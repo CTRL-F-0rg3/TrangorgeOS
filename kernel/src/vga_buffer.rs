@@ -1,4 +1,7 @@
 
+use volatile::Volatile;
+
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq )]
 #[repr(u8)]
@@ -43,6 +46,7 @@ const BUFFER_WIDTH: unsize = 80;
 
 #[repr(transparent)]
 struct Buffer {
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT], //useless 
     char: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
@@ -99,5 +103,5 @@ pub fn print_something() {
     writer.write_byte(b'H');
     writer.write_string("ello ");
     writer.write_string("world ");
-    
+
 }
