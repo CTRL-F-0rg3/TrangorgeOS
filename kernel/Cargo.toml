@@ -1,7 +1,7 @@
 [package]
 name = "kernel"
 version = "0.1.0"
-edition = "2024"
+edition = "2021" # UWAGA: Ustawiłem 2021 (patrz sekcja uwag niżej)
 
 [[bin]]
 name = "kernel"
@@ -15,10 +15,15 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-bootloader = "0.9"
+bootloader = "0.9.23"
 volatile = "0.2.6"
 spin = "0.5.2"
 
+# Główna zmiana: wyłączenie domyślnych featurów i jawne wybranie bezpiecznych
+x86_64 = { version = "0.14.12", default-features = false, features = ["instructions", "abi_x86_interrupt"] }
+
+pic8259 = "0.10.1"
+
 [dependencies.lazy_static]
-version = "1.0"
+version = "1.4"
 features = ["spin_no_std"]
