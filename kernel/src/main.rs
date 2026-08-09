@@ -14,6 +14,9 @@ fn panic(_info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     let vga_buffer = 0xb8000 as *mut u8;
 
+    
+
+
     for (i, &byte) in HELLO.iter().enumerate() {
         unsafe {
             *vga_buffer.offset(i as isize * 2) = byte;
@@ -21,8 +24,11 @@ pub extern "C" fn _start() -> ! {
         }
     }
 
+    vga_buffer::print_something();
+
     loop{}
 }
+
 
 static HELLO: &[u8] = b"hello";
 
