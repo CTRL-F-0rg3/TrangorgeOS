@@ -3,18 +3,16 @@ name = "kernel"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "kernel"
+test = false
+bench = false
+
 [profile.dev]
 panic = "abort"
 
 [profile.release]
 panic = "abort"
-
-[[bin]]
-name= "kernel"
-test= false
-bench = false
-
-
 
 [dependencies]
 bootloader = "0.9"
