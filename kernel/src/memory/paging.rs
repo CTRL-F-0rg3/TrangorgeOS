@@ -1,8 +1,6 @@
-use spin::Mutex;
+use crate::memory::PHYSICAL_MEMORY_OFFSET;
 use x86_64::VirtAddr;
 use x86_64::structures::paging::PageTable;
-
-pub static PHYSICAL_MEMORY_OFFSET: Mutex<u64> = Mutex::new(0);
 
 crate::test_module!({
     let offset = VirtAddr::new(*PHYSICAL_MEMORY_OFFSET.lock());
@@ -13,10 +11,6 @@ crate::test_module!({
     }
     Ok("level 4 page table read via physical memory offset")
 });
-
-pub fn init(physical_memory_offset: u64) {
-    *PHYSICAL_MEMORY_OFFSET.lock() = physical_memory_offset;
-}
 
 pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;

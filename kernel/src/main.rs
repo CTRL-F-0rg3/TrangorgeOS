@@ -27,8 +27,8 @@ static TESTS: &[Test] = &[
         func: interrupts::self_test,
     },
     Test {
-        module: "memory",
-        func: memory::self_test,
+        module: "memory::paging",
+        func: memory::paging::self_test,
     },
 ];
 
@@ -57,7 +57,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
     memory::init(boot_info.physical_memory_offset);
     testing::run_all(TESTS);
-    println!("welcome in my galaxy{}", "!");
+    println!("Hello World{}", "!");
 
     hlt_loop();
 }
