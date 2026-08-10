@@ -2,8 +2,11 @@
 #![no_main]
 #![feature(abi_x86_interrupt)]
 
+use bootloader::{BootInfo, entry_point};
+
 mod gdt;
 mod interrupts;
+mod memory;
 mod testing;
 mod vga_buffer;
 
@@ -16,8 +19,16 @@ static TESTS: &[Test] = &[
         func: vga_buffer::self_test,
     },
     Test {
+        module: "gdt",
+        func: gdt::self_test,
+    },
+    Test {
         module: "interrupts",
         func: interrupts::self_test,
+    },
+    Test {
+        module: "memory",
+        func: memory::self_test,
     },
 ];
 
@@ -40,9 +51,11 @@ fn panic(info: &PanicInfo) -> ! {
     hlt_loop();
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
+    memory::init(boot_info.physical_memory_offset);
     testing::run_all(TESTS);
     println!("welcome in my galaxy{}", "!");
 

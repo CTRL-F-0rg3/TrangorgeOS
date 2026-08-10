@@ -11,14 +11,12 @@ pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
 pub static KEYBOARD_HITS: AtomicU64 = AtomicU64::new(0);
 
 crate::test_module!({
-    
     let hits_before = BREAKPOINT_HITS.load(Ordering::SeqCst);
     x86_64::instructions::interrupts::int3();
     let hits_after = BREAKPOINT_HITS.load(Ordering::SeqCst);
     if hits_after != hits_before + 1 {
-        return Err("breakpoint handler nie zwiekszyl licznika - IDT zle zaladowany?");
+        return Err("breakpoint handler did not increment counter - IDT not loaded correctly?");
     }
-
 
     let ticks_before = TIMER_TICKS.load(Ordering::SeqCst);
     let mut waited = 0;
@@ -27,10 +25,10 @@ crate::test_module!({
         waited += 1;
     }
     if TIMER_TICKS.load(Ordering::SeqCst) == ticks_before {
-        return Err("timer IRQ dont work - PIC/IDT failed");
+        return Err("timer IRQ never arrived - PIC/IDT wiring broken");
     }
 
-    Ok("breakpoint {+} + timer IRQ true")
+    Ok("breakpoint counted + timer IRQ confirmed live")
 });
 
 pub const PIC_1_OFFSET: u8 = 32;
@@ -50,10 +48,6 @@ impl InterruptIndex {
     fn as_u8(self) -> u8 {
         self as u8
     }
-
-    fn as_usize(self) -> usize {
-        usize::from(self.as_u8())
-    }
 }
 
 lazy_static! {
@@ -66,8 +60,8 @@ lazy_static! {
                 .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
         idt.page_fault.set_handler_fn(page_fault_handler);
-        idt[InterruptIndex::Timer.as_usize()].set_handler_fn(timer_interrupt_handler);
-        idt[InterruptIndex::Keyboard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
+        idt[InterruptIndex::Timer.as_u8()].set_handler_fn(timer_interrupt_handler);
+        idt[InterruptIndex::Keyboard.as_u8()].set_handler_fn(keyboard_interrupt_handler);
         idt
     };
 }
@@ -95,7 +89,7 @@ extern "x86-interrupt" fn page_fault_handler(
     use x86_64::registers::control::Cr2;
 
     println!("EXCEPTION: PAGE FAULT");
-    println!("Accessed Address: {:?}", Cr2::read());
+    println!("Accessed Address: {:#x}", Cr2::read_raw());
     println!("Error Code: {:?}", error_code);
     println!("{:#?}", stack_frame);
     crate::hlt_loop();

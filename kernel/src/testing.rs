@@ -17,7 +17,7 @@ macro_rules! test_module {
     };
 }
 
-pub fn run_test(test: &Test) {
+pub fn run_test(test: &Test) -> bool {
     print_colored!(Color::Magenta, "{}", test.module);
     print!(" ");
     match (test.func)() {
@@ -26,20 +26,36 @@ pub fn run_test(test: &Test) {
             print!("[");
             print_colored!(Color::LightGreen, "OK");
             println!("]");
+            true
         }
         Err(msg) => {
             print!("[");
             print_colored!(Color::LightRed, "FAILED");
             print!("]");
             println!(" {}", msg);
+            false
         }
     }
 }
 
 pub fn run_all(tests: &[Test]) {
     println!("Running {} module test(s)...", tests.len());
+    let mut passed = 0;
     for test in tests {
-        run_test(test);
+        if run_test(test) {
+            passed += 1;
+        }
+    }
+    println!();
+    if passed == tests.len() {
+        print_colored!(Color::LightGreen, "SYSTEM STATUS: {}/{} OK", passed, tests.len());
+    } else {
+        print_colored!(
+            Color::LightRed,
+            "SYSTEM STATUS: {}/{} FAILED",
+            tests.len() - passed,
+            tests.len()
+        );
     }
     println!();
 }

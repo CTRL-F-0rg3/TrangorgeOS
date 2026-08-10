@@ -5,20 +5,23 @@ use volatile::Volatile;
 
 crate::test_module!({
     let s = "roundtrip";
+    let expected_color = ColorCode::new(Color::Yellow, Color::Black);
     {
         let mut w = WRITER.lock();
         w.column_position = 0;
+        w.set_color(Color::Yellow);
         w.write_string(s);
     }
-    for (i, expected) in s.bytes().enumerate() {
-        let actual = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i]
-            .read()
-            .ascii_character;
-        if actual != expected {
-            return Err("VGA buffer readback mismatch");
+    for (i, expected_byte) in s.bytes().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i].read();
+        if screen_char.ascii_character != expected_byte {
+            return Err("VGA buffer ascii readback mismatch");
+        }
+        if screen_char.color_code != expected_color {
+            return Err("VGA buffer color readback mismatch");
         }
     }
-    Ok("buffer write/read")
+    Ok("ascii + color roundtrip")
 });
 
 #[allow(dead_code)]

@@ -1,7 +1,7 @@
 # TrangorgeOS - kernel
 
-**Wersja:** 0.0.2
-**Bazuje na:** [Writing an OS in Rust](https://os.phil-opp.com/) (Phil Opperman), rozdziały: *A Minimal Kernel* + *VGA Text Mode* + *CPU Exceptions* + *Double Faults* + *Hardware Interrupts*
+**Wersja:** 0.0.3
+**Bazuje na:** [Writing an OS in Rust](https://os.phil-opp.com/) (Phil Opperman), rozdziały: *A Minimal Kernel* + *VGA Text Mode* + *CPU Exceptions* + *Double Faults* + *Hardware Interrupts* + *Introduction to Paging* (poczatek)
 
 Minimalny kernel x86_64 w Rust, bootowany przez crate `bootloader = "0.9"`, z własnym targetem, printami przez VGA text mode i własnym mini-frameworkiem do selftestów modułów.
 
@@ -245,11 +245,13 @@ Na górze `interrupts.rs` jest test wywołujący programowo przerwanie breakpoin
 - [x] Double Faults - bezpieczny stos dla double fault (IST, GDT)
 - [x] Hardware Interrupts - PIC, timer, klawiatura
 - [x] hlt_loop zamiast busy-loop (mniejsze zużycie mocy/ciepło)
+- [x] Przejście z reczengo `_start` na `bootloader::entry_point!` + `BootInfo` (feature `map_physical_memory`) - wymagane, żeby w ogóle mieć dostęp do offsetu pamięci fizycznej i mapy pamięci od bootloadera
+- [x] Pierwszy krok paging: `memory::active_level_4_table()` czyta CR3 i realny poziom 4 tablicy stron przez physical memory offset
 - [ ] Testing w prawdziwym `cargo test` (harness z `bootimage test-runner`, wyjście przez `isa-debug-exit`) - do rozważenia jako uzupełnienie własnego `testing.rs`
-- [ ] Paging / dostęp do własnych tablic stron
-- [ ] Heap allocation (`alloc`, custom allocator - np. bump albo linked-list)
-- [ ] Frame allocator (zarządzanie pamięcią fizyczną, na bazie memory map z bootloadera)
-- [ ] Wielordzeniowość (SMP): parsowanie ACPI/MADT, inicjalizacja Local APIC, wybudzanie AP-ów (INIT-SIPI-SIPI), per-core stosy i GDT/TSS, atomowy scheduler/lock-free struktury. To spora, osobna faza - sensownie robi się ją dopiero PO paging + heap, bo każdy rdzeń potrzebuje własnego stosu i często własnych struktur w pamięci dynamicznej. Nie próbuj tego przeskoczyć przed heapem, będzie bolało.
+- [ ] Pełne mapowanie/tłumaczenie adresów (translate_addr, walka po wszystkich poziomach tablic)
+- [ ] Frame allocator (zarządzanie pamięcią fizyczną, na bazie `boot_info.memory_map`)
+- [ ] Heap allocation (`alloc`, custom allocator - np. bump albo linked-list) - wymaga frame allocatora
+- [ ] Wielordzeniowość (SMP): parsowanie ACPI/MADT (crate `acpi`), inicjalizacja Local APIC (zamiast starego PIC 8259 dla timera), wybudzanie AP-ów (INIT-SIPI-SIPI), per-core stosy i GDT/TSS, atomowy scheduler/lock-free struktury. Wymaga dzialającego paging + heap, bo parsowanie ACPI i budzenie rdzeni odbywa się przez pamięć dynamiczną i mapowanie dowolnych adresów fizycznych - to dopiero nastepny duży etap po punktach powyżej.
 
 ---
 
@@ -262,3 +264,6 @@ Na górze `interrupts.rs` jest test wywołujący programowo przerwanie breakpoin
 5. **`compiler-builtins-mem`, nie `compiler-build-mem`** - literówka w `build-std-features` wywala build ze skrajnie niejasnym błędem.
 6. **`extern "x86-interrupt"` wymaga `#![feature(abi_x86_interrupt)]` na górze `main.rs`** - to niestabilna cecha kompilatora (dostępna tylko na nightly, którego i tak używamy). Bez tego atrybutu handlery przerwań w `interrupts.rs` się nie skompilują.
 7. **Kolejność `init()` ma znaczenie** - GDT musi być załadowany przed IDT (double fault odwołuje się do stosu z GDT), a `sti` (włączenie przerwań) musi być na samym końcu, po zainicjalizowaniu PIC-a - inaczej przerwanie sprzętowe przyjdzie zanim IDT/PIC są gotowe i kernel się wywali.
+8. **Crate `x86_64` w wersji 0.15 zmienił kilka nazw API względem 0.14** - `GlobalDescriptorTable::add_entry` to teraz `append`, a `InterruptDescriptorTable` indeksuje się po `u8`, nie po `usize`. Jeśli update crate w `Cargo.toml`, zawsze usuń `Cargo.lock` i zrób `cargo clean`, żeby nie zostały dwie wersje tej samej biblioteki w grafie zależności.
+9. **Niestabilny trait `Step` w bibliotece standardowej potrafi się zmienić z nightla na nightla** - starsze wersje `x86_64` (np. 0.14.13) mogą przestać się kompilować z błędem `missing forward_overflowing, backward_overflowing`. Rozwiązanie: aktualna wersja `x86_64` (0.15.x), nie próba łatania samego triku ze Step.
+10. **`bootloader::entry_point!` wymaga feature `map_physical_memory`** w `Cargo.toml` (`bootloader = { version = "0.9", features = ["map_physical_memory"] }`), inaczej `boot_info.physical_memory_offset` będzie zawsze zerem i każda próba odczytu tablic stron przez ten offset skończy się page faultem.
