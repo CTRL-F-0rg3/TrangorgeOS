@@ -45,7 +45,7 @@ crate::test_module!({
     let eth_size = core::mem::size_of::<EthernetHeader>();
     let ip_size = core::mem::size_of::<Ipv4Header>();
     let ip_bytes = &buffer[eth_size..eth_size + ip_size];
-    if calculate_ipv4_checksum(ip_bytes) != 0xFFFF {
+    if calculate_ipv4_checksum(ip_bytes) != 0 {
         return Err("IPv4 header checksum does not satisfy the ones-complement invariant");
     }
 

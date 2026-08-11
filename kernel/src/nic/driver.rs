@@ -24,7 +24,7 @@ impl<'a> DriverRegistry<'a> {
         true
     }
 
-    pub fn device(&mut self, index: usize) -> Option<&mut (dyn NetworkDevice + '_)> {
+    pub fn device(&mut self, index: usize) -> Option<&mut (dyn NetworkDevice + 'a)> {
         self.devices.get_mut(index)?.as_deref_mut()
     }
 
