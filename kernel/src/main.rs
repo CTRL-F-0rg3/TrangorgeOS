@@ -7,6 +7,7 @@ use bootloader::{BootInfo, entry_point};
 mod gdt;
 mod interrupts;
 mod memory;
+mod nic;
 mod testing;
 mod vga_buffer;
 
@@ -29,6 +30,26 @@ static TESTS: &[Test] = &[
     Test {
         module: "memory::paging",
         func: memory::paging::self_test,
+    },
+    Test {
+        module: "memory::frame_allocator",
+        func: memory::frame_allocator::self_test,
+    },
+    Test {
+        module: "memory::mapping",
+        func: memory::mapping::self_test,
+    },
+    Test {
+        module: "nic::ethernet",
+        func: nic::ethernet::self_test,
+    },
+    Test {
+        module: "nic::packet",
+        func: nic::packet::self_test,
+    },
+    Test {
+        module: "nic::virtio::queue",
+        func: nic::virtio::queue::self_test,
     },
 ];
 
@@ -55,7 +76,7 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
-    memory::init(boot_info.physical_memory_offset);
+    memory::init(boot_info.physical_memory_offset, &boot_info.memory_map);
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
 

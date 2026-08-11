@@ -1,7 +1,7 @@
 # TrangorgeOS - kernel
 
-**Wersja:** 0.0.3
-**Bazuje na:** [Writing an OS in Rust](https://os.phil-opp.com/) (Phil Opperman), rozdziały: *A Minimal Kernel* + *VGA Text Mode* + *CPU Exceptions* + *Double Faults* + *Hardware Interrupts* + *Introduction to Paging* (poczatek)
+**Wersja:** 0.0.4
+**Bazuje na:** [Writing an OS in Rust](https://os.phil-opp.com/) (Phil Opperman), rozdziały: *A Minimal Kernel* + *VGA Text Mode* + *CPU Exceptions* + *Double Faults* + *Hardware Interrupts* + *Introduction to Paging* + *Paging Implementation*
 
 Minimalny kernel x86_64 w Rust, bootowany przez crate `bootloader = "0.9"`, z własnym targetem, printami przez VGA text mode i własnym mini-frameworkiem do selftestów modułów.
 
@@ -239,23 +239,54 @@ Na górze `interrupts.rs` jest test wywołujący programowo przerwanie breakpoin
 
 ---
 
-## 8. Co dalej (TODO / kolejne rozdziały bloga)
+## 8. src/memory/ - struktura modulu pamieci
+
+```
+src/memory/
+├── mod.rs             -- PHYSICAL_MEMORY_OFFSET, globalny MAPPER, globalny FRAME_ALLOCATOR, init()
+├── paging.rs           -- active_level_4_table, OffsetPageTable, manualny translate_addr (4 poziomy)
+├── frame_allocator.rs   -- BootInfoFrameAllocator (na bazie boot_info.memory_map), EmptyFrameAllocator
+└── mapping.rs            -- realne mapowanie strony: allocate_frame + map_to + zapis/odczyt + unmap
+```
+
+`memory::init(physical_memory_offset, memory_map)` wywolywane raz w `kernel_main()`, zaraz po `init()` (GDT/IDT/PIC) a przed testami:
+1. zapisuje offset pamieci fizycznej
+2. buduje `OffsetPageTable` (bezpieczny wrapper x86_64 na manualne chodzenie po tablicach) i chowa go w `MAPPER`
+3. buduje `BootInfoFrameAllocator` z prawdziwej mapy pamieci od bootloadera i chowa go w `FRAME_ALLOCATOR`
+
+Oba globalne stany sa za `spin::Mutex`, wiec dostep jest bezpieczny nawet gdy pozniej dojda przerwania/wiele rdzeni siegajace po pamiec rownolegle.
+
+### Dlaczego trzy pliki, nie jeden
+
+- `paging.rs` odpowiada wylacznie za CZYTANIE istniejacych tablic stron (translate_addr, dostep do poziomu 4)
+- `frame_allocator.rs` odpowiada wylacznie za PRZYDZIAL nowej pamieci fizycznej
+- `mapping.rs` odpowiada za ZMIANE mapowan (laczy oba powyzsze, bo map_to potrzebuje frame allocatora do budowy brakujacych tablic posrednich)
+
+Rozdzielenie odpowiedzialnosci: kod czytajacy nie wie nic o alokacji, kod alokujacy nic nie wie o mapowaniu, kod mapujacy korzysta z obu przez ich publiczne API - zaden z tych plikow nie musi znac szczegolow implementacji pozostalych.
+
+### Co kazdy test faktycznie sprawdza
+
+- `memory::paging` - realny odczyt poziomu 4 (>0 aktywnych wpisow) + manualny walk 4 poziomow przez `translate_addr` porownany z faktycznym adresem fizycznym VGA (0xb8000)
+- `memory::frame_allocator` - 8 kolejnych alokacji zwraca 8 unikalnych, wyrownanych do 4KiB ramek (bez duplikatow)
+- `memory::mapping` - najmocniejszy test: alokuje realna ramke, mapuje na nia swiezo wybrana strone wirtualna, zapisuje przez wskaznik konkretna wartosc, czyta z powrotem przez ten sam wskaznik, odmapowuje. Jesli to przejdzie, paging realnie dziala od poczatku do konca - nie tylko "nie crashuje"
+
+## 9. Co dalej (TODO / kolejne rozdziały bloga)
 
 - [x] CPU Exceptions - IDT, breakpoint, page fault
 - [x] Double Faults - bezpieczny stos dla double fault (IST, GDT)
 - [x] Hardware Interrupts - PIC, timer, klawiatura
 - [x] hlt_loop zamiast busy-loop (mniejsze zużycie mocy/ciepło)
 - [x] Przejście z reczengo `_start` na `bootloader::entry_point!` + `BootInfo` (feature `map_physical_memory`) - wymagane, żeby w ogóle mieć dostęp do offsetu pamięci fizycznej i mapy pamięci od bootloadera
-- [x] Pierwszy krok paging: `memory::active_level_4_table()` czyta CR3 i realny poziom 4 tablicy stron przez physical memory offset
+- [x] Paging: `active_level_4_table`, `OffsetPageTable`, manualny `translate_addr` po wszystkich 4 poziomach
+- [x] Frame allocator na bazie `boot_info.memory_map` (`BootInfoFrameAllocator`)
+- [x] Realne mapowanie strony (alokacja + `map_to` + zapis/odczyt + `unmap`) z testem end-to-end
 - [ ] Testing w prawdziwym `cargo test` (harness z `bootimage test-runner`, wyjście przez `isa-debug-exit`) - do rozważenia jako uzupełnienie własnego `testing.rs`
-- [ ] Pełne mapowanie/tłumaczenie adresów (translate_addr, walka po wszystkich poziomach tablic)
-- [ ] Frame allocator (zarządzanie pamięcią fizyczną, na bazie `boot_info.memory_map`)
-- [ ] Heap allocation (`alloc`, custom allocator - np. bump albo linked-list) - wymaga frame allocatora
-- [ ] Wielordzeniowość (SMP): parsowanie ACPI/MADT (crate `acpi`), inicjalizacja Local APIC (zamiast starego PIC 8259 dla timera), wybudzanie AP-ów (INIT-SIPI-SIPI), per-core stosy i GDT/TSS, atomowy scheduler/lock-free struktury. Wymaga dzialającego paging + heap, bo parsowanie ACPI i budzenie rdzeni odbywa się przez pamięć dynamiczną i mapowanie dowolnych adresów fizycznych - to dopiero nastepny duży etap po punktach powyżej.
+- [ ] Heap allocation (`alloc`, custom allocator - np. bump albo linked-list) - `BootInfoFrameAllocator` jest teraz gotowy jako fundament pod to
+- [ ] Wielordzeniowość (SMP): parsowanie ACPI/MADT (crate `acpi`), inicjalizacja Local APIC (zamiast starego PIC 8259 dla timera), wybudzanie AP-ów (INIT-SIPI-SIPI), per-core stosy i GDT/TSS, atomowy scheduler/lock-free struktury. Wymaga dzialającego heap - to dopiero nastepny duży etap po punkcie powyzej.
 
 ---
 
-## 9. Znane pułapki (żeby nie tracić czasu drugi raz)
+## 10. Znane pułapki (żeby nie tracić czasu drugi raz)
 
 1. **`.json` target wymaga `json-target-spec = true`** w `.cargo/config.toml` (cargo 1.95+, styczeń 2026) - bez tego: `error: .json target specs require -Zjson-target-spec`.
 2. **Pola w target JSON bywają typowane inaczej niż w starych tutorialach** - np. `target-pointer-width` i `target-c-int-width` muszą być liczbami (`64`, `32`), nie stringami (`"64"`) w nowszych nightly.
