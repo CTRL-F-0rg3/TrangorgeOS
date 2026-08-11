@@ -1,15 +1,19 @@
+//! alokacje oraz świeże strony dla kubełków slab.
+
 pub mod buddy_heap;
 pub mod slab;
 
 use buddy_heap::BuddyAllocator;
-use slab::{SlabBucket, SLAB_SIZES};
+use slab::{SlabBucket, SLAB_REFILL_SIZE, SLAB_SIZES};
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{null_mut, NonNull};
 use spin::Mutex;
 
+const SLAB_BUCKET_COUNT: usize = SLAB_SIZES.len();
+
 pub struct KernelHeap {
     buddy: BuddyAllocator,
-    slabs: [SlabBucket; 9], // Odpowiada rozmiarom z SLAB_SIZES
+    slabs: [SlabBucket; SLAB_BUCKET_COUNT],
 }
 
 impl KernelHeap {
@@ -30,7 +34,14 @@ impl KernelHeap {
         }
     }
 
+    /// # Bezpieczeństwo: patrz [`BuddyAllocator::add_memory`].
     pub unsafe fn init(&mut self, start_addr: usize, size: usize) {
+        self.buddy.add_memory(start_addr, size);
+    }
+
+    /// Dokłada kolejny region do już działającej sterty.
+    /// # Bezpieczeństwo: patrz [`BuddyAllocator::add_memory`].
+    pub unsafe fn grow(&mut self, start_addr: usize, size: usize) {
         self.buddy.add_memory(start_addr, size);
     }
 
@@ -42,6 +53,9 @@ impl KernelHeap {
         }
         None
     }
+
+    pub fn used_bytes(&self) -> usize { self.buddy.allocated_bytes() }
+    pub fn total_bytes(&self) -> usize { self.buddy.total_bytes() }
 }
 
 pub struct LockedHeap(Mutex<KernelHeap>);
@@ -51,31 +65,48 @@ impl LockedHeap {
         Self(Mutex::new(KernelHeap::new()))
     }
 
+    /// # Bezpieczeństwo: patrz [`KernelHeap::init`]. Wywołać raz, zanim
+    /// jakikolwiek kod użyje alokacji na stercie (`Box`, `Vec`, ...).
     pub unsafe fn init(&self, start_addr: usize, size: usize) {
         self.0.lock().init(start_addr, size);
     }
+
+    /// # Bezpieczeństwo: patrz [`KernelHeap::grow`].
+    pub unsafe fn grow(&self, start_addr: usize, size: usize) {
+        self.0.lock().grow(start_addr, size);
+    }
+
+    pub fn used_bytes(&self) -> usize { self.0.lock().used_bytes() }
+    pub fn total_bytes(&self) -> usize { self.0.lock().total_bytes() }
 }
 
 unsafe impl GlobalAlloc for LockedHeap {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mut heap = self.0.lock();
-        let size = layout.size();
+        // Layout.size() nie musi być >= align() - liczymy realny wymagany rozmiar,
+        // inaczej mały, mocno wyrównany typ dostałby źle wyrównaną pamięć.
+        let size = layout.size().max(layout.align());
         let align = layout.align();
 
-        // 1. Jeśli rozmar pasuje do Slaba, próbujemy alokować z kubełka
         if let Some(slab) = heap.select_slab(size) {
             if let Some(ptr) = slab.allocate() {
                 return ptr.as_ptr();
             }
 
-            // Kubełek jest pusty -> alokujemy nowy blok z Buddy i dodajemy do Slaba
+            // Pusty kubełek: pobieramy jedną stronę z Buddy i dzielimy ją
+            // na sloty, zamiast marnować całą stronę na jeden mały obiekt.
             let block_size = slab.block_size;
-            if let Some(ptr) = heap.buddy.allocate(block_size, block_size) {
-                return ptr.as_ptr();
+            let refill_size = SLAB_REFILL_SIZE.max(block_size);
+            if let Some(chunk) = heap.buddy.allocate(refill_size, block_size) {
+                slab.refill(chunk, refill_size);
+                if let Some(ptr) = slab.allocate() {
+                    return ptr.as_ptr();
+                }
             }
+            return null_mut();
         }
 
-        // 2. Dla dużych alokacji (> 2048B) lub gdy Slab się skończył – uderzamy do Buddy
+        // Duże alokacje (> 2048 B) idą bezpośrednio do Buddy.
         heap.buddy
             .allocate(size, align)
             .map_or(null_mut(), |ptr| ptr.as_ptr())
@@ -84,14 +115,12 @@ unsafe impl GlobalAlloc for LockedHeap {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         let Some(non_null) = NonNull::new(ptr) else { return };
         let mut heap = self.0.lock();
-        let size = layout.size();
+        let size = layout.size().max(layout.align());
         let align = layout.align();
 
-        // Jeśli to był mały obiekt, zwracamy go do odpowiedniego Slaba
         if let Some(slab) = heap.select_slab(size) {
             slab.deallocate(non_null);
         } else {
-            // Duży obiekt wraca bezpośrednio do Buddy Allocatora
             heap.buddy.deallocate(non_null, size, align);
         }
     }

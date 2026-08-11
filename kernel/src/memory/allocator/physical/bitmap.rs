@@ -1,4 +1,5 @@
-pub const PAGE_SIZE: usize = 4096;
+use crate::allocator::config::PAGE_SIZE;
+use crate::allocator::traits::{Frame, FrameAllocator};
 
 pub struct BitmapFrameAllocator<'a> {
     bitmap: &'a mut [u64],
@@ -43,7 +44,7 @@ impl<'a> BitmapFrameAllocator<'a> {
                 let frame_idx = word_idx * 64 + bit_idx;
 
                 if frame_idx >= self.total_frames {
-                    return None; 
+                    return None;
                 }
 
                 self.bitmap[word_idx] |= 1u64 << bit_idx;
@@ -54,7 +55,7 @@ impl<'a> BitmapFrameAllocator<'a> {
             }
         }
 
-        None 
+        None
     }
 
     pub fn deallocate_frame(&mut self, frame_idx: usize) {
@@ -101,13 +102,9 @@ impl<'a> BitmapFrameAllocator<'a> {
         }
     }
 
-    
-
-
     pub fn frame_to_addr(frame_idx: usize) -> u64 {
         (frame_idx * PAGE_SIZE) as u64
     }
-
 
     pub fn addr_to_frame(addr: u64) -> usize {
         (addr as usize) / PAGE_SIZE
@@ -116,4 +113,15 @@ impl<'a> BitmapFrameAllocator<'a> {
     pub fn total_frames(&self) -> usize { self.total_frames }
     pub fn used_frames(&self) -> usize { self.used_frames }
     pub fn free_frames(&self) -> usize { self.total_frames - self.used_frames }
+}
+
+impl<'a> FrameAllocator for BitmapFrameAllocator<'a> {
+    fn allocate_frame(&mut self) -> Option<Frame> {
+        BitmapFrameAllocator::allocate_frame(self).map(Frame)
+    }
+    fn deallocate_frame(&mut self, frame: Frame) {
+        BitmapFrameAllocator::deallocate_frame(self, frame.0)
+    }
+    fn total_frames(&self) -> usize { self.total_frames }
+    fn free_frames(&self) -> usize { self.free_frames() }
 }
