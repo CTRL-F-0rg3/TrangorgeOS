@@ -1,5 +1,39 @@
-use crate::allocator::config::PAGE_SIZE;
-use crate::allocator::traits::{Frame, FrameAllocator};
+pub const PAGE_SIZE: usize = 4096;
+
+crate::test_module!({
+    let mut storage = [0u64; 4];
+    let mut allocator = BitmapFrameAllocator::new(&mut storage, 200);
+
+    let first = match allocator.allocate_frame() {
+        Some(idx) => idx,
+        None => return Err("allocate_frame returned None on a fresh allocator"),
+    };
+    let second = match allocator.allocate_frame() {
+        Some(idx) => idx,
+        None => return Err("allocate_frame returned None for the second frame"),
+    };
+    if first == second {
+        return Err("allocate_frame returned the same frame index twice");
+    }
+    if allocator.used_frames() != 2 {
+        return Err("used_frames did not track two allocations correctly");
+    }
+
+    allocator.deallocate_frame(first);
+    if allocator.used_frames() != 1 {
+        return Err("used_frames did not decrease after deallocate_frame");
+    }
+
+    let reused = match allocator.allocate_frame() {
+        Some(idx) => idx,
+        None => return Err("allocate_frame returned None after freeing a frame"),
+    };
+    if reused != first {
+        return Err("freed frame was not reused by the next allocation");
+    }
+
+    Ok("bitmap allocator alloc/dealloc/reuse verified")
+});
 
 pub struct BitmapFrameAllocator<'a> {
     bitmap: &'a mut [u64],
@@ -10,10 +44,10 @@ pub struct BitmapFrameAllocator<'a> {
 
 impl<'a> BitmapFrameAllocator<'a> {
     pub fn new(bitmap_slice: &'a mut [u64], total_frames: usize) -> Self {
-        let required_words = (total_frames + 63) / 64;
+        let required_words = total_frames.div_ceil(64);
         assert!(
             bitmap_slice.len() >= required_words,
-            "Przekazana bitmapa jest za mała dla podanej liczby ramek!"
+            "bitmap slice too small for the requested frame count"
         );
 
         Self {
@@ -26,14 +60,14 @@ impl<'a> BitmapFrameAllocator<'a> {
 
     pub fn mark_all_used(&mut self) {
         for word in self.bitmap.iter_mut() {
-            *word = !0u64; // Same jedynki
+            *word = !0u64;
         }
         self.used_frames = self.total_frames;
         self.last_word_idx = 0;
     }
 
     pub fn allocate_frame(&mut self) -> Option<usize> {
-        let num_words = (self.total_frames + 63) / 64;
+        let num_words = self.total_frames.div_ceil(64);
 
         for i in 0..num_words {
             let word_idx = (self.last_word_idx + i) % num_words;
@@ -59,7 +93,7 @@ impl<'a> BitmapFrameAllocator<'a> {
     }
 
     pub fn deallocate_frame(&mut self, frame_idx: usize) {
-        assert!(frame_idx < self.total_frames, "Indeks ramki poza zakresem!");
+        assert!(frame_idx < self.total_frames, "frame index out of range");
 
         let word_idx = frame_idx / 64;
         let bit_idx = frame_idx % 64;
@@ -76,7 +110,9 @@ impl<'a> BitmapFrameAllocator<'a> {
 
     pub fn mark_range_free(&mut self, start_frame: usize, count: usize) {
         for frame_idx in start_frame..start_frame + count {
-            if frame_idx >= self.total_frames { break; }
+            if frame_idx >= self.total_frames {
+                break;
+            }
 
             let word_idx = frame_idx / 64;
             let bit_idx = frame_idx % 64;
@@ -90,7 +126,9 @@ impl<'a> BitmapFrameAllocator<'a> {
 
     pub fn mark_range_used(&mut self, start_frame: usize, count: usize) {
         for frame_idx in start_frame..start_frame + count {
-            if frame_idx >= self.total_frames { break; }
+            if frame_idx >= self.total_frames {
+                break;
+            }
 
             let word_idx = frame_idx / 64;
             let bit_idx = frame_idx % 64;
@@ -110,18 +148,15 @@ impl<'a> BitmapFrameAllocator<'a> {
         (addr as usize) / PAGE_SIZE
     }
 
-    pub fn total_frames(&self) -> usize { self.total_frames }
-    pub fn used_frames(&self) -> usize { self.used_frames }
-    pub fn free_frames(&self) -> usize { self.total_frames - self.used_frames }
-}
+    pub fn total_frames(&self) -> usize {
+        self.total_frames
+    }
 
-impl<'a> FrameAllocator for BitmapFrameAllocator<'a> {
-    fn allocate_frame(&mut self) -> Option<Frame> {
-        BitmapFrameAllocator::allocate_frame(self).map(Frame)
+    pub fn used_frames(&self) -> usize {
+        self.used_frames
     }
-    fn deallocate_frame(&mut self, frame: Frame) {
-        BitmapFrameAllocator::deallocate_frame(self, frame.0)
+
+    pub fn free_frames(&self) -> usize {
+        self.total_frames - self.used_frames
     }
-    fn total_frames(&self) -> usize { self.total_frames }
-    fn free_frames(&self) -> usize { self.free_frames() }
 }
