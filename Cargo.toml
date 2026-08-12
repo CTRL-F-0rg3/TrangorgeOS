@@ -1,0 +1,14 @@
+# TrangorgeOS/Cargo.toml
+[workspace]
+members = [
+    "kernel",
+    "comgrub",
+    "comlimine",
+    "trangorgelib",   # ← nowe
+]
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true

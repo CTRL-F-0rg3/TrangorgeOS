@@ -110,6 +110,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
     memory::init(boot_info.physical_memory_offset, &boot_info.memory_map);
     allocator::init(&boot_info.memory_map);
+    pci::init();
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
 
