@@ -1,8 +1,8 @@
-
 [workspace]
 members = [
     "kernel",
     "comgrub",
+    "comlimine",
 ]
 
 [profile.dev]
