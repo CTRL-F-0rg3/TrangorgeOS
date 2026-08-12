@@ -115,3 +115,16 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     hlt_loop();
 }
+
+// kernel/src/lib.rs (jeśli przenosisz) albo main.rs
+
+#[no_mangle]
+pub extern "C" fn kernel_main(magic: u32, mboot_info: *const u8) -> ! {
+    // Twój dotychczasowy kod init
+    init();
+    
+    // Główna pętla
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
