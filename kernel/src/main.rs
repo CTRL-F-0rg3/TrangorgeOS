@@ -110,21 +110,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
     memory::init(boot_info.physical_memory_offset, &boot_info.memory_map);
     allocator::init(&boot_info.memory_map);
+    pci::init();
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
 
     hlt_loop();
-}
-
-// kernel/src/lib.rs (jeśli przenosisz) albo main.rs
-
-#[no_mangle]
-pub extern "C" fn kernel_main(magic: u32, mboot_info: *const u8) -> ! {
-    // Twój dotychczasowy kod init
-    init();
-    
-    // Główna pętla
-    loop {
-        x86_64::instructions::hlt();
-    }
 }
