@@ -1,0 +1,4 @@
+name = calltest
+target = x86_64
+entry = src/main.xl
+route = asm

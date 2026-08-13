@@ -14,11 +14,26 @@ pub struct SemaError {
 
 pub struct Sema {
     symbols: HashMap<String, Symbol>,
+    fns: HashMap<String, usize>,
 }
 
 impl Sema {
     pub fn new() -> Self {
-        Self { symbols: HashMap::new() }
+        Self {
+            symbols: HashMap::new(),
+            fns: HashMap::new(),
+        }
+    }
+
+    pub fn check(&mut self, program: &Program) -> Result<(), SemaError> {
+        for f in &program.functions {
+            let arity = f.params.iter().filter(|p| matches!(p, Param::Typed(_))).count();
+            self.fns.insert(f.name.clone(), arity);
+        }
+        for f in &program.functions {
+            self.check_function(f)?;
+        }
+        Ok(())
     }
 
     fn err(&self, msg: String) -> SemaError {
@@ -136,6 +151,32 @@ impl Sema {
                     .ok_or_else(|| self.err(format!("nieznany symbol '{}'", name)))?;
 
                 match (sym, call.op.as_str()) {
+                    (Symbol::Reg(_), "call") => {
+                        let fname = match &call.args.get(0) {
+                            Some(Expr::Ident(n)) => n,
+                            _ => {
+                                return Err(self.err("pierwszy argument ::call to nazwa funkcji".to_string()))
+                            }
+                        };
+                        let arity = match self.fns.get(fname) {
+                            Some(a) => *a,
+                            None => {
+                                return Err(self.err(format!("nieznana funkcja '{}'", fname)))
+                            }
+                        };
+                        if call.args.len() - 1 != arity {
+                            return Err(self.err(format!(
+                                "'{}' oczekuje {} argumentow, jest {}",
+                                fname,
+                                arity,
+                                call.args.len() - 1
+                            )));
+                        }
+                        for a in &call.args[1..] {
+                            self.check_operand(a)?;
+                        }
+                        Ok(())
+                    }
                     (Symbol::Reg(_), "set") => {
                         self.expect_arity(call, 1)?;
                         self.check_operand(&call.args[0])

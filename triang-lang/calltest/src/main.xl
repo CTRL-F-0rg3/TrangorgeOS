@@ -1,0 +1,5 @@
+Pub fn main(u32; self) {
+    Reg u64 r0;
+    r0::set(42);
+    return r0;
+}

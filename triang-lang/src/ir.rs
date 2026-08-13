@@ -32,6 +32,8 @@ pub enum Ir {
     Branch { lhs: Val, op: CmpOp, rhs: Val, target: String },
     Jump(String),
     Ret(Val),
+    FnStart { name: String, args: usize, is_main: bool },
+    Call { dst: String, func: String, args: Vec<Val> },
 }
 
 pub struct Lower {
@@ -62,7 +64,13 @@ impl Lower {
     }
 
     fn lower_function(&mut self, f: &Function) {
-        self.out.push(Ir::Label(format!("fn_{}", f.name)));
+        let args = f.params.iter().filter(|p| matches!(p, Param::Typed(_))).count();
+        let is_main = f.name == "main";
+        self.out.push(Ir::FnStart {
+            name: f.name.clone(),
+            args,
+            is_main,
+        });
         for s in &f.body {
             self.lower_stmt(s);
         }
@@ -125,10 +133,22 @@ impl Lower {
     }
 
     fn lower_op(&mut self, call: &OpCall) {
+        
         match &call.target {
             Target::Named(dst) => {
                 if self.mems.contains(dst) {
                     match call.op.as_str() {
+                        "call" => {
+                            let func = match &call.args[0] {
+                                Expr::Ident(n) => n.clone(),
+                                _ => String::new(),
+                            };
+                            self.out.push(Ir::Call {
+                                dst: dst.clone(),
+                                func,
+                                args: call.args[1..].iter().map(val).collect(),
+                            });
+                        }
                         "set" => {
                             self.out.push(Ir::MemFill {
                                 name: dst.clone(),

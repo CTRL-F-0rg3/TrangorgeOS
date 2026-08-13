@@ -45,13 +45,34 @@ pub fn emit(ir: &[Ir]) -> String {
     e.out.push('\n');
 
     e.out.push_str("section .text\n");
-    e.out.push_str("global main\n");
-    e.out.push_str("main:\n");
+
 
     for op_ in ir {
         match op_ {
             Ir::Label(l) => {
                 e.out.push_str(&format!("{}:\n", l));
+            }
+            Ir::FnStart { name, is_main, .. } => {
+                if *is_main {
+                    e.out.push_str("global main\n");
+                    e.out.push_str("main:\n");
+                }
+                e.out.push_str(&format!("fn_{}:\n", name));
+            }
+                        Ir::Call { dst, func, args } => {
+                let scr = ["r12", "r13", "r14", "r15"];
+                let argr = ["rax", "rbx", "rcx", "rdx"];
+                for (i, a) in args.iter().enumerate().take(4) {
+                    e.line(&format!("mov {}, {}", scr[i], op(&t, a)));
+                }
+                for i in 0..args.len().min(4) {
+                    e.line(&format!("mov {}, {}", argr[i], scr[i]));
+                }
+                e.line(&format!("call fn_{}", func));
+                let d = t.reg(dst);
+                if d != "rax" {
+                    e.line(&format!("mov {}, rax", d));
+                }
             }
             Ir::RegDecl { .. } | Ir::MemDecl { .. } => {}
             Ir::SetImm { dst, imm } => {
