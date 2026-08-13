@@ -25,6 +25,10 @@ impl Sema {
         }
     }
 
+    fn err(&self, msg: String) -> SemaError {
+        SemaError { msg }
+    }
+
     pub fn check(&mut self, program: &Program) -> Result<(), SemaError> {
         for f in &program.functions {
             let arity = f.params.iter().filter(|p| matches!(p, Param::Typed(_))).count();
@@ -36,19 +40,19 @@ impl Sema {
         Ok(())
     }
 
-    fn err(&self, msg: String) -> SemaError {
-        SemaError { msg }
-    }
-
-    pub fn check(&mut self, program: &Program) -> Result<(), SemaError> {
-        for f in &program.functions {
-            self.check_function(f)?;
-        }
-        Ok(())
-    }
-
     fn check_function(&mut self, f: &Function) -> Result<(), SemaError> {
         self.symbols.clear();
+
+        if f.name != "main" {
+            let mut idx = 0;
+            for p in &f.params {
+                if let Param::Typed(ty) = p {
+                    self.symbols.insert(format!("r{}", idx), Symbol::Reg(*ty));
+                    idx += 1;
+                }
+            }
+        }
+
         for s in &f.body {
             self.check_stmt(s)?;
         }
@@ -151,8 +155,23 @@ impl Sema {
                     .ok_or_else(|| self.err(format!("nieznany symbol '{}'", name)))?;
 
                 match (sym, call.op.as_str()) {
+                    (Symbol::Reg(_), "set") => {
+                        self.expect_arity(call, 1)?;
+                        self.check_operand(&call.args[0])
+                    }
+                    (Symbol::Reg(_), "move") => {
+                        self.expect_arity(call, 1)?;
+                        self.check_operand(&call.args[0])
+                    }
+                    (Symbol::Reg(_), "load") => {
+                        self.expect_arity(call, 1)?;
+                        match &call.args[0] {
+                            Expr::Indexed(n, i) => self.check_mem_access(n, *i),
+                            other => Err(self.err(format!("::load oczekuje dostepu do Mem, otrzymano {:?}", other))),
+                        }
+                    }
                     (Symbol::Reg(_), "call") => {
-                        let fname = match &call.args.get(0) {
+                        let fname = match call.args.get(0) {
                             Some(Expr::Ident(n)) => n,
                             _ => {
                                 return Err(self.err("pierwszy argument ::call to nazwa funkcji".to_string()))
@@ -176,21 +195,6 @@ impl Sema {
                             self.check_operand(a)?;
                         }
                         Ok(())
-                    }
-                    (Symbol::Reg(_), "set") => {
-                        self.expect_arity(call, 1)?;
-                        self.check_operand(&call.args[0])
-                    }
-                    (Symbol::Reg(_), "move") => {
-                        self.expect_arity(call, 1)?;
-                        self.check_operand(&call.args[0])
-                    }
-                    (Symbol::Reg(_), "load") => {
-                        self.expect_arity(call, 1)?;
-                        match &call.args[0] {
-                            Expr::Indexed(n, i) => self.check_mem_access(n, *i),
-                            other => Err(self.err(format!("::load oczekuje dostepu do Mem, otrzymano {:?}", other))),
-                        }
                     }
                     (Symbol::Reg(_), "add" | "sub" | "mul" | "div" | "and" | "or" | "xor") => {
                         self.expect_arity(call, 2)?;

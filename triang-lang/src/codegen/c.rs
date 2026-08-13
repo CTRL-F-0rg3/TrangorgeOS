@@ -128,7 +128,7 @@ pub fn emit(ir: &[Ir]) -> String {
         for op in &f.ops {
             match op {
                 Ir::Label(l) => out.push_str(&format!("{}:\n", l)),
-                Ir::RegDecl { .. } | Ir::MemDecl { .. } => {}
+                Ir::RegDecl { .. } | Ir::MemDecl { .. } | Ir::FnStart { .. } => {}
                 Ir::SetImm { dst, imm } => {
                     out.push_str(&format!("    {} = {}ull;\n", dst, imm));
                 }

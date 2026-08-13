@@ -22,6 +22,7 @@ pub enum BinOp {
 pub enum Ir {
     RegDecl { name: String, ty: Type },
     MemDecl { name: String, ty: Type, len: u64 },
+    FnStart { name: String, args: usize, is_main: bool },
     Label(String),
     SetImm { dst: String, imm: u64 },
     Move { dst: String, src: Val },
@@ -31,9 +32,8 @@ pub enum Ir {
     LoadMem { dst: String, name: String, idx: u64 },
     Branch { lhs: Val, op: CmpOp, rhs: Val, target: String },
     Jump(String),
-    Ret(Val),
-    FnStart { name: String, args: usize, is_main: bool },
     Call { dst: String, func: String, args: Vec<Val> },
+    Ret(Val),
 }
 
 pub struct Lower {
@@ -84,7 +84,11 @@ impl Lower {
             }
             Stmt::MemDecl { ty, len, name } => {
                 self.mems.insert(name.clone());
-                self.out.push(Ir::MemDecl { name: name.clone(), ty: *ty, len: *len });
+                self.out.push(Ir::MemDecl {
+                    name: name.clone(),
+                    ty: *ty,
+                    len: *len,
+                });
             }
             Stmt::Op(call) => self.lower_op(call),
             Stmt::If { cond, then_body, else_body } => {
@@ -133,22 +137,10 @@ impl Lower {
     }
 
     fn lower_op(&mut self, call: &OpCall) {
-        
         match &call.target {
             Target::Named(dst) => {
                 if self.mems.contains(dst) {
                     match call.op.as_str() {
-                        "call" => {
-                            let func = match &call.args[0] {
-                                Expr::Ident(n) => n.clone(),
-                                _ => String::new(),
-                            };
-                            self.out.push(Ir::Call {
-                                dst: dst.clone(),
-                                func,
-                                args: call.args[1..].iter().map(val).collect(),
-                            });
-                        }
                         "set" => {
                             self.out.push(Ir::MemFill {
                                 name: dst.clone(),
@@ -161,14 +153,23 @@ impl Lower {
                     match call.op.as_str() {
                         "set" => match &call.args[0] {
                             Expr::Int(v) => {
-                                self.out.push(Ir::SetImm { dst: dst.clone(), imm: *v });
+                                self.out.push(Ir::SetImm {
+                                    dst: dst.clone(),
+                                    imm: *v,
+                                });
                             }
                             other => {
-                                self.out.push(Ir::Move { dst: dst.clone(), src: val(other) });
+                                self.out.push(Ir::Move {
+                                    dst: dst.clone(),
+                                    src: val(other),
+                                });
                             }
                         },
                         "move" => {
-                            self.out.push(Ir::Move { dst: dst.clone(), src: val(&call.args[0]) });
+                            self.out.push(Ir::Move {
+                                dst: dst.clone(),
+                                src: val(&call.args[0]),
+                            });
                         }
                         "load" => match &call.args[0] {
                             Expr::Indexed(name, idx) => {
@@ -180,6 +181,17 @@ impl Lower {
                             }
                             _ => {}
                         },
+                        "call" => {
+                            let func = match &call.args[0] {
+                                Expr::Ident(n) => n.clone(),
+                                _ => String::new(),
+                            };
+                            self.out.push(Ir::Call {
+                                dst: dst.clone(),
+                                func,
+                                args: call.args[1..].iter().map(val).collect(),
+                            });
+                        }
                         op => {
                             self.out.push(Ir::Bin {
                                 op: binop(op),
