@@ -7,6 +7,7 @@ extern crate alloc;
 use bootloader::{BootInfo, entry_point};
 
 mod allocator;
+mod fs;
 mod gdt;
 mod interrupts;
 mod memory;
@@ -83,6 +84,22 @@ static TESTS: &[Test] = &[
         module: "allocator",
         func: allocator::self_test,
     },
+    Test {
+        module: "fs::disc",
+        func: fs::disc::self_test,
+    },
+    Test {
+        module: "fs::fat32",
+        func: fs::fat32::self_test,
+    },
+    Test {
+        module: "fs::ext4",
+        func: fs::ext4::self_test,
+    },
+    Test {
+        module: "fs::format",
+        func: fs::format::self_test,
+    },
 ];
 
 pub fn init() {
@@ -110,6 +127,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
     memory::init(boot_info.physical_memory_offset, &boot_info.memory_map);
     allocator::init(&boot_info.memory_map);
+    fs::init::init();
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
 
