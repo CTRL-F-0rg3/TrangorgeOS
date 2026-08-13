@@ -1,5 +1,30 @@
 Pub fn main(u32; self) {
     Reg u64 r0;
-    r0::set(42);
+    Reg u64 r3;
+    Reg u64 r4;
+    Reg u64 r5;
+    Mem [u8, 8] path;
+    Mem [u8, 8] data;
+
+    path[0]::set(0x74);
+    path[1]::set(0x2E);
+    path[2]::set(0x74);
+    path[3]::set(0x78);
+    path[4]::set(0x74);
+    path[5]::set(0);
+
+    data[0]::set(0x48);
+    data[1]::set(0x49);
+    data[2]::set(0x0A);
+
+    r0::set(4);
+    r3::set(5);
+    r5::call(add2, r0, r3);
+    data[3]::set(r5);
+
+    r4::fopen(path, 1);
+    r5::fwrite(r4, data, 4);
+    r0::move(r5);
+    r5::fclose(r4);
     return r0;
 }

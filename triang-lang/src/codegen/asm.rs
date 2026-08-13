@@ -30,6 +30,17 @@ fn op(t: &Target, v: &Val) -> String {
     }
 }
 
+fn mem_len(ir: &[Ir], name: &str) -> u64 {
+    for op_ in ir {
+        if let Ir::MemDecl { name: n, len, .. } = op_ {
+            if n == name {
+                return *len;
+            }
+        }
+    }
+    0
+}
+
 pub fn emit(ir: &[Ir]) -> String {
     let t = Target::X86_64;
     let mut e = Emitter { out: String::new(), counter: 0 };
@@ -46,12 +57,8 @@ pub fn emit(ir: &[Ir]) -> String {
 
     e.out.push_str("section .text\n");
 
-
     for op_ in ir {
         match op_ {
-            Ir::Label(l) => {
-                e.out.push_str(&format!("{}:\n", l));
-            }
             Ir::FnStart { name, is_main, .. } => {
                 if *is_main {
                     e.out.push_str("global main\n");
@@ -59,20 +66,8 @@ pub fn emit(ir: &[Ir]) -> String {
                 }
                 e.out.push_str(&format!("fn_{}:\n", name));
             }
-                        Ir::Call { dst, func, args } => {
-                let scr = ["r12", "r13", "r14", "r15"];
-                let argr = ["rax", "rbx", "rcx", "rdx"];
-                for (i, a) in args.iter().enumerate().take(4) {
-                    e.line(&format!("mov {}, {}", scr[i], op(&t, a)));
-                }
-                for i in 0..args.len().min(4) {
-                    e.line(&format!("mov {}, {}", argr[i], scr[i]));
-                }
-                e.line(&format!("call fn_{}", func));
-                let d = t.reg(dst);
-                if d != "rax" {
-                    e.line(&format!("mov {}, rax", d));
-                }
+            Ir::Label(l) => {
+                e.out.push_str(&format!("{}:\n", l));
             }
             Ir::RegDecl { .. } | Ir::MemDecl { .. } => {}
             Ir::SetImm { dst, imm } => {
@@ -159,6 +154,56 @@ pub fn emit(ir: &[Ir]) -> String {
             Ir::Jump(target) => {
                 e.line(&format!("jmp {}", target));
             }
+            Ir::Call { dst, func, args } => {
+                let scr = ["r12", "r13", "r14", "r15"];
+                let argr = ["rax", "rbx", "rcx", "rdx"];
+                for (i, a) in args.iter().enumerate().take(4) {
+                    e.line(&format!("mov {}, {}", scr[i], op(&t, a)));
+                }
+                for i in 0..args.len().min(4) {
+                    e.line(&format!("mov {}, {}", argr[i], scr[i]));
+                }
+                e.line(&format!("call fn_{}", func));
+                let d = t.reg(dst);
+                if d != "rax" {
+                    e.line(&format!("mov {}, rax", d));
+                }
+            }
+            Ir::FOpen { dst, path, mode } => {
+                e.line(&format!("lea rdi, [rel {}]", path));
+                if *mode != 0 {
+                    e.line("mov rsi, 0x41");
+                    e.line("mov rdx, 0x1A4");
+                } else {
+                    e.line("xor rsi, rsi");
+                    e.line("xor rdx, rdx");
+                }
+                e.line("mov rax, 2");
+                e.line("syscall");
+                e.line(&format!("mov {}, rax", t.reg(dst)));
+            }
+            Ir::FWrite { dst, fd, buf, len } => {
+                e.line(&format!("mov rdi, {}", op(&t, fd)));
+                e.line(&format!("lea rsi, [rel {}]", buf));
+                e.line(&format!("mov rdx, {}", op(&t, len)));
+                e.line("mov rax, 1");
+                e.line("syscall");
+                e.line(&format!("mov {}, rax", t.reg(dst)));
+            }
+            Ir::FRead { dst, fd, buf, len } => {
+                e.line(&format!("mov rdi, {}", op(&t, fd)));
+                e.line(&format!("lea rsi, [rel {}]", buf));
+                e.line(&format!("mov rdx, {}", op(&t, len)));
+                e.line("xor rax, rax");
+                e.line("syscall");
+                e.line(&format!("mov {}, rax", t.reg(dst)));
+            }
+            Ir::FClose { dst, fd } => {
+                e.line(&format!("mov rdi, {}", op(&t, fd)));
+                e.line("mov rax, 3");
+                e.line("syscall");
+                e.line(&format!("mov {}, 0", t.reg(dst)));
+            }
             Ir::Ret(v) => {
                 let r = op(&t, v);
                 if r != t.ret_reg() {
@@ -170,15 +215,4 @@ pub fn emit(ir: &[Ir]) -> String {
     }
 
     e.out
-}
-
-fn mem_len(ir: &[Ir], name: &str) -> u64 {
-    for op_ in ir {
-        if let Ir::MemDecl { name: n, len, .. } = op_ {
-            if n == name {
-                return *len;
-            }
-        }
-    }
-    0
 }

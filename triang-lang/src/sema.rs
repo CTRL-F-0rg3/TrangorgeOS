@@ -196,6 +196,27 @@ impl Sema {
                         }
                         Ok(())
                     }
+                    (Symbol::Reg(_), "fopen") => {
+                        self.expect_arity(call, 2)?;
+                        match &call.args[0] {
+                            Expr::Ident(n) => self.check_mem_access(n, 0)?,
+                            _ => return Err(self.err("fopen: sciezka musi byc Mem".to_string())),
+                        }
+                        self.check_operand(&call.args[1])
+                    }
+                    (Symbol::Reg(_), "fwrite" | "fread") => {
+                        self.expect_arity(call, 3)?;
+                        self.check_operand(&call.args[0])?;
+                        match &call.args[1] {
+                            Expr::Ident(n) => self.check_mem_access(n, 0)?,
+                            _ => return Err(self.err("fwrite/fread: bufor musi byc Mem".to_string())),
+                        }
+                        self.check_operand(&call.args[2])
+                    }
+                    (Symbol::Reg(_), "fclose") => {
+                        self.expect_arity(call, 1)?;
+                        self.check_operand(&call.args[0])
+                    }
                     (Symbol::Reg(_), "add" | "sub" | "mul" | "div" | "and" | "or" | "xor") => {
                         self.expect_arity(call, 2)?;
                         self.check_operand(&call.args[0])?;

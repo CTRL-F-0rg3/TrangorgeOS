@@ -67,7 +67,8 @@ fn split(ir: &[Ir]) -> Vec<FnChunk> {
 pub fn emit(ir: &[Ir]) -> String {
     let mut out = String::new();
     out.push_str("#include <stdint.h>\n");
-    out.push_str("#include <string.h>\n\n");
+    out.push_str("#include <string.h>\n");
+    out.push_str("#include <stdio.h>\n\n");
 
     let mut mem_len: HashMap<String, u64> = HashMap::new();
     for op in ir {
@@ -161,6 +162,19 @@ pub fn emit(ir: &[Ir]) -> String {
                         s.push_str(&val(a));
                     }
                     out.push_str(&format!("    {} = {}({});\n", dst, func, s));
+                }
+                Ir::FOpen { dst, path, mode } => {
+                    let m = if *mode != 0 { "wb" } else { "rb" };
+                    out.push_str(&format!("    {} = (uint64_t)fopen({}, \"{}\");\n", dst, path, m));
+                }
+                Ir::FWrite { dst, fd, buf, len } => {
+                    out.push_str(&format!("    {} = fwrite({}, 1, {}, (FILE*){});\n", dst, buf, val(len), val(fd)));
+                }
+                Ir::FRead { dst, fd, buf, len } => {
+                    out.push_str(&format!("    {} = fread({}, 1, {}, (FILE*){});\n", dst, buf, val(len), val(fd)));
+                }
+                Ir::FClose { dst, fd } => {
+                    out.push_str(&format!("    fclose((FILE*){});\n    {} = 0;\n", val(fd), dst));
                 }
                 Ir::Ret(v) => {
                     if f.is_main {

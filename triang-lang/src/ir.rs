@@ -33,6 +33,10 @@ pub enum Ir {
     Branch { lhs: Val, op: CmpOp, rhs: Val, target: String },
     Jump(String),
     Call { dst: String, func: String, args: Vec<Val> },
+    FOpen { dst: String, path: String, mode: u64 },
+    FWrite { dst: String, fd: Val, buf: String, len: Val },
+    FRead { dst: String, fd: Val, buf: String, len: Val },
+    FClose { dst: String, fd: Val },
     Ret(Val),
 }
 
@@ -190,6 +194,47 @@ impl Lower {
                                 dst: dst.clone(),
                                 func,
                                 args: call.args[1..].iter().map(val).collect(),
+                            });
+                        }
+                        "fopen" => {
+                            let path = match &call.args[0] {
+                                Expr::Ident(n) => n.clone(),
+                                _ => String::new(),
+                            };
+                            let mode = match &call.args[1] {
+                                Expr::Int(v) => *v,
+                                _ => 0,
+                            };
+                            self.out.push(Ir::FOpen { dst: dst.clone(), path, mode });
+                        }
+                        "fwrite" => {
+                            let buf = match &call.args[1] {
+                                Expr::Ident(n) => n.clone(),
+                                _ => String::new(),
+                            };
+                            self.out.push(Ir::FWrite {
+                                dst: dst.clone(),
+                                fd: val(&call.args[0]),
+                                buf,
+                                len: val(&call.args[2]),
+                            });
+                        }
+                        "fread" => {
+                            let buf = match &call.args[1] {
+                                Expr::Ident(n) => n.clone(),
+                                _ => String::new(),
+                            };
+                            self.out.push(Ir::FRead {
+                                dst: dst.clone(),
+                                fd: val(&call.args[0]),
+                                buf,
+                                len: val(&call.args[2]),
+                            });
+                        }
+                        "fclose" => {
+                            self.out.push(Ir::FClose {
+                                dst: dst.clone(),
+                                fd: val(&call.args[0]),
                             });
                         }
                         op => {
