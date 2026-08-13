@@ -1,0 +1,45 @@
+// xlang/examples/sample.xl
+
+Pub fn main(u32; self) {
+
+    Const [u8, 16 << 1;]
+        => [u8, 16 << 0;];
+
+    Static [1x16; ffx001 -> 0;]
+        ::set(0);
+
+    Reg u64 r0;
+    Reg u64 r1;
+    Reg u64 r2;
+
+    r0::set(0x10);
+    r1::set(0x20);
+
+    r2::add(r0, r1);
+
+    Mem [u8, 16] buffer;
+
+    buffer::set(0);
+
+    buffer[0]::set(0x41);
+    buffer[1]::set(0x42);
+    buffer[2]::set(0x43);
+
+    r0::load(buffer[0]);
+    r1::load(buffer[1]);
+
+    r2::add(r0, r1);
+
+    if r2 == 0x83 {
+        r0::set(1);
+    } else {
+        r0::set(0);
+    };
+
+    while r0 != 0 {
+        r1::sub(r0, 1);
+        r0::move(r1);
+    };
+
+    return r0;
+}
