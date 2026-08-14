@@ -161,6 +161,23 @@ impl Writer {
     pub fn set_color(&mut self, foreground: Color) {
         self.color_code = ColorCode::new(foreground, Color::Black);
     }
+
+    pub fn backspace(&mut self) {
+        if self.column_position > 0 {
+            self.column_position -= 1;
+            let row = BUFFER_HEIGHT - 1;
+            let col = self.column_position;
+            let color_code = self.color_code;
+            self.buffer.chars[row][col].write(ScreenChar {
+                ascii_character: b' ',
+                color_code,
+            });
+        }
+    }
+}
+
+pub fn backspace() {
+    WRITER.lock().backspace();
 }
 
 #[macro_export]

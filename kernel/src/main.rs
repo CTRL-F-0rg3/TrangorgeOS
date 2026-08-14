@@ -10,9 +10,11 @@ mod allocator;
 mod fs;
 mod gdt;
 mod interrupts;
+mod keyboard;
 mod memory;
 mod nic;
 mod pci;
+mod shell;
 mod testing;
 mod vga_buffer;
 
@@ -69,6 +71,10 @@ static TESTS: &[Test] = &[
         func: allocator::physical::bitmap::self_test,
     },
     Test {
+        module: "allocator::physical",
+        func: allocator::physical::self_test,
+    },
+    Test {
         module: "allocator::heap::buddy_heap",
         func: allocator::heap::buddy_heap::self_test,
     },
@@ -100,6 +106,14 @@ static TESTS: &[Test] = &[
         module: "fs::format",
         func: fs::format::self_test,
     },
+    Test {
+        module: "keyboard",
+        func: keyboard::self_test,
+    },
+    Test {
+        module: "shell",
+        func: shell::self_test,
+    },
 ];
 
 pub fn init() {
@@ -130,6 +144,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     fs::init::init();
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
+    shell::init();
 
     hlt_loop();
 }

@@ -14,7 +14,7 @@ pub struct SlabBucket {
 unsafe impl Send for SlabBucket {}
 
 crate::test_module!({
-    static mut SCRATCH: [u8; 256] = [0; 256];
+    static mut SCRATCH: [u64; 32] = [0; 32];
     let mut bucket = SlabBucket::new(32);
     let base = &raw mut SCRATCH as *mut u8;
 

@@ -39,6 +39,28 @@ pub fn deallocate_frame(frame: PhysFrame<Size4KiB>) {
     }
 }
 
+pub fn stats() -> Option<(usize, usize, usize)> {
+    let guard = FRAME_ALLOCATOR.lock();
+    let allocator = guard.as_ref()?;
+    Some((
+        allocator.total_frames(),
+        allocator.used_frames(),
+        allocator.free_frames(),
+    ))
+}
+
+crate::test_module!({
+    match stats() {
+        Some((total, used, free)) => {
+            if total != used + free {
+                return Err("physical stats total does not equal used + free");
+            }
+            Ok("physical frame allocator stats are internally consistent")
+        }
+        None => Err("physical frame allocator stats returned None after init"),
+    }
+});
+
 pub struct GlobalFrameAllocator;
 
 unsafe impl FrameAllocator<Size4KiB> for GlobalFrameAllocator {
