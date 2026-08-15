@@ -223,6 +223,234 @@ pub fn read_file<D: BlockDevice + ?Sized>(
     Ok(data)
 }
 
+pub fn write_fat_entry<D: BlockDevice + ?Sized>(
+    device: &mut D,
+    bpb: &Fat32BootSector,
+    cluster: u32,
+    value: u32,
+) -> FsResult<()> {
+    let fat_offset = cluster * 4;
+    let sector = bpb.first_fat_sector() + fat_offset / bpb.bytes_per_sector as u32;
+    let offset_in_sector = (fat_offset % bpb.bytes_per_sector as u32) as usize;
+
+    let mut buf = [0u8; 512];
+    device
+        .read_block(sector as u64, &mut buf)
+        .map_err(|_| FsError::Io)?;
+
+    let masked = value & FAT32_ENTRY_MASK;
+    buf[offset_in_sector..offset_in_sector + 4].copy_from_slice(&masked.to_le_bytes());
+
+    device
+        .write_block(sector as u64, &buf)
+        .map_err(|_| FsError::Io)?;
+
+    for fat_index in 1..bpb.num_fats as u32 {
+        let alt_sector = sector + fat_index * bpb.fat_size_32;
+        device
+            .write_block(alt_sector as u64, &buf)
+            .map_err(|_| FsError::Io)?;
+    }
+
+    Ok(())
+}
+
+pub fn allocate_cluster<D: BlockDevice + ?Sized>(
+    device: &mut D,
+    bpb: &Fat32BootSector,
+) -> FsResult<u32> {
+    let total_clusters =
+        (bpb.total_sectors_32 - bpb.first_data_sector()) / bpb.sectors_per_cluster as u32 + 2;
+    for cluster in 2..total_clusters {
+        let entry = read_fat_entry(device, bpb, cluster)?;
+        if entry == 0 {
+            write_fat_entry(device, bpb, cluster, FAT32_EOC_MIN)?;
+            return Ok(cluster);
+        }
+    }
+    Err(FsError::OutOfSpace)
+}
+
+pub fn write_file_data<D: BlockDevice + ?Sized>(
+    device: &mut D,
+    bpb: &Fat32BootSector,
+    start_cluster: u32,
+    data: &[u8],
+) -> FsResult<()> {
+    let cluster_bytes = bpb.bytes_per_cluster() as usize;
+    let mut cluster = start_cluster;
+    let mut offset = 0usize;
+
+    loop {
+        let mut buf = vec![0u8; cluster_bytes];
+        let take = (data.len() - offset).min(cluster_bytes);
+        buf[..take].copy_from_slice(&data[offset..offset + take]);
+        offset += take;
+
+        for s in 0..bpb.sectors_per_cluster as u32 {
+            let sector = bpb.cluster_to_sector(cluster) + s;
+            let start = (s as usize) * bpb.bytes_per_sector as usize;
+            let end = start + bpb.bytes_per_sector as usize;
+            device
+                .write_block(sector as u64, &buf[start..end])
+                .map_err(|_| FsError::Io)?;
+        }
+
+        if offset >= data.len() {
+            write_fat_entry(device, bpb, cluster, FAT32_EOC_MIN)?;
+            break;
+        }
+
+        let next_cluster = allocate_cluster(device, bpb)?;
+        write_fat_entry(device, bpb, cluster, next_cluster)?;
+        cluster = next_cluster;
+    }
+
+    Ok(())
+}
+
+pub fn find_entry<D: BlockDevice + ?Sized>(
+    device: &mut D,
+    bpb: &Fat32BootSector,
+    start_cluster: u32,
+    name: &str,
+) -> FsResult<Option<(u32, FileMetadata)>> {
+    let target = to_short_name(name);
+    let mut cluster = start_cluster;
+    let entries_per_sector = bpb.bytes_per_sector as usize / core::mem::size_of::<DirEntryRaw>();
+
+    loop {
+        for s in 0..bpb.sectors_per_cluster as u32 {
+            let sector = bpb.cluster_to_sector(cluster) + s;
+            let mut buf = [0u8; 512];
+            device
+                .read_block(sector as u64, &mut buf)
+                .map_err(|_| FsError::Io)?;
+
+            for i in 0..entries_per_sector {
+                let offset = i * core::mem::size_of::<DirEntryRaw>();
+                let raw = unsafe {
+                    core::ptr::read_unaligned(buf[offset..].as_ptr() as *const DirEntryRaw)
+                };
+                if raw.name[0] == 0x00 {
+                    return Ok(None);
+                }
+                if raw.is_free() || raw.is_long_name() {
+                    continue;
+                }
+                if raw.name == target {
+                    return Ok(Some((
+                        raw.first_cluster(),
+                        FileMetadata {
+                            size_bytes: raw.file_size as u64,
+                            is_directory: raw.is_directory(),
+                        },
+                    )));
+                }
+            }
+        }
+
+        let next = read_fat_entry(device, bpb, cluster)?;
+        if next >= FAT32_EOC_MIN {
+            return Ok(None);
+        }
+        cluster = next;
+    }
+}
+
+pub fn write_file<D: BlockDevice + ?Sized>(
+    device: &mut D,
+    bpb: &Fat32BootSector,
+    root_cluster: u32,
+    name: &str,
+    data: &[u8],
+) -> FsResult<()> {
+    let short_name = to_short_name(name);
+    let entries_per_sector = bpb.bytes_per_sector as usize / core::mem::size_of::<DirEntryRaw>();
+
+    let mut cluster = root_cluster;
+    loop {
+        for s in 0..bpb.sectors_per_cluster as u32 {
+            let sector = bpb.cluster_to_sector(cluster) + s;
+            let mut buf = [0u8; 512];
+            device
+                .read_block(sector as u64, &mut buf)
+                .map_err(|_| FsError::Io)?;
+
+            for i in 0..entries_per_sector {
+                let offset = i * core::mem::size_of::<DirEntryRaw>();
+                let raw = unsafe {
+                    core::ptr::read_unaligned(buf[offset..].as_ptr() as *const DirEntryRaw)
+                };
+
+                let matches_existing =
+                    !raw.is_free() && !raw.is_long_name() && raw.name == short_name;
+                let is_free_slot = raw.is_free();
+
+                if matches_existing || is_free_slot {
+                    let start_cluster = if matches_existing {
+                        raw.first_cluster()
+                    } else {
+                        allocate_cluster(device, bpb)?
+                    };
+
+                    write_file_data(device, bpb, start_cluster, data)?;
+
+                    let new_entry = DirEntryRaw {
+                        name: short_name,
+                        attr: 0x20,
+                        nt_reserved: 0,
+                        create_time_tenth: 0,
+                        create_time: 0,
+                        create_date: 0,
+                        last_access_date: 0,
+                        cluster_high: (start_cluster >> 16) as u16,
+                        write_time: 0,
+                        write_date: 0,
+                        cluster_low: (start_cluster & 0xFFFF) as u16,
+                        file_size: data.len() as u32,
+                    };
+
+                    let entry_bytes = unsafe {
+                        core::slice::from_raw_parts(
+                            &new_entry as *const _ as *const u8,
+                            core::mem::size_of::<DirEntryRaw>(),
+                        )
+                    };
+                    buf[offset..offset + entry_bytes.len()].copy_from_slice(entry_bytes);
+                    device
+                        .write_block(sector as u64, &buf)
+                        .map_err(|_| FsError::Io)?;
+
+                    return Ok(());
+                }
+            }
+        }
+
+        let next = read_fat_entry(device, bpb, cluster)?;
+        if next >= FAT32_EOC_MIN {
+            return Err(FsError::OutOfSpace);
+        }
+        cluster = next;
+    }
+}
+
+fn to_short_name(name: &str) -> [u8; 11] {
+    let mut result = [b' '; 11];
+    let upper = name.to_ascii_uppercase();
+    let (base, ext) = match upper.split_once('.') {
+        Some((b, e)) => (b, e),
+        None => (upper.as_str(), ""),
+    };
+    for (i, b) in base.bytes().take(8).enumerate() {
+        result[i] = b;
+    }
+    for (i, b) in ext.bytes().take(3).enumerate() {
+        result[8 + i] = b;
+    }
+    result
+}
+
 fn format_short_name(raw: &[u8; 11]) -> String {
     let mut name = String::new();
     for &b in &raw[0..8] {
@@ -276,12 +504,13 @@ impl BlockDevice for TestDisc {
 }
 
 crate::test_module!({
-    let mut image = vec![0u8; 512 * 4];
+    let mut image = vec![0u8; 512 * 6];
 
     image[11..13].copy_from_slice(&512u16.to_le_bytes());
     image[13] = 1;
     image[14..16].copy_from_slice(&1u16.to_le_bytes());
     image[16] = 1;
+    image[32..36].copy_from_slice(&6u32.to_le_bytes());
     image[36..40].copy_from_slice(&1u32.to_le_bytes());
     image[44..48].copy_from_slice(&2u32.to_le_bytes());
     image[510] = 0x55;
@@ -337,5 +566,26 @@ crate::test_module!({
         return Err("read_file did not return the expected synthetic content");
     }
 
-    Ok("FAT32 boot sector parse + directory listing + file read verified")
+    if write_file(&mut disc, &bpb, bpb.root_cluster, "NEW.TXT", b"world").is_err() {
+        return Err("write_file failed on synthetic FAT32 image");
+    }
+
+    let (new_cluster, new_meta) = match find_entry(&mut disc, &bpb, bpb.root_cluster, "NEW.TXT") {
+        Ok(Some(pair)) => pair,
+        Ok(None) => return Err("find_entry did not locate the freshly written file"),
+        Err(_) => return Err("find_entry returned an error"),
+    };
+    if new_meta.size_bytes != 5 {
+        return Err("freshly written file has the wrong size");
+    }
+
+    let new_content = match read_file(&mut disc, &bpb, new_cluster, new_meta.size_bytes) {
+        Ok(c) => c,
+        Err(_) => return Err("failed to read back the freshly written file"),
+    };
+    if new_content.as_slice() != b"world" {
+        return Err("freshly written file content did not match what was written");
+    }
+
+    Ok("FAT32 read + write_file + find_entry round trip verified")
 });

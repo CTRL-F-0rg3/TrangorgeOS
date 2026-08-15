@@ -107,11 +107,143 @@ fn run_command(input: &str) {
     let trimmed = input.trim();
     match trimmed {
         "" => {}
-        "help" => println!("available commands: help, meminfo, diskinfo, echo <text>"),
+        "help" => println!(
+            "available commands: help, meminfo, diskinfo, format, ls, write <name> <text>, read <name>, echo <text>"
+        ),
         "meminfo" => print_meminfo(),
         "diskinfo" => print_diskinfo(),
+        "format" => cmd_format(),
+        "ls" => cmd_ls(),
+        cmd if cmd.starts_with("write ") => cmd_write(&cmd[6..]),
+        cmd if cmd.starts_with("read ") => cmd_read(&cmd[5..]),
         cmd if cmd.starts_with("echo ") => println!("{}", &cmd[5..]),
         other => println!("unknown command: {}", other),
+    }
+}
+
+fn cmd_format() {
+    let mut registry = crate::fs::driver::REGISTRY.lock();
+    let Some(device) = registry.get(0) else {
+        println!("no block device registered");
+        return;
+    };
+
+    if device.block_size() != 512 {
+        println!("format: only 512-byte sector devices are supported right now");
+        return;
+    }
+
+    let options = crate::fs::format::Fat32FormatOptions {
+        bytes_per_sector: 512,
+        sectors_per_cluster: 1,
+        reserved_sectors: 1,
+        num_fats: 1,
+        total_sectors: device.block_count() as u32,
+    };
+
+    match crate::fs::format::format_fat32(device, &options) {
+        Ok(()) => println!("formatted device 0 as FAT32"),
+        Err(e) => println!("format failed: {:?}", e),
+    }
+}
+
+fn cmd_ls() {
+    let mut registry = crate::fs::driver::REGISTRY.lock();
+    let Some(device) = registry.get(0) else {
+        println!("no block device registered");
+        return;
+    };
+
+    let bpb = match read_bpb(device) {
+        Some(bpb) => bpb,
+        None => return,
+    };
+
+    match crate::fs::fat32::list_directory(device, &bpb, bpb.root_cluster) {
+        Ok(entries) => {
+            if entries.is_empty() {
+                println!("(empty)");
+            }
+            for entry in entries {
+                println!("{}  {} bytes", entry.name, entry.metadata.size_bytes);
+            }
+        }
+        Err(e) => println!("ls failed: {:?}", e),
+    }
+}
+
+fn cmd_write(args: &str) {
+    let mut parts = args.splitn(2, ' ');
+    let Some(name) = parts.next() else {
+        println!("usage: write <name> <content>");
+        return;
+    };
+    let content = parts.next().unwrap_or("");
+
+    let mut registry = crate::fs::driver::REGISTRY.lock();
+    let Some(device) = registry.get(0) else {
+        println!("no block device registered");
+        return;
+    };
+
+    let bpb = match read_bpb(device) {
+        Some(bpb) => bpb,
+        None => return,
+    };
+
+    match crate::fs::fat32::write_file(device, &bpb, bpb.root_cluster, name, content.as_bytes()) {
+        Ok(()) => println!("wrote {} bytes to {}", content.len(), name),
+        Err(e) => println!("write failed: {:?}", e),
+    }
+}
+
+fn cmd_read(name: &str) {
+    let name = name.trim();
+    if name.is_empty() {
+        println!("usage: read <name>");
+        return;
+    }
+
+    let mut registry = crate::fs::driver::REGISTRY.lock();
+    let Some(device) = registry.get(0) else {
+        println!("no block device registered");
+        return;
+    };
+
+    let bpb = match read_bpb(device) {
+        Some(bpb) => bpb,
+        None => return,
+    };
+
+    match crate::fs::fat32::find_entry(device, &bpb, bpb.root_cluster, name) {
+        Ok(Some((cluster, metadata))) => {
+            match crate::fs::fat32::read_file(device, &bpb, cluster, metadata.size_bytes) {
+                Ok(data) => match core::str::from_utf8(&data) {
+                    Ok(text) => println!("{}", text),
+                    Err(_) => println!("(binary content, {} bytes)", data.len()),
+                },
+                Err(e) => println!("read failed: {:?}", e),
+            }
+        }
+        Ok(None) => println!("file not found: {}", name),
+        Err(e) => println!("error: {:?}", e),
+    }
+}
+
+fn read_bpb(
+    device: &mut (dyn crate::fs::disc::BlockDevice + Send),
+) -> Option<crate::fs::fat32::Fat32BootSector> {
+    let mut boot_sector_buf = [0u8; 512];
+    if device.read_block(0, &mut boot_sector_buf).is_err() {
+        println!("failed to read boot sector");
+        return None;
+    }
+    match crate::fs::fat32::parse_boot_sector(&boot_sector_buf) {
+        Ok(bpb) => Some(bpb),
+        Err(_) => {
+            println!("device 0 is not formatted as FAT32 - run 'format' first");
+            None
+        }
     }
 }
 
