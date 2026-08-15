@@ -484,6 +484,59 @@ bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
     return true;
 }
 
+uint64_t aspace_stack_base(void)
+{
+    return USER_STACK_TOP - USER_STACK_SIZE;
+}
+
+uint64_t aspace_reserve_at(proc_aspace_t *pa,
+                           uint64_t addr,
+                           size_t len,
+                           uint32_t flags)
+{
+    if (pa == NULL || len == 0) {
+        return 0;
+    }
+
+    uint64_t a = arch_page_align_down((uint64_t)addr);
+    uint64_t b = arch_page_align_up((uint64_t)addr + (uint64_t)len);
+
+    if (!user_range_ok(a, b - a)) {
+        return 0;
+    }
+
+    as_lock();
+
+    vma_t *v = pa->vmas;
+
+    while (v != NULL) {
+        if (v->start < b && v->end > a) {
+            as_unlock();
+            return 0;
+        }
+
+        v = v->next;
+    }
+
+    vma_t *nv = (vma_t *)heap_alloc(sizeof(vma_t));
+
+    if (nv == NULL) {
+        as_unlock();
+        return 0;
+    }
+
+    nv->start = a;
+    nv->end = b;
+    nv->prot = 0;
+    nv->flags = flags;
+
+    vma_insert(pa, nv);
+
+    as_unlock();
+
+    return a;
+}
+
 uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
 {
     if (pa == NULL) {

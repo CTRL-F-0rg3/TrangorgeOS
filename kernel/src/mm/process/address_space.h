@@ -9,6 +9,7 @@
 #define VMA_FLAG_ANON    (1u << 0)
 #define VMA_FLAG_PRIVATE (1u << 1)
 #define VMA_FLAG_SHARED  (1u << 2)
+#define VMA_FLAG_GUARD   (1u << 3)
 
 typedef struct vma {
     uint64_t start;
@@ -35,11 +36,13 @@ address_space_t *aspace_paging_handle(proc_aspace_t *pa);
 
 uint64_t aspace_map_anon(proc_aspace_t *pa, uint64_t hint, size_t len, uint32_t prot);
 uint64_t aspace_map_at(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot);
+uint64_t aspace_reserve_at(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t flags);
 bool aspace_unmap(proc_aspace_t *pa, uint64_t addr, size_t len);
 bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot);
 
 uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk);
 
 vma_t *aspace_vma_find(proc_aspace_t *pa, uint64_t addr);
+uint64_t aspace_stack_base(void);
 
 #endif
