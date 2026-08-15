@@ -1,5 +1,6 @@
 #include "paging.h"
 #include "memory.h"
+#include "../../alloc/physical/pmm.h"
 
 extern void kprintf(const char *fmt, ...);
 
@@ -15,6 +16,20 @@ static void paging_panic(const char *msg)
 
 static uint64_t boot_phys_offset = 0;
 static bool boot_phys_offset_valid = false;
+
+/*
+ * Flagi PTE, które paging_set_flags() może zmieniać na istniejącym
+ * mapowaniu (PTE_PRESENT i PTE_PAGE_SIZE są zachowywane osobno).
+ */
+#define PTE_FLAGS_MASK \
+    (PTE_WRITABLE | PTE_USER | PTE_WRITE_THROUGH | PTE_CACHE_DISABLE | \
+     PTE_ACCESSED | PTE_DIRTY | PTE_GLOBAL | PTE_NX)
+
+/* IA32_EFER (MSR 0xC0000080) — bit NXE włącza Execute-Disable. */
+#define IA32_EFER_MSR 0xC0000080U
+#define EFER_NXE_BIT  (1U << 11)
+
+static bool nx_enabled = false;
 
 static void *phys_to_ptr(uint64_t phys)
 {
@@ -78,19 +93,260 @@ void paging_flush_page(uint64_t addr)
     __asm__ volatile("invlpg (%0)" :: "r"(addr) : "memory");
 }
 
+static inline uint64_t read_msr(uint32_t msr)
+{
+    uint32_t low;
+    uint32_t high;
+
+    __asm__ volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+
+    return ((uint64_t)high << 32) | low;
+}
+
+static inline void write_msr(uint32_t msr, uint64_t value)
+{
+    uint32_t low = (uint32_t)value;
+    uint32_t high = (uint32_t)(value >> 32);
+
+    __asm__ volatile("wrmsr" :: "a"(low), "d"(high), "c"(msr));
+}
+
+static void cpuid_leaf(uint32_t leaf,
+                       uint32_t subleaf,
+                       uint32_t *eax,
+                       uint32_t *ebx,
+                       uint32_t *ecx,
+                       uint32_t *edx)
+{
+    __asm__ volatile("cpuid"
+                     : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
+                     : "a"(leaf), "c"(subleaf));
+}
+
+static bool cpuid_max_standard_leaf_at_least(uint32_t leaf)
+{
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
+
+    cpuid_leaf(0, 0, &eax, &ebx, &ecx, &edx);
+
+    return eax >= leaf;
+}
+
+static bool cpuid_leaf7_ebx_bit(uint32_t bit)
+{
+    if (!cpuid_max_standard_leaf_at_least(7)) {
+        return false;
+    }
+
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
+
+    cpuid_leaf(7, 0, &eax, &ebx, &ecx, &edx);
+
+    return (ebx & (1U << bit)) != 0;
+}
+
+static bool cpuid_leaf7_ecx_bit(uint32_t bit)
+{
+    if (!cpuid_max_standard_leaf_at_least(7)) {
+        return false;
+    }
+
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
+
+    cpuid_leaf(7, 0, &eax, &ebx, &ecx, &edx);
+
+    return (ecx & (1U << bit)) != 0;
+}
+
+static bool cpu_supports_nx(void)
+{
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
+
+    cpuid_leaf(0x80000001U, 0, &eax, &ebx, &ecx, &edx);
+
+    return (edx & (1U << 20)) != 0;
+}
+
+void paging_enable_nx(void)
+{
+    if (nx_enabled) {
+        return;
+    }
+
+    if (!cpu_supports_nx()) {
+        return;
+    }
+
+    write_msr(IA32_EFER_MSR, read_msr(IA32_EFER_MSR) | EFER_NXE_BIT);
+
+    nx_enabled = true;
+}
+
+bool paging_nx_enabled(void)
+{
+    return nx_enabled;
+}
+
+static inline uint64_t read_cr0(void)
+{
+    uint64_t cr0;
+
+    __asm__ volatile("mov %%cr0, %0" : "=r"(cr0));
+
+    return cr0;
+}
+
+static inline void write_cr0(uint64_t cr0)
+{
+    __asm__ volatile("mov %0, %%cr0" :: "r"(cr0) : "memory");
+}
+
+static inline uint64_t read_cr4(void)
+{
+    uint64_t cr4;
+
+    __asm__ volatile("mov %%cr4, %0" : "=r"(cr4));
+
+    return cr4;
+}
+
+static inline void write_cr4(uint64_t cr4)
+{
+    __asm__ volatile("mov %0, %%cr4" :: "r"(cr4) : "memory");
+}
+
+#define CR0_WRITE_PROTECT (1ULL << 16)
+
+void paging_enable_write_protect(void)
+{
+    write_cr0(read_cr0() | CR0_WRITE_PROTECT);
+}
+
+void paging_disable_write_protect(void)
+{
+    write_cr0(read_cr0() & ~CR0_WRITE_PROTECT);
+}
+
+bool paging_write_protect_enabled(void)
+{
+    return (read_cr0() & CR0_WRITE_PROTECT) != 0;
+}
+
+#define CR4_SMEP  (1ULL << 20)
+#define CR4_SMAP  (1ULL << 21)
+#define CR4_PCIDE (1ULL << 17)
+#define CR4_LA57  (1ULL << 12)
+
+void paging_enable_smep(void)
+{
+    if (cpuid_leaf7_ebx_bit(7)) {
+        write_cr4(read_cr4() | CR4_SMEP);
+    }
+}
+
+void paging_enable_smap(void)
+{
+    if (cpuid_leaf7_ebx_bit(20)) {
+        write_cr4(read_cr4() | CR4_SMAP);
+    }
+}
+
+bool paging_smep_enabled(void)
+{
+    return (read_cr4() & CR4_SMEP) != 0;
+}
+
+bool paging_smap_enabled(void)
+{
+    return (read_cr4() & CR4_SMAP) != 0;
+}
+
+bool paging_pcid_supported(void)
+{
+    return cpuid_leaf7_ebx_bit(17);
+}
+
+void paging_enable_pcid(void)
+{
+    if (paging_pcid_supported()) {
+        write_cr4(read_cr4() | CR4_PCIDE);
+    }
+}
+
+bool paging_pcid_enabled(void)
+{
+    return (read_cr4() & CR4_PCIDE) != 0;
+}
+
+bool paging_la57_supported(void)
+{
+    return cpuid_leaf7_ecx_bit(16);
+}
+
+void paging_assert_4level_paging(void)
+{
+    if (read_cr4() & CR4_LA57) {
+        paging_panic("5-level paging (LA57) enabled — not supported");
+    }
+}
+
+/*
+ * Raw wrapper na INVPCID. Wymaga włączonego CR4.PCIDE.
+ *   type: 0 = individual, 1 = single-context (global),
+ *         2 = all-contexts (incl. global), 3 = single-context (non-global).
+ */
+void paging_invpcid(uint64_t type, uint64_t pcid, uint64_t addr)
+{
+    struct invpcid_desc {
+        uint64_t pcid;
+        uint64_t addr;
+    } desc = { pcid & 0xFFFULL, addr };
+
+    __asm__ volatile("invpcid %0, %1" : : "m"(desc), "r"(type) : "memory");
+}
+
 static uint64_t alloc_zeroed_table_page(void)
 {
     uint64_t phys = 0;
 
-    if (!arch_memory_boot_alloc(PAGING_PAGE_SIZE,
-                                PAGING_PAGE_SIZE,
-                                &phys)) {
-        paging_panic("cannot allocate page table page");
+    if (pmm_ready()) {
+        if (!pmm_alloc_zero_frame(&phys)) {
+            paging_panic("cannot allocate page table page");
+        }
+    } else {
+        if (!arch_memory_boot_alloc(PAGING_PAGE_SIZE,
+                                    PAGING_PAGE_SIZE,
+                                    &phys)) {
+            paging_panic("cannot allocate page table page");
+        }
+
+        zero_page_phys(phys);
     }
 
-    zero_page_phys(phys);
-
     return phys;
+}
+
+static void free_table_page(uint64_t phys)
+{
+    /*
+     * Przed pmm_init() ramki pochodzą z boot allocatora i nie da się
+     * ich zwolnić — dopuszczamy wyciek (dotyczy tylko wczesnego boota).
+     */
+    if (pmm_ready()) {
+        pmm_free_frame(phys);
+    }
 }
 
 static uint64_t ensure_table_entry(uint64_t *table,
@@ -124,7 +380,96 @@ static uint64_t ensure_table_entry(uint64_t *table,
     return table_phys;
 }
 
-bool paging_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
+typedef enum page_level {
+    PAGE_LEVEL_4K = 0,
+    PAGE_LEVEL_2M = 1,
+    PAGE_LEVEL_1G = 2,
+} page_level_t;
+
+/*
+ * Przechodzi po drzewie PML4 -> PDPT -> PD -> PT i zwraca wskaźnik do
+ * wpisu-liścia dla `virt`, nie tworząc żadnych tablic.
+ *
+ * Zwraca wskaźnik do wpisu PT (4 KiB), PD (2 MiB) lub PDPT (1 GiB),
+ * albo NULL, gdy adres nie jest zmapowany. Przez `out_level` zwraca
+ * poziom, na którym znalazł liść.
+ */
+static uint64_t *walk_leaf(uint64_t *pml4,
+                           uint64_t virt,
+                           page_level_t *out_level)
+{
+    uint64_t pml4e = pml4[pml4_index(virt)];
+
+    if (!(pml4e & PTE_PRESENT)) {
+        return NULL;
+    }
+
+    uint64_t *pdpt = (uint64_t *)phys_to_ptr(pml4e & PAGING_ADDR_MASK);
+    uint64_t pdpte = pdpt[pdpt_index(virt)];
+
+    if (!(pdpte & PTE_PRESENT)) {
+        return NULL;
+    }
+
+    if (pdpte & PTE_PAGE_SIZE) {
+        if (out_level != NULL) {
+            *out_level = PAGE_LEVEL_1G;
+        }
+
+        return &pdpt[pdpt_index(virt)];
+    }
+
+    uint64_t *pd = (uint64_t *)phys_to_ptr(pdpte & PAGING_ADDR_MASK);
+    uint64_t pde = pd[pd_index(virt)];
+
+    if (!(pde & PTE_PRESENT)) {
+        return NULL;
+    }
+
+    if (pde & PTE_PAGE_SIZE) {
+        if (out_level != NULL) {
+            *out_level = PAGE_LEVEL_2M;
+        }
+
+        return &pd[pd_index(virt)];
+    }
+
+    uint64_t *pt = (uint64_t *)phys_to_ptr(pde & PAGING_ADDR_MASK);
+    uint64_t *pte = &pt[pt_index(virt)];
+
+    if (!(*pte & PTE_PRESENT)) {
+        return NULL;
+    }
+
+    if (out_level != NULL) {
+        *out_level = PAGE_LEVEL_4K;
+    }
+
+    return pte;
+}
+
+/*
+ * Przechodzi do wpisu PT (strona 4 KiB) dla `virt`, tworząc po drodze
+ * brakujące tablice pośrednie. Zwraca wskaźnik do wpisu PT.
+ */
+static uint64_t *walk_to_pt(uint64_t *pml4, uint64_t virt, uint64_t flags)
+{
+    uint64_t pdpt_phys = ensure_table_entry(pml4, pml4_index(virt), flags);
+    uint64_t *pdpt = (uint64_t *)phys_to_ptr(pdpt_phys);
+
+    uint64_t pd_phys = ensure_table_entry(pdpt, pdpt_index(virt), flags);
+    uint64_t *pd = (uint64_t *)phys_to_ptr(pd_phys);
+
+    uint64_t pt_phys = ensure_table_entry(pd, pd_index(virt), flags);
+    uint64_t *pt = (uint64_t *)phys_to_ptr(pt_phys);
+
+    return &pt[pt_index(virt)];
+}
+
+bool paging_map_page_in(uint64_t pml4_phys,
+                        uint64_t virt,
+                        uint64_t phys,
+                        uint64_t flags)
 {
     if (!boot_phys_offset_valid) {
         return false;
@@ -135,34 +480,197 @@ bool paging_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
         return false;
     }
 
-    /*
-     * Tymczasowo nie używamy NX, dopóki EFER.NXE nie jest włączony.
-     */
-    flags &= ~PTE_NX;
     flags &= ~PTE_PAGE_SIZE;
 
-    uint64_t pml4_phys = paging_read_cr3();
+    /*
+     * PTE_NX ma sens dopiero, gdy EFER.NXE jest włączony.
+     * Wcześniej ustawienie go kończy się page faultem przy każdym
+     * dostępie do strony.
+     */
+    if (!nx_enabled) {
+        flags &= ~PTE_NX;
+    }
+
     uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    uint64_t *pte = walk_to_pt(pml4, virt, flags);
 
-    uint64_t pdpt_phys = ensure_table_entry(pml4, pml4_index(virt), flags);
-    uint64_t *pdpt = (uint64_t *)phys_to_ptr(pdpt_phys);
-
-    uint64_t pd_phys = ensure_table_entry(pdpt, pdpt_index(virt), flags);
-    uint64_t *pd = (uint64_t *)phys_to_ptr(pd_phys);
-
-    uint64_t pt_phys = ensure_table_entry(pd, pd_index(virt), flags);
-    uint64_t *pt = (uint64_t *)phys_to_ptr(pt_phys);
-
-    pt[pt_index(virt)] =
-        (phys & PAGING_ADDR_MASK) |
-        flags |
-        PTE_PRESENT;
+    *pte = (phys & PAGING_ADDR_MASK) | flags | PTE_PRESENT;
 
     paging_flush_page(virt);
 
     return true;
 }
 
+bool paging_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
+{
+    return paging_map_page_in(paging_read_cr3(), virt, phys, flags);
+}
+
+static bool table_is_empty(const uint64_t *table)
+{
+    for (size_t i = 0; i < 512; i++) {
+        if (table[i] & PTE_PRESENT) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
+ * Rekurencyjnie zwalnia tablicę pośrednią i wszystkie jej podtablice.
+ * `level`: 2 = PDPT, 1 = PD, 0 = PT. Strony-duże (1 GiB / 2 MiB) nie mają
+ * podtablic, więc są pomijane — zwalniamy wyłącznie same tablice.
+ */
+static void free_page_table(uint64_t table_phys, unsigned level)
+{
+    uint64_t *table = (uint64_t *)phys_to_ptr(table_phys);
+
+    for (size_t i = 0; i < 512; i++) {
+        uint64_t entry = table[i];
+
+        if (!(entry & PTE_PRESENT)) {
+            continue;
+        }
+
+        if (entry & PTE_PAGE_SIZE) {
+            continue;
+        }
+
+        if (level > 0) {
+            free_page_table(entry & PAGING_ADDR_MASK, level - 1);
+        }
+    }
+
+    free_table_page(table_phys);
+}
+
+uint64_t paging_create_pml4(void)
+{
+    if (!boot_phys_offset_valid) {
+        return 0;
+    }
+
+    uint64_t pml4_phys = 0;
+
+    if (pmm_ready()) {
+        if (!pmm_alloc_zero_frame(&pml4_phys)) {
+            return 0;
+        }
+    } else {
+        if (!arch_memory_boot_alloc(PAGING_PAGE_SIZE,
+                                    PAGING_PAGE_SIZE,
+                                    &pml4_phys)) {
+            return 0;
+        }
+
+        zero_page_phys(pml4_phys);
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    uint64_t *current = (uint64_t *)phys_to_ptr(paging_read_cr3());
+
+    /*
+     * Kopiujemy wyższą połowę (kernela) z aktualnego PML4, żeby nowa
+     * przestrzeń adresowa widziała direct map i cały kernel.
+     */
+    for (size_t i = PAGING_KERNEL_PML4_START; i < 512; i++) {
+        pml4[i] = current[i];
+    }
+
+    return pml4_phys;
+}
+
+void paging_destroy_pml4(uint64_t pml4_phys)
+{
+    if (!boot_phys_offset_valid) {
+        return;
+    }
+
+    if (pml4_phys == paging_read_cr3()) {
+        paging_panic("cannot destroy active PML4");
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+
+    /*
+     * Zwalniamy tylko dolną połowę (user-space). Górna połowa jest
+     * współdzielona z kernelem i innymi przestrzeniami adresowymi.
+     */
+    for (size_t i = 0; i < PAGING_KERNEL_PML4_START; i++) {
+        uint64_t entry = pml4[i];
+
+        if ((entry & PTE_PRESENT) && !(entry & PTE_PAGE_SIZE)) {
+            free_page_table(entry & PAGING_ADDR_MASK, 2);
+        }
+    }
+
+    free_table_page(pml4_phys);
+}
+
+void paging_switch_pml4(uint64_t pml4_phys)
+{
+    __asm__ volatile("mov %0, %%cr3" :: "r"(pml4_phys) : "memory");
+}
+
+/*
+ * Po zdjęciu strony 4 KiB sprawdza, czy tablice pośrednie (PT/PD/PDPT)
+ * stały się puste, i zwalnia je. Działa tylko w dolnej połowie — tablice
+ * kernela są współdzielone i nie mogą być zwalniane.
+ */
+static void free_empty_tables(uint64_t *pml4, uint64_t virt)
+{
+    size_t pml4i = pml4_index(virt);
+
+    if (pml4i >= PAGING_KERNEL_PML4_START) {
+        return;
+    }
+
+    uint64_t pml4e = pml4[pml4i];
+
+    if (!(pml4e & PTE_PRESENT)) {
+        return;
+    }
+
+    uint64_t *pdpt = (uint64_t *)phys_to_ptr(pml4e & PAGING_ADDR_MASK);
+    size_t pdpti = pdpt_index(virt);
+    uint64_t pdpte = pdpt[pdpti];
+
+    if (!(pdpte & PTE_PRESENT) || (pdpte & PTE_PAGE_SIZE)) {
+        return;
+    }
+
+    uint64_t *pd = (uint64_t *)phys_to_ptr(pdpte & PAGING_ADDR_MASK);
+    size_t pdi = pd_index(virt);
+    uint64_t pde = pd[pdi];
+
+    if (!(pde & PTE_PRESENT) || (pde & PTE_PAGE_SIZE)) {
+        return;
+    }
+
+    uint64_t *pt = (uint64_t *)phys_to_ptr(pde & PAGING_ADDR_MASK);
+
+    if (!table_is_empty(pt)) {
+        return;
+    }
+
+    free_table_page(pde & PAGING_ADDR_MASK);
+    pd[pdi] = 0;
+
+    if (!table_is_empty(pd)) {
+        return;
+    }
+
+    free_table_page(pdpte & PAGING_ADDR_MASK);
+    pdpt[pdpti] = 0;
+
+    if (!table_is_empty(pdpt)) {
+        return;
+    }
+
+    free_table_page(pml4e & PAGING_ADDR_MASK);
+    pml4[pml4i] = 0;
+}
 
 static bool map_page_2m(uint64_t virt, uint64_t phys, uint64_t flags)
 {
@@ -175,8 +683,11 @@ static bool map_page_2m(uint64_t virt, uint64_t phys, uint64_t flags)
         return false;
     }
 
-    flags &= ~PTE_NX;
     flags &= ~PTE_PAGE_SIZE;
+
+    if (!nx_enabled) {
+        flags &= ~PTE_NX;
+    }
 
     uint64_t pml4_phys = paging_read_cr3();
     uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
@@ -228,7 +739,6 @@ bool paging_map_range(uint64_t virt, uint64_t phys, uint64_t len, uint64_t flags
     }
 
     uint64_t virt_end = virt + len;
-    uint64_t phys_end = phys + len;
 
     while (virt < virt_end) {
         uint64_t remaining = virt_end - virt;
@@ -258,6 +768,191 @@ bool paging_map_range(uint64_t virt, uint64_t phys, uint64_t len, uint64_t flags
     paging_flush_tlb_all();
 
     return true;
+}
+
+bool paging_map_mmio(uint64_t virt, uint64_t phys, uint64_t len)
+{
+    if (!boot_phys_offset_valid) {
+        return false;
+    }
+
+    if (len == 0) {
+        return true;
+    }
+
+    if ((virt & PAGING_PAGE_MASK) != 0 ||
+        (phys & PAGING_PAGE_MASK) != 0 ||
+        (len & PAGING_PAGE_MASK) != 0) {
+        return false;
+    }
+
+    if (len > UINT64_MAX - virt || len > UINT64_MAX - phys) {
+        return false;
+    }
+
+    uint64_t end = virt + len;
+
+    while (virt < end) {
+        if (!paging_map_page(virt,
+                             phys,
+                             PAGING_KERNEL_RW |
+                             PTE_CACHE_DISABLE |
+                             PTE_WRITE_THROUGH)) {
+            return false;
+        }
+
+        virt += PAGING_PAGE_SIZE;
+        phys += PAGING_PAGE_SIZE;
+    }
+
+    return true;
+}
+
+bool paging_unmap_page_in(uint64_t pml4_phys, uint64_t virt)
+{
+    if (!boot_phys_offset_valid) {
+        return false;
+    }
+
+    if ((virt & PAGING_PAGE_MASK) != 0) {
+        return false;
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    page_level_t level = PAGE_LEVEL_4K;
+    uint64_t *leaf = walk_leaf(pml4, virt, &level);
+
+    if (leaf == NULL) {
+        return false;
+    }
+
+    *leaf = 0;
+
+    paging_flush_page(virt);
+
+    if (level == PAGE_LEVEL_4K) {
+        free_empty_tables(pml4, virt);
+    }
+
+    return true;
+}
+
+bool paging_unmap_page(uint64_t virt)
+{
+    return paging_unmap_page_in(paging_read_cr3(), virt);
+}
+
+/*
+ * Tłumaczy adres wirtualny na fizyczny. Zwraca 0, gdy adres nie jest
+ * zmapowany (fizyczny adres 0 jest wtedy nierozróżnialny — używaj
+ * paging_is_mapped() do jednoznacznego sprawdzenia).
+ */
+uint64_t paging_translate_in(uint64_t pml4_phys, uint64_t virt)
+{
+    if (!boot_phys_offset_valid) {
+        return 0;
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    page_level_t level = PAGE_LEVEL_4K;
+    uint64_t *leaf = walk_leaf(pml4, virt, &level);
+
+    if (leaf == NULL) {
+        return 0;
+    }
+
+    uint64_t entry = *leaf;
+
+    switch (level) {
+    case PAGE_LEVEL_1G:
+        return (entry & PAGING_ADDR_MASK) | (virt & PAGING_1G_PAGE_MASK);
+    case PAGE_LEVEL_2M:
+        return (entry & PAGING_ADDR_MASK) | (virt & PAGING_2M_PAGE_MASK);
+    default:
+        return (entry & PAGING_ADDR_MASK) | (virt & PAGING_PAGE_MASK);
+    }
+}
+
+uint64_t paging_translate(uint64_t virt)
+{
+    return paging_translate_in(paging_read_cr3(), virt);
+}
+
+bool paging_is_mapped_in(uint64_t pml4_phys, uint64_t virt)
+{
+    if (!boot_phys_offset_valid) {
+        return false;
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+
+    return walk_leaf(pml4, virt, NULL) != NULL;
+}
+
+bool paging_is_mapped(uint64_t virt)
+{
+    return paging_is_mapped_in(paging_read_cr3(), virt);
+}
+
+bool paging_set_flags_in(uint64_t pml4_phys, uint64_t virt, uint64_t flags)
+{
+    if (!boot_phys_offset_valid) {
+        return false;
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    uint64_t *leaf = walk_leaf(pml4, virt, NULL);
+
+    if (leaf == NULL) {
+        return false;
+    }
+
+    if (!nx_enabled) {
+        flags &= ~PTE_NX;
+    }
+
+    uint64_t old = *leaf;
+
+    *leaf = (old & PAGING_ADDR_MASK) |
+            PTE_PRESENT |
+            (old & PTE_PAGE_SIZE) |
+            (flags & PTE_FLAGS_MASK);
+
+    paging_flush_page(virt);
+
+    return true;
+}
+
+bool paging_set_flags(uint64_t virt, uint64_t flags)
+{
+    return paging_set_flags_in(paging_read_cr3(), virt, flags);
+}
+
+bool paging_get_flags_in(uint64_t pml4_phys, uint64_t virt, uint64_t *out_flags)
+{
+    if (out_flags == NULL) {
+        return false;
+    }
+
+    if (!boot_phys_offset_valid) {
+        return false;
+    }
+
+    uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
+    uint64_t *leaf = walk_leaf(pml4, virt, NULL);
+
+    if (leaf == NULL) {
+        return false;
+    }
+
+    *out_flags = *leaf;
+
+    return true;
+}
+
+bool paging_get_flags(uint64_t virt, uint64_t *out_flags)
+{
+    return paging_get_flags_in(paging_read_cr3(), virt, out_flags);
 }
 
 void paging_set_boot_phys_offset(uint64_t phys_offset)
@@ -317,6 +1012,8 @@ void paging_init_direct_map(void)
 
 void paging_init(uint64_t phys_offset)
 {
+    paging_assert_4level_paging();
+
     paging_set_boot_phys_offset(phys_offset);
     paging_init_direct_map();
 }
