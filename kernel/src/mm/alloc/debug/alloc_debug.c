@@ -111,6 +111,22 @@ void dbg_free(void *ptr)
     heap_free(real);
 }
 
+size_t dbg_usable_size(void *ptr)
+{
+    if (ptr == NULL) {
+        return 0;
+    }
+
+    dbg_header_t *h =
+        (dbg_header_t *)((uint8_t *)ptr - sizeof(dbg_header_t));
+
+    if (h->magic != DBG_MAGIC) {
+        return 0;
+    }
+
+    return h->size;
+}
+
 bool dbg_verify(void *ptr)
 {
     if (ptr == NULL) {
