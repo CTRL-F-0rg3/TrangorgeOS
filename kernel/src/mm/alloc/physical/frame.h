@@ -21,6 +21,10 @@ bool frame_alloc_zero(frame_t *out);
 bool frame_alloc_contiguous(size_t count,
                             size_t align_frames,
                             frame_t *out);
+bool frame_alloc_below(size_t count,
+                       size_t align_frames,
+                       uint64_t max_phys,
+                       frame_t *out);
 
 bool frame_free(frame_t frame);
 bool frame_free_contiguous(frame_t start, size_t count);

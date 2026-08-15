@@ -413,7 +413,30 @@ uint64_t pmm_stat_free_bytes(void)
     return frames * ARCH_PAGE_SIZE;
 }
 
+bool pmm_alloc_frames_below(size_t count,
+                           size_t align_frames,
+                           uint64_t max_phys,
+                           uint64_t *out_phys)
+{
+    if (!pmm_initialized || out_phys == NULL || count == 0) {
+        return false;
+    }
 
+    pmm_lock();
+
+    frame_t frame = FRAME_INVALID;
+    bool ok = frame_alloc_below(count, align_frames, max_phys, &frame);
+
+    pmm_unlock();
+
+    if (!ok) {
+        return false;
+    }
+
+    *out_phys = frame;
+
+    return true;
+}
 
 void pmm_dump(void)
 {

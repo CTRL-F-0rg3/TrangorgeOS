@@ -26,6 +26,10 @@ bool pmm_alloc_contiguous_bytes(size_t bytes,
                                 size_t align_bytes,
                                 uint64_t *out_phys);
 bool pmm_free_frame(uint64_t phys);
+bool pmm_alloc_frames_below(size_t count,
+                           size_t align_frames,
+                           uint64_t max_phys,
+                           uint64_t *out_phys);
 bool pmm_free_frames(uint64_t phys, size_t count);
 bool pmm_free_bytes(uint64_t phys, size_t bytes);
 size_t pmm_stat_total_frames(void);

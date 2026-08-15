@@ -303,6 +303,53 @@ bool frame_zero(frame_t frame)
     return true;
 }
 
+bool frame_alloc_below(size_t count,
+                       size_t align_frames,
+                       uint64_t max_phys,
+                       frame_t *out)
+{
+    if (!frame_initialized || count == 0 || out == NULL) {
+        return false;
+    }
+
+    if (align_frames == 0) {
+        align_frames = 1;
+    }
+
+    size_t max_pfn = (size_t)(max_phys / ARCH_PAGE_SIZE);
+
+    size_t limit = total_frames < max_pfn ? total_frames : max_pfn;
+
+    if (count > limit) {
+        return false;
+    }
+
+    size_t pfn = 0;
+
+    while (pfn <= limit - count) {
+        size_t mask = align_frames - 1;
+        size_t aligned = (pfn + mask) & ~mask;
+
+        if (aligned > limit - count) {
+            break;
+        }
+
+        if (bitmap_test_range_free(&frame_bitmap, aligned, count)) {
+            bitmap_set_range(&frame_bitmap, aligned, count);
+
+            allocated_frames += count;
+
+            *out = frame_from_pfn(aligned);
+
+            return true;
+        }
+
+        pfn = aligned + 1;
+    }
+
+    return false;
+}
+
 size_t frame_total(void)
 {
     if (!frame_initialized) {
