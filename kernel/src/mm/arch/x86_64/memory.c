@@ -128,6 +128,24 @@ static arch_mem_region_t tmp_regions[ARCH_TMP_REGIONS];
 
 // helpers
 
+bool arch_memory_boot_alloc(uint64_t len, uint64_t align, uint64_t *out_base)
+{
+    if (!mem_ready || out_base == NULL || len == 0) {
+        return false;
+    }
+
+    uint64_t base = 0;
+
+    if (!arch_memory_find_usable(len, align, &base)) {
+        return false;
+    }
+
+    arch_memory_reserve_range(base, len);
+
+    *out_base = base;
+    return true;
+}
+
 static uint64_t safe_end(uint64_t base, uint64_t len)
 {
     if (len > ARCH_U64_MAX - base) {

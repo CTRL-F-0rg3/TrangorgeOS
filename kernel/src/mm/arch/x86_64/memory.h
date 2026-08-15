@@ -69,6 +69,8 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
 
 bool arch_memory_ready(void);
 
+bool arch_memory_boot_alloc(uint64_t len, uint64_t align, uint64_t *out_base);
+
 const arch_mem_info_t *arch_memory_get(void);
 size_t arch_memory_regions(const arch_mem_region_t **out);
 uint64_t arch_memory_total_usable(void);
