@@ -97,5 +97,5 @@ void paging_invpcid(uint64_t type, uint64_t pcid, uint64_t addr);
 /* Etap D — detekcja 5-level paging (LA57). */
 bool paging_la57_supported(void);
 void paging_assert_4level_paging(void);
-
+void paging_write_cr3(uint64_t pml4_phys);
 #endif /* ARCH_X86_64_PAGING_H */
