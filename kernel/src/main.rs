@@ -6,6 +6,8 @@ extern crate alloc;
 
 use bootloader::{BootInfo, entry_point};
 
+mod drivers;
+mod fs;
 mod gdt;
 mod gfx;
 mod interrupts;
@@ -69,6 +71,14 @@ static TESTS: &[Test] = &[
         func: mm::self_test,
     },
     Test {
+        module: "fs",
+        func: fs::self_test,
+    },
+    Test {
+        module: "drivers::usb",
+        func: drivers::usb::self_test,
+    },
+    Test {
         module: "gfx",
         func: gfx::self_test,
     },
@@ -112,6 +122,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     }
 
     pci::init();
+    fs::init();
     testing::run_all(TESTS);
     println!("Welcome in my Galaxy{}", "!");
 

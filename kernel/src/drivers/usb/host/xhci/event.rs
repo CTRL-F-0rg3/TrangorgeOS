@@ -10,7 +10,7 @@ impl Xhci {
         while let Some(t) = self.ev.pending() {
             let t = t;
             self.ev.pop();
-            self.regs.rt_write(super::init::RT_ERDP, self.ev.erdp());
+            super::init::rt_write64(&self.regs, super::init::RT_ERDP, self.ev.erdp());
 
             match t.typ() {
                 TRB_PORT_STATUS => unsafe {

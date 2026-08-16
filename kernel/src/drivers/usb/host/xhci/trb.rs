@@ -72,6 +72,7 @@ impl Trb {
     pub fn address_device(slot: u8, ctx_phys: u64) -> Self {
         Trb {
             param: ctx_phys & ADDR_MASK,
+            status: 0,
             control: (TRB_ADDRESS_DEVICE << 10) | ((slot as u32) << 24),
         }
     }
@@ -79,6 +80,7 @@ impl Trb {
     pub fn configure_ep(slot: u8, ctx_phys: u64) -> Self {
         Trb {
             param: ctx_phys & ADDR_MASK,
+            status: 0,
             control: (TRB_CONFIGURE_EP << 10) | ((slot as u32) << 24),
         }
     }
@@ -90,6 +92,7 @@ impl Trb {
     pub fn setup_stage(raw_setup: u64, trt: u32) -> Self {
         Trb {
             param: raw_setup,
+            status: 0,
             control: (TRB_SETUP << 10) | (1 << 6) | ((trt & 3) << 16),
         }
     }
@@ -104,25 +107,29 @@ impl Trb {
 
     pub fn status_stage(dir_in: bool) -> Self {
         Trb {
+            param: 0,
+            status: 0,
             control: (TRB_STATUS << 10) | ((dir_in as u32) << 16) | (1 << 5),
+        }
+    }
+
+    pub fn normal(addr: u64, len: u32) -> Self {
+        Trb {
+            param: addr & ADDR_MASK,
+            status: len & 0xFFFF,
+            control: (TRB_NORMAL << 10) | (1 << 5),
+        }
+    }
+
+    pub fn evaluate_ctx(slot: u8, ctx_phys: u64) -> Self {
+        Trb {
+            param: ctx_phys & ADDR_MASK,
+            status: 0,
+            control: (TRB_EVALUATE_CTX << 10) | ((slot as u32) << 24),
         }
     }
 }
 
-pub fn normal(addr: u64, len: u32) -> Self {
-    Trb {
-        param: addr & ADDR_MASK,
-        status: len & 0xFFFF,
-        control: (TRB_NORMAL << 10) | (1 << 5),
-    }
-}
-
-pub fn evaluate_ctx(slot: u8, ctx_phys: u64) -> Self {
-    Trb {
-        param: ctx_phys & ADDR_MASK,
-        control: (TRB_EVALUATE_CTX << 10) | ((slot as u32) << 24),
-    }
-}
 pub fn pack_setup(bm_request: u8, b_request: u8, value: u16,
                   index: u16, length: u16) -> u64 {
     (bm_request as u64)

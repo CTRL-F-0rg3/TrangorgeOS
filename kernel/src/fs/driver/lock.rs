@@ -1,23 +1,32 @@
+use x86_64::instructions::interrupts;
+
+/// RAII guard that disables interrupts while held and restores the previous
+/// interrupt state on drop.
+///
+/// Uses the `x86_64` crate's `sti`/`cli` wrappers, which do not touch the
+/// stack (the hand-written `pushfq`/`popfq` version could leave the stack
+/// misaligned when an interrupt fired on re-enable).
 pub struct IrqGuard {
-    flags: u64,
+    were_enabled: bool,
 }
 
 impl IrqGuard {
     pub fn lock() -> Self {
-        let flags: u64;
+        let were_enabled = interrupts::are_enabled();
 
-        unsafe {
-            core::arch::asm!("pushfq", "pop {0}", "cli", out(reg) flags);
+        if were_enabled {
+            interrupts::disable();
         }
 
-        Self { flags }
+        Self { were_enabled }
     }
 }
 
 impl Drop for IrqGuard {
     fn drop(&mut self) {
-        unsafe {
-            core::arch::asm!("push {0}", "popfq", in(reg) self.flags);
+        if self.were_enabled {
+            interrupts::enable();
         }
     }
 }
+

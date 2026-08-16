@@ -41,7 +41,7 @@ fn op_write64(regs: &XhciRegs, off: usize, v: u64) {
     regs.op_write(off + 4, (v >> 32) as u32);
 }
 
-fn rt_write64(regs: &XhciRegs, off: usize, v: u64) {
+pub(super) fn rt_write64(regs: &XhciRegs, off: usize, v: u64) {
     regs.rt_write(off, (v & 0xFFFF_FFFF) as u32);
     regs.rt_write(off + 4, (v >> 32) as u32);
 }
@@ -66,7 +66,7 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
     let slots = regs.max_slots.min(64);
     let ports = regs.max_ports;
 
-    let dcbaa = DmaBuf::new(64 * 8)?;
+    let mut dcbaa = DmaBuf::new(64 * 8)?;
     dcbaa.zero();
 
     let cmd = CmdRing::new(64)?;
@@ -86,12 +86,14 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
 
     spin_wait(|| regs.op_read(OP_USBSTS) & STS_HCH == 0)?;
 
+    let ctx_size = if regs.csz64 { 64 } else { 32 };
+
     Ok(Xhci {
         regs,
         cmd,
         ev,
         dcbaa,
-        ctx_size: if regs.csz64 { 64 } else { 32 },
+        ctx_size,
         slots,
         ports,
     })
@@ -106,7 +108,7 @@ impl Xhci {
             if let Some(t) = self.ev.pending() {
                 let t = t;
                 self.ev.pop();
-                self.regs.rt_write(RT_ERDP, self.ev.erdp());
+                rt_write64(&self.regs, RT_ERDP, self.ev.erdp());
 
                 if t.typ() == TRB_CMD_COMPLETION {
                     if t.completion_code() == CC_SUCCESS {

@@ -38,6 +38,14 @@ impl AtaPio {
         Self { base, ctrl }
     }
 
+    /// Inhibit the drive's INTRQ (IRQ14/IRQ15) line. We poll the status
+    /// register instead of using interrupts, so this avoids delivering the
+    /// unmapped IRQ14/IRQ15 vectors (which would otherwise cause a #GP ->
+    /// double fault when IDENTIFY/READ assert INTRQ).
+    fn disable_irq(&self) {
+        unsafe { port::outb(self.ctrl, 0x02) }; // nIEN = bit 1
+    }
+
     fn status(&self) -> u8 {
         unsafe { port::inb(self.base + ATA_REG_STATUS) }
     }
@@ -206,6 +214,8 @@ impl BlockDevice for AtaPio {
 }
 
 pub fn probe() -> bool {
+    ATA0.disable_irq();
+
     match ATA0.identify() {
         Ok(id) => {
             let sectors = (id[60] as u64) | ((id[61] as u64) << 16);

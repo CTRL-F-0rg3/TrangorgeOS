@@ -1,6 +1,6 @@
 use super::init::Xhci;
 use super::trb::*;
-use crate::drivers::usb::usbcore::device::UsbDevice;
+use crate::drivers::usb::core::device::UsbDevice;
 use crate::drivers::usb::UsbError;
 
 pub fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
@@ -8,7 +8,7 @@ pub fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
         if let Some(t) = x.ev.pending() {
             let t = t;
             x.ev.pop();
-            x.regs.rt_write(super::init::RT_ERDP, x.ev.erdp());
+            super::init::rt_write64(&x.regs, super::init::RT_ERDP, x.ev.erdp());
 
             if t.typ() == TRB_TRANSFER_EVENT && t.slot_id() == slot {
                 return Ok(t.completion_code());
@@ -28,7 +28,7 @@ pub fn wait_transfer_ep(x: &mut Xhci, slot: u8, ep: u8) -> Result<u8, UsbError> 
         if let Some(t) = x.ev.pending() {
             let t = t;
             x.ev.pop();
-            x.regs.rt_write(super::init::RT_ERDP, x.ev.erdp());
+            super::init::rt_write64(&x.regs, super::init::RT_ERDP, x.ev.erdp());
 
             if t.typ() == TRB_TRANSFER_EVENT && t.slot_id() == slot && t.ep_id() == ep {
                 return Ok(t.completion_code());
@@ -56,7 +56,7 @@ pub fn control(x: &mut Xhci,
         None => (false, 0),
     };
 
-    if let Some((buf, l)) = data {
+    if let Some((ref buf, l)) = data {
         if !dir_in && l > 0 {
             unsafe {
                 core::ptr::copy_nonoverlapping(buf.as_ptr(), dev.data.virt, l);
@@ -94,8 +94,9 @@ pub fn control(x: &mut Xhci,
 pub fn control_in(x: &mut Xhci, dev: &mut UsbDevice,
                   req: u8, value: u16, index: u16,
                   buf: &mut [u8]) -> Result<usize, UsbError> {
-    let setup = pack_setup(0x80, req, value, index, buf.len() as u16);
-    control(x, dev, setup, 3, Some((buf, buf.len())), 0)
+    let len = buf.len();
+    let setup = pack_setup(0x80, req, value, index, len as u16);
+    control(x, dev, setup, 3, Some((buf, len)), 0)
 }
 
 pub fn control_out(x: &mut Xhci, dev: &mut UsbDevice,

@@ -7,9 +7,10 @@ pub struct Contexts {
     pub ctx_size: usize,
 }
 
-pub fn setup_configure_ep(&mut self, speed: u32, port: u32,
-                          epidx: u32, ep_type: u32, mps: u16,
-                          interval: u32, ring_phys: u64) {
+impl Contexts {
+    pub fn setup_configure_ep(&mut self, speed: u32, port: u32,
+                              epidx: u32, ep_type: u32, mps: u16,
+                              interval: u32, ring_phys: u64) {
     self.input.zero();
     self.in_add_drop(1 | (1 << epidx), 0);
 
@@ -63,6 +64,7 @@ pub fn setup_configure_bulk_pair(&mut self, speed: u32, port: u32,
             e.add(4).write_volatile(512);
         }
     }
+}
 }
 
 impl Contexts {

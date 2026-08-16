@@ -11,7 +11,10 @@ pub fn init() {
 }
 
 pub fn self_test() -> bool {
-    let dev = registry::first()?;
+    let dev = match registry::first() {
+        Some(d) => d,
+        None => return false,
+    };
 
     let mut buf = [0u8; 512];
 
