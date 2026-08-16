@@ -60,3 +60,37 @@ impl Drop for AddressSpace {
         unsafe { ffi::aspace_destroy(self.ptr) }
     }
 }
+
+pub fn self_test() -> Result<&'static str, &'static str> {
+    let aspace = AddressSpace::new().ok_or("aspace: create failed")?;
+
+    let a1 = aspace
+        .map_anon(0, 4096, PROT_READ | PROT_WRITE)
+        .ok_or("aspace: map_anon failed")?;
+
+    if a1 == 0 {
+        return Err("aspace: map_anon returned 0");
+    }
+
+    let a2 = aspace
+        .mmap(0, 8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE)
+        .ok_or("aspace: mmap failed")?;
+
+    if a2 == 0 {
+        return Err("aspace: mmap returned 0");
+    }
+
+    if !aspace.protect(a1, 4096, PROT_READ) {
+        return Err("aspace: protect failed");
+    }
+
+    if !aspace.munmap(a1, 4096) {
+        return Err("aspace: munmap(a1) failed");
+    }
+
+    if !aspace.munmap(a2, 8192) {
+        return Err("aspace: munmap(a2) failed");
+    }
+
+    Ok("address space create/map/protect/unmap roundtrip")
+}

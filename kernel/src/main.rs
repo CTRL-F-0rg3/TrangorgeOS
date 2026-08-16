@@ -32,8 +32,36 @@ static TESTS: &[Test] = &[
         func: interrupts::self_test,
     },
     Test {
+        module: "nic::ethernet",
+        func: nic::ethernet::self_test,
+    },
+    Test {
+        module: "nic::packet",
+        func: nic::packet::self_test,
+    },
+    Test {
+        module: "nic::virtio::queue",
+        func: nic::virtio::queue::self_test,
+    },
+    Test {
         module: "pci",
         func: pci::self_test,
+    },
+    Test {
+        module: "mm::physical",
+        func: mm::phys::self_test,
+    },
+    Test {
+        module: "mm::heap_api",
+        func: mm::api::self_test,
+    },
+    Test {
+        module: "mm::vmm",
+        func: mm::virt::self_test,
+    },
+    Test {
+        module: "mm::address_space",
+        func: mm::space::self_test,
     },
     Test {
         module: "mm::allocator",

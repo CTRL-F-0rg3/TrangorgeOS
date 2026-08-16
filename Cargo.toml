@@ -1,5 +1,6 @@
 # TrangorgeOS/Cargo.toml
 [workspace]
+resolver = "2"
 members = [
     "kernel",
     "comgrub",
