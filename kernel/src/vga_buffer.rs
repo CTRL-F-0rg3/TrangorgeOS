@@ -178,10 +178,12 @@ pub fn _print_colored(color: Color, args: fmt::Arguments) {
     writer.set_color(color);
     writer.write_fmt(args).unwrap();
     writer.color_code = previous;
+    crate::serial::print_args(args);
 }
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
+    crate::serial::print_args(args);
 }

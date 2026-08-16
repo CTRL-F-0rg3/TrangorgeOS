@@ -27,9 +27,11 @@ bool mm_init(const mm_boot_params_t *params)
     if (params == NULL ||
         params->memmap == NULL ||
         params->memmap_count == 0) {
+        kprintf("mm_init: bad params\n");
         return false;
     }
 
+    kprintf("mm_init: arch_memory_init...\n");
     arch_memory_init(params->memmap,
                      params->memmap_count,
                      params->kernel_phys_start,
@@ -37,41 +39,58 @@ bool mm_init(const mm_boot_params_t *params)
                      params->initrd_phys_start,
                      params->initrd_phys_end);
 
+    kprintf("mm_init: paging_init...\n");
     paging_init(params->boot_phys_offset);
 
+    kprintf("mm_init: pmm_init...\n");
     if (!pmm_init()) {
+        kprintf("mm_init: pmm_init FAILED\n");
         return false;
     }
 
+    kprintf("mm_init: vmm_init...\n");
     if (!vmm_init()) {
+        kprintf("mm_init: vmm_init FAILED\n");
         return false;
     }
 
+    kprintf("mm_init: page_init...\n");
     if (!page_init()) {
+        kprintf("mm_init: page_init FAILED\n");
         return false;
     }
 
     mapping_init();
 
+    kprintf("mm_init: heap_init...\n");
     if (!heap_init()) {
+        kprintf("mm_init: heap_init FAILED\n");
         return false;
     }
 
+    kprintf("mm_init: cache_init...\n");
     if (!cache_init()) {
+        kprintf("mm_init: cache_init FAILED\n");
         return false;
     }
 
+    kprintf("mm_init: paging_subsystem_init...\n");
     if (!paging_subsystem_init()) {
+        kprintf("mm_init: paging_subsystem_init FAILED\n");
         return false;
     }
 
     isolation_init();
 
+    kprintf("mm_init: aspace_subsystem_init...\n");
     if (!aspace_subsystem_init()) {
+        kprintf("mm_init: aspace_subsystem_init FAILED\n");
         return false;
     }
 
     mm_initialized = true;
+
+    kprintf("mm_init: OK\n");
 
     return true;
 }

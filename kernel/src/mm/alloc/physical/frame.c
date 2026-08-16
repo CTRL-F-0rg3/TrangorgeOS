@@ -91,10 +91,10 @@ bool frame_init_from_memory(void)
     }
 
     /*
-     * Bitmapa indeksuje wszystkie możliwe PFN-y aż do max_address,
-     * łącznie z dziurami w przestrzeni fizycznej.
+     * Bitmapa indeksuje PFN-y aż do końca najwyższego usable regionu
+     * (z dziurami w przestrzeni fizycznej włącznie).
      */
-    uint64_t max_pfn = info->max_address / ARCH_PAGE_SIZE;
+    uint64_t max_pfn = info->max_usable_address / ARCH_PAGE_SIZE;
     size_t bit_count = (size_t)(max_pfn + 1);
 
     size_t bitmap_bytes = bitmap_bytes_for_bits(bit_count);

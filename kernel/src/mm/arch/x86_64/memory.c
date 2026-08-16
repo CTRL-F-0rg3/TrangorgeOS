@@ -103,10 +103,8 @@ void arch_memory_init_multiboot2(uint32_t magic,
 }
 
 #endif /* ARCH_MEMORY_MULTIBOOT2 */
-__attribute__((weak)) void kprintf(const char *fmt, ...)
-{
-    (void)fmt;
-}
+/* kprintf jest dostarczany przez kprintf.c (silna definicja -> port szeregowy). */
+extern void kprintf(const char *fmt, ...);
 
 static void arch_mem_panic(const char *msg) __attribute__((noreturn));
 static void arch_mem_panic(const char *msg)
@@ -437,6 +435,7 @@ static void recalc_stats(void)
 {
     uint64_t total_usable = 0;
     uint64_t max_address = 0;
+    uint64_t max_usable_address = 0;
 
     for (size_t i = 0; i < mem.count; i++) {
         const arch_mem_region_t *r = &mem.regions[i];
@@ -452,11 +451,16 @@ static void recalc_stats(void)
             } else {
                 total_usable += r->len;
             }
+
+            if (end > max_usable_address) {
+                max_usable_address = end;
+            }
         }
     }
 
     mem.total_usable = total_usable;
     mem.max_address = max_address;
+    mem.max_usable_address = max_usable_address;
     mem.direct_map_base = ARCH_DIRECT_MAP_BASE;
 }
 /* ------------------------------------------------------------------ */

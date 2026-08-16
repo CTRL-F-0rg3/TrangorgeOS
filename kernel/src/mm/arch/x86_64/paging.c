@@ -999,7 +999,7 @@ void paging_init_direct_map(void)
         paging_panic("no arch memory info");
     }
 
-    uint64_t phys_limit = arch_page_align_up(info->max_address);
+    uint64_t phys_limit = arch_page_align_up(info->max_usable_address);
 
     if (phys_limit == 0 || phys_limit == UINT64_MAX) {
         paging_panic("invalid physical memory limit");

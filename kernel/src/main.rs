@@ -11,6 +11,7 @@ mod interrupts;
 mod mm;
 mod nic;
 mod pci;
+mod serial;
 mod testing;
 mod vga_buffer;
 
@@ -34,9 +35,14 @@ static TESTS: &[Test] = &[
         module: "pci",
         func: pci::self_test,
     },
+    Test {
+        module: "mm::allocator",
+        func: mm::self_test,
+    },
 ];
 
 pub fn init() {
+    serial::init();
     gdt::init();
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };

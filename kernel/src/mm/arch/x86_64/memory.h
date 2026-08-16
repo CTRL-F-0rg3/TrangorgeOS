@@ -56,6 +56,7 @@ typedef struct arch_mem_info {
 
     uint64_t total_usable;
     uint64_t max_address;
+    uint64_t max_usable_address;
 
     uint64_t direct_map_base;
 } arch_mem_info_t;

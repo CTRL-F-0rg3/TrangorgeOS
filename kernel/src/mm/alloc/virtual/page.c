@@ -76,26 +76,38 @@ bool page_init(void)
     }
 
     if (!pmm_ready()) {
+        kprintf("page_init: pmm not ready\n");
         return false;
     }
 
     const arch_mem_info_t *info = arch_memory_get();
 
     if (info == NULL) {
+        kprintf("page_init: no arch mem info\n");
         return false;
     }
 
-    uint64_t max_pfn = info->max_address / ARCH_PAGE_SIZE;
+    uint64_t max_pfn = info->max_usable_address / ARCH_PAGE_SIZE;
 
     page_desc_count = (size_t)(max_pfn + 1);
 
     size_t bytes = page_desc_count * sizeof(page_t);
 
+    kprintf("page_init: max_usable=0x%llx max_addr=0x%llx desc_count=%llu bytes=%llu\n",
+            (unsigned long long)info->max_usable_address,
+            (unsigned long long)info->max_address,
+            (unsigned long long)page_desc_count,
+            (unsigned long long)bytes);
+
     uint64_t descs_phys = 0;
 
     if (!pmm_alloc_bytes(bytes, &descs_phys)) {
+        kprintf("page_init: pmm_alloc_bytes(%llu) FAILED\n",
+                (unsigned long long)bytes);
         return false;
     }
+
+    kprintf("page_init: descs_phys=0x%llx\n", (unsigned long long)descs_phys);
 
     page_descs = (page_t *)arch_phys_to_virt(descs_phys);
 
