@@ -6,10 +6,9 @@ extern crate alloc;
 
 use bootloader::{BootInfo, entry_point};
 
-mod allocator;
 mod gdt;
 mod interrupts;
-mod memory;
+mod mm;
 mod nic;
 mod pci;
 mod testing;
@@ -32,56 +31,8 @@ static TESTS: &[Test] = &[
         func: interrupts::self_test,
     },
     Test {
-        module: "memory::paging",
-        func: memory::paging::self_test,
-    },
-    Test {
-        module: "memory::frame_allocator",
-        func: memory::frame_allocator::self_test,
-    },
-    Test {
-        module: "memory::mapping",
-        func: memory::mapping::self_test,
-    },
-    Test {
-        module: "nic::ethernet",
-        func: nic::ethernet::self_test,
-    },
-    Test {
-        module: "nic::packet",
-        func: nic::packet::self_test,
-    },
-    Test {
-        module: "nic::virtio::queue",
-        func: nic::virtio::queue::self_test,
-    },
-    Test {
         module: "pci",
         func: pci::self_test,
-    },
-    Test {
-        module: "allocator::stats",
-        func: allocator::stats::self_test,
-    },
-    Test {
-        module: "allocator::physical::bitmap",
-        func: allocator::physical::bitmap::self_test,
-    },
-    Test {
-        module: "allocator::heap::buddy_heap",
-        func: allocator::heap::buddy_heap::self_test,
-    },
-    Test {
-        module: "allocator::heap::slab",
-        func: allocator::heap::slab::self_test,
-    },
-    Test {
-        module: "allocator::virt::adress_space",
-        func: allocator::virt::adress_space::self_test,
-    },
-    Test {
-        module: "allocator",
-        func: allocator::self_test,
     },
 ];
 
@@ -108,8 +59,13 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     init();
-    memory::init(boot_info.physical_memory_offset, &boot_info.memory_map);
-    allocator::init(&boot_info.memory_map);
+
+    if mm::init_from_boot_info(boot_info) {
+        println!("[mm] allocator initialized OK");
+    } else {
+        println!("[mm] allocator initialization FAILED");
+    }
+
     pci::init();
     testing::run_all(TESTS);
     println!("Hello World{}", "!");

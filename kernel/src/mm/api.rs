@@ -30,6 +30,9 @@ pub fn virt_to_phys(ptr: *mut u8) -> u64 {
 
 pub struct KernelAlloc;
 
+#[global_allocator]
+static ALLOCATOR: KernelAlloc = KernelAlloc;
+
 unsafe impl GlobalAlloc for KernelAlloc {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let p = if layout.align() <= 16 {

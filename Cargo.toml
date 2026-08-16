@@ -4,7 +4,7 @@ members = [
     "kernel",
     "comgrub",
     "comlimine",
-    "trangorgelib", "triang-lang",   # ← nowe
+    "trangorgelibc",
 ]
 [profile.dev]
 panic = "abort"
