@@ -255,6 +255,18 @@ fn split_once_space(s: &str) -> (&str, &str) {
     }
 }
 
+/// Parses a resolution specifier of the form `WxH` or `W:H` (e.g. `1920:1080`).
+fn parse_resolution(s: &str) -> Option<(u32, u32)> {
+    let sep = s.find(|c| c == 'x' || c == 'X' || c == ':')?;
+    let (w, h) = (&s[..sep], &s[sep + 1..]);
+    let w: u32 = w.trim().parse().ok()?;
+    let h: u32 = h.trim().parse().ok()?;
+    if w == 0 || h == 0 || w > 4096 || h > 4096 {
+        return None;
+    }
+    Some((w, h))
+}
+
 fn dev() -> Option<&'static dyn BlockDevice> {
     crate::fs::root_device()
 }
@@ -271,7 +283,7 @@ fn execute(line: &str) {
             crate::println!("  ls                      list the current folder");
             crate::println!("  mkdir <name>            create a folder");
             crate::println!("  cd    <name|/>          change folder ( / = root )");
-            crate::println!("  res   <320|640>         change resolution");
+            crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
             crate::println!("  format                  format the disk (TFS)");
         }
         "clear" => {
@@ -337,12 +349,16 @@ fn execute(line: &str) {
             let ok = match arg {
                 "640" => crate::gfx::set_resolution(crate::gfx::vga::VideoMode::Mode12h),
                 "320" => crate::gfx::set_resolution(crate::gfx::vga::VideoMode::Mode13h),
-                _ => false,
+                _ => match parse_resolution(arg) {
+                    Some((w, h)) => crate::gfx::set_resolution_w_h(w, h),
+                    None => false,
+                },
             };
             if ok {
-                crate::println!("resolution: {}", crate::gfx::current_resolution());
+                let (w, h) = crate::gfx::current_resolution();
+                crate::println!("resolution: {}x{}", w, h);
             } else {
-                crate::println!("usage: res <320|640>");
+                crate::println!("usage: res <320|640|WxH|W:H>  (e.g. res 1920:1080)");
             }
         }
         "format" => match dev() {

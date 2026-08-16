@@ -8,10 +8,19 @@ use framebuffer::PixelFormat;
 
 pub const FB_PHYS: u64 = 0xA0000;
 
-/// Currently active video mode.
+/// Currently active video mode (legacy VGA modes only).
 static mut CURRENT: vga::VideoMode = vga::VideoMode::Mode13h;
+/// Active resolution in pixels. Tracked separately so LFB modes (which have no
+/// `VideoMode` variant) can be reported accurately.
+static mut CURRENT_W: u32 = 320;
+static mut CURRENT_H: u32 = 200;
 
 pub fn init() -> bool {
+    unsafe {
+        CURRENT = vga::VideoMode::Mode13h;
+        CURRENT_W = 320;
+        CURRENT_H = 200;
+    }
     console::init(FB_PHYS, 320, 200, 320, PixelFormat::Indexed8)
 }
 
@@ -19,24 +28,62 @@ pub fn init_mode(fb_phys: u64, width: u32, height: u32, stride: u32) -> bool {
     console::init(fb_phys, width, height, stride, PixelFormat::Indexed8)
 }
 
-/// Switches the video mode (direct VGA register programming) and re-initializes
-/// the console. Returns true on success.
+/// Switches to one of the legacy VGA modes (320x200 chunky or 640x480 planar)
+/// via direct VGA register programming and re-initializes the console.
+/// Returns true on success.
 pub fn set_resolution(mode: vga::VideoMode) -> bool {
+    // If a Bochs VBE linear-framebuffer mode is active, disable it first so
+    // the card returns to plain VGA before the legacy registers are written.
+    vga::bochs_disable();
     vga::set_mode(mode);
     unsafe { CURRENT = mode; }
 
     match mode {
-        vga::VideoMode::Mode13h => console::init(FB_PHYS, 320, 200, 320, PixelFormat::Indexed8),
-        vga::VideoMode::Mode12h => console::init(FB_PHYS, 640, 480, 80, PixelFormat::Planar4),
+        vga::VideoMode::Mode13h => {
+            unsafe { CURRENT_W = 320; CURRENT_H = 200; }
+            console::init(FB_PHYS, 320, 200, 320, PixelFormat::Indexed8)
+        }
+        vga::VideoMode::Mode12h => {
+            unsafe { CURRENT_W = 640; CURRENT_H = 480; }
+            console::init(FB_PHYS, 640, 480, 80, PixelFormat::Planar4)
+        }
     }
 }
 
-/// Human-readable name of the active resolution.
-pub fn current_resolution() -> &'static str {
-    match unsafe { CURRENT } {
-        vga::VideoMode::Mode13h => "320x200",
-        vga::VideoMode::Mode12h => "640x480",
+/// Switches to an arbitrary resolution (e.g. 1920x1080) using the Bochs VBE
+/// linear-framebuffer extension found on QEMU's standard VGA card. The mode is
+/// set immediately at 32 bpp and the console is re-initialized. Returns true
+/// on success; false if the card lacks the extension or rejects the mode.
+pub fn set_resolution_w_h(width: u32, height: u32) -> bool {
+    if width == 0 || height == 0 || width > 4096 || height > 4096 {
+        return false;
     }
+
+    let Some(lfb) = vga::bochs_lfb_base() else {
+        return false;
+    };
+
+    if !vga::bochs_set_mode(width, height, 32) {
+        return false;
+    }
+
+    // 32 bpp linear framebuffer — one 4-byte pixel per column, no padding.
+    let stride = width * 4;
+    if !console::init(lfb, width, height, stride, PixelFormat::Rgb888) {
+        return false;
+    }
+
+    unsafe {
+        CURRENT_W = width;
+        CURRENT_H = height;
+    }
+
+    true
+}
+
+/// Active resolution in pixels (`width`, `height`).
+pub fn current_resolution() -> (u32, u32) {
+    unsafe { (CURRENT_W, CURRENT_H) }
 }
 
 pub fn refresh() {

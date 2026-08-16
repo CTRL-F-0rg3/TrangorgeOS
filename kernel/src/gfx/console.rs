@@ -32,6 +32,12 @@ static mut ROWS: usize = 0;
 static mut CELL_CACHE: [(u8, u8); MAX_COLS * MAX_ROWS] = [(0, 0); MAX_COLS * MAX_ROWS];
 static mut CACHE_VALID: bool = false;
 
+// Virtual base + byte length of the last device-mapped framebuffer. A
+// resolution switch releases the previous mapping before creating a new one,
+// so repeated switches do not leak virtual address space.
+static mut FB_DEV_VIRT: u64 = 0;
+static mut FB_DEV_SIZE: usize = 0;
+
 // PATCH, not a fix: something in vga_buffer (outside these files) serves
 // characters in a line in reverse order relative to the visible console
 // width. Instead of waiting for a fix at the source, we read column `col`
@@ -146,10 +152,23 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     let ptr = if fb_addr >= 0xFFFF800000000000 {
         fb_addr as *mut u8
     } else {
+        unsafe {
+            if FB_DEV_VIRT != 0 {
+                ffi::vmm_unmap_device(FB_DEV_VIRT, FB_DEV_SIZE);
+                FB_DEV_VIRT = 0;
+                FB_DEV_SIZE = 0;
+            }
+        }
+
         let mut virt = 0u64;
 
         if !unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) } {
             return false;
+        }
+
+        unsafe {
+            FB_DEV_VIRT = virt;
+            FB_DEV_SIZE = size;
         }
 
         virt as *mut u8
@@ -158,6 +177,7 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     match format {
         PixelFormat::Indexed8 => set_palette_rgb332(),
         PixelFormat::Planar4 => set_palette16(),
+        PixelFormat::Rgb888 => {} // true color — no DAC palette needed
     }
     disable_text_cursor();
 
@@ -186,9 +206,12 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
         CACHE_VALID = false;
     }
 
-    // Fade-in step count scales down for larger resolutions.
+    // Fade-in step count scales down for larger resolutions; very large
+    // framebuffers (e.g. 1920x1080) render once so switching is instant.
     let total_px = width * height;
-    let steps: u32 = if total_px > 400_000 {
+    let steps: u32 = if total_px > 1_000_000 {
+        1
+    } else if total_px > 400_000 {
         4
     } else if total_px > 150_000 {
         8

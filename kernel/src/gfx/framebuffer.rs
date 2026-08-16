@@ -19,6 +19,9 @@ pub enum PixelFormat {
     Indexed8,
     /// Mode 12h: 4 bitplanes, 4 bits per pixel (color index 0..15).
     Planar4,
+    /// Linear framebuffer (Bochs VBE): 32 bpp true color, 0x00RRGGBB stored
+    /// little-endian (memory byte order is B, G, R, then an unused byte).
+    Rgb888,
 }
 
 /// Default 16-color VGA palette (used by planar mode and the text console).
@@ -85,6 +88,11 @@ impl Framebuffer {
                 rgb332_from_index(idx)
             }
             PixelFormat::Planar4 => index4_to_rgb(self.planar_get(x, y)),
+            PixelFormat::Rgb888 => {
+                let off = self.ry(y) * self.stride + self.rx(x) * 4;
+                let v = unsafe { (self.ptr.add(off) as *const u32).read_volatile() };
+                ((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF)
+            }
         };
         0xFF000000 | (r << 16) | (g << 8) | b
     }
@@ -101,6 +109,12 @@ impl Framebuffer {
             }
             PixelFormat::Planar4 => {
                 self.planar_set(x, y, rgb_to_index4(r, g, b));
+            }
+            PixelFormat::Rgb888 => {
+                let off = self.ry(y) * self.stride + self.rx(x) * 4;
+                unsafe {
+                    (self.ptr.add(off) as *mut u32).write_volatile((r << 16) | (g << 8) | b);
+                }
             }
         }
     }
