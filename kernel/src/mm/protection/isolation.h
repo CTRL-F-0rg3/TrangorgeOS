@@ -1,21 +1,17 @@
-#include "guard.h"
-#include "../arch/x86_64/memory.h"
+#ifndef MM_PROTECTION_ISOLATION_H
+#define MM_PROTECTION_ISOLATION_H
 
-uint64_t guard_install(proc_aspace_t *pa, uint64_t addr, size_t len)
-{
-    return aspace_reserve_at(pa, addr, len, VMA_FLAG_GUARD);
-}
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
-bool guard_user_stack(proc_aspace_t *pa)
-{
-    uint64_t stack_base = aspace_stack_base();
+bool isolation_init(void);
 
-    if (stack_base < ARCH_PAGE_SIZE) {
-        return false;
-    }
+bool isolation_has_smep(void);
+bool isolation_has_smap(void);
+bool isolation_enable_smep(void);
+bool isolation_enable_smap(void);
 
-    return aspace_reserve_at(pa,
-                             stack_base - ARCH_PAGE_SIZE,
-                             ARCH_PAGE_SIZE,
-                             VMA_FLAG_GUARD) != 0;
-}
+size_t isolation_audit_kernel(void);
+
+#endif
