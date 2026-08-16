@@ -115,5 +115,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     testing::run_all(TESTS);
     println!("Hello World{}", "!");
 
+    gfx::refresh();
+
     hlt_loop();
 }

@@ -1,6 +1,0 @@
-clang: warning: argument unused during compilation: '-ffreestanding' [-Wunused-command-line-argument]
-clang: warning: argument unused during compilation: '-fno-builtin' [-Wunused-command-line-argument]
-clang: warning: argument unused during compilation: '-fno-stack-protector' [-Wunused-command-line-argument]
-clang: warning: argument unused during compilation: '-mno-red-zone' [-Wunused-command-line-argument]
-clang: warning: argument unused during compilation: '-mcmodel=kernel' [-Wunused-command-line-argument]
-clang: warning: argument unused during compilation: '-O2' [-Wunused-command-line-argument]

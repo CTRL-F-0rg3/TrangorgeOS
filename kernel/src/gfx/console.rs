@@ -102,18 +102,6 @@ pub fn init(fb_phys: u64, width: u32, height: u32, stride: u32) -> bool {
     true
 }
 
-fn mix(base: u32, c: (u32, u32, u32), a: u32) -> u32 {
-    let br = (base >> 16) & 0xFF;
-    let bg = (base >> 8) & 0xFF;
-    let bb = base & 0xFF;
-
-    let r = br + ((c.0.min(255).saturating_sub(br)) * a >> 8);
-    let g = bg + ((c.1.min(255).saturating_sub(bg)) * a >> 8);
-    let b = bb + ((c.2.min(255).saturating_sub(bb)) * a >> 8);
-
-    rgb(r, g, b)
-}
-
 pub fn refresh() {
     if !unsafe { READY } {
         return;
@@ -141,23 +129,23 @@ pub fn refresh() {
                 FONT8X8[('?' as u8 - 0x20) as usize]
             };
 
+            // Font 8x8 renderujemy jako 4x8 (downscale 2:1 w poziomie),
+            // żeby całe 80 kolumn zmieściło się w 320 px.
             for gy in 0..8 {
                 let bits = glyph[gy];
 
-                for gx in 0..8 {
-                    let px = col * 8 + gx;
+                for gx in 0..4 {
+                    let px = col * 4 + gx;
                     let py = row * 8 + gy;
 
                     if px >= w || py >= h {
                         continue;
                     }
 
-                    let base = fb().get(px, py);
-
-                    let c = if bits & (0x80 >> gx) != 0 {
+                    let c = if bits & (0xC0 >> (gx * 2)) != 0 {
                         rgb(fg.0, fg.1, fg.2)
                     } else {
-                        mix(base, bg, 110)
+                        rgb(bg.0, bg.1, bg.2)
                     };
 
                     fb().set(px, py, c);
@@ -165,4 +153,31 @@ pub fn refresh() {
             }
         }
     }
+}
+
+/// Debug: zrzut framebuffera jako ASCII (do diagnostyki orientacji tekstu).
+pub fn debug_dump() {
+    crate::serial::write_str("--- gfx framebuffer dump ---\n");
+
+    for row in 0..ROWS {
+        for col in 0..COLS {
+            let mut bright = false;
+
+            for gy in 0..8 {
+                for gx in 0..4 {
+                    let c = fb().get(col * 4 + gx, row * 8 + gy);
+
+                    if (c & 0xFFFFFF) > 0x404040 {
+                        bright = true;
+                    }
+                }
+            }
+
+            crate::serial::write_byte(if bright { b'#' } else { b'.' });
+        }
+
+        crate::serial::write_byte(b'\n');
+    }
+
+    crate::serial::write_str("--- end dump ---\n");
 }

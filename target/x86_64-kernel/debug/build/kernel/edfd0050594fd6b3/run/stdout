@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=src/mm
-cargo:rustc-link-search=native=/home/ctrl/TrangorgeOS/target/x86_64-kernel/debug/build/kernel/edfd0050594fd6b3/out
-cargo:rustc-link-lib=static=mm

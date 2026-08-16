@@ -1,7 +1,0 @@
-cargo:rerun-if-changed=/home/ctrl/TrangorgeOS/kernel/Cargo.toml
-cargo:rustc-link-search=native=/home/ctrl/TrangorgeOS/target/bootimage/bootloader/x86_64-bootloader/release/build/bootloader/6df62701783b6ea9/out
-cargo:rustc-link-lib=static=kernel_bin-kernel
-cargo:rerun-if-env-changed=KERNEL
-cargo:rerun-if-env-changed=KERNEL_MANIFEST
-cargo:rerun-if-changed=/home/ctrl/TrangorgeOS/target/x86_64-kernel/debug/kernel
-cargo:rerun-if-changed=build.rs
