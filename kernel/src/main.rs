@@ -113,7 +113,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     pci::init();
     testing::run_all(TESTS);
-    println!("Hello World{}", "!");
+    println!("Welcome in my Galaxy{}", "!");
 
     gfx::refresh();
 
