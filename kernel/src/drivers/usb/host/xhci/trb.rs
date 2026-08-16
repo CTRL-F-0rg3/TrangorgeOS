@@ -108,7 +108,12 @@ impl Trb {
         }
     }
 }
-
+pub fn evaluate_ctx(slot: u8, ctx_phys: u64) -> Self {
+    Trb {
+        param: ctx_phys & ADDR_MASK,
+        control: (TRB_EVALUATE_CTX << 10) | ((slot as u32) << 24),
+    }
+}
 pub fn pack_setup(bm_request: u8, b_request: u8, value: u16,
                   index: u16, length: u16) -> u64 {
     (bm_request as u64)

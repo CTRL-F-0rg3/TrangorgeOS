@@ -55,6 +55,49 @@ pub struct EventRing {
     cycle: bool,
 }
 
+pub struct TransferRing {
+    buf: DmaBuf,
+    len: usize,
+    enqueue: usize,
+    cycle: bool,
+}
+
+impl TransferRing {
+    pub fn new(count: usize) -> Result<Self, UsbError> {
+        let len = count + 1;
+        let buf = DmaBuf::new(len * 16)?;
+
+        unsafe {
+            (buf.virt as *mut Trb).add(count).write_volatile(Trb::link(buf.phys));
+        }
+
+        Ok(Self { buf, len, enqueue: 0, cycle: true })
+    }
+
+    pub fn phys(&self) -> u64 {
+        self.buf.phys
+    }
+
+    pub fn enqueue(&mut self, mut trb: Trb) {
+        if self.enqueue == self.len - 1 {
+            self.enqueue = 0;
+            self.cycle = !self.cycle;
+        }
+
+        if self.cycle {
+            trb.control |= 1;
+        } else {
+            trb.control &= !1;
+        }
+
+        unsafe {
+            (self.buf.virt as *mut Trb).add(self.enqueue).write_volatile(trb);
+        }
+
+        self.enqueue += 1;
+    }
+}
+
 impl EventRing {
     pub fn new(count: usize) -> Result<Self, UsbError> {
         let buf = DmaBuf::new(count * 16)?;
