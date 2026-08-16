@@ -3,14 +3,15 @@ use super::framebuffer::{Framebuffer, PixelFormat, PALETTE16, rgb};
 use super::galaxy;
 use crate::mm::ffi;
 
-// Glyph size in pixels. We always render 1:1 — no scaling, no bit merging —
-// so a glyph is never squashed or deformed regardless of resolution.
+// Glyph size in pixels (source font is 8x8). The console scales each glyph by
+// an integer factor derived from the resolution, so text stays sharp and is
+// never stretched or deformed.
 const GLYPH_W: usize = 8;
 const GLYPH_H: usize = 8;
 
 // Max text buffer size provided by `vga_buffer` (classic 80x25). The console
 // grid never exceeds this; at lower resolutions it simply shows fewer cells,
-// but always 1:1 with the font.
+// at higher ones it scales the glyphs up to fill the screen proportionally.
 pub const MAX_COLS: usize = 80;
 pub const MAX_ROWS: usize = 25;
 
@@ -37,6 +38,12 @@ static mut CACHE_VALID: bool = false;
 // so repeated switches do not leak virtual address space.
 static mut FB_DEV_VIRT: u64 = 0;
 static mut FB_DEV_SIZE: usize = 0;
+
+// Integer scale factor and centering offsets, recomputed on every resolution
+// change so the whole text grid is re-laid-out and scaled to the new size.
+static mut SCALE: usize = 1;
+static mut OFF_X: usize = 0;
+static mut OFF_Y: usize = 0;
 
 // PATCH, not a fix: something in vga_buffer (outside these files) serves
 // characters in a line in reverse order relative to the visible console
@@ -162,7 +169,16 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
 
         let mut virt = 0u64;
 
-        if !unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) } {
+        // The linear framebuffer lives in ordinary (prefetchable) RAM, so map
+        // it cacheable; the legacy VGA aperture at 0xA0000 is true MMIO and
+        // must stay uncached.
+        let mapped = if format == PixelFormat::Rgb888 {
+            unsafe { ffi::vmm_map_framebuffer(fb_addr, size, &mut virt) }
+        } else {
+            unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) }
+        };
+
+        if !mapped {
             return false;
         }
 
@@ -197,10 +213,22 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
             format,
         });
 
-        // Console grid derived from the resolution, capped to the text buffer
-        // size, always 1:1 with the glyph.
-        COLS = (width / GLYPH_W).clamp(1, MAX_COLS);
-        ROWS = (height / GLYPH_H).clamp(1, MAX_ROWS);
+        // Uniform integer scale so the 80x25 grid fills the resolution as much
+        // as possible without stretching (glyphs stay square). Then derive the
+        // visible cell grid and center it on screen.
+        let scale = (width / (MAX_COLS * GLYPH_W))
+            .min(height / (MAX_ROWS * GLYPH_H))
+            .max(1);
+        let cols = (width / (GLYPH_W * scale)).clamp(1, MAX_COLS);
+        let rows = (height / (GLYPH_H * scale)).clamp(1, MAX_ROWS);
+        let off_x = width.saturating_sub(MAX_COLS * GLYPH_W * scale) / 2;
+        let off_y = height.saturating_sub(MAX_ROWS * GLYPH_H * scale) / 2;
+
+        COLS = cols;
+        ROWS = rows;
+        SCALE = scale;
+        OFF_X = off_x;
+        OFF_Y = off_y;
 
         // New resolution = cache invalid, force a full redraw.
         CACHE_VALID = false;
@@ -220,14 +248,19 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     };
     let step_size = (256 / steps.max(1)).max(1);
 
-    let mut t = 0u32;
-    loop {
-        galaxy::render(fb(), t.min(256));
-        delay();
-        if t >= 256 {
-            break;
+    if steps <= 1 {
+        // Very large framebuffers: render once at full brightness — no fade.
+        galaxy::render(fb(), 256);
+    } else {
+        let mut t = 0u32;
+        loop {
+            galaxy::render(fb(), t.min(256));
+            delay();
+            if t >= 256 {
+                break;
+            }
+            t += step_size;
         }
-        t += step_size;
     }
 
     // Capture the logical background (RGB888 per pixel) for transparent text.
@@ -297,9 +330,10 @@ pub fn refresh() {
     }
 }
 
-/// Draws one text cell 1:1 with the 8x8 font — no scaling, no bit merging.
-/// Bit 7 = leftmost pixel of row `gy` (order: top->bottom, left->right), so
-/// a character never comes out mirrored or distorted.
+/// Draws one text cell, scaling the 8x8 glyph by the current `SCALE` factor
+/// (nearest-neighbor, so pixels stay square) and honoring the centering
+/// offsets computed in init(). Bit 7 = leftmost pixel of row `gy` (order:
+/// top->bottom, left->right), so a character never comes out mirrored.
 ///
 /// Cell background: when the attribute has bg == 0 (default/black — how the
 /// vast majority of the text buffer looks), we do NOT paint a flat color;
@@ -320,38 +354,52 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
         FONT8X8[('?' as u8 - 0x20) as usize]
     };
 
-    let (w, h) = {
+    let (w, h, scale, off_x, off_y) = {
         let f = fb();
-        (f.width, f.height)
+        unsafe { (f.width, f.height, SCALE, OFF_X, OFF_Y) }
     };
+
+    let cell_w = GLYPH_W * scale;
+    let cell_h = GLYPH_H * scale;
+    let base_x = off_x + col * cell_w;
+    let base_y = off_y + row * cell_h;
 
     for gy in 0..GLYPH_H {
         let bits = glyph[gy];
-        let py = row * GLYPH_H + gy;
-
-        if py >= h {
-            continue;
-        }
 
         for gx in 0..GLYPH_W {
-            let px = col * GLYPH_W + gx;
+            let lit = bits & (0x80 >> gx) != 0;
+            let px0 = base_x + gx * scale;
+            let py0 = base_y + gy * scale;
 
-            if px >= w {
+            if px0 >= w || py0 >= h {
                 continue;
             }
 
-            let lit = bits & (0x80 >> gx) != 0;
-
-            if lit {
-                fb().set(px, py, rgb(fg.0, fg.1, fg.2));
-            } else if transparent_bg {
-                // Restore the pixel underneath from the background snapshot.
-                unsafe {
-                    let c = CLEAN[py * fb().width + px];
-                    fb().set(px, py, c);
+            for sy in 0..scale {
+                let py = py0 + sy;
+                if py >= h {
+                    break;
                 }
-            } else {
-                fb().set(px, py, rgb(bg.0, bg.1, bg.2));
+
+                for sx in 0..scale {
+                    let px = px0 + sx;
+                    if px >= w {
+                        break;
+                    }
+
+                    if lit {
+                        fb().set(px, py, rgb(fg.0, fg.1, fg.2));
+                    } else if transparent_bg {
+                        // Restore the pixel underneath from the background snapshot.
+                        unsafe {
+                            let c = CLEAN[py * fb().width + px];
+                            fb().set(px, py, c);
+                        }
+                    } else {
+                        fb().set(px, py, rgb(bg.0, bg.1, bg.2));
+                    }
+                }
             }
         }
     }

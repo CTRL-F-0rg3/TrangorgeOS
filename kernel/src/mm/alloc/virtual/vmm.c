@@ -319,6 +319,72 @@ bool vmm_map_device(uint64_t phys, size_t len, uint64_t *out_virt)
     return true;
 }
 
+/* Framebuffer mapping: write-back cached. The emulated VGA card exposes its
+ * VRAM as a plain (prefetchable) RAM BAR, so a cacheable mapping is both
+ * correct and dramatically faster than the uncached device mapping used for
+ * true MMIO regions. */
+bool vmm_map_framebuffer(uint64_t phys, size_t len, uint64_t *out_virt)
+{
+    if (!vmm_initialized || out_virt == NULL || len == 0) {
+        return false;
+    }
+
+    if (!arch_is_page_aligned(phys) || !arch_is_page_aligned(len)) {
+        return false;
+    }
+
+    size_t pages = (size_t)(len / ARCH_PAGE_SIZE);
+
+    if (pages == 0) {
+        return false;
+    }
+
+    uint64_t pte = vmm_flags_to_pte(VMM_FLAG_WRITE | VMM_FLAG_NX);
+
+    vmm_lock();
+
+    size_t start = bitmap_alloc_range(&vmm_bitmap, pages, 1);
+
+    if (start == BITMAP_INVALID) {
+        vmm_unlock();
+        return false;
+    }
+
+    size_t mapped = 0;
+    bool ok = true;
+
+    for (size_t i = 0; i < pages; i++) {
+        uint64_t virt = vmm_page_virt(start + i);
+        uint64_t frame_phys = phys + (uint64_t)i * ARCH_PAGE_SIZE;
+
+        if (!paging_map_page(virt, frame_phys, pte)) {
+            ok = false;
+            break;
+        }
+
+        mapped++;
+    }
+
+    if (!ok) {
+        for (size_t i = 0; i < mapped; i++) {
+            paging_unmap_page(vmm_page_virt(start + i));
+        }
+
+        bitmap_free_range(&vmm_bitmap, start, pages);
+        vmm_unlock();
+        return false;
+    }
+
+    vmm_allocated_pages += pages;
+
+    vmm_unlock();
+
+    *out_virt = vmm_page_virt(start);
+
+    return true;
+}
+
+
 bool vmm_free(uint64_t virt, size_t bytes)
 {
     if (!vmm_initialized) {

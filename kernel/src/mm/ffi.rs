@@ -57,6 +57,7 @@ extern "C" {
     pub fn vmm_alloc(bytes: usize, flags: u32, out: *mut u64) -> bool;
     pub fn vmm_free(virt: u64, bytes: usize) -> bool;
     pub fn vmm_map_device(phys: u64, len: usize, out: *mut u64) -> bool;
+    pub fn vmm_map_framebuffer(phys: u64, len: usize, out: *mut u64) -> bool;
     pub fn vmm_unmap_device(virt: u64, len: usize) -> bool;
 
     /* heap api */

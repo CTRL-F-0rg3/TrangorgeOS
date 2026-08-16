@@ -21,6 +21,7 @@ bool vmm_ready(void);
 bool vmm_alloc(size_t bytes, uint32_t flags, uint64_t *out_virt);
 bool vmm_alloc_aligned(size_t bytes, size_t align, uint32_t flags, uint64_t *out_virt);
 bool vmm_map_device(uint64_t phys, size_t len, uint64_t *out_virt);
+bool vmm_map_framebuffer(uint64_t phys, size_t len, uint64_t *out_virt);
 
 bool vmm_free(uint64_t virt, size_t bytes);
 bool vmm_unmap_device(uint64_t virt, size_t len);
