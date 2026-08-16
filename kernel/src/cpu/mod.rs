@@ -57,19 +57,25 @@ fn delay_ms(ms: u64) {
 }
 
 /// Buduje i ładuje na bieżącym rdzeniu własny GDT + TSS (z własnym stosem IST
-/// dla double fault). Struktury są wyciekane (żyją do końca pracy jądra).
+/// dla double fault). Ustawia też DS/ES/SS na ważny segment danych — AP wchodzi
+/// z trampoliny z SS=0x20 (selektor trampoliny), który nie istnieje w nowym GDT,
+/// przez co `iretq` w obsłudze przerwania robi #GP -> double fault.
 fn load_cpu_gdt(ist_stack_top: VirtAddr) {
     let tss: &'static mut TaskStateSegment = Box::leak(Box::new(TaskStateSegment::new()));
     tss.interrupt_stack_table[crate::gdt::DOUBLE_FAULT_IST_INDEX as usize] = ist_stack_top;
 
     let gdt: &'static mut GlobalDescriptorTable = Box::leak(Box::new(GlobalDescriptorTable::new()));
     let code_selector = gdt.append(Descriptor::kernel_code_segment());
+    let data_selector = gdt.append(Descriptor::kernel_data_segment());
     let tss_selector = gdt.append(Descriptor::tss_segment(tss));
 
     gdt.load();
     unsafe {
-        use x86_64::instructions::segmentation::{CS, Segment};
+        use x86_64::instructions::segmentation::{CS, DS, ES, SS, Segment};
         CS::set_reg(code_selector);
+        DS::set_reg(data_selector);
+        ES::set_reg(data_selector);
+        SS::set_reg(data_selector);
         x86_64::instructions::tables::load_tss(tss_selector);
     }
 }
@@ -85,8 +91,8 @@ extern "C" fn ap_entry(cpu_index: u64) -> ! {
     // Własny GDT + TSS (własny stos IST).
     load_cpu_gdt(VirtAddr::new(stack_top_of(i)));
 
-    // Własny Local APIC.
-    lapic::enable();
+    // Własny Local APIC (SVR, LINT zamaskowane — bez PIC/NMI na AP).
+    lapic::enable_ap();
 
     // IDT jest współdzielona — załaduj ją na tym rdzeniu.
     crate::interrupts::init_idt();
@@ -150,7 +156,7 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         return;
     }
     println!("[cpu] lapic init ok (x2apic={})", lapic::is_x2apic());
-    lapic::enable();
+    lapic::enable_bsp();
     println!("[cpu] lapic enabled, id={}", lapic::id());
 
     let bsp_id = lapic::id();
@@ -170,21 +176,22 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     );
     println!("[cpu] trampoline installed, {} AP(s) to start", aps.len());
 
-    // Startuj AP sekwencyjnie (INIT-SIPI-SIPI), czekając na każdy.
+    // INIT jest zawsze broadcast (all-excl-self) — wyślij raz, resetując wszystkie
+    // AP, zanim którykolwiek zacznie działać. Potem budzimy każdy AP celowanym SIPI.
+    println!("[cpu] init ipi (broadcast)");
+    lapic::send_init_ipi();
+    delay_ms(20);
+
+    // Startuj AP sekwencyjnie (SIPI-SIPI), czekając na każdy.
     for (idx, &apic_id) in aps.iter().enumerate() {
         let cpu_index = idx + 1;
         EXPECTED_APIC_IDS[cpu_index].store(apic_id, Ordering::SeqCst);
         trampoline::set_stack_and_arg(stack_top_of(cpu_index), cpu_index as u64);
 
-        println!("[cpu] init ipi -> apic {}", apic_id);
-        lapic::send_init_ipi();
-        println!("[cpu] init ipi sent");
-        delay_ms(20);
         println!("[cpu] sipi -> apic {}", apic_id);
         lapic::send_startup_ipi(apic_id, (trampoline::TRAMPOLINE_BASE >> 12) as u8);
         delay_ms(1);
         lapic::send_startup_ipi(apic_id, (trampoline::TRAMPOLINE_BASE >> 12) as u8);
-        println!("[cpu] sipi sent, waiting for start");
 
         if wait_for(&AP_STARTED[cpu_index], 1000) {
             println!("[cpu] AP #{} (apic id {}) started", cpu_index, apic_id);

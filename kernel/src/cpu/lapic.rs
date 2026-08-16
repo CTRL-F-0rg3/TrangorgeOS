@@ -14,6 +14,7 @@ const REG_EOI: u32 = 0x0B0;
 const REG_ICR0: u32 = 0x300;
 const REG_ICR1: u32 = 0x310;
 const REG_LVT_LINT0: u32 = 0x350;
+const REG_LVT_LINT1: u32 = 0x360;
 
 const SPURIOUS_ENABLE: u32 = 1 << 8; // APIC Software Enable
 
@@ -87,11 +88,20 @@ pub fn version() -> u32 {
     read(REG_VERSION)
 }
 
-/// Włącza Local APIC (SVR) i konfiguruje LINT0 jako ExtINT (virtual wire),
-/// żeby 8259 PIC dalej dostarczał IRQ na BSP.
-pub fn enable() {
+/// Włącza Local APIC BSP: SVR + LINT0 jako ExtINT (virtual wire), żeby 8259
+/// PIC dalej dostarczał IRQ (timer/klawiatura) na BSP.
+pub fn enable_bsp() {
     write(REG_SVR, SPURIOUS_ENABLE | 0xFF);
     write(REG_LVT_LINT0, 0x700); // ExtINT, unmasked
+}
+
+/// Włącza Local APIC AP: SVR + maskowanie LINT0/LINT1. AP nie ma podpiętego
+/// PIC/NMI, a odkryty LINT0 (ExtINT) kazałby mu obsługiwać timer 8259 i robić
+/// double-fault. IPI (fixed delivery) nadal docierają — nie idą przez LINT.
+pub fn enable_ap() {
+    write(REG_SVR, SPURIOUS_ENABLE | 0xFF);
+    write(REG_LVT_LINT0, 1 << 16); // mask
+    write(REG_LVT_LINT1, 1 << 16); // mask
 }
 
 /// Sygnalizacja końca przerwania (EOI).
@@ -112,7 +122,10 @@ pub fn send_ipi(icr: u32, dest_apic_id: u32) {
     }
 }
 
-/// INIT IPI do wszystkich AP (assert + deassert).
+/// INIT IPI (assert + deassert). Zgodnie z Intel SDM INIT jest ZAWSZE
+/// broadcastowany do wszystkich procesorów poza nadawcą — pole destination jest
+/// ignorowane. Wysyłamy go raz, przed startem AP, a potem budzimy każdy AP
+/// celowanym SIPI (SIPI potrafi adresować konkretny APIC ID).
 pub fn send_init_ipi() {
     // delivery mode = 101 (INIT), level = 1 (assert), shorthand = all-excl-self
     send_ipi((5 << 8) | (1 << 14) | (1 << 15) | (3 << 18), 0);
