@@ -1,5 +1,5 @@
 use crate::nic::protocols::{EthernetHeader, MacAddress};
-
+use crate::nic::error::NetworkError;
 pub const MIN_FRAME_LEN: usize = 60;
 pub const MAX_FRAME_LEN: usize = 1518;
 pub const HEADER_LEN: usize = core::mem::size_of::<EthernetHeader>();
@@ -60,4 +60,10 @@ pub fn build_header(
         core::ptr::write_unaligned(buffer.as_mut_ptr() as *mut EthernetHeader, header);
     }
     Some(HEADER_LEN)
+}
+pub fn validate_frame_len(len: usize) -> Result<(), NetworkError> {
+    if len < MIN_FRAME_LEN || len > MAX_FRAME_LEN {
+        return Err(NetworkError::InvalidFrameLength);
+    }
+    Ok(())
 }

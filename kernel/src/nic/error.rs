@@ -6,4 +6,5 @@ pub enum NetworkError {
     ReceiveFailed,
     BufferUnavailable,
     Unsupported,
+    InvalidFrameLength,
 }

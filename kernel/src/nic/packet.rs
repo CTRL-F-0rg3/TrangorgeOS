@@ -1,5 +1,6 @@
 use crate::nic::protocols::*;
-
+use crate::nic::error::NetworkError;
+use crate::nic::ethernet;
 fn calculate_ipv4_checksum(header: &[u8]) -> u16 {
     let mut sum: u32 = 0;
     for chunk in header.chunks(2) {
@@ -30,8 +31,8 @@ crate::test_module!({
     };
 
     let len = match builder.build(&mut buffer) {
-        Ok(len) => len,
-        Err(()) => return Err("UDP packet builder failed on a valid buffer"),
+    Ok(len) => len,
+    Err(_) => return Err("UDP packet builder failed on a valid buffer"),
     };
 
     let expected_len = core::mem::size_of::<EthernetHeader>()
@@ -63,13 +64,15 @@ pub struct UdpPacketBuilder<'a> {
 }
 
 impl<'a> UdpPacketBuilder<'a> {
-    pub fn build(self, buffer: &mut [u8]) -> Result<usize, ()> {
+    pub fn build(self, buffer: &mut [u8]) -> Result<usize, NetworkError> {
         let udp_len = (core::mem::size_of::<UdpHeader>() + self.payload.len()) as u16;
         let ip_len = (core::mem::size_of::<Ipv4Header>() as u16) + udp_len;
         let total_len = core::mem::size_of::<EthernetHeader>() + (ip_len as usize);
 
+        ethernet::validate_frame_len(total_len);
+
         if buffer.len() < total_len {
-            return Err(());
+            return Err(NetworkError::BufferUnavailable);
         }
 
         let eth = EthernetHeader {
@@ -107,6 +110,7 @@ impl<'a> UdpPacketBuilder<'a> {
             length: udp_len.to_be(),
             checksum: 0,
         };
+        
 
         let eth_size = core::mem::size_of::<EthernetHeader>();
         let ip_size = core::mem::size_of::<Ipv4Header>();
