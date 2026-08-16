@@ -13,6 +13,7 @@ mod gfx;
 mod interrupts;
 mod mm;
 mod nic;
+mod cpu;
 mod pci;
 mod serial;
 mod testing;
@@ -79,6 +80,10 @@ static TESTS: &[Test] = &[
         func: drivers::usb::self_test,
     },
     Test {
+        module: "cpu",
+        func: cpu::self_test,
+    },
+    Test {
         module: "gfx",
         func: gfx::self_test,
     },
@@ -123,6 +128,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     pci::init();
     fs::init();
+    cpu::init(boot_info);
     testing::run_all(TESTS);
     println!("Welcome in my Galaxy{}", "!");
 

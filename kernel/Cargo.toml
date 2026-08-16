@@ -22,4 +22,4 @@ features = ["spin_no_std"]
 
 [package.metadata.bootimage]
 build-command = ["build"]
-run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}", "-device", "qemu-xhci", "-display", "gtk"]
+run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}", "-device", "qemu-xhci", "-smp", "4", "-display", "gtk"]

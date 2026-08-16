@@ -9,6 +9,10 @@ use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, Pag
 pub static BREAKPOINT_HITS: AtomicU64 = AtomicU64::new(0);
 pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
 pub static KEYBOARD_HITS: AtomicU64 = AtomicU64::new(0);
+pub static IPI_HITS: AtomicU64 = AtomicU64::new(0);
+
+/// Wektor IPI między rdzeniami (fixed delivery przez Local APIC).
+pub const IPI_VECTOR: u8 = 0x30;
 
 crate::test_module!({
     let hits_before = BREAKPOINT_HITS.load(Ordering::SeqCst);
@@ -62,6 +66,7 @@ lazy_static! {
         idt.page_fault.set_handler_fn(page_fault_handler);
         idt[InterruptIndex::Timer.as_u8()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.as_u8()].set_handler_fn(keyboard_interrupt_handler);
+        idt[IPI_VECTOR].set_handler_fn(ipi_handler);
         idt
     };
 }
@@ -116,4 +121,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
+}
+
+extern "x86-interrupt" fn ipi_handler(_stack_frame: InterruptStackFrame) {
+    IPI_HITS.fetch_add(1, Ordering::SeqCst);
+    crate::cpu::lapic::eoi();
 }

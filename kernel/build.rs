@@ -19,19 +19,19 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
 fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR");
-    let mm_dir = Path::new(&manifest_dir).join("src").join("mm");
+    let src_dir = Path::new(&manifest_dir).join("src");
 
-    println!("cargo:rerun-if-changed=src/mm");
+    println!("cargo:rerun-if-changed=src");
 
     let mut c_files = Vec::new();
-    collect_c_files(&mm_dir, &mut c_files);
+    collect_c_files(&src_dir, &mut c_files);
     c_files.sort();
 
     let target = "x86_64-unknown-none-elf";
 
     let mut objs = Vec::new();
     for c_file in &c_files {
-        let rel = c_file.strip_prefix(&mm_dir).expect("strip prefix");
+        let rel = c_file.strip_prefix(&src_dir).expect("strip prefix");
         let obj_name = rel.to_string_lossy().replace('/', "_") + ".o";
         let obj = Path::new(&out_dir).join(obj_name);
 
@@ -51,7 +51,7 @@ fn main() {
                 "-O2",
             ])
             .arg("-I")
-            .arg(&mm_dir)
+            .arg(&src_dir)
             .arg("-c")
             .arg(c_file)
             .arg("-o")
