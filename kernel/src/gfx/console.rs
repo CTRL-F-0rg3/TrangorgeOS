@@ -39,6 +39,14 @@ static mut ROWS: usize = 0;
 static mut CELL_CACHE: [(u8, u8); MAX_COLS * MAX_ROWS] = [(0, 0); MAX_COLS * MAX_ROWS];
 static mut CACHE_VALID: bool = false;
 
+// ŁATKA, nie fix: coś w vga_buffer (poza tymi plikami) serwuje znaki w
+// linii w odwrotnej kolejności względem widocznej szerokości konsoli.
+// Zamiast czekać na naprawę u źródła, czytamy kolumnę `col` jako
+// `cols-1-col`. Jeśli/gdy prawdziwa przyczyna zostanie znaleziona i
+// naprawiona w vga_buffer.rs, to trzeba wyłączyć (ustawić na false),
+// inaczej tekst znów będzie odwrócony, tylko w drugą stronę.
+const REVERSE_TEXT_COLS: bool = true;
+
 fn fb() -> &'static mut Framebuffer {
     unsafe { FB.as_mut().unwrap() }
 }
@@ -71,6 +79,21 @@ fn set_palette_rgb332() {
             data.write(g as u8);
             data.write(b as u8);
         }
+    }
+}
+
+// Kursor sprzętowy trybu tekstowego (rejestr CRTC 0x0A, bit 5 = disable)
+// zostaje "żywy" po przełączeniu w tryb graficzny, jeśli nikt go jawnie
+// nie wyłączy — stąd migający/kwadratowy artefakt na środku ekranu.
+fn disable_text_cursor() {
+    use x86_64::instructions::port::Port;
+
+    let mut idx = Port::<u8>::new(0x3D4);
+    let mut data = Port::<u8>::new(0x3D5);
+
+    unsafe {
+        idx.write(0x0Au8);
+        data.write(0x20u8);
     }
 }
 
@@ -122,15 +145,27 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
     };
 
     set_palette_rgb332();
+    disable_text_cursor();
 
     // Framebuffer VGA 13h pod 0xA0000 jest natywnie top-down (wiersz 0 =
     // góra ekranu). Wymuszamy FLIP=false tutaj, bo jeśli coś gdzie indziej
     // w kernelu ustawiło ten globalny flag na true (np. zaszłość po innym
     // trybie), cały ekran — tło i tekst — renderuje się odwrócony w pionie.
-    // Jeśli kiedyś dojdzie tryb z naprawdę bottom-up framebufferem, to
-    // trzeba tu przekazać flagę jako parametr zamiast nadpisywać na sztywno.
+    //
+    // FLIP_X=true to próba na podstawie objawu z ostatniego zrzutu ekranu
+    // (tekst poprawny w pionie, lustrzany w poziomie). JEŚLI PO TEJ ZMIANIE
+    // dalej jest źle (albo zrobi się gorzej — np. galaktyka wygląda ok, ale
+    // tekst nadal lustrzany, lub litery są teraz w dobrą stronę ale kolejność
+    // słów/kolumn w linii jest zła), ustaw to z powrotem na false i wyślij
+    // mi zawartość vga_buffer::text_cell() — wtedy odbicie siedzi w źródle
+    // danych tekstu, nie w warstwie graficznej, i trzeba naprawić tam.
+    //
+    // Jeśli kiedyś dojdzie tryb z naprawdę innym framebufferem (np. VESA
+    // LFB), obie flagi lepiej przekazywać jako parametr zamiast nadpisywać
+    // na sztywno tutaj.
     unsafe {
         super::framebuffer::FLIP = false;
+        super::framebuffer::FLIP_X = true;
     }
 
     unsafe {
@@ -221,7 +256,8 @@ pub fn refresh() {
 
     for row in 0..rows {
         for col in 0..cols {
-            let (ch, attr) = crate::vga_buffer::text_cell(row, col);
+            let src_col = if REVERSE_TEXT_COLS { cols - 1 - col } else { col };
+            let (ch, attr) = crate::vga_buffer::text_cell(row, src_col);
             let idx = row * MAX_COLS + col;
 
             let changed = unsafe { CELL_CACHE[idx] != (ch, attr) };
@@ -267,9 +303,9 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
         FONT8X8[('?' as u8 - 0x20) as usize]
     };
 
-    let (w, h, s) = {
+    let (w, h) = {
         let f = fb();
-        (f.width, f.height, f.stride)
+        (f.width, f.height)
     };
 
     for gy in 0..GLYPH_H {
@@ -295,8 +331,10 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
                 // Kopiujemy surowy bajt indeksu palety wprost z CLEAN —
                 // taniej niż get()+set() (bez konwersji RGB w obie strony)
                 // i dokładnie odtwarza to, co tam narysowała galaxy::render.
+                // offset() uwzględnia FLIP/FLIP_X, więc to zostaje spójne
+                // niezależnie od orientacji framebuffera.
                 unsafe {
-                    let off = py * s + px;
+                    let off = fb().offset(px, py);
                     let idx_byte = *CLEAN.add(off);
                     *fb().ptr.add(off) = idx_byte;
                 }

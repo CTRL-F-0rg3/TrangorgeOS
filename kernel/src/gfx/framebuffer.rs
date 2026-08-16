@@ -1,5 +1,10 @@
 pub static mut FLIP: bool = false;
 
+// Analogicznie do FLIP (oś Y): jeśli tekst/tło wychodzi lustrzanie w
+// poziomie, włącz to. Domyślnie false — patrz komentarz w console::init()
+// o tym, jak to przetestować i co zrobić jeśli to nie pomoże.
+pub static mut FLIP_X: bool = false;
+
 // Framebuffer w trybie VGA 13h (8 bpp). Publiczne API działa na RGB888
 // (u32); konwersja do 8-bitowego indeksu RGB332 odbywa się przy set/get.
 
@@ -28,8 +33,14 @@ impl Framebuffer {
         }
     }
 
+    fn rx(&self, x: usize) -> usize {
+        unsafe {
+            if FLIP_X { self.width - 1 - x } else { x }
+        }
+    }
+
     pub fn get(&self, x: usize, y: usize) -> u32 {
-        let idx = unsafe { *self.ptr.add(self.ry(y) * self.stride + x) };
+        let idx = unsafe { *self.ptr.add(self.offset(x, y)) };
         let (r, g, b) = from_index(idx);
 
         0xFF000000 | (r << 16) | (g << 8) | b
@@ -40,7 +51,16 @@ impl Framebuffer {
         let g = (c >> 8) & 0xFF;
         let b = c & 0xFF;
 
-        unsafe { *self.ptr.add(self.ry(y) * self.stride + x) = to_index(r, g, b) };
+        let off = self.offset(x, y);
+        unsafe { *self.ptr.add(off) = to_index(r, g, b) };
+    }
+
+    /// Fizyczny offset bajtu w pamięci framebuffera dla logicznych (x, y),
+    /// z uwzględnieniem FLIP/FLIP_X. Publiczne, żeby console.rs mogło
+    /// bezpiecznie kopiować surowe bajty (np. z bufora CLEAN) bez
+    /// duplikowania tej logiki i bez ryzyka rozjazdu przy zmianie flag.
+    pub fn offset(&self, x: usize, y: usize) -> usize {
+        self.ry(y) * self.stride + self.rx(x)
     }
 
     pub fn add(&mut self, x: usize, y: usize, r: u32, g: u32, b: u32) {

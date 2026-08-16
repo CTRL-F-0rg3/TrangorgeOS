@@ -37,14 +37,17 @@ struct Blob {
     inten: i64,
 }
 
+// Bardziej nasycona, kontrastowa paleta niż poprzednio — magenta/turkus/
+// pomarańcz jako ciepły kontrapunkt do reszty zimnych barw, żeby mgławica
+// nie wyglądała płasko-fioletowo, tylko miała wyraźne strefy koloru.
 const NEBULA_COLORS: [(i64, i64, i64); 7] = [
-    (110, 40, 160),
-    (40, 70, 170),
-    (30, 110, 130),
-    (150, 40, 100),
-    (25, 40, 120),
-    (80, 30, 140),
-    (40, 120, 150),
+    (168, 32, 176),  // magenta
+    (32, 88, 214),   // głęboki niebieski
+    (24, 168, 176),  // turkus
+    (214, 64, 96),   // róż/czerwień
+    (48, 32, 150),   // indygo
+    (128, 24, 190),  // fiolet
+    (232, 128, 40),  // pomarańcz (ciepły kontrapunkt)
 ];
 
 fn plot_soft(fb: &mut Framebuffer, x: i64, y: i64, t: u32, r: u32, g: u32, b: u32) {
@@ -63,6 +66,7 @@ fn plot_soft(fb: &mut Framebuffer, x: i64, y: i64, t: u32, r: u32, g: u32, b: u3
 pub fn render(fb: &mut Framebuffer, t: u32) {
     let m = t.min(256) as i64;
     let h = fb.height as i64;
+    let w = fb.width as i64;
 
     let mut rng = Rng(0x5EED_C0DE);
 
@@ -87,9 +91,15 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
             cr: c.0,
             cg: c.1,
             cb: c.2,
-            inten: 60 + rng.range(70) as i64,
+            inten: 70 + rng.range(80) as i64,
         };
     }
+
+    let cx = w / 2;
+    let cy = h / 2;
+    // Promień do winiety (dla lekkiego przyciemnienia krawędzi, żeby
+    // środek — z jądrem galaktyki — wybijał się głębią).
+    let vign_r2 = (cx * cx + cy * cy).max(1);
 
     for y in 0..fb.height {
         for x in 0..fb.width {
@@ -118,6 +128,17 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
                 ab += c * b.cb >> 8;
             }
 
+            // Winieta: lekkie przyciemnienie proporcjonalne do odległości
+            // od środka, żeby krawędzie ekranu nie konkurowały z jądrem.
+            let dvx = x as i64 - cx;
+            let dvy = y as i64 - cy;
+            let dv2 = dvx * dvx + dvy * dvy;
+            let vign = (256 - (dv2 * 96 / vign_r2).min(96)).max(160);
+
+            ar = ar * vign >> 8;
+            ag = ag * vign >> 8;
+            ab = ab * vign >> 8;
+
             let r = (ar * m >> 8).min(255) as u32;
             let g = (ag * m >> 8).min(255) as u32;
             let bch = (ab * m >> 8).min(255) as u32;
@@ -126,8 +147,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    let cx = fb.width as i64 / 2;
-    let cy = fb.height as i64 / 2;
     let core_r = (fb.height.min(fb.width) as i64) / 5;
 
     let mut y = -core_r;
@@ -138,14 +157,17 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
             let r2 = core_r * core_r;
             let i = (255 * r2 / (d2 + r2 / 3)).min(255) as u32;
 
+            // Jądro cieplejsze niż poprzednio (bardziej złociste niż białe).
             plot_soft(fb, cx + x, cy + y, t,
-                      i, i * 220 / 255, i * 160 / 255);
+                      i, i * 200 / 255, i * 120 / 255);
 
             x += 2;
         }
         y += 2;
     }
 
+    // Dwa ramiona spiralne jak wcześniej, ale gęstsze (więcej ziaren na
+    // krok), żeby spirala była wyraźniej widoczna na tle mgławicy.
     for arm in 0..2u64 {
         let mut px: i64 = 1 << 16;
         let mut py: i64 = 0;
@@ -169,15 +191,15 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
             let (r, g, b) = if step < 60 {
                 (255u32, 200, 150)
             } else {
-                (90, 140, 255)
+                (110, 160, 255)
             };
 
             let mut srng = Rng(0x9E3779B97F4A7C15 ^ step as u64 ^ arm);
 
-            for _ in 0..10 {
+            for _ in 0..14 {
                 let ox = srng.range(7) as i64 - 3;
                 let oy = srng.range(7) as i64 - 3;
-                let dim = 40 + srng.range(120) as u32;
+                let dim = 40 + srng.range(140) as u32;
 
                 plot_soft(fb, sx + ox, sy + oy, t,
                           r * dim / 255, g * dim / 255, b * dim / 255);
