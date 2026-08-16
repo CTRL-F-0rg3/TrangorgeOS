@@ -1,5 +1,5 @@
 use crate::gdt;
-use crate::{print, println};
+use crate::println;
 use core::sync::atomic::{AtomicU64, Ordering};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -115,7 +115,8 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
 
     let mut port = Port::new(0x60);
     let scancode: u8 = unsafe { port.read() };
-    print!("{:x} ", scancode);
+
+    crate::terminal::push_scancode(scancode);
 
     unsafe {
         PICS.lock()

@@ -180,6 +180,45 @@ impl Writer {
     pub fn set_color(&mut self, foreground: Color) {
         self.color_code = ColorCode::new(foreground, Color::Black);
     }
+
+    /// Bieżąca kolumna (dla terminala — edytor linii).
+    pub fn column(&self) -> usize {
+        self.column_position
+    }
+
+    /// Ustawia kolumnę w bieżącym (ostatnim) wierszu.
+    pub fn set_column(&mut self, col: usize) {
+        self.column_position = col.min(BUFFER_WIDTH);
+    }
+
+    /// Czyści od bieżącej kolumny do końca wiersza.
+    pub fn clear_to_end(&mut self) {
+        let row = BUFFER_HEIGHT - 1;
+        let col = self.column_position;
+        let color_code = self.color_code;
+        for c in col..BUFFER_WIDTH {
+            self.buffer.chars[row][c] = ScreenChar {
+                ascii_character: b' ',
+                color_code,
+            };
+        }
+    }
+
+    /// Czyści cały ekran (wszystkie wiersze).
+    pub fn clear_screen(&mut self) {
+        for row in 0..BUFFER_HEIGHT {
+            self.clear_row(row);
+        }
+        self.column_position = 0;
+    }
+
+    /// Zapisuje bajt z jawnym kolorem (bez zmiany stanu writer'a).
+    pub fn write_byte_colored(&mut self, byte: u8, fg: Color) {
+        let prev = self.color_code;
+        self.color_code = ColorCode::new(fg, Color::Black);
+        self.write_byte(byte);
+        self.color_code = prev;
+    }
 }
 
 #[macro_export]

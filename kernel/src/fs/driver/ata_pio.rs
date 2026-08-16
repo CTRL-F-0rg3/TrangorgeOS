@@ -23,19 +23,51 @@ const ATA_CMD_READ28: u8 = 0x20;
 const ATA_CMD_WRITE28: u8 = 0x30;
 const ATA_CMD_FLUSH: u8 = 0xE7;
 
-static PRESENT: AtomicBool = AtomicBool::new(false);
-static SECTOR_COUNT: AtomicU64 = AtomicU64::new(0);
-
 pub struct AtaPio {
     base: u16,
     ctrl: u16,
+    slave: bool,
+    present: AtomicBool,
+    sectors: AtomicU64,
 }
 
-pub static ATA0: AtaPio = AtaPio::new(0x1F0, 0x3F6);
+pub static ATA0: AtaPio = AtaPio::master(0x1F0, 0x3F6);
+pub static ATA1: AtaPio = AtaPio::slave(0x1F0, 0x3F6);
 
 impl AtaPio {
-    pub const fn new(base: u16, ctrl: u16) -> Self {
-        Self { base, ctrl }
+    pub const fn master(base: u16, ctrl: u16) -> Self {
+        Self {
+            base,
+            ctrl,
+            slave: false,
+            present: AtomicBool::new(false),
+            sectors: AtomicU64::new(0),
+        }
+    }
+
+    pub const fn slave(base: u16, ctrl: u16) -> Self {
+        Self {
+            base,
+            ctrl,
+            slave: true,
+            present: AtomicBool::new(false),
+            sectors: AtomicU64::new(0),
+        }
+    }
+
+    /// Bajt rejestru drive dla LBA28 (bit 6 = LBA, bit 4 = slave).
+    fn drive_lba(&self) -> u8 {
+        if self.slave { 0xF0 } else { 0xE0 }
+    }
+
+    /// Bajt rejestru drive dla IDENTIFY.
+    fn drive_identify(&self) -> u8 {
+        if self.slave { 0xB0 } else { 0xA0 }
+    }
+
+    /// Czy dysk został wykryty przez IDENTIFY.
+    pub fn is_present(&self) -> bool {
+        self.present.load(Ordering::Relaxed)
     }
 
     /// Inhibit the drive's INTRQ (IRQ14/IRQ15) line. We poll the status
@@ -90,7 +122,7 @@ impl AtaPio {
 
     fn setup_lba28(&self, lba: u32, count: u8, cmd: u8) -> Result<(), DriverError> {
         unsafe {
-            port::outb(self.base + ATA_REG_DRIVE, 0xE0 | ((lba >> 24) & 0x0F) as u8);
+            port::outb(self.base + ATA_REG_DRIVE, self.drive_lba() | ((lba >> 24) & 0x0F) as u8);
             port::outb(self.base + ATA_REG_SECT, count);
             port::outb(self.base + ATA_REG_LBA_LO, (lba & 0xFF) as u8);
             port::outb(self.base + ATA_REG_LBA_MID, ((lba >> 8) & 0xFF) as u8);
@@ -105,7 +137,7 @@ impl AtaPio {
         let _g = IrqGuard::lock();
 
         unsafe {
-            port::outb(self.base + ATA_REG_DRIVE, 0xA0);
+            port::outb(self.base + ATA_REG_DRIVE, self.drive_identify());
             port::outb(self.base + ATA_REG_SECT, 0);
             port::outb(self.base + ATA_REG_LBA_LO, 0);
             port::outb(self.base + ATA_REG_LBA_MID, 0);
@@ -169,7 +201,7 @@ impl AtaPio {
 
 impl BlockDevice for AtaPio {
     fn name(&self) -> &'static str {
-        "ata0"
+        if self.slave { "ata1" } else { "ata0" }
     }
 
     fn block_size(&self) -> usize {
@@ -177,11 +209,11 @@ impl BlockDevice for AtaPio {
     }
 
     fn block_count(&self) -> u64 {
-        SECTOR_COUNT.load(Ordering::Relaxed)
+        self.sectors.load(Ordering::Relaxed)
     }
 
     fn read_block(&self, block: u64, buf: &mut [u8]) -> Result<(), DriverError> {
-        if !PRESENT.load(Ordering::Relaxed) {
+        if !self.present.load(Ordering::Relaxed) {
             return Err(DriverError::NoDevice);
         }
 
@@ -197,7 +229,7 @@ impl BlockDevice for AtaPio {
     }
 
     fn write_block(&self, block: u64, buf: &[u8]) -> Result<(), DriverError> {
-        if !PRESENT.load(Ordering::Relaxed) {
+        if !self.present.load(Ordering::Relaxed) {
             return Err(DriverError::NoDevice);
         }
 
@@ -213,18 +245,29 @@ impl BlockDevice for AtaPio {
     }
 }
 
-pub fn probe() -> bool {
-    ATA0.disable_irq();
-
-    match ATA0.identify() {
+fn probe_dev(dev: &AtaPio) -> bool {
+    match dev.identify() {
         Ok(id) => {
             let sectors = (id[60] as u64) | ((id[61] as u64) << 16);
-
-            SECTOR_COUNT.store(sectors, Ordering::Relaxed);
-            PRESENT.store(true, Ordering::Relaxed);
-
+            dev.sectors.store(sectors, Ordering::Relaxed);
+            dev.present.store(true, Ordering::Relaxed);
             true
         }
         Err(_) => false,
     }
+}
+
+/// Wykrywa master i slave; zwraca liczbę znalezionych dysków.
+pub fn probe() -> usize {
+    ATA0.disable_irq();
+    ATA1.disable_irq();
+
+    let mut found = 0;
+    if probe_dev(&ATA0) {
+        found += 1;
+    }
+    if probe_dev(&ATA1) {
+        found += 1;
+    }
+    found
 }

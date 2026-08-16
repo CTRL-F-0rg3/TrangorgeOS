@@ -16,6 +16,7 @@ mod nic;
 mod cpu;
 mod pci;
 mod serial;
+mod terminal;
 mod testing;
 mod vga_buffer;
 
@@ -134,5 +135,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     gfx::refresh();
 
-    hlt_loop();
+    terminal::init();
+    terminal::run();
 }

@@ -203,6 +203,11 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     println!("[cpu] SMP: BSP + {} AP(s)", aps.len());
 }
 
+/// Liczba wykrytych CPU (BSP + AP).
+pub fn total_cpus() -> u32 {
+    TOTAL_CPUS.load(Ordering::SeqCst)
+}
+
 pub fn self_test() -> TestResult {
     let total = TOTAL_CPUS.load(Ordering::SeqCst);
     if total <= 1 {

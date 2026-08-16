@@ -5,8 +5,12 @@ pub mod port;
 pub mod registry;
 
 pub fn init() {
-    if ata_pio::probe() {
+    ata_pio::probe();
+    if ata_pio::ATA0.is_present() {
         registry::register(&ata_pio::ATA0);
+    }
+    if ata_pio::ATA1.is_present() {
+        registry::register(&ata_pio::ATA1);
     }
 }
 
