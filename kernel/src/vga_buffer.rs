@@ -1,7 +1,6 @@
 use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use volatile::Volatile;
 
 crate::test_module!({
     let s = "roundtrip";
@@ -13,7 +12,7 @@ crate::test_module!({
         w.write_string(s);
     }
     for (i, expected_byte) in s.bytes().enumerate() {
-        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i].read();
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i];
         if screen_char.ascii_character != expected_byte {
             return Err("VGA buffer ascii readback mismatch");
         }
@@ -68,7 +67,7 @@ const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 struct Buffer {
-    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Writer {
@@ -90,10 +89,10 @@ impl Writer {
                 let col = self.column_position;
 
                 let color_code = self.color_code;
-                self.buffer.chars[row][col].write(ScreenChar {
+                self.buffer.chars[row][col] = ScreenChar {
                     ascii_character: byte,
                     color_code,
-                });
+                };
 
                 self.column_position += 1;
             }
@@ -103,8 +102,8 @@ impl Writer {
     fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
-                let character = self.buffer.chars[row][col].read();
-                self.buffer.chars[row - 1][col].write(character);
+                let character = self.buffer.chars[row][col];
+                self.buffer.chars[row - 1][col] = character;
             }
         }
         self.clear_row(BUFFER_HEIGHT - 1);
@@ -117,7 +116,7 @@ impl Writer {
             color_code: self.color_code,
         };
         for col in 0..BUFFER_WIDTH {
-            self.buffer.chars[row][col].write(blank);
+            self.buffer.chars[row][col] = blank;
         }
     }
 
@@ -138,12 +137,32 @@ impl fmt::Write for Writer {
     }
 }
 
+const BLANK: ScreenChar = ScreenChar {
+    ascii_character: b' ',
+    color_code: ColorCode(0x07),
+};
+
+// Programowy bufor tekstu (w RAM) — tryb graficzny 13h nie ma działającego
+// bufora tekstowego 0xB8000, więc tekst trzymamy tutaj, a gfx rysuje go
+// na framebufferze.
+static mut TEXT_BUFFER: Buffer = Buffer {
+    chars: [[BLANK; BUFFER_WIDTH]; BUFFER_HEIGHT],
+};
+
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+        buffer: unsafe { &mut TEXT_BUFFER },
     });
+}
+
+/// Zwraca (znak, atrybut koloru) komórki tekstowej — dla modułu gfx.
+pub fn text_cell(row: usize, col: usize) -> (u8, u8) {
+    unsafe {
+        let cell = TEXT_BUFFER.chars[row][col];
+        (cell.ascii_character, cell.color_code.0)
+    }
 }
 
 #[macro_export]
@@ -179,6 +198,7 @@ pub fn _print_colored(color: Color, args: fmt::Arguments) {
     writer.write_fmt(args).unwrap();
     writer.color_code = previous;
     crate::serial::print_args(args);
+    crate::gfx::refresh();
 }
 
 #[doc(hidden)]
@@ -186,4 +206,5 @@ pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
     crate::serial::print_args(args);
+    crate::gfx::refresh();
 }

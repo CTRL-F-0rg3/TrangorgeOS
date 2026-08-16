@@ -10,7 +10,7 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-bootloader = { version = "0.9", features = ["map_physical_memory"] }
+bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
 volatile = "0.2.6"
 spin = "0.5.2"
 x86_64 = "0.15"

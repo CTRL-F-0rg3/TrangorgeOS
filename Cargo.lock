@@ -19,6 +19,9 @@ name = "bootloader"
 version = "0.9.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e22d5a0b9e11dd5bee9d24a68885de6dc7ed367f897323b1c1286150fd469374"
+dependencies = [
+ "font8x8",
+]
 
 [[package]]
 name = "cc"
@@ -57,6 +60,12 @@ name = "find-msvc-tools"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d45db016d36b838f563236e9193d0ee6ce38f3f68b6c94e914b4929c96bbb890"
+
+[[package]]
+name = "font8x8"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
 
 [[package]]
 name = "kernel"

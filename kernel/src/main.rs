@@ -7,6 +7,7 @@ extern crate alloc;
 use bootloader::{BootInfo, entry_point};
 
 mod gdt;
+mod gfx;
 mod interrupts;
 mod mm;
 mod nic;
@@ -67,6 +68,10 @@ static TESTS: &[Test] = &[
         module: "mm::allocator",
         func: mm::self_test,
     },
+    Test {
+        module: "gfx",
+        func: gfx::self_test,
+    },
 ];
 
 pub fn init() {
@@ -98,6 +103,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         println!("[mm] allocator initialized OK");
     } else {
         println!("[mm] allocator initialization FAILED");
+    }
+
+    if gfx::init() {
+        println!("[gfx] framebuffer initialized OK");
+    } else {
+        println!("[gfx] framebuffer initialization FAILED");
     }
 
     pci::init();

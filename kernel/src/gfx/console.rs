@@ -3,9 +3,6 @@ use super::framebuffer::{Framebuffer, rgb};
 use super::galaxy;
 use crate::mm::ffi;
 
-const VGA_TEXT_PHYS: u64 = 0xB8000;
-const DIRECT_BASE: u64 = 0xFFFF888000000000;
-
 pub const COLS: usize = 80;
 pub const ROWS: usize = 25;
 
@@ -17,37 +14,67 @@ const VGA_PALETTE: [(u32, u32, u32); 16] = [
 ];
 
 static mut FB: Option<Framebuffer> = None;
-static mut CLEAN: *mut u32 = core::ptr::null_mut();
+static mut CLEAN: *mut u8 = core::ptr::null_mut();
+static mut READY: bool = false;
 
 fn fb() -> &'static mut Framebuffer {
     unsafe { FB.as_mut().unwrap() }
 }
 
+fn set_palette_rgb332() {
+    use x86_64::instructions::port::Port;
+
+    let mut idx_port = Port::<u8>::new(0x3C8);
+    let mut data_port = Port::<u8>::new(0x3C9);
+
+    unsafe {
+        idx_port.write(0);
+
+        for i in 0..256u32 {
+            let r = ((i >> 5) & 0x7) * 9;
+            let g = ((i >> 2) & 0x7) * 9;
+            let b = (i & 0x3) * 21;
+
+            data_port.write(r as u8);
+            data_port.write(g as u8);
+            data_port.write(b as u8);
+        }
+    }
+}
+
 fn delay() {
-    for _ in 0..300_000 {
+    for _ in 0..50_000 {
         core::hint::spin_loop();
     }
 }
 
 pub fn init(fb_phys: u64, width: u32, height: u32, stride: u32) -> bool {
-    let size = (stride * height * 4) as usize;
+    if unsafe { READY } {
+        return true;
+    }
+
+    // Zaokrąglamy do strony — vmm_map_device wymaga wyrównania, a okno
+    // pamięci VGA w trybie 13h to 64 KiB (0xA0000..0xB0000).
+    let size = ((stride * height) as usize + 0xFFF) & !0xFFF;
 
     let mut virt = 0u64;
 
-    if !unsafe { ffi::vmm_map_device(fb_phys, size as usize, &mut virt) } {
+    if !unsafe { ffi::vmm_map_device(fb_phys, size, &mut virt) } {
         return false;
     }
 
-    let fb = Framebuffer {
-        ptr: virt as *mut u32,
+    set_palette_rgb332();
+
+    let framebuffer = Framebuffer {
+        ptr: virt as *mut u8,
         width: width as usize,
         height: height as usize,
         stride: stride as usize,
     };
 
-    unsafe { FB = Some(fb) };
+    unsafe { FB = Some(framebuffer) };
 
-    for t in (0..=256).step_by(8) {
+    for t in (0..=256).step_by(32) {
         galaxy::render(fb(), t);
         delay();
     }
@@ -59,14 +86,16 @@ pub fn init(fb_phys: u64, width: u32, height: u32, stride: u32) -> bool {
     }
 
     unsafe {
-        CLEAN = buf as *mut u32;
+        CLEAN = buf as *mut u8;
 
         core::ptr::copy_nonoverlapping(
-            fb().ptr as *const u32,
+            fb().ptr as *const u8,
             CLEAN,
             fb().stride * fb().height,
         );
     }
+
+    unsafe { READY = true };
 
     refresh();
 
@@ -86,6 +115,10 @@ fn mix(base: u32, c: (u32, u32, u32), a: u32) -> u32 {
 }
 
 pub fn refresh() {
+    if !unsafe { READY } {
+        return;
+    }
+
     let (w, h, s) = {
         let f = fb();
         (f.width, f.height, f.stride)
@@ -95,14 +128,9 @@ pub fn refresh() {
         core::ptr::copy_nonoverlapping(CLEAN, fb().ptr, s * h);
     }
 
-    let vga = (DIRECT_BASE + VGA_TEXT_PHYS) as *const u16;
-
     for row in 0..ROWS {
         for col in 0..COLS {
-            let cell = unsafe { *vga.add(row * COLS + col) };
-
-            let ch = (cell & 0xFF) as u8;
-            let attr = (cell >> 8) as u8;
+            let (ch, attr) = crate::vga_buffer::text_cell(row, col);
 
             let fg = VGA_PALETTE[(attr & 0x0F) as usize];
             let bg = VGA_PALETTE[(attr >> 4) as usize];
