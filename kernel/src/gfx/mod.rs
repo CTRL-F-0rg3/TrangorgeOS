@@ -3,8 +3,6 @@ pub mod font;
 pub mod framebuffer;
 pub mod galaxy;
 
-// Tryb VGA 13h (320x200, 8 bpp) — jedyny tryb graficzny obsługiwany przez
-// bootloader 0.9 (feature `vga_320x200`). Framebuffer leży pod 0xA0000.
 pub const FB_PHYS: u64 = 0xA0000;
 pub const FB_WIDTH: u32 = 320;
 pub const FB_HEIGHT: u32 = 200;
@@ -12,6 +10,10 @@ pub const FB_STRIDE: u32 = 320;
 
 pub fn init() -> bool {
     console::init(FB_PHYS, FB_WIDTH, FB_HEIGHT, FB_STRIDE)
+}
+
+pub fn init_mode(fb_phys: u64, width: u32, height: u32, stride: u32) -> bool {
+    console::init(fb_phys, width, height, stride)
 }
 
 pub fn refresh() {
