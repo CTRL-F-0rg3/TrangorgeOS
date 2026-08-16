@@ -53,9 +53,9 @@ trampoline_32:
     mov %ax, %es
     mov %ax, %ss
 
-    /* włącz PAE */
+    /* CR4: PAE + OSFXSR + OSXMMEXCPT (SSE) */
     mov %cr4, %eax
-    or $(1 << 5), %eax
+    or $((1 << 5) | (1 << 9) | (1 << 10)), %eax
     mov %eax, %cr4
 
     /* załaduj CR3 (fizyczny PML4 jądra) z pola danych */
@@ -63,10 +63,11 @@ trampoline_32:
     mov (%eax), %eax
     mov %eax, %cr3
 
-    /* włącz LME w EFER */
+    /* EFER: LME + NXE */
     mov $0xC0000080, %ecx
     rdmsr
-    or $(1 << 8), %eax
+    or $(1 << 8), %eax     /* LME — long mode enable */
+    or $(1 << 11), %eax    /* NXE — execute-disable (bez niego PTE_NX -> #PF) */
     wrmsr
 
     /* włącz paging */
