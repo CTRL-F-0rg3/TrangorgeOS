@@ -613,6 +613,11 @@ void paging_switch_pml4(uint64_t pml4_phys)
     __asm__ volatile("mov %0, %%cr3" :: "r"(pml4_phys) : "memory");
 }
 
+void paging_write_cr3(uint64_t pml4_phys)
+{
+    __asm__ volatile("mov %0, %%cr3" :: "r"(pml4_phys) : "memory");
+}
+
 /*
  * Po zdjęciu strony 4 KiB sprawdza, czy tablice pośrednie (PT/PD/PDPT)
  * stały się puste, i zwalnia je. Działa tylko w dolnej połowie — tablice
