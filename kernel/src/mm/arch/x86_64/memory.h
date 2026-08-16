@@ -102,8 +102,8 @@ static inline bool arch_is_page_aligned(uint64_t v)
 }
 
 /*
- * Uwaga: te funkcje mają sens dopiero po ustawieniu direct mapu
- * w paging.c.
+ * Note: these functions only make sense once the direct map has been set up
+ * in paging.c.
  */
 static inline void *arch_phys_to_virt(uint64_t phys)
 {

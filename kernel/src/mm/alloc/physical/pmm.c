@@ -468,7 +468,7 @@ bool pmm_self_test(void)
     }
 
     /*
-     * Test 1: pojedyncze ramki.
+     * Test 1: single frames.
      */
     uint64_t frames[8];
 
@@ -502,7 +502,7 @@ bool pmm_self_test(void)
     }
 
     /*
-     * Test 2: ciągły zakres 16 ramek.
+     * Test 2: contiguous range of 16 frames.
      */
     uint64_t contiguous = PMM_INVALID_FRAME;
 
@@ -522,7 +522,7 @@ bool pmm_self_test(void)
     }
 
     /*
-     * Test 3: wyrównanie do 2 MiB.
+     * Test 3: alignment to 2 MiB.
      */
     uint64_t aligned2m = PMM_INVALID_FRAME;
 
@@ -544,7 +544,7 @@ bool pmm_self_test(void)
     }
 
     /*
-     * Test 4: alokacja bajtowa.
+     * Test 4: byte allocation.
      */
     uint64_t bytes_alloc = PMM_INVALID_FRAME;
 

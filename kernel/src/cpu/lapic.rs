@@ -1,12 +1,12 @@
-//! Sterownik Local APIC (xAPIC przez MMIO, z fallbackiem x2APIC przez MSR).
+//! Local APIC driver (xAPIC via MMIO, with an x2APIC fallback via MSR).
 
 use core::ptr;
 use x86_64::registers::model_specific::Msr;
 
-/// MSR IA32_APIC_BASE — status i położenie Local APIC.
+/// IA32_APIC_BASE MSR — Local APIC status and location.
 const APIC_BASE_MSR: u32 = 0x1B;
 
-/* Offsety rejestrów xAPIC (MMIO). */
+/* xAPIC register offsets (MMIO). */
 const REG_ID: u32 = 0x020;
 const REG_VERSION: u32 = 0x030;
 const REG_SVR: u32 = 0x0F0;

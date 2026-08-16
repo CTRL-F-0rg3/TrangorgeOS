@@ -61,8 +61,8 @@ bool frame_init(uint64_t bitmap_phys, size_t bit_count)
     }
 
     /*
-     * Na starcie wszystko jest zajęte.
-     * Potem ręcznie zwolnimy regiony USABLE.
+     * At startup everything is allocated. We then manually free the USABLE
+     * regions.
      */
     bitmap_fill(&frame_bitmap, true);
 
@@ -91,8 +91,8 @@ bool frame_init_from_memory(void)
     }
 
     /*
-     * Bitmapa indeksuje PFN-y aż do końca najwyższego usable regionu
-     * (z dziurami w przestrzeni fizycznej włącznie).
+     * The bitmap indexes PFNs up to the end of the highest usable region
+     * (including holes in the physical address space).
      */
     uint64_t max_pfn = info->max_usable_address / ARCH_PAGE_SIZE;
     size_t bit_count = (size_t)(max_pfn + 1);
@@ -112,10 +112,10 @@ bool frame_init_from_memory(void)
     }
 
     /*
-     * Zwalniamy tylko regiony USABLE.
+     * We only free USABLE regions.
      *
-     * Uwaga: bitmapa została zarezerwowana przez
-     * arch_memory_boot_alloc(), więc nie powinna zostać zwolniona.
+     * Note: the bitmap was reserved via arch_memory_boot_alloc(), so it
+     * should not be freed.
      */
     const arch_mem_region_t *regions = NULL;
     size_t region_count = arch_memory_regions(&regions);
@@ -233,7 +233,7 @@ bool frame_free(frame_t frame)
     size_t pfn = frame_to_pfn(frame);
 
     /*
-     * Jeśli bit jest 0, ramka już jest wolna.
+     * If the bit is 0, the frame is already free.
      */
     if (!bitmap_test(&frame_bitmap, pfn)) {
         return false;
@@ -269,7 +269,7 @@ bool frame_free_contiguous(frame_t start, size_t count)
     }
 
     /*
-     * Jeśli cały zakres jest już wolny, traktujemy to jako double free.
+     * If the whole range is already free, treat it as a double free.
      */
     if (bitmap_test_range_free(&frame_bitmap, pfn_start, count)) {
         return false;

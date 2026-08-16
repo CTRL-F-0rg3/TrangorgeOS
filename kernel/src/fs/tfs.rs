@@ -1,25 +1,37 @@
-//! TFS — Trangorge FileSystem: minimalny, ale prawdziwy system plików na dysku.
+//! TFS — Trangorge FileSystem: a minimal but real on-disk filesystem.
 //!
-//! Układ na dysku (bloki 512 B):
-//!   * blok 0  — MBR (nietknięty),
-//!   * blok 1  — superblock,
-//!   * bloki 2..17 — katalog główny (16 bloków = 128 wpisów × 64 B),
-//!   * bloki 18..  — dane plików (alokacja ciągła).
+//! On-disk layout (512-byte blocks):
+//!   * block 0      — MBR (untouched),
+//!   * block 1      — superblock,
+//!   * blocks 2..17 — root directory table (16 blocks = 128 entries × 64 B),
+//!   * blocks 18..  — file data and sub-directory tables (contiguous allocation).
 //!
-//! Wszystkie operacje czytają/piszą fizyczne bloki przez `BlockDevice` (ATA),
-//! więc dane żyją na dysku, nie w RAM-ie.
+//! A directory is a contiguous run of `DIR_BLOCKS` blocks holding its entries.
+//! The root directory is fixed at block 2; sub-directories are allocated from
+//! the free pool. Every operation takes the directory's first block (`dir`).
+//!
+//! All operations read/write physical blocks through `BlockDevice` (ATA), so
+//! data lives on disk, not in RAM.
 
 use crate::fs::driver::block::BlockDevice;
 use core::fmt::Write;
 
 pub const SUPER_MAGIC: [u8; 4] = *b"TFS1";
+
 const DIR_BLOCKS: u32 = 16;
-const DATA_START: u32 = 1 + 1 + DIR_BLOCKS; // MBR + superblock + katalog
+const DATA_START: u32 = 1 + 1 + DIR_BLOCKS; // MBR + superblock + root directory
 const ENTRY_SIZE: usize = 64;
 const ENTRIES_PER_BLOCK: usize = 512 / ENTRY_SIZE; // 8
 const MAX_NAME: usize = 48;
 
-/// Błąd operacji na systemie plików.
+/// First block of the root directory table.
+pub const ROOT_DIR: u32 = 2;
+
+const KIND_EMPTY: u8 = 0;
+const KIND_FILE: u8 = 1;
+const KIND_DIR: u8 = 2;
+
+/// Filesystem error.
 #[derive(Debug)]
 pub enum FsError {
     NoDevice,
@@ -28,6 +40,8 @@ pub enum FsError {
     NotFound,
     NameTooLong,
     DiskFull,
+    NotDir,
+    NotEmpty,
 }
 
 pub type Result<T> = core::result::Result<T, FsError>;
@@ -48,7 +62,7 @@ fn wr32(b: &mut [u8], off: usize, v: u32) {
     b[off..off + 4].copy_from_slice(&bytes);
 }
 
-/// Zapisuje superblock (formatowanie) na dysku.
+/// Writes a fresh superblock and clears the root directory (formats the disk).
 pub fn format(dev: &dyn BlockDevice) -> Result<()> {
     let mut sb = [0u8; 512];
     sb[0..4].copy_from_slice(&SUPER_MAGIC);
@@ -62,10 +76,9 @@ pub fn format(dev: &dyn BlockDevice) -> Result<()> {
 
     dev.write_block(1, &sb).map_err(|_| FsError::Io)?;
 
-    // wyczyść katalog (zera)
     let zero = [0u8; 512];
     for i in 0..DIR_BLOCKS {
-        dev.write_block(2 + i as u64, &zero).map_err(|_| FsError::Io)?;
+        dev.write_block(ROOT_DIR as u64 + i as u64, &zero).map_err(|_| FsError::Io)?;
     }
 
     Ok(())
@@ -101,14 +114,14 @@ fn write_superblock(dev: &dyn BlockDevice, sb: &Superblock) -> Result<()> {
 
 struct DirEntry {
     name: [u8; MAX_NAME],
-    kind: u8, // 0 = empty, 1 = file
+    kind: u8,
     size: u32,
     first_block: u32,
 }
 
 const EMPTY_ENTRY: DirEntry = DirEntry {
     name: [0; MAX_NAME],
-    kind: 0,
+    kind: KIND_EMPTY,
     size: 0,
     first_block: 0,
 };
@@ -133,22 +146,24 @@ fn write_entry(block: &mut [u8], idx: usize, e: &DirEntry) {
     wr32(block, off + 56, e.first_block);
 }
 
-fn find_entry(dev: &dyn BlockDevice, name: &str) -> Result<(usize, DirEntry)> {
+fn entry_name(e: &DirEntry) -> &str {
+    let slen = e.name.iter().position(|&c| c == 0).unwrap_or(MAX_NAME);
+    core::str::from_utf8(&e.name[..slen]).unwrap_or("?")
+}
+
+/// Finds an entry by name inside `dir`; returns its (index, entry).
+fn find_entry(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<(usize, DirEntry)> {
     for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
-        dev.read_block(2 + blk, &mut buf).map_err(|_| FsError::Io)?;
+        dev.read_block(dir as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
 
         for i in 0..ENTRIES_PER_BLOCK {
             let e = read_entry(&buf, i);
-            if e.kind == 0 {
+            if e.kind == KIND_EMPTY {
                 continue;
             }
-            let slen = e.name.iter().position(|&c| c == 0).unwrap_or(MAX_NAME);
-            if slen == name.len() {
-                let ename = core::str::from_utf8(&e.name[..slen]).unwrap_or("");
-                if ename == name {
-                    return Ok((blk as usize * ENTRIES_PER_BLOCK + i, e));
-                }
+            if entry_name(&e) == name {
+                return Ok((blk as usize * ENTRIES_PER_BLOCK + i, e));
             }
         }
     }
@@ -156,8 +171,8 @@ fn find_entry(dev: &dyn BlockDevice, name: &str) -> Result<(usize, DirEntry)> {
     Err(FsError::NotFound)
 }
 
-/// Wypisuje nazwy plików w katalogu głównym do `out`.
-pub fn list(dev: &dyn BlockDevice, out: &mut impl Write) -> Result<()> {
+/// Lists the entries of directory `dir` into `out`.
+pub fn list_dir(dev: &dyn BlockDevice, dir: u32, out: &mut impl Write) -> Result<()> {
     let sb = read_superblock(dev)?;
 
     writeln!(out, "TFS: {} block(s), {} file(s), next free {}",
@@ -167,16 +182,15 @@ pub fn list(dev: &dyn BlockDevice, out: &mut impl Write) -> Result<()> {
 
     for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
-        dev.read_block(2 + blk, &mut buf).map_err(|_| FsError::Io)?;
+        dev.read_block(dir as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
 
         for i in 0..ENTRIES_PER_BLOCK {
             let e = read_entry(&buf, i);
-            if e.kind == 0 {
+            if e.kind == KIND_EMPTY {
                 continue;
             }
-            let slen = e.name.iter().position(|&c| c == 0).unwrap_or(MAX_NAME);
-            let name = core::str::from_utf8(&e.name[..slen]).unwrap_or("?");
-            writeln!(out, "  {}  ({} bytes @ block {})", name, e.size, e.first_block).ok();
+            let tag = if e.kind == KIND_DIR { "dir " } else { "    " };
+            writeln!(out, "  {}{}  ({} bytes @ block {})", tag, entry_name(&e), e.size, e.first_block).ok();
             found += 1;
         }
     }
@@ -188,17 +202,17 @@ pub fn list(dev: &dyn BlockDevice, out: &mut impl Write) -> Result<()> {
     Ok(())
 }
 
-/// Zapisuje plik tekstowy na dysk (alokuje ciągłe bloki danych).
-pub fn write_file(dev: &dyn BlockDevice, name: &str, data: &[u8]) -> Result<()> {
+/// Writes a text file into directory `dir` (allocates contiguous data blocks).
+pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> Result<()> {
     if name.is_empty() || name.len() >= MAX_NAME {
         return Err(FsError::NameTooLong);
     }
 
     let mut sb = read_superblock(dev)?;
 
-    // usuń istniejący (przydzielamy na nowo)
-    if find_entry(dev, name).is_ok() {
-        remove_file(dev, name)?;
+    // Overwrite: drop the existing entry first (blocks are re-allocated).
+    if find_entry(dev, dir, name).is_ok() {
+        remove(dev, dir, name)?;
         sb = read_superblock(dev)?;
     }
 
@@ -208,7 +222,7 @@ pub fn write_file(dev: &dyn BlockDevice, name: &str, data: &[u8]) -> Result<()> 
         return Err(FsError::DiskFull);
     }
 
-    // zapisz dane
+    // Write the data.
     for i in 0..blocks_needed {
         let mut block = [0u8; 512];
         let start = i as usize * 512;
@@ -216,28 +230,27 @@ pub fn write_file(dev: &dyn BlockDevice, name: &str, data: &[u8]) -> Result<()> 
         if start < data.len() {
             block[..end - start].copy_from_slice(&data[start..end]);
         }
-        dev.write_block(sb.free_start as u64 + i as u64, &block)
-            .map_err(|_| FsError::Io)?;
+        dev.write_block(sb.free_start as u64 + i as u64, &block).map_err(|_| FsError::Io)?;
     }
 
-    // znajdź wolny wpis katalogowy
+    // Find a free directory slot.
     let mut slot = None;
     'outer: for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
-        dev.read_block(2 + blk, &mut buf).map_err(|_| FsError::Io)?;
+        dev.read_block(dir as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
 
         for i in 0..ENTRIES_PER_BLOCK {
-            if read_entry(&buf, i).kind == 0 {
+            if read_entry(&buf, i).kind == KIND_EMPTY {
                 let mut name_buf = [0u8; MAX_NAME];
                 name_buf[..name.len()].copy_from_slice(name.as_bytes());
                 let e = DirEntry {
                     name: name_buf,
-                    kind: 1,
+                    kind: KIND_FILE,
                     size: data.len() as u32,
                     first_block: sb.free_start,
                 };
                 write_entry(&mut buf, i, &e);
-                dev.write_block(2 + blk, &buf).map_err(|_| FsError::Io)?;
+                dev.write_block(dir as u64 + blk, &buf).map_err(|_| FsError::Io)?;
                 slot = Some(());
                 break 'outer;
             }
@@ -253,17 +266,129 @@ pub fn write_file(dev: &dyn BlockDevice, name: &str, data: &[u8]) -> Result<()> 
     write_superblock(dev, &sb)
 }
 
-/// Czyta plik z dysku do wektora bajtów.
-pub fn read_file(dev: &dyn BlockDevice, name: &str) -> Result<alloc::vec::Vec<u8>> {
-    let (_, e) = find_entry(dev, name)?;
+/// Removes an entry (file or empty directory) from directory `dir`.
+pub fn remove(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
+    let (idx, e) = find_entry(dev, dir, name)?;
+
+    // Directories must be empty before removal.
+    if e.kind == KIND_DIR {
+        for blk in 0..DIR_BLOCKS as u64 {
+            let mut buf = [0u8; 512];
+            dev.read_block(e.first_block as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
+            for i in 0..ENTRIES_PER_BLOCK {
+                if read_entry(&buf, i).kind != KIND_EMPTY {
+                    return Err(FsError::NotEmpty);
+                }
+            }
+        }
+    }
+
+    let blk = idx / ENTRIES_PER_BLOCK;
+    let slot = idx % ENTRIES_PER_BLOCK;
+
+    let mut buf = [0u8; 512];
+    dev.read_block(dir as u64 + blk as u64, &mut buf).map_err(|_| FsError::Io)?;
+    write_entry(&mut buf, slot, &EMPTY_ENTRY);
+    dev.write_block(dir as u64 + blk as u64, &buf).map_err(|_| FsError::Io)?;
+
+    let mut sb = read_superblock(dev)?;
+    sb.file_count = sb.file_count.saturating_sub(1);
+    write_superblock(dev, &sb)
+}
+
+/// Creates a sub-directory named `name` inside directory `dir`.
+pub fn mkdir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
+    if name.is_empty() || name.len() >= MAX_NAME {
+        return Err(FsError::NameTooLong);
+    }
+    if find_entry(dev, dir, name).is_ok() {
+        return Err(FsError::NotDir); // name already taken
+    }
+
+    let mut sb = read_superblock(dev)?;
+
+    if sb.free_start + DIR_BLOCKS > sb.total_blocks {
+        return Err(FsError::DiskFull);
+    }
+
+    // Allocate and clear the sub-directory table.
+    let first = sb.free_start;
+    let zero = [0u8; 512];
+    for i in 0..DIR_BLOCKS {
+        dev.write_block(first as u64 + i as u64, &zero).map_err(|_| FsError::Io)?;
+    }
+
+    // Add the directory entry.
+    let mut slot = None;
+    'outer: for blk in 0..DIR_BLOCKS as u64 {
+        let mut buf = [0u8; 512];
+        dev.read_block(dir as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
+        for i in 0..ENTRIES_PER_BLOCK {
+            if read_entry(&buf, i).kind == KIND_EMPTY {
+                let mut name_buf = [0u8; MAX_NAME];
+                name_buf[..name.len()].copy_from_slice(name.as_bytes());
+                let e = DirEntry {
+                    name: name_buf,
+                    kind: KIND_DIR,
+                    size: 0,
+                    first_block: first,
+                };
+                write_entry(&mut buf, i, &e);
+                dev.write_block(dir as u64 + blk, &buf).map_err(|_| FsError::Io)?;
+                slot = Some(());
+                break 'outer;
+            }
+        }
+    }
+
+    if slot.is_none() {
+        return Err(FsError::DiskFull);
+    }
+
+    sb.free_start += DIR_BLOCKS;
+    sb.file_count += 1;
+    write_superblock(dev, &sb)
+}
+
+/// Returns the first block of the sub-directory `name` inside `dir`.
+pub fn find_dir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<u32> {
+    let (_, e) = find_entry(dev, dir, name)?;
+    if e.kind != KIND_DIR {
+        return Err(FsError::NotDir);
+    }
+    Ok(e.first_block)
+}
+
+/// Returns (name, size, kind) of the entries in `dir` — for the terminal.
+pub fn entries(dev: &dyn BlockDevice, dir: u32) -> Result<alloc::vec::Vec<(alloc::string::String, u32, u8)>> {
+    let mut out = alloc::vec::Vec::new();
+
+    for blk in 0..DIR_BLOCKS as u64 {
+        let mut buf = [0u8; 512];
+        dev.read_block(dir as u64 + blk, &mut buf).map_err(|_| FsError::Io)?;
+
+        for i in 0..ENTRIES_PER_BLOCK {
+            let e = read_entry(&buf, i);
+            if e.kind == KIND_EMPTY {
+                continue;
+            }
+            out.push((alloc::string::String::from(entry_name(&e)), e.size, e.kind));
+        }
+    }
+
+    Ok(out)
+}
+
+/// Reads a file from directory `dir` into a byte vector.
+pub fn read_file(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<alloc::vec::Vec<u8>> {
+    let (_, e) = find_entry(dev, dir, name)?;
 
     let mut data = alloc::vec![0u8; e.size as usize];
     let blocks = (e.size as usize + 511) / 512;
 
     for i in 0..blocks {
         let mut block = [0u8; 512];
-        dev.read_block(e.first_block as u64 + i as u64, &mut block)
-            .map_err(|_| FsError::Io)?;
+        dev.read_block(e.first_block as u64 + i as u64, &mut block).map_err(|_| FsError::Io)?;
         let start = i * 512;
         let end = core::cmp::min(start + 512, data.len());
         data[start..end].copy_from_slice(&block[..end - start]);
@@ -271,42 +396,3 @@ pub fn read_file(dev: &dyn BlockDevice, name: &str) -> Result<alloc::vec::Vec<u8
 
     Ok(data)
 }
-
-/// Usuwa plik z dysku (zwalnia wpis katalogowy).
-pub fn remove_file(dev: &dyn BlockDevice, name: &str) -> Result<()> {
-    let (idx, _) = find_entry(dev, name)?;
-    let blk = idx / ENTRIES_PER_BLOCK;
-    let slot = idx % ENTRIES_PER_BLOCK;
-
-    let mut buf = [0u8; 512];
-    dev.read_block(2 + blk as u64, &mut buf).map_err(|_| FsError::Io)?;
-    write_entry(&mut buf, slot, &EMPTY_ENTRY);
-    dev.write_block(2 + blk as u64, &buf).map_err(|_| FsError::Io)?;
-
-    let mut sb = read_superblock(dev)?;
-    sb.file_count = sb.file_count.saturating_sub(1);
-    write_superblock(dev, &sb)
-}
-
-/// Zwraca (nazwę, rozmiar) plików — dla terminala.
-pub fn entries(dev: &dyn BlockDevice) -> Result<alloc::vec::Vec<(alloc::string::String, u32)>> {
-    let mut out = alloc::vec::Vec::new();
-
-    for blk in 0..DIR_BLOCKS as u64 {
-        let mut buf = [0u8; 512];
-        dev.read_block(2 + blk, &mut buf).map_err(|_| FsError::Io)?;
-
-        for i in 0..ENTRIES_PER_BLOCK {
-            let e = read_entry(&buf, i);
-            if e.kind == 0 {
-                continue;
-            }
-            let slen = e.name.iter().position(|&c| c == 0).unwrap_or(MAX_NAME);
-            let name = core::str::from_utf8(&e.name[..slen]).unwrap_or("?");
-            out.push((alloc::string::String::from(name), e.size));
-        }
-    }
-
-    Ok(out)
-}
-

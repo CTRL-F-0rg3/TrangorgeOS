@@ -1,6 +1,6 @@
-//! Minimalny parser ACPI: wyszukanie RSDP i wyciągnięcie informacji z MADT
-//! (lista CPU, adres Local APIC, I/O APIC). Odczyt pamięci fizycznej odbywa
-//! się przez `physical_memory_offset` (map_physical_memory bootloadera).
+//! Minimal ACPI parser: finds the RSDP and extracts information from the MADT
+//! (CPU list, Local APIC address, I/O APIC). Physical memory is read through
+//! `physical_memory_offset` (the bootloader's map_physical_memory).
 
 use alloc::vec::Vec;
 use core::ptr;

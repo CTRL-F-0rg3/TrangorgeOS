@@ -1,14 +1,14 @@
-//! Glue dla trampoliny AP zdefiniowanej w `trampoline.s`.
+//! Glue for the AP trampoline defined in `trampoline.s`.
 //!
-//! Trampolina jest kopiowana pod fizyczny adres `TRAMPOLINE_BASE` i wykonywana
-//! tam przez każdy startowany AP. Pola runtime'owe (cr3, entry, stack, arg) są
-//! wpisywane do fizycznego bloku danych trampoliny przed wysłaniem IPI.
+//! The trampoline is copied to physical address `TRAMPOLINE_BASE` and executed
+//! there by every started AP. The runtime fields (cr3, entry, stack, arg) are
+//! written into the trampoline's physical data block before the IPI is sent.
 
 use crate::mm::ffi;
 use core::ptr;
 
-/// Fizyczny adres, pod którym wykonywana jest trampolina. Musi być zgodny z
-/// wartością `TRAMPOLINE_BASE` w `trampoline.s`.
+/// Physical address at which the trampoline executes. Must match the
+/// `TRAMPOLINE_BASE` value in `trampoline.s`.
 pub const TRAMPOLINE_BASE: u64 = 0x8000;
 
 const PTE_PRESENT: u64 = 1;

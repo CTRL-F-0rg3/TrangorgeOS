@@ -11,7 +11,7 @@ pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
 pub static KEYBOARD_HITS: AtomicU64 = AtomicU64::new(0);
 pub static IPI_HITS: AtomicU64 = AtomicU64::new(0);
 
-/// Wektor IPI między rdzeniami (fixed delivery przez Local APIC).
+/// Inter-core IPI vector (fixed delivery via the Local APIC).
 pub const IPI_VECTOR: u8 = 0x30;
 
 crate::test_module!({

@@ -1,15 +1,15 @@
-/* Trampolina startowa dla AP (Application Processor).
+/* Startup trampoline for an AP (Application Processor).
  *
- * Jest kopiowana w całości pod fizyczny adres 0x8000 (TRAMPOLINE_BASE) i
- * tam wykonywana. Kod jest niezależny od pozycji: wszystkie odwołania do
- * danych używają STAŁYCH adresów fizycznych postaci:
+ * It is copied in its entirety to physical address 0x8000 (TRAMPOLINE_BASE)
+ * and executed there. The code is position-independent: all data references
+ * use FIXED physical addresses of the form:
  *
  *      TRAMPOLINE_BASE + (symbol - trampoline_start)
  *
- * Wartości runtime'owe (cr3, entry, stack, arg) są wpisywane do pól danych
- * przez kod Rust w pliku trampoline.rs (przed wysłaniem IPI).
+ * The runtime values (cr3, entry, stack, arg) are written into the data
+ * fields by the Rust code in trampoline.rs (before the IPI is sent).
  *
- * Przebieg: 16-bit real mode -> 32-bit protected mode -> 64-bit long mode.
+ * Flow: 16-bit real mode -> 32-bit protected mode -> 64-bit long mode.
  */
 
 .section .text

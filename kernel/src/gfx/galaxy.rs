@@ -37,17 +37,17 @@ struct Blob {
     inten: i64,
 }
 
-// Bardziej nasycona, kontrastowa paleta niż poprzednio — magenta/turkus/
-// pomarańcz jako ciepły kontrapunkt do reszty zimnych barw, żeby mgławica
-// nie wyglądała płasko-fioletowo, tylko miała wyraźne strefy koloru.
+// A more saturated, higher-contrast palette than before — magenta/teal/
+// orange as a warm counterpoint to the rest of the cool colors, so the
+// nebula does not look flat-purple but has distinct color zones.
 const NEBULA_COLORS: [(i64, i64, i64); 7] = [
     (168, 32, 176),  // magenta
-    (32, 88, 214),   // głęboki niebieski
-    (24, 168, 176),  // turkus
-    (214, 64, 96),   // róż/czerwień
-    (48, 32, 150),   // indygo
-    (128, 24, 190),  // fiolet
-    (232, 128, 40),  // pomarańcz (ciepły kontrapunkt)
+    (32, 88, 214),   // deep blue
+    (24, 168, 176),  // teal
+    (214, 64, 96),   // pink/red
+    (48, 32, 150),   // indigo
+    (128, 24, 190),  // violet
+    (232, 128, 40),  // orange (warm counterpoint)
 ];
 
 fn plot_soft(fb: &mut Framebuffer, x: i64, y: i64, t: u32, r: u32, g: u32, b: u32) {

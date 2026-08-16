@@ -217,8 +217,8 @@ static arch_mem_type_t raw_type_to_arch(uint32_t raw_type)
 static void sort_raw_entries(arch_raw_mem_entry_t *entries, size_t count)
 {
     /*
-     * Insertion sort jest OK, bo wpisów mapy pamięci jest zwykle
-     * kilkanaście/kilkadziesiąt, a nie tysiące.
+     * Insertion sort is fine, because there are usually a dozen or a few
+     * dozen memory map entries, not thousands.
      */
     for (size_t i = 1; i < count; i++) {
         arch_raw_mem_entry_t key = entries[i];
@@ -249,9 +249,9 @@ static void map_add(arch_mem_region_t *list,
         uint64_t last_end = safe_end(last->base, last->len);
 
         /*
-         * Jeśli nowy region nachodzi na poprzedni, przytnij go.
-         * To jest zabezpieczenie, normalnie wejście jest posortowane
-         * i przygotowane tak, żeby nie było nakładania.
+         * If the new region overlaps the previous one, trim it. This is a
+         * safeguard; normally the input is sorted and prepared so there is
+         * no overlap.
          */
         if (r.base < last_end) {
             uint64_t delta = last_end - r.base;
@@ -265,7 +265,7 @@ static void map_add(arch_mem_region_t *list,
         }
 
         /*
-         * Scal sąsiednie regiony tego samego typu.
+         * Merge adjacent regions of the same type.
          */
         if (safe_end(last->base, last->len) == r.base &&
             last->type == r.type) {
@@ -290,9 +290,8 @@ static void map_reserve_range(uint64_t base, uint64_t len)
     uint64_t end = safe_end(base, len);
 
     /*
-     * Rezerwacje wyrównujemy na zewnątrz do stron.
-     * Dzięki temu kernel/initrd/struktury PMM nie przetną strony
-     * w pół.
+     * We align reservations outward to pages. This way kernel/initrd/PMM
+     * structures do not cut pages in half.
      */
     base = align_down_page(base);
     end = align_up_page_safe(end);
@@ -307,13 +306,13 @@ static void map_reserve_range(uint64_t base, uint64_t len)
         arch_mem_region_t r = mem.regions[i];
         uint64_t r_end = safe_end(r.base, r.len);
 
-        /* Brak przecięcia. */
+        /* No intersection. */
         if (r_end <= base || r.base >= end) {
             map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, r);
             continue;
         }
 
-        /* Część przed rezerwacją. */
+        /* Part before the reservation. */
         if (r.base < base) {
             arch_mem_region_t before;
             before.base = r.base;
@@ -323,7 +322,7 @@ static void map_reserve_range(uint64_t base, uint64_t len)
             map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, before);
         }
 
-        /* Część rezerwowana. */
+        /* Reserved part. */
         uint64_t ov_base = u64_max(r.base, base);
         uint64_t ov_end = u64_min(r_end, end);
 
@@ -336,7 +335,7 @@ static void map_reserve_range(uint64_t base, uint64_t len)
             map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, reserved);
         }
 
-        /* Część po rezerwacji. */
+        /* Part after the reservation. */
         if (r_end > end) {
             arch_mem_region_t after;
             after.base = end;
@@ -375,9 +374,9 @@ static void map_align_usable_regions(void)
         uint64_t aligned_end = align_down_page(r_end);
 
         /*
-         * Region usable mniejszy niż jedna strona albo nie da się
-         * go wyrównać — oznaczamy całość jako reserved, żeby nie
-         * udawać, że da się z tego alokować strony.
+         * A usable region smaller than one page, or one that cannot be
+         * aligned — mark the whole thing reserved, rather than pretending
+         * pages can be allocated from it.
          */
         if (aligned_end <= aligned_base) {
             arch_mem_region_t tiny;
@@ -389,7 +388,7 @@ static void map_align_usable_regions(void)
             continue;
         }
 
-        /* Przód niepełna strona -> reserved. */
+        /* Front partial page -> reserved. */
         if (r.base < aligned_base) {
             arch_mem_region_t before;
             before.base = r.base;
@@ -399,7 +398,7 @@ static void map_align_usable_regions(void)
             map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, before);
         }
 
-        /* Właściwy usable region. */
+        /* The actual usable region. */
         {
             arch_mem_region_t usable;
             usable.base = aligned_base;
@@ -409,7 +408,7 @@ static void map_align_usable_regions(void)
             map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, usable);
         }
 
-        /* Tył niepełna strona -> reserved. */
+        /* Rear partial page -> reserved. */
         if (aligned_end < r_end) {
             arch_mem_region_t after;
             after.base = aligned_end;
@@ -495,10 +494,9 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
     sort_raw_entries(raw_sorted, count);
 
     /*
-     * Budujemy wstępną mapę regionów.
-     * Zakładamy, że bootloader dał sensowne, nienakładające się wpisy.
-     * Jeśli jest drobne nakładanie, przycinamy aktualny wpis do końca
-     * poprzedniego.
+     * Build the initial region map. We assume the bootloader provided
+     * sensible, non-overlapping entries. If there is slight overlap, we trim
+     * the current entry to the end of the previous one.
      */
     for (size_t i = 0; i < count; i++) {
         uint64_t base = raw_sorted[i].base;
@@ -534,10 +532,10 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
     }
 
     /*
-     * Absolutne minimum bezpieczeństwa:
-     * - pierwszy 1 MiB zostawiamy spokojnie,
-     * - kernel jest reserved,
-     * - initrd jest reserved.
+     * Absolute safety minimum:
+     * - leave the first 1 MiB alone,
+     * - the kernel is reserved,
+     * - the initrd is reserved.
      */
     map_reserve_range(0, 0x100000);
 
@@ -552,8 +550,8 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
     }
 
     /*
-     * PMM operuje na stronach, więc usable regiony muszą mieć
-     * page-aligned początek i koniec.
+     * PMM operates on pages, so usable regions must have page-aligned start
+     * and end.
      */
     map_align_usable_regions();
 
@@ -649,8 +647,7 @@ bool arch_memory_find_usable(uint64_t len,
     }
 
     /*
-     * Alignment musi być potęgą dwójki.
-     * Jeśli nie jest, fallback do page size.
+     * Alignment must be a power of two. If not, fall back to page size.
      */
     if ((align & (align - 1)) != 0) {
         align = ARCH_PAGE_SIZE;

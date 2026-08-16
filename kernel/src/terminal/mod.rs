@@ -4,7 +4,7 @@
 
 use crate::fs::driver::block::BlockDevice;
 use crate::vga_buffer::{Color, WRITER};
-use core::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, AtomicUsize, Ordering};
 
 /* ------------------------------------------------------------------ */
 /* Bufor klawiatury (SPSC ring buffer, IRQ-safe)                       */
@@ -134,10 +134,15 @@ pub fn push_scancode(code: u8) {
 const MAX_LINE: usize = 120;
 const PROMPT: &str = "#$-=>";
 const CURSOR: &str = "_";
+const CONSOLE_COLOR: Color = Color::Green;
+const INPUT_COLOR: Color = Color::LightBlue;
 
 static LINE: [AtomicU8; MAX_LINE] = [const { AtomicU8::new(0) }; MAX_LINE];
 static LINE_LEN: AtomicUsize = AtomicUsize::new(0);
 static LINE_START_COL: AtomicUsize = AtomicUsize::new(0);
+
+// Current working directory (first block of its entry table).
+static CURRENT_DIR: AtomicU32 = AtomicU32::new(crate::fs::tfs::ROOT_DIR);
 
 fn line_as_str(buf: &mut [u8]) -> &str {
     let len = LINE_LEN.load(Ordering::Relaxed);
@@ -159,6 +164,7 @@ fn draw_prompt() {
         w.write_string(PROMPT);
         w.set_color(Color::Red);
         w.write_string(CURSOR);
+        w.set_color(CONSOLE_COLOR);
         col
     };
     LINE_START_COL.store(start_col, Ordering::Relaxed);
@@ -180,10 +186,11 @@ fn redraw_line() {
         w.clear_to_end();
         w.set_color(Color::White);
         w.write_string(PROMPT);
-        w.set_color(Color::Blue);
+        w.set_color(INPUT_COLOR);
         w.write_string(text);
         w.set_color(Color::Red);
         w.write_string(CURSOR);
+        w.set_color(CONSOLE_COLOR);
     }
 
     crate::gfx::refresh();
@@ -204,8 +211,9 @@ fn handle_char(c: char) {
                 w.clear_to_end();
                 w.set_color(Color::White);
                 w.write_string(PROMPT);
-                w.set_color(Color::Blue);
+                w.set_color(INPUT_COLOR);
                 w.write_string(text);
+                w.set_color(CONSOLE_COLOR);
                 w.write_byte(b'\n');
             }
             crate::serial::write_str("\n");
@@ -256,12 +264,15 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ls format write read rm");
-            crate::println!("  write <name> <text...>  zapisz plik na dysk");
-            crate::println!("  read  <name>            odczytaj plik z dysku");
-            crate::println!("  rm    <name>            usuń plik");
-            crate::println!("  ls                      wypisz katalog");
-            crate::println!("  format                  sformatuj dysk (TFS)");
+            crate::println!("commands: help clear echo info ls cd mkdir format write read rm res");
+            crate::println!("  write <name> <text...>  write a text file to disk");
+            crate::println!("  read  <name>            read a file from disk");
+            crate::println!("  rm    <name>            remove a file or empty folder");
+            crate::println!("  ls                      list the current folder");
+            crate::println!("  mkdir <name>            create a folder");
+            crate::println!("  cd    <name|/>          change folder ( / = root )");
+            crate::println!("  res   <320|640>         change resolution");
+            crate::println!("  format                  format the disk (TFS)");
         }
         "clear" => {
             WRITER.lock().clear_screen();
@@ -280,12 +291,58 @@ fn execute(line: &str) {
             crate::println!("  CPUs: {}", crate::cpu::total_cpus());
         }
         "ls" => {
+            let dir = CURRENT_DIR.load(Ordering::Relaxed);
             match dev() {
                 Some(d) => {
                     let mut sink = Sink;
-                    let _ = crate::fs::tfs::list(d, &mut sink);
+                    let _ = crate::fs::tfs::list_dir(d, dir, &mut sink);
                 }
                 None => crate::println!("no disk"),
+            }
+        }
+        "cd" => {
+            let (name, _) = split_once_space(rest);
+            if name.is_empty() {
+                crate::println!("usage: cd <name|/>");
+            } else if name == "/" {
+                CURRENT_DIR.store(crate::fs::tfs::ROOT_DIR, Ordering::Relaxed);
+            } else {
+                let dir = CURRENT_DIR.load(Ordering::Relaxed);
+                match dev() {
+                    Some(d) => match crate::fs::tfs::find_dir(d, dir, name) {
+                        Ok(next) => CURRENT_DIR.store(next, Ordering::Relaxed),
+                        Err(e) => crate::println!("cd failed: {:?}", e),
+                    },
+                    None => crate::println!("no disk"),
+                }
+            }
+        }
+        "mkdir" => {
+            let (name, _) = split_once_space(rest);
+            if name.is_empty() {
+                crate::println!("usage: mkdir <name>");
+            } else {
+                let dir = CURRENT_DIR.load(Ordering::Relaxed);
+                match dev() {
+                    Some(d) => match crate::fs::tfs::mkdir(d, dir, name) {
+                        Ok(()) => crate::println!("created folder {}", name),
+                        Err(e) => crate::println!("mkdir failed: {:?}", e),
+                    },
+                    None => crate::println!("no disk"),
+                }
+            }
+        }
+        "res" => {
+            let (arg, _) = split_once_space(rest);
+            let ok = match arg {
+                "640" => crate::gfx::set_resolution(crate::gfx::vga::VideoMode::Mode12h),
+                "320" => crate::gfx::set_resolution(crate::gfx::vga::VideoMode::Mode13h),
+                _ => false,
+            };
+            if ok {
+                crate::println!("resolution: {}", crate::gfx::current_resolution());
+            } else {
+                crate::println!("usage: res <320|640>");
             }
         }
         "format" => match dev() {
@@ -300,8 +357,9 @@ fn execute(line: &str) {
             if name.is_empty() {
                 crate::println!("usage: write <name> <text...>");
             } else {
+                let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::write_file(d, name, text.as_bytes()) {
+                    Some(d) => match crate::fs::tfs::write_file(d, dir, name, text.as_bytes()) {
                         Ok(()) => crate::println!("wrote {} ({} bytes)", name, text.len()),
                         Err(e) => crate::println!("write failed: {:?}", e),
                     },
@@ -314,8 +372,9 @@ fn execute(line: &str) {
             if name.is_empty() {
                 crate::println!("usage: read <name>");
             } else {
+                let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::read_file(d, name) {
+                    Some(d) => match crate::fs::tfs::read_file(d, dir, name) {
                         Ok(data) => {
                             let s = core::str::from_utf8(&data).unwrap_or("(binary)");
                             crate::println!("{}", s);
@@ -331,8 +390,9 @@ fn execute(line: &str) {
             if name.is_empty() {
                 crate::println!("usage: rm <name>");
             } else {
+                let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::remove_file(d, name) {
+                    Some(d) => match crate::fs::tfs::remove(d, dir, name) {
                         Ok(()) => crate::println!("removed {}", name),
                         Err(e) => crate::println!("rm failed: {:?}", e),
                     },
@@ -349,7 +409,7 @@ fn execute(line: &str) {
     crate::gfx::refresh();
 }
 
-/// Sink dla `tfs::list` — wypisuje przez `println!`.
+/// Sink for `tfs::list_dir` — prints via `println!`.
 struct Sink;
 
 impl core::fmt::Write for Sink {
@@ -360,10 +420,11 @@ impl core::fmt::Write for Sink {
 }
 
 /* ------------------------------------------------------------------ */
-/* Główna pętla                                                       */
+/* Main loop                                                          */
 /* ------------------------------------------------------------------ */
 
 pub fn init() {
+    WRITER.lock().set_color(CONSOLE_COLOR);
     draw_prompt();
 }
 

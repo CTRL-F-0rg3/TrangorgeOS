@@ -35,7 +35,7 @@ pub fn unmap_device(virt: u64, len: usize) -> bool {
 }
 
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // zwykły region wirtualny
+    // ordinary virtual region
     let v = alloc(4096, WRITE).ok_or("vmm: alloc failed")?;
 
     if v == 0 {

@@ -55,7 +55,7 @@ pub unsafe fn mm_add_region(base: u64, len: u64, typ: u32) {
     let i = RAW_COUNT;
 
     if i >= MAX_RAW_ENTRIES {
-        // Zwiększ ARCH_MAX_MEM_REGIONS w memory.h i MAX_RAW_ENTRIES tutaj.
+        // Increase ARCH_MAX_MEM_REGIONS in memory.h and MAX_RAW_ENTRIES here.
         panic!("mm_bridge: too many memory map entries");
     }
 

@@ -142,9 +142,8 @@ const BLANK: ScreenChar = ScreenChar {
     color_code: ColorCode(0x07),
 };
 
-// Programowy bufor tekstu (w RAM) — tryb graficzny 13h nie ma działającego
-// bufora tekstowego 0xB8000, więc tekst trzymamy tutaj, a gfx rysuje go
-// na framebufferze.
+// Software text buffer (in RAM) — graphics mode 13h has no working 0xB8000
+// text buffer, so we keep the text here and gfx draws it onto the framebuffer.
 static mut TEXT_BUFFER: Buffer = Buffer {
     chars: [[BLANK; BUFFER_WIDTH]; BUFFER_HEIGHT],
 };
@@ -157,7 +156,7 @@ lazy_static! {
     });
 }
 
-/// Zwraca (znak, atrybut koloru) komórki tekstowej — dla modułu gfx.
+/// Returns (character, color attribute) of a text cell — for the gfx module.
 pub fn text_cell(row: usize, col: usize) -> (u8, u8) {
     unsafe {
         let cell = TEXT_BUFFER.chars[row][col];

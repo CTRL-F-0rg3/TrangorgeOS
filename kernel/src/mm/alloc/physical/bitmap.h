@@ -11,18 +11,18 @@ typedef struct bitmap {
     uint64_t *bits;
 
     /*
-     * Liczba bitów w bitmapie.
+     * Number of bits in the bitmap.
      */
     size_t bit_count;
 
     /*
-     * Liczba 64-bitowych słów.
+     * Number of 64-bit words.
      */
     size_t word_count;
 
     /*
-     * Hint dla alokacji first-fit.
-     * Indeks słowa, od którego warto zacząć szukanie.
+     * Hint for first-fit allocation. The word index from which to start
+     * searching.
      */
     size_t alloc_hint;
 } bitmap_t;

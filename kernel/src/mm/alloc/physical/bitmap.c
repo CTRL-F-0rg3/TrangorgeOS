@@ -1,8 +1,7 @@
 #include "bitmap.h"
 
 /*
- * Uwaga: jeśli Twój include path jest inny,
- * popraw tę ścieżkę albo użyj flag -I.
+ * Note: if your include path is different, fix this path or use -I flags.
  */
 #include "../../arch/x86_64/memory.h"
 
@@ -82,8 +81,8 @@ static void bitmap_mark_tail_used(bitmap_t *bm)
     }
 
     /*
-     * Bity powyżej bit_count ustawiamy na 1,
-     * żeby alokator nigdy ich nie przydzielił.
+     * Set the bits above bit_count to 1 so the allocator never hands them
+     * out.
      */
     bm->bits[bm->word_count - 1] |= ~((1ULL << rem) - 1);
 }
@@ -445,7 +444,7 @@ size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align)
     }
 
     /*
-     * Alignment bitowy musi być potęgą dwójki.
+     * Bit alignment must be a power of two.
      */
     if ((align & (align - 1)) != 0) {
         align = 1;
@@ -485,8 +484,8 @@ size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align)
         }
 
         /*
-         * Jeśli zakres nie jest wolny, przeskocz za pierwszy zajęty bit
-         * w sprawdzanym zakresie.
+         * If the range is not free, skip past the first used bit in the
+         * checked range.
          */
         size_t used = find_next_used_bit(bm, candidate, candidate + count);
 

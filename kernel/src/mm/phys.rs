@@ -68,7 +68,7 @@ pub fn phys_to_virt(phys: u64) -> *mut u8 {
 }
 
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // pojedyncze ramki: wyrównanie + unikalność
+    // single frames: alignment + uniqueness
     let mut frames = [0u64; 8];
 
     for f in frames.iter_mut() {

@@ -28,13 +28,13 @@ const ZERO_ENTRY: ffi::RawMemEntry = ffi::RawMemEntry {
 
 struct EntryStorage(UnsafeCell<[ffi::RawMemEntry; MAX_RAW_ENTRIES]>);
 
-// Inicjalizacja mm dzieje się jednokrotnie, na starcie, zanim pojawi się
-// jakakolwiek współbieżność — bezpiecznie wymuszamy Sync.
+// mm initialization happens exactly once, at startup, before any concurrency
+// exists — we safely force Sync.
 unsafe impl Sync for EntryStorage {}
 
-/// Buduje parametry dla `mm_init` z informacji przekazanych przez bootloader
-/// i inicjalizuje cały podsystem pamięci (arch memory -> paging -> pmm ->
-/// vmm -> heap -> cache -> address spaces).
+/// Builds the parameters for `mm_init` from the bootloader-provided
+/// information and initializes the whole memory subsystem (arch memory ->
+/// paging -> pmm -> vmm -> heap -> cache -> address spaces).
 pub fn init_from_boot_info(boot_info: &'static bootloader::BootInfo) -> bool {
     use bootloader::bootinfo::MemoryRegionType;
 

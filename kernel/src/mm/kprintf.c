@@ -1,6 +1,7 @@
 /*
- * Minimalny UART (COM1) + kprintf — mostek debugowy do portu szeregowego.
- * Nadpisuje słabą definicję kprintf z memory.c (silna definicja wygrywa).
+ * Minimal UART (COM1) + kprintf — debug bridge to the serial port.
+ * Overrides the weak kprintf definition from memory.c (the strong
+ * definition wins).
  */
 
 #include <stdint.h>
@@ -180,7 +181,7 @@ void kprintf(const char *fmt, ...)
     va_end(ap);
 }
 
-/* Dla strony Rust — prosty zapis łańcucha na port szeregowy. */
+/* For the Rust side — simple string write to the serial port. */
 void serial_write_str(const char *s)
 {
     serial_init();

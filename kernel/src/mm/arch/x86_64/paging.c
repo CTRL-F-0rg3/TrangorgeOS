@@ -18,14 +18,14 @@ static uint64_t boot_phys_offset = 0;
 static bool boot_phys_offset_valid = false;
 
 /*
- * Flagi PTE, które paging_set_flags() może zmieniać na istniejącym
- * mapowaniu (PTE_PRESENT i PTE_PAGE_SIZE są zachowywane osobno).
+ * PTE flags that paging_set_flags() may change on an existing mapping
+ * (PTE_PRESENT and PTE_PAGE_SIZE are preserved separately).
  */
 #define PTE_FLAGS_MASK \
     (PTE_WRITABLE | PTE_USER | PTE_WRITE_THROUGH | PTE_CACHE_DISABLE | \
      PTE_ACCESSED | PTE_DIRTY | PTE_GLOBAL | PTE_NX)
 
-/* IA32_EFER (MSR 0xC0000080) — bit NXE włącza Execute-Disable. */
+/* IA32_EFER (MSR 0xC0000080) — the NXE bit enables Execute-Disable. */
 #define IA32_EFER_MSR 0xC0000080U
 #define EFER_NXE_BIT  (1U << 11)
 
@@ -303,7 +303,7 @@ void paging_assert_4level_paging(void)
 }
 
 /*
- * Raw wrapper na INVPCID. Wymaga włączonego CR4.PCIDE.
+ * Raw wrapper for INVPCID. Requires CR4.PCIDE to be enabled.
  *   type: 0 = individual, 1 = single-context (global),
  *         2 = all-contexts (incl. global), 3 = single-context (non-global).
  */
@@ -341,8 +341,8 @@ static uint64_t alloc_zeroed_table_page(void)
 static void free_table_page(uint64_t phys)
 {
     /*
-     * Przed pmm_init() ramki pochodzą z boot allocatora i nie da się
-     * ich zwolnić — dopuszczamy wyciek (dotyczy tylko wczesnego boota).
+     * Before pmm_init() frames come from the boot allocator and cannot be
+     * freed — we allow the leak (early boot only).
      */
     if (pmm_ready()) {
         pmm_free_frame(phys);
@@ -366,8 +366,8 @@ static uint64_t ensure_table_entry(uint64_t *table,
     uint64_t table_phys = alloc_zeroed_table_page();
 
     /*
-     * Tablice pośrednie muszą być dostępne dla kernela.
-     * Jeśli docelowe mapowanie ma być user-space, ustawiamy też USER.
+     * Intermediate tables must be kernel-accessible. If the target mapping
+     * is user-space, set USER as well.
      */
     uint64_t table_flags = PTE_PRESENT | PTE_WRITABLE;
 
@@ -387,12 +387,12 @@ typedef enum page_level {
 } page_level_t;
 
 /*
- * Przechodzi po drzewie PML4 -> PDPT -> PD -> PT i zwraca wskaźnik do
- * wpisu-liścia dla `virt`, nie tworząc żadnych tablic.
+ * Walks the PML4 -> PDPT -> PD -> PT tree and returns a pointer to the
+ * leaf entry for `virt`, without creating any tables.
  *
- * Zwraca wskaźnik do wpisu PT (4 KiB), PD (2 MiB) lub PDPT (1 GiB),
- * albo NULL, gdy adres nie jest zmapowany. Przez `out_level` zwraca
- * poziom, na którym znalazł liść.
+ * Returns a pointer to a PT entry (4 KiB), PD entry (2 MiB) or PDPT entry
+ * (1 GiB), or NULL when the address is not mapped. `out_level` receives the
+ * level at which the leaf was found.
  */
 static uint64_t *walk_leaf(uint64_t *pml4,
                            uint64_t virt,
@@ -449,8 +449,8 @@ static uint64_t *walk_leaf(uint64_t *pml4,
 }
 
 /*
- * Przechodzi do wpisu PT (strona 4 KiB) dla `virt`, tworząc po drodze
- * brakujące tablice pośrednie. Zwraca wskaźnik do wpisu PT.
+ * Walks to the PT entry (4 KiB page) for `virt`, creating any missing
+ * intermediate tables along the way. Returns a pointer to the PT entry.
  */
 static uint64_t *walk_to_pt(uint64_t *pml4, uint64_t virt, uint64_t flags)
 {
@@ -483,9 +483,8 @@ bool paging_map_page_in(uint64_t pml4_phys,
     flags &= ~PTE_PAGE_SIZE;
 
     /*
-     * PTE_NX ma sens dopiero, gdy EFER.NXE jest włączony.
-     * Wcześniej ustawienie go kończy się page faultem przy każdym
-     * dostępie do strony.
+     * PTE_NX only makes sense once EFER.NXE is enabled. Before that, setting
+     * it causes a page fault on every access to the page.
      */
     if (!nx_enabled) {
         flags &= ~PTE_NX;
@@ -518,9 +517,9 @@ static bool table_is_empty(const uint64_t *table)
 }
 
 /*
- * Rekurencyjnie zwalnia tablicę pośrednią i wszystkie jej podtablice.
- * `level`: 2 = PDPT, 1 = PD, 0 = PT. Strony-duże (1 GiB / 2 MiB) nie mają
- * podtablic, więc są pomijane — zwalniamy wyłącznie same tablice.
+ * Recursively frees an intermediate table and all of its child tables.
+ * `level`: 2 = PDPT, 1 = PD, 0 = PT. Large pages (1 GiB / 2 MiB) have no
+ * child tables, so they are skipped — we only free the tables themselves.
  */
 static void free_page_table(uint64_t table_phys, unsigned level)
 {
@@ -571,8 +570,8 @@ uint64_t paging_create_pml4(void)
     uint64_t *current = (uint64_t *)phys_to_ptr(paging_read_cr3());
 
     /*
-     * Kopiujemy wyższą połowę (kernela) z aktualnego PML4, żeby nowa
-     * przestrzeń adresowa widziała direct map i cały kernel.
+     * Copy the higher half (kernel) from the current PML4, so the new
+     * address space sees the direct map and the whole kernel.
      */
     for (size_t i = PAGING_KERNEL_PML4_START; i < 512; i++) {
         pml4[i] = current[i];
@@ -594,8 +593,8 @@ void paging_destroy_pml4(uint64_t pml4_phys)
     uint64_t *pml4 = (uint64_t *)phys_to_ptr(pml4_phys);
 
     /*
-     * Zwalniamy tylko dolną połowę (user-space). Górna połowa jest
-     * współdzielona z kernelem i innymi przestrzeniami adresowymi.
+     * We only free the lower half (user-space). The upper half is shared
+     * with the kernel and other address spaces.
      */
     for (size_t i = 0; i < PAGING_KERNEL_PML4_START; i++) {
         uint64_t entry = pml4[i];
@@ -619,9 +618,9 @@ void paging_write_cr3(uint64_t pml4_phys)
 }
 
 /*
- * Po zdjęciu strony 4 KiB sprawdza, czy tablice pośrednie (PT/PD/PDPT)
- * stały się puste, i zwalnia je. Działa tylko w dolnej połowie — tablice
- * kernela są współdzielone i nie mogą być zwalniane.
+ * After removing a 4 KiB page, checks whether the intermediate tables
+ * (PT/PD/PDPT) have become empty and frees them. Only works in the lower
+ * half — kernel tables are shared and must not be freed.
  */
 static void free_empty_tables(uint64_t *pml4, uint64_t virt)
 {
@@ -707,8 +706,8 @@ static bool map_page_2m(uint64_t virt, uint64_t phys, uint64_t flags)
     uint64_t old = pd[idx];
 
     /*
-     * Jeśli istnieje już tablica 4 KiB w tym miejscu,
-     * nie nadpisujemy jej 2 MiB stroną.
+     * If a 4 KiB table already exists here, do not overwrite it with a
+     * 2 MiB page.
      */
     if ((old & PTE_PRESENT) && !(old & PTE_PAGE_SIZE)) {
         paging_panic("cannot map 2M page over existing 4K table");
@@ -848,9 +847,9 @@ bool paging_unmap_page(uint64_t virt)
 }
 
 /*
- * Tłumaczy adres wirtualny na fizyczny. Zwraca 0, gdy adres nie jest
- * zmapowany (fizyczny adres 0 jest wtedy nierozróżnialny — używaj
- * paging_is_mapped() do jednoznacznego sprawdzenia).
+ * Translates a virtual address to a physical one. Returns 0 when the address
+ * is not mapped (physical address 0 is then indistinguishable — use
+ * paging_is_mapped() for an unambiguous check).
  */
 uint64_t paging_translate_in(uint64_t pml4_phys, uint64_t virt)
 {
@@ -986,8 +985,8 @@ void paging_init_direct_map(void)
     }
 
     /*
-     * Jeśli bootloader już mapuje fizyczną pamięć dokładnie pod
-     * ARCH_DIRECT_MAP_BASE, nie musimy nic robić.
+     * If the bootloader already maps physical memory exactly at
+     * ARCH_DIRECT_MAP_BASE, there is nothing to do.
      */
     if (boot_phys_offset == ARCH_DIRECT_MAP_BASE) {
         return;

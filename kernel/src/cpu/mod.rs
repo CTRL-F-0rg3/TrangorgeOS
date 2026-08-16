@@ -1,6 +1,6 @@
-//! Zarządzanie wieloma rdzeniami (SMP): wykrywanie CPU przez ACPI/MADT,
-//! inicjalizacja Local APIC, startowanie AP przez trampolinę (INIT-SIPI-SIPI)
-//! oraz samotest potwierdzający, że rdzenie pracują i odpowiadają na IPI.
+//! Multi-core management (SMP): CPU detection via ACPI/MADT, Local APIC
+//! initialization, starting APs via the trampoline (INIT-SIPI-SIPI), and a
+//! self-test confirming the cores run and respond to IPIs.
 
 pub mod acpi;
 pub mod lapic;

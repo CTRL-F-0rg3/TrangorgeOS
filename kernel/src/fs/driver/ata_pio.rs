@@ -65,7 +65,7 @@ impl AtaPio {
         if self.slave { 0xB0 } else { 0xA0 }
     }
 
-    /// Czy dysk został wykryty przez IDENTIFY.
+    /// Whether the drive was detected by IDENTIFY.
     pub fn is_present(&self) -> bool {
         self.present.load(Ordering::Relaxed)
     }

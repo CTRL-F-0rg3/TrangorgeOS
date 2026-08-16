@@ -9,7 +9,7 @@ pub struct InstalledPackage {
     pub kind: ComponentKind,
     pub status: PackageStatus,
     pub installed_at: u64,
-    pub files: alloc::vec::Vec<alloc::string::String>,  // ścieżki do plików
+    pub files: alloc::vec::Vec<alloc::string::String>,  // paths to files
     pub dependencies: alloc::vec::Vec<alloc::string::String>,
 }
 

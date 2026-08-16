@@ -4,13 +4,14 @@ pub mod tfs;
 
 use crate::testing::TestResult;
 
-/// Inicjalizacja podsystemu plików: wykrywa dysk ATA/IDE i parsuje MBR.
+/// Initializes the filesystem subsystem: detects ATA/IDE disks and parses MBR.
 pub fn init() {
     driver::init();
     mbr::init();
 }
 
-/// Samotest FS: wykrycie dysku, odczyt sektora 0 i weryfikacja MBR.
+/// FS self-test: detect a disk, read sector 0, verify the MBR, and run a TFS
+/// roundtrip (format, write, read, mkdir, rm) on the data disk.
 pub fn self_test() -> TestResult {
     if driver::registry::count() == 0 {
         driver::init();
@@ -49,7 +50,7 @@ pub fn self_test() -> TestResult {
 
     crate::println!("[fs] MBR valid, {} partition(s)", parts);
 
-    // --- Roundtrip TFS na dysku danych (slave) ---
+    // --- TFS roundtrip on the data disk (slave) ---
     let data = match root_device() {
         Some(d) => d,
         None => return Err("no data disk"),
@@ -59,34 +60,55 @@ pub fn self_test() -> TestResult {
         return Err("tfs format failed");
     }
 
-    if tfs::write_file(data, "hello.txt", b"Hello from TFS on disk!").is_err() {
+    if tfs::write_file(data, tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {
         return Err("tfs write failed");
     }
 
-    if tfs::write_file(data, "note.txt", b"second file").is_err() {
+    if tfs::write_file(data, tfs::ROOT_DIR, "note.txt", b"second file").is_err() {
         return Err("tfs write #2 failed");
     }
 
-    match tfs::read_file(data, "hello.txt") {
+    match tfs::read_file(data, tfs::ROOT_DIR, "hello.txt") {
         Ok(d) if d == b"Hello from TFS on disk!" => {}
         _ => return Err("tfs readback mismatch"),
     }
 
-    match tfs::entries(data) {
-        Ok(v) if v.len() == 2 => {}
-        _ => return Err("tfs entry count mismatch"),
+    // Directories: create one, put a file inside, read it back, remove it.
+    if tfs::mkdir(data, tfs::ROOT_DIR, "docs").is_err() {
+        return Err("tfs mkdir failed");
     }
 
-    if tfs::remove_file(data, "note.txt").is_err() {
+    let docs = match tfs::find_dir(data, tfs::ROOT_DIR, "docs") {
+        Ok(d) => d,
+        Err(_) => return Err("tfs find_dir failed"),
+    };
+
+    if tfs::write_file(data, docs, "readme.txt", b"inside a folder").is_err() {
+        return Err("tfs write in dir failed");
+    }
+
+    match tfs::read_file(data, docs, "readme.txt") {
+        Ok(d) if d == b"inside a folder" => {}
+        _ => return Err("tfs dir readback mismatch"),
+    }
+
+    if tfs::remove(data, docs, "readme.txt").is_err() {
+        return Err("tfs rm in dir failed");
+    }
+
+    if tfs::remove(data, tfs::ROOT_DIR, "docs").is_err() {
+        return Err("tfs rmdir failed");
+    }
+
+    if tfs::remove(data, tfs::ROOT_DIR, "note.txt").is_err() {
         return Err("tfs rm failed");
     }
 
-    Ok("ATA + MBR + TFS (format/write/read/rm) OK")
+    Ok("ATA + MBR + TFS (format/write/read/mkdir/rm) OK")
 }
 
-/// Zwraca pierwszą dostępną partycję lub cały dysk — dla terminala i TFS.
+/// Returns the data disk (slave) or the boot disk if no data disk is present.
 pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
-    // Preferujemy partycję (jeśli jest), inaczej cały dysk.
     if driver::registry::count() > 1 {
         driver::registry::get(1)
     } else {

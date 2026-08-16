@@ -60,7 +60,7 @@ unsafe impl GlobalAlloc for KernelAlloc {
 }
 
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // kmalloc różnych rozmiarów + write/read
+    // kmalloc of various sizes + write/read
     let sizes: [usize; 6] = [8, 64, 256, 1024, 4096, 16384];
     let mut keep: [*mut u8; 6] = [core::ptr::null_mut(); 6];
 

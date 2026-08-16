@@ -1,0 +1,83 @@
+//! Direct VGA register programming to switch video modes without the BIOS.
+//!
+//! Supports mode 13h (320x200x8, chunky) and mode 12h (640x480x16, planar).
+
+use x86_64::instructions::port::Port;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum VideoMode {
+    /// 320x200, 8 bpp, chunky (linear).
+    Mode13h,
+    /// 640x480, 4 bpp, planar (4 planes).
+    Mode12h,
+}
+
+fn write_regs(misc: u8, seq: &[u8], crtc: &[u8], gfx: &[u8], attr: &[u8]) {
+    unsafe {
+        // Miscellaneous output register.
+        Port::<u8>::new(0x3C2).write(misc);
+
+        // Sequencer.
+        for (i, v) in seq.iter().enumerate() {
+            Port::<u8>::new(0x3C4).write(i as u8);
+            Port::<u8>::new(0x3C5).write(*v);
+        }
+
+        // Unlock CRTC protection (registers 0-7 are write-protected).
+        Port::<u8>::new(0x3D4).write(0x03);
+        let v = Port::<u8>::new(0x3D5).read();
+        Port::<u8>::new(0x3D5).write(v | 0x80);
+        Port::<u8>::new(0x3D4).write(0x11);
+        let v = Port::<u8>::new(0x3D5).read();
+        Port::<u8>::new(0x3D5).write(v & !0x80);
+
+        // CRTC.
+        for (i, v) in crtc.iter().enumerate() {
+            Port::<u8>::new(0x3D4).write(i as u8);
+            Port::<u8>::new(0x3D5).write(*v);
+        }
+
+        // Graphics controller.
+        for (i, v) in gfx.iter().enumerate() {
+            Port::<u8>::new(0x3CE).write(i as u8);
+            Port::<u8>::new(0x3CF).write(*v);
+        }
+
+        // Attribute controller (reset flip-flop first).
+        for (i, v) in attr.iter().enumerate() {
+            let _ = Port::<u8>::new(0x3DA).read();
+            Port::<u8>::new(0x3C0).write(i as u8);
+            Port::<u8>::new(0x3C0).write(*v);
+        }
+
+        // Re-enable the attribute palette.
+        let _ = Port::<u8>::new(0x3DA).read();
+        Port::<u8>::new(0x3C0).write(0x20);
+    }
+}
+
+/// Programs the VGA registers for the given mode.
+pub fn set_mode(mode: VideoMode) {
+    match mode {
+        VideoMode::Mode13h => write_regs(
+            0x63,
+            &[0x03, 0x01, 0x0F, 0x00, 0x0E],
+            &[0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F, 0x00, 0x41,
+              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9C, 0x0E, 0x8F, 0x28,
+              0x40, 0x96, 0xB9, 0xA3, 0xFF],
+            &[0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F, 0xFF],
+            &[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+              0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x41, 0x00, 0x0F, 0x00, 0x00],
+        ),
+        VideoMode::Mode12h => write_regs(
+            0xE3,
+            &[0x03, 0x01, 0x0F, 0x00, 0x06],
+            &[0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0x0B, 0x3E, 0x00, 0x40,
+              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEA, 0x0C, 0xDF, 0x28,
+              0x00, 0xE7, 0x04, 0xE3, 0xFF],
+            &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x0F, 0xFF],
+            &[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+              0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x01, 0x00, 0x0F, 0x00, 0x00],
+        ),
+    }
+}

@@ -1,62 +1,55 @@
 use super::font::FONT8X8;
-use super::framebuffer::{Framebuffer, rgb};
+use super::framebuffer::{Framebuffer, PixelFormat, PALETTE16, rgb};
 use super::galaxy;
 use crate::mm::ffi;
 
-// Rozmiar glifu w pikselach. Renderujemy ZAWSZE 1:1 — bez przeskalowania,
-// bez łączenia bitów. Dzięki temu znak nigdy nie jest ściśnięty ani
-// zdeformowany, niezależnie od rozdzielczości.
+// Glyph size in pixels. We always render 1:1 — no scaling, no bit merging —
+// so a glyph is never squashed or deformed regardless of resolution.
 const GLYPH_W: usize = 8;
 const GLYPH_H: usize = 8;
 
-// Maksymalny rozmiar bufora tekstowego, jaki dostarcza `vga_buffer`
-// (klasyczny układ 80x25). Siatka konsoli nigdy nie wykroczy poza te
-// granice — przy niższych rozdzielczościach będzie mniejsza (mniej
-// widocznych kolumn/wierszy), ale zawsze 1:1 z fontem.
+// Max text buffer size provided by `vga_buffer` (classic 80x25). The console
+// grid never exceeds this; at lower resolutions it simply shows fewer cells,
+// but always 1:1 with the font.
 pub const MAX_COLS: usize = 80;
 pub const MAX_ROWS: usize = 25;
 
-const VGA_PALETTE: [(u32, u32, u32); 16] = [
-    (0,0,0),(0,0,170),(0,170,0),(0,170,170),
-    (170,0,0),(170,0,170),(170,85,0),(170,170,170),
-    (85,85,85),(85,85,255),(85,255,85),(85,255,255),
-    (255,85,85),(255,85,255),(255,255,85),(255,255,255),
-];
-
 static mut FB: Option<Framebuffer> = None;
-static mut CLEAN: *mut u8 = core::ptr::null_mut();
+// Logical background snapshot (RGB888 per pixel), captured after the galaxy
+// fade-in. Used to restore the area underneath transparent text.
+static mut CLEAN: alloc::vec::Vec<u32> = alloc::vec::Vec::new();
 
-// Faktyczna siatka tekstu, wyliczana w init() na podstawie rozdzielczości
-// (width/GLYPH_W, height/GLYPH_H, capowane do MAX_COLS/MAX_ROWS).
+// Actual text grid, computed in init() from the resolution
+// (width/GLYPH_W, height/GLYPH_H, capped to MAX_COLS/MAX_ROWS).
 static mut COLS: usize = 0;
 static mut ROWS: usize = 0;
 
-// Cache ostatnio narysowanej zawartości każdej komórki (znak, atrybut).
-// refresh() przerysowuje tylko komórki, które faktycznie się zmieniły —
-// to główna oszczędność, bo pełne przejście 80x25 z rysowaniem glifu
-// piksel po pikselu jest kosztowne, a w praktyce większość ekranu się
-// nie zmienia między klatkami.
+// Cache of the last drawn contents of each cell (character, attribute).
+// refresh() only redraws cells that actually changed — this is the main
+// saving, because a full 80x25 pass drawing each glyph pixel by pixel is
+// expensive, and in practice most of the screen does not change between
+// frames.
 static mut CELL_CACHE: [(u8, u8); MAX_COLS * MAX_ROWS] = [(0, 0); MAX_COLS * MAX_ROWS];
 static mut CACHE_VALID: bool = false;
 
-// ŁATKA, nie fix: coś w vga_buffer (poza tymi plikami) serwuje znaki w
-// linii w odwrotnej kolejności względem widocznej szerokości konsoli.
-// Zamiast czekać na naprawę u źródła, czytamy kolumnę `col` jako
-// `cols-1-col`. Jeśli/gdy prawdziwa przyczyna zostanie znaleziona i
-// naprawiona w vga_buffer.rs, to trzeba wyłączyć (ustawić na false),
-// inaczej tekst znów będzie odwrócony, tylko w drugą stronę.
+// PATCH, not a fix: something in vga_buffer (outside these files) serves
+// characters in a line in reverse order relative to the visible console
+// width. Instead of waiting for a fix at the source, we read column `col`
+// as `cols-1-col`. If/when the real cause is found and fixed in
+// vga_buffer.rs, this must be disabled (set to false), otherwise the text
+// will be mirrored again, just the other way around.
 const REVERSE_TEXT_COLS: bool = true;
 
 fn fb() -> &'static mut Framebuffer {
     unsafe { FB.as_mut().unwrap() }
 }
 
-/// Aktualna liczba kolumn siatki tekstu (zależna od rozdzielczości).
+/// Current number of text grid columns (resolution-dependent).
 pub fn cols() -> usize {
     unsafe { COLS }
 }
 
-/// Aktualna liczba wierszy siatki tekstu (zależna od rozdzielczości).
+/// Current number of text grid rows (resolution-dependent).
 pub fn rows() -> usize {
     unsafe { ROWS }
 }
@@ -82,9 +75,26 @@ fn set_palette_rgb332() {
     }
 }
 
-// Kursor sprzętowy trybu tekstowego (rejestr CRTC 0x0A, bit 5 = disable)
-// zostaje "żywy" po przełączeniu w tryb graficzny, jeśli nikt go jawnie
-// nie wyłączy — stąd migający/kwadratowy artefakt na środku ekranu.
+// Programs the DAC with the standard 16-color VGA palette (for planar mode).
+fn set_palette16() {
+    use x86_64::instructions::port::Port;
+
+    let mut idx = Port::<u8>::new(0x3C8);
+    let mut data = Port::<u8>::new(0x3C9);
+
+    unsafe {
+        idx.write(0);
+        for &(r, g, b) in PALETTE16.iter() {
+            data.write(r as u8);
+            data.write(g as u8);
+            data.write(b as u8);
+        }
+    }
+}
+
+// The text-mode hardware cursor (CRTC register 0x0A, bit 5 = disable) stays
+// "alive" after switching to a graphics mode if nobody explicitly disables
+// it — hence the blinking/square artifact in the middle of the screen.
 fn disable_text_cursor() {
     use x86_64::instructions::port::Port;
 
@@ -116,7 +126,7 @@ pub fn test_fill(r: u32, g: u32, b: u32) {
     }
 }
 
-pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
+pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFormat) -> bool {
     if width == 0 || height == 0 || stride == 0 {
         return false;
     }
@@ -127,9 +137,10 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
 
     let width = width as usize;
     let height = height as usize;
-    let stride = stride as usize; // 8 bpp: bajty na wiersz
+    let stride = stride as usize; // bytes per row (for Planar4: width/8)
 
-    // Zaokrąglamy do strony (vmm_map_device wymaga wyrównania; okno VGA to 64 KiB).
+    // Round up to a page (vmm_map_device requires alignment; the VGA window
+    // is up to 64 KiB).
     let size = ((stride * height) + 0xFFF) & !0xFFF;
 
     let ptr = if fb_addr >= 0xFFFF800000000000 {
@@ -144,28 +155,17 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
         virt as *mut u8
     };
 
-    set_palette_rgb332();
+    match format {
+        PixelFormat::Indexed8 => set_palette_rgb332(),
+        PixelFormat::Planar4 => set_palette16(),
+    }
     disable_text_cursor();
 
-    // Framebuffer VGA 13h pod 0xA0000 jest natywnie top-down (wiersz 0 =
-    // góra ekranu). Wymuszamy FLIP=false tutaj, bo jeśli coś gdzie indziej
-    // w kernelu ustawiło ten globalny flag na true (np. zaszłość po innym
-    // trybie), cały ekran — tło i tekst — renderuje się odwrócony w pionie.
-    //
-    // FLIP_X=true to próba na podstawie objawu z ostatniego zrzutu ekranu
-    // (tekst poprawny w pionie, lustrzany w poziomie). JEŚLI PO TEJ ZMIANIE
-    // dalej jest źle (albo zrobi się gorzej — np. galaktyka wygląda ok, ale
-    // tekst nadal lustrzany, lub litery są teraz w dobrą stronę ale kolejność
-    // słów/kolumn w linii jest zła), ustaw to z powrotem na false i wyślij
-    // mi zawartość vga_buffer::text_cell() — wtedy odbicie siedzi w źródle
-    // danych tekstu, nie w warstwie graficznej, i trzeba naprawić tam.
-    //
-    // Jeśli kiedyś dojdzie tryb z naprawdę innym framebufferem (np. VESA
-    // LFB), obie flagi lepiej przekazywać jako parametr zamiast nadpisywać
-    // na sztywno tutaj.
     unsafe {
+        // Mode 13h framebuffer is top-down and text comes out mirrored on the
+        // X axis for this hardware; keep the historical workaround for it.
         super::framebuffer::FLIP = false;
-        super::framebuffer::FLIP_X = true;
+        super::framebuffer::FLIP_X = format == PixelFormat::Indexed8;
     }
 
     unsafe {
@@ -174,23 +174,19 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
             width,
             height,
             stride,
+            format,
         });
 
-        // Siatka konsoli dopasowana do rozdzielczości: tyle kolumn/wierszy,
-        // ile zmieści się glifami 8x8 bez ściskania, capowane do rozmiaru
-        // bufora tekstowego. Przy 320x200 wyjdzie 40x25 (nie 80x25) —
-        // mniej widocznych kolumn, ale bez deformacji fontu.
+        // Console grid derived from the resolution, capped to the text buffer
+        // size, always 1:1 with the glyph.
         COLS = (width / GLYPH_W).clamp(1, MAX_COLS);
         ROWS = (height / GLYPH_H).clamp(1, MAX_ROWS);
 
-        // Nowa rozdzielczość = cache nieaktualny, wymuszamy pełny redraw.
+        // New resolution = cache invalid, force a full redraw.
         CACHE_VALID = false;
     }
 
-    // Liczba klatek fade-inu skalowana w dół dla dużych rozdzielczości —
-    // przy 320x200 (64k px) 17 klatek jest tanie, ale przy większych
-    // trybach ten sam koszt liczony per-piksel narasta szybko. Zamiast
-    // ciąć jakość, po prostu robimy mniej kroków fade-inu.
+    // Fade-in step count scales down for larger resolutions.
     let total_px = width * height;
     let steps: u32 = if total_px > 400_000 {
         4
@@ -211,20 +207,15 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32) -> bool {
         t += step_size;
     }
 
-    let mut buf = 0u64;
-
-    if !unsafe { ffi::vmm_alloc(size, 1, &mut buf) } {
-        return false;
-    }
-
+    // Capture the logical background (RGB888 per pixel) for transparent text.
     unsafe {
-        CLEAN = buf as *mut u8;
-
-        core::ptr::copy_nonoverlapping(
-            fb().ptr as *const u8,
-            CLEAN,
-            fb().stride * fb().height,
-        );
+        CLEAN.clear();
+        CLEAN.reserve(width * height);
+        for y in 0..height {
+            for x in 0..width {
+                CLEAN.push(fb().get(x, y));
+            }
+        }
     }
 
     refresh();
@@ -237,18 +228,22 @@ pub fn refresh() {
         return;
     }
 
-    // Pierwsze odświeżenie po init()/zmianie rozdzielczości: pełny
-    // redraw. Kolejne wywołania: tylko zmienione komórki.
+    // First refresh after init()/resolution change: full redraw. Subsequent
+    // calls: only changed cells.
     let first = unsafe { !CACHE_VALID };
 
     if first {
-        let (h, s) = {
+        let (w, h) = {
             let f = fb();
-            (f.height, f.stride)
+            (f.width, f.height)
         };
 
         unsafe {
-            core::ptr::copy_nonoverlapping(CLEAN, fb().ptr, s * h);
+            for y in 0..h {
+                for x in 0..w {
+                    fb().set(x, y, CLEAN[y * w + x]);
+                }
+            }
         }
     }
 
@@ -279,23 +274,22 @@ pub fn refresh() {
     }
 }
 
-/// Rysuje jedną komórkę tekstu 1:1 z fontem 8x8 — bez przeskalowania,
-/// bez łączenia bitów. Bit 7 = najbardziej wysunięty w lewo piksel
-/// wiersza `gy` (kolejność: góra->dół, lewo->prawo), więc znak nigdy
-/// nie wychodzi odbity ani zniekształcony.
+/// Draws one text cell 1:1 with the 8x8 font — no scaling, no bit merging.
+/// Bit 7 = leftmost pixel of row `gy` (order: top->bottom, left->right), so
+/// a character never comes out mirrored or distorted.
 ///
-/// Tło komórki: jeśli atrybut ma bg == 0 (domyślny/czarny — tak wygląda
-/// zdecydowana większość bufora tekstowego), NIE malujemy płaskiego
-/// koloru, tylko przywracamy piksel spod tekstu z bufora CLEAN (czyli
-/// mgławica prześwituje zza tekstu, tak jak było zamierzone). Jeśli bg
-/// jest jawnie ustawione na coś innego niż 0 (np. podświetlenie), maluje
-/// się kryjąco tym kolorem — jak wcześniej.
+/// Cell background: when the attribute has bg == 0 (default/black — how the
+/// vast majority of the text buffer looks), we do NOT paint a flat color;
+/// instead we restore the pixel underneath the text from the CLEAN buffer
+/// (so the nebula shows through behind the text, as intended). When bg is
+/// explicitly set to something other than 0 (e.g. a highlight), it is
+/// painted opaquely with that color — as before.
 fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
     let bg_idx = attr >> 4;
     let transparent_bg = bg_idx == 0;
 
-    let fg = VGA_PALETTE[(attr & 0x0F) as usize];
-    let bg = VGA_PALETTE[bg_idx as usize];
+    let fg = PALETTE16[(attr & 0x0F) as usize];
+    let bg = PALETTE16[bg_idx as usize];
 
     let glyph = if (0x20..=0x7E).contains(&ch) {
         FONT8X8[(ch - 0x20) as usize]
@@ -328,15 +322,10 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
             if lit {
                 fb().set(px, py, rgb(fg.0, fg.1, fg.2));
             } else if transparent_bg {
-                // Kopiujemy surowy bajt indeksu palety wprost z CLEAN —
-                // taniej niż get()+set() (bez konwersji RGB w obie strony)
-                // i dokładnie odtwarza to, co tam narysowała galaxy::render.
-                // offset() uwzględnia FLIP/FLIP_X, więc to zostaje spójne
-                // niezależnie od orientacji framebuffera.
+                // Restore the pixel underneath from the background snapshot.
                 unsafe {
-                    let off = fb().offset(px, py);
-                    let idx_byte = *CLEAN.add(off);
-                    *fb().ptr.add(off) = idx_byte;
+                    let c = CLEAN[py * fb().width + px];
+                    fb().set(px, py, c);
                 }
             } else {
                 fb().set(px, py, rgb(bg.0, bg.1, bg.2));
