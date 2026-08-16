@@ -3,7 +3,7 @@ use super::trb::*;
 use crate::drivers::usb::usbcore::device::UsbDevice;
 use crate::drivers::usb::UsbError;
 
-fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
+pub fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
     for _ in 0..2_000_000 {
         if let Some(t) = x.ev.pending() {
             let t = t;
@@ -11,6 +11,26 @@ fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
             x.regs.rt_write(super::init::RT_ERDP, x.ev.erdp());
 
             if t.typ() == TRB_TRANSFER_EVENT && t.slot_id() == slot {
+                return Ok(t.completion_code());
+            }
+
+            continue;
+        }
+
+        core::hint::spin_loop();
+    }
+
+    Err(UsbError::Timeout)
+}
+
+pub fn wait_transfer_ep(x: &mut Xhci, slot: u8, ep: u8) -> Result<u8, UsbError> {
+    for _ in 0..2_000_000 {
+        if let Some(t) = x.ev.pending() {
+            let t = t;
+            x.ev.pop();
+            x.regs.rt_write(super::init::RT_ERDP, x.ev.erdp());
+
+            if t.typ() == TRB_TRANSFER_EVENT && t.slot_id() == slot && t.ep_id() == ep {
                 return Ok(t.completion_code());
             }
 

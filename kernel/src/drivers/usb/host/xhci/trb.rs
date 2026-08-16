@@ -108,6 +108,15 @@ impl Trb {
         }
     }
 }
+
+pub fn normal(addr: u64, len: u32) -> Self {
+    Trb {
+        param: addr & ADDR_MASK,
+        status: len & 0xFFFF,
+        control: (TRB_NORMAL << 10) | (1 << 5),
+    }
+}
+
 pub fn evaluate_ctx(slot: u8, ctx_phys: u64) -> Self {
     Trb {
         param: ctx_phys & ADDR_MASK,

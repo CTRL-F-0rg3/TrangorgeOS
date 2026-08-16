@@ -13,7 +13,8 @@ extern "C" {
 
 pub fn enumerate(x: &mut Xhci, port: u32) -> Result<UsbDevice, UsbError> {
     let slot = x.command(Trb::enable_slot())?.slot_id();
-
+    let mut dev = UsbDevice::new(slot, speed, x.ctx_size)?;
+    dev.port = port;
     let speed = x.regs.port_speed(port);
 
     let mut dev = UsbDevice::new(slot, speed, x.ctx_size)?;
