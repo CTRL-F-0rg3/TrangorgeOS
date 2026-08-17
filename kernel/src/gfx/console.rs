@@ -335,8 +335,28 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
         (f.width, f.height)
     };
 
+    // Framebuffer::set() re-maps (x, y) through FLIP/FLIP_X before writing
+    // to VRAM (needed because e.g. the Bochs LFB is bottom-up), which
+    // inverts the *whole screen* — background included. A glyph is not
+    // symmetric like the nebula noise, so without compensation it can come
+    // out upside-down and/or mirrored around its own axes even though its
+    // cell position on screen is correct.
+    //
+    // IMPORTANT: this per-glyph correction is NOT simply "mirror whenever
+    // FLIP/FLIP_X is set". FLIP_X for Indexed8 is already compensated at
+    // the cell layout level by REVERSE_TEXT_COLS (see refresh()), so glyphs
+    // there must NOT be mirrored again here — doing so double-compensates
+    // and breaks the previously-correct 320x200/640x480 output. Empirically,
+    // only Rgb888 needs a glyph-level correction, and it needs it on BOTH
+    // axes (confirmed: after compensating Y only, text was upright but
+    // mirrored left-right). So the per-glyph flip is keyed on the pixel
+    // format itself, independent of the FLIP/FLIP_X screen-level flags.
+    let format = fb().format;
+    let glyph_flip = format == PixelFormat::Rgb888;
+
     for gy in 0..GLYPH_H {
-        let bits = glyph[gy];
+        let src_gy = if glyph_flip { GLYPH_H - 1 - gy } else { gy };
+        let bits = glyph[src_gy];
         let py = row * GLYPH_H + gy;
 
         if py >= h {
@@ -350,7 +370,8 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
                 continue;
             }
 
-            let lit = bits & (0x80 >> gx) != 0;
+            let src_gx = if glyph_flip { GLYPH_W - 1 - gx } else { gx };
+            let lit = bits & (0x80 >> src_gx) != 0;
 
             if lit {
                 fb().set(px, py, rgb(fg.0, fg.1, fg.2));
