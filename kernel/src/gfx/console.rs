@@ -330,38 +330,52 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
         FONT8X8[('?' as u8 - 0x20) as usize]
     };
 
-    let (w, h) = {
+    let (w, h, format) = {
         let f = fb();
-        (f.width, f.height)
+        (f.width, f.height, f.format)
     };
 
-    // Framebuffer::set() re-maps (x, y) through FLIP/FLIP_X before writing
-    // to VRAM (needed because e.g. the Bochs LFB is bottom-up), which
-    // inverts the *whole screen* — background included. A glyph is not
-    // symmetric like the nebula noise, so without compensation it can come
-    // out upside-down and/or mirrored around its own axes even though its
-    // cell position on screen is correct.
+    // Two SEPARATE corrections are needed for Rgb888 (Bochs LFB) — do not
+    // conflate them:
     //
-    // IMPORTANT: this per-glyph correction is NOT simply "mirror whenever
-    // FLIP/FLIP_X is set". FLIP_X for Indexed8 is already compensated at
-    // the cell layout level by REVERSE_TEXT_COLS (see refresh()), so glyphs
-    // there must NOT be mirrored again here — doing so double-compensates
-    // and breaks the previously-correct 320x200/640x480 output. Empirically,
-    // only Rgb888 needs a glyph-level correction, and it needs it on BOTH
-    // axes (confirmed: after compensating Y only, text was upright but
-    // mirrored left-right). So the per-glyph flip is keyed on the pixel
-    // format itself, independent of the FLIP/FLIP_X screen-level flags.
-    let format = fb().format;
-    let glyph_flip = format == PixelFormat::Rgb888;
+    // 1. BLOCK position (Y only): the text grid is capped to
+    //    MAX_COLS/MAX_ROWS, so at large resolutions it only covers a small
+    //    y-band (e.g. 0..200 out of 0..1080). Framebuffer::set()/get() flip
+    //    y around the *screen* height for Rgb888 (see Framebuffer::ry and
+    //    the note in console::init) — correct for full-screen content like
+    //    the galaxy, but that same flip carries the small text band to the
+    //    *opposite* edge of the screen (bottom instead of top, rows in
+    //    reverse order). Fixed below via `vy`, which mirrors the logical y
+    //    around the screen height *before* handing it to set()/CLEAN, so
+    //    set()'s own flip lands it back at the intended physical row. This
+    //    also means gy itself must NOT be reversed when reading glyph rows:
+    //    vy already reverses how gy maps to the physical row, so reversing
+    //    the bits too would flip the glyph a second time (upside down).
+    //
+    // 2. GLYPH shape (X only): set()/get() never touch x for Rgb888
+    //    (FLIP_X is only set for Indexed8 — see console::init), so there is
+    //    no screen-level X correction to piggyback on. The glyph's columns
+    //    still need reading back-to-front on this format to come out
+    //    non-mirrored (confirmed empirically) — see src_gx below.
+    //
+    // Both only apply to Rgb888; legacy formats have no screen-level flip.
+    let flip = format == PixelFormat::Rgb888;
 
     for gy in 0..GLYPH_H {
-        let src_gy = if glyph_flip { GLYPH_H - 1 - gy } else { gy };
-        let bits = glyph[src_gy];
+        // NOTE: gy is intentionally NOT reversed here. The block-position
+        // correction below (vy = h - 1 - py) already inverts how gy maps to
+        // the physical row, so reversing the glyph's row order on top of
+        // that would flip it a second time — which is exactly what was
+        // making letters render upside down. Only X still needs its own
+        // mirror (see src_gx below), since vy only touches Y.
+        let bits = glyph[gy];
         let py = row * GLYPH_H + gy;
 
         if py >= h {
             continue;
         }
+
+        let vy = if flip { h - 1 - py } else { py };
 
         for gx in 0..GLYPH_W {
             let px = col * GLYPH_W + gx;
@@ -370,19 +384,19 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
                 continue;
             }
 
-            let src_gx = if glyph_flip { GLYPH_W - 1 - gx } else { gx };
+            let src_gx = if flip { GLYPH_W - 1 - gx } else { gx };
             let lit = bits & (0x80 >> src_gx) != 0;
 
             if lit {
-                fb().set(px, py, rgb(fg.0, fg.1, fg.2));
+                fb().set(px, vy, rgb(fg.0, fg.1, fg.2));
             } else if transparent_bg {
                 // Restore the pixel underneath from the background snapshot.
                 unsafe {
-                    let c = CLEAN[py * fb().width + px];
-                    fb().set(px, py, c);
+                    let c = CLEAN[vy * fb().width + px];
+                    fb().set(px, vy, c);
                 }
             } else {
-                fb().set(px, py, rgb(bg.0, bg.1, bg.2));
+                fb().set(px, vy, rgb(bg.0, bg.1, bg.2));
             }
         }
     }
