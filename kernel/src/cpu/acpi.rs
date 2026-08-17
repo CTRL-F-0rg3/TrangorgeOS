@@ -22,6 +22,11 @@ pub struct MadtInfo {
     pub io_apics: Vec<IoApic>,
 }
 
+/// Fixed ACPI Description Table — only the power-management port is extracted.
+pub struct FadtInfo {
+    pub pm1a_cnt_blk: u32,
+}
+
 pub struct Rsdp {
     pub revision: u8,
     pub rsdt_addr: u32,
@@ -30,6 +35,7 @@ pub struct Rsdp {
 
 const RSDP_SIGNATURE: &[u8; 8] = b"RSD PTR ";
 const MADT_SIGNATURE: &[u8; 4] = b"APIC";
+const FADT_SIGNATURE: &[u8; 4] = b"FACP";
 
 unsafe fn phys_read<T: Copy>(phys_offset: u64, phys: u64) -> T {
     ptr::read_unaligned((phys_offset + phys) as *const T)
@@ -101,13 +107,13 @@ unsafe fn is_table(phys_offset: u64, addr: u64, sig: &[u8; 4]) -> bool {
     addr != 0 && phys_slice(phys_offset, addr, 4) == sig
 }
 
-pub unsafe fn find_madt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
+unsafe fn find_table(phys_offset: u64, rsdp: &Rsdp, sig: &[u8; 4]) -> Option<u64> {
     if rsdp.xsdt_addr != 0 {
         let len = phys_read::<u32>(phys_offset, rsdp.xsdt_addr + 4) as usize;
         let count = len.saturating_sub(36) / 8;
         for i in 0..count {
             let entry = phys_read::<u64>(phys_offset, rsdp.xsdt_addr + 36 + (i as u64) * 8);
-            if is_table(phys_offset, entry, MADT_SIGNATURE) {
+            if is_table(phys_offset, entry, sig) {
                 return Some(entry);
             }
         }
@@ -118,7 +124,7 @@ pub unsafe fn find_madt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
         for i in 0..count {
             let entry =
                 phys_read::<u32>(phys_offset, rsdp.rsdt_addr as u64 + 36 + (i as u64) * 4) as u64;
-            if is_table(phys_offset, entry, MADT_SIGNATURE) {
+            if is_table(phys_offset, entry, sig) {
                 return Some(entry);
             }
         }
@@ -126,6 +132,20 @@ pub unsafe fn find_madt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
     } else {
         None
     }
+}
+
+pub unsafe fn find_madt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
+    find_table(phys_offset, rsdp, MADT_SIGNATURE)
+}
+
+pub unsafe fn find_fadt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
+    find_table(phys_offset, rsdp, FADT_SIGNATURE)
+}
+
+/// Reads the PM1a control-register port from the FADT (offset 64).
+pub unsafe fn parse_fadt(phys_offset: u64, fadt: u64) -> FadtInfo {
+    let pm1a_cnt_blk = phys_read::<u32>(phys_offset, fadt + 64);
+    FadtInfo { pm1a_cnt_blk }
 }
 
 pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {

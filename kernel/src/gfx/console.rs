@@ -182,9 +182,10 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     unsafe {
         // Mode 13h framebuffer is top-down and text comes out mirrored on the
         // X axis for this hardware; keep the historical workaround for it.
-        // The Bochs VBE linear framebuffer (Rgb888) is also top-down, so no
-        // Y-axis flip is needed.
-        super::framebuffer::FLIP = false;
+        // The Bochs VBE linear framebuffer (Rgb888) is bottom-up on QEMU's
+        // stdvga card: scanline 0 lives at the end of the buffer, so the whole
+        // image must be flipped on the Y axis to come out upright.
+        super::framebuffer::FLIP = format == PixelFormat::Rgb888;
         super::framebuffer::FLIP_X = format == PixelFormat::Indexed8;
 
         // Legacy VGA modes need reversed column order; the linear framebuffer

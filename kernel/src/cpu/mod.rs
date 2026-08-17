@@ -21,6 +21,8 @@ pub const MAX_CPUS: usize = 32;
 const AP_STACK_SIZE: usize = 64 * 1024;
 
 static TOTAL_CPUS: AtomicU32 = AtomicU32::new(1);
+// Physical memory offset from the bootloader, used to read ACPI tables.
+static PHYS_OFFSET: AtomicU64 = AtomicU64::new(0);
 
 static AP_STARTED: [AtomicBool; MAX_CPUS] = [const { AtomicBool::new(false) }; MAX_CPUS];
 static AP_DONE: [AtomicBool; MAX_CPUS] = [const { AtomicBool::new(false) }; MAX_CPUS];
@@ -126,6 +128,7 @@ fn wait_for(flag: &AtomicBool, max_ms: u64) -> bool {
 /// Wykrywa CPU (ACPI/MADT), inicjalizuje Local APIC i startuje AP.
 pub fn init(boot_info: &'static bootloader::BootInfo) {
     let phys_offset = boot_info.physical_memory_offset;
+    PHYS_OFFSET.store(phys_offset, Ordering::Relaxed);
 
     let Some(rsdp) = acpi::find_rsdp(phys_offset) else {
         println!("[cpu] no ACPI RSDP found — single CPU (BSP only)");
@@ -206,6 +209,53 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
 /// Liczba wykrytych CPU (BSP + AP).
 pub fn total_cpus() -> u32 {
     TOTAL_CPUS.load(Ordering::SeqCst)
+}
+
+/// Powers off the machine via ACPI (PM1a_CNT: SLP_TYP = 5, SLP_EN). Returns
+/// false if the ACPI tables cannot be found; otherwise never returns.
+pub fn poweroff() -> bool {
+    let phys_offset = PHYS_OFFSET.load(Ordering::Relaxed);
+
+    let Some(rsdp_addr) = acpi::find_rsdp(phys_offset) else {
+        return false;
+    };
+    let rsdp = unsafe { acpi::parse_rsdp(phys_offset, rsdp_addr) };
+    let Some(fadt) = (unsafe { acpi::find_fadt(phys_offset, &rsdp) }) else {
+        return false;
+    };
+    let info = unsafe { acpi::parse_fadt(phys_offset, fadt) };
+    if info.pm1a_cnt_blk == 0 {
+        return false;
+    }
+
+    use x86_64::instructions::port::Port;
+    let mut port = Port::<u16>::new(info.pm1a_cnt_blk as u16);
+    unsafe { port.write(0x3400) };
+
+    // The write should power the machine off; if it does not, halt forever.
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+
+/// Reboots the machine by pulsing the CPU reset line through the 8042
+/// keyboard controller. Never returns.
+pub fn reboot() -> ! {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut kbd = Port::<u8>::new(0x64);
+        // Wait for the keyboard controller input buffer to become empty.
+        while kbd.read() & 0x02 != 0 {
+            core::hint::spin_loop();
+        }
+        kbd.write(0xFE);
+    }
+
+    // If the reset did not happen, halt forever.
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 
 pub fn self_test() -> TestResult {

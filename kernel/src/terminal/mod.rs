@@ -276,7 +276,7 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ls cd mkdir format write read rm res");
+            crate::println!("commands: help clear echo info ls cd mkdir format write read rm res poweroff reboot");
             crate::println!("  write <name> <text...>  write a text file to disk");
             crate::println!("  read  <name>            read a file from disk");
             crate::println!("  rm    <name>            remove a file or empty folder");
@@ -284,6 +284,8 @@ fn execute(line: &str) {
             crate::println!("  mkdir <name>            create a folder");
             crate::println!("  cd    <name|/>          change folder ( / = root )");
             crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
+            crate::println!("  poweroff                power off the machine");
+            crate::println!("  reboot                  reboot the machine");
             crate::println!("  format                  format the disk (TFS)");
         }
         "clear" => {
@@ -360,6 +362,16 @@ fn execute(line: &str) {
             } else {
                 crate::println!("usage: res <320|640|WxH|W:H>  (e.g. res 1920:1080)");
             }
+        }
+        "poweroff" => {
+            crate::println!("powering off...");
+            if !crate::cpu::poweroff() {
+                crate::println!("poweroff failed (ACPI not available)");
+            }
+        }
+        "reboot" => {
+            crate::println!("rebooting...");
+            crate::cpu::reboot();
         }
         "format" => match dev() {
             Some(d) => match crate::fs::tfs::format(d) {
