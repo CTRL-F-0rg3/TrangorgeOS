@@ -3,15 +3,14 @@ use super::framebuffer::{Framebuffer, PixelFormat, PALETTE16, rgb};
 use super::galaxy;
 use crate::mm::ffi;
 
-// Glyph size in pixels (source font is 8x8). The console scales each glyph by
-// an integer factor derived from the resolution, so text stays sharp and is
-// never stretched or deformed.
+// Glyph size in pixels (8x8 font, drawn 1:1 — never scaled or deformed). The
+// console grid is recomputed from the resolution on every switch.
 const GLYPH_W: usize = 8;
 const GLYPH_H: usize = 8;
 
 // Max text buffer size provided by `vga_buffer` (classic 80x25). The console
-// grid never exceeds this; at lower resolutions it simply shows fewer cells,
-// at higher ones it scales the glyphs up to fill the screen proportionally.
+// grid never exceeds this; at higher resolutions it shows more cells, at
+// lower ones fewer — but always 1:1 with the font.
 pub const MAX_COLS: usize = 80;
 pub const MAX_ROWS: usize = 25;
 
@@ -39,19 +38,11 @@ static mut CACHE_VALID: bool = false;
 static mut FB_DEV_VIRT: u64 = 0;
 static mut FB_DEV_SIZE: usize = 0;
 
-// Integer scale factor and centering offsets, recomputed on every resolution
-// change so the whole text grid is re-laid-out and scaled to the new size.
-static mut SCALE: usize = 1;
-static mut OFF_X: usize = 0;
-static mut OFF_Y: usize = 0;
-
-// PATCH, not a fix: something in vga_buffer (outside these files) serves
-// characters in a line in reverse order relative to the visible console
-// width. Instead of waiting for a fix at the source, we read column `col`
-// as `cols-1-col`. If/when the real cause is found and fixed in
-// vga_buffer.rs, this must be disabled (set to false), otherwise the text
-// will be mirrored again, just the other way around.
-const REVERSE_TEXT_COLS: bool = true;
+// Legacy VGA modes (13h/12h) serve text reversed on this hardware, so the
+// console must read columns back-to-front for them. The Bochs VBE linear
+// framebuffer (Rgb888) uses a standard top-left layout and needs no reversal.
+// The value is set in init() from the pixel format.
+static mut REVERSE_TEXT_COLS: bool = true;
 
 fn fb() -> &'static mut Framebuffer {
     unsafe { FB.as_mut().unwrap() }
@@ -169,16 +160,7 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
 
         let mut virt = 0u64;
 
-        // The linear framebuffer lives in ordinary (prefetchable) RAM, so map
-        // it cacheable; the legacy VGA aperture at 0xA0000 is true MMIO and
-        // must stay uncached.
-        let mapped = if format == PixelFormat::Rgb888 {
-            unsafe { ffi::vmm_map_framebuffer(fb_addr, size, &mut virt) }
-        } else {
-            unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) }
-        };
-
-        if !mapped {
+        if !unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) } {
             return false;
         }
 
@@ -200,8 +182,14 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     unsafe {
         // Mode 13h framebuffer is top-down and text comes out mirrored on the
         // X axis for this hardware; keep the historical workaround for it.
+        // The Bochs VBE linear framebuffer (Rgb888) is also top-down, so no
+        // Y-axis flip is needed.
         super::framebuffer::FLIP = false;
         super::framebuffer::FLIP_X = format == PixelFormat::Indexed8;
+
+        // Legacy VGA modes need reversed column order; the linear framebuffer
+        // (Rgb888) does not.
+        REVERSE_TEXT_COLS = format != PixelFormat::Rgb888;
     }
 
     unsafe {
@@ -213,22 +201,10 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
             format,
         });
 
-        // Uniform integer scale so the 80x25 grid fills the resolution as much
-        // as possible without stretching (glyphs stay square). Then derive the
-        // visible cell grid and center it on screen.
-        let scale = (width / (MAX_COLS * GLYPH_W))
-            .min(height / (MAX_ROWS * GLYPH_H))
-            .max(1);
-        let cols = (width / (GLYPH_W * scale)).clamp(1, MAX_COLS);
-        let rows = (height / (GLYPH_H * scale)).clamp(1, MAX_ROWS);
-        let off_x = width.saturating_sub(MAX_COLS * GLYPH_W * scale) / 2;
-        let off_y = height.saturating_sub(MAX_ROWS * GLYPH_H * scale) / 2;
-
-        COLS = cols;
-        ROWS = rows;
-        SCALE = scale;
-        OFF_X = off_x;
-        OFF_Y = off_y;
+        // Text grid recomputed fresh from the resolution (1:1 with the glyph),
+        // capped to the text buffer size.
+        COLS = (width / GLYPH_W).clamp(1, MAX_COLS);
+        ROWS = (height / GLYPH_H).clamp(1, MAX_ROWS);
 
         // New resolution = cache invalid, force a full redraw.
         CACHE_VALID = false;
@@ -307,7 +283,7 @@ pub fn refresh() {
 
     for row in 0..rows {
         for col in 0..cols {
-            let src_col = if REVERSE_TEXT_COLS { cols - 1 - col } else { col };
+            let src_col = if unsafe { REVERSE_TEXT_COLS } { cols - 1 - col } else { col };
             let (ch, attr) = crate::vga_buffer::text_cell(row, src_col);
             let idx = row * MAX_COLS + col;
 
@@ -330,10 +306,9 @@ pub fn refresh() {
     }
 }
 
-/// Draws one text cell, scaling the 8x8 glyph by the current `SCALE` factor
-/// (nearest-neighbor, so pixels stay square) and honoring the centering
-/// offsets computed in init(). Bit 7 = leftmost pixel of row `gy` (order:
-/// top->bottom, left->right), so a character never comes out mirrored.
+/// Draws one text cell 1:1 with the 8x8 font — no scaling, no bit merging.
+/// Bit 7 = leftmost pixel of row `gy` (order: top->bottom, left->right), so
+/// a character never comes out mirrored or distorted.
 ///
 /// Cell background: when the attribute has bg == 0 (default/black — how the
 /// vast majority of the text buffer looks), we do NOT paint a flat color;
@@ -354,52 +329,38 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
         FONT8X8[('?' as u8 - 0x20) as usize]
     };
 
-    let (w, h, scale, off_x, off_y) = {
+    let (w, h) = {
         let f = fb();
-        unsafe { (f.width, f.height, SCALE, OFF_X, OFF_Y) }
+        (f.width, f.height)
     };
-
-    let cell_w = GLYPH_W * scale;
-    let cell_h = GLYPH_H * scale;
-    let base_x = off_x + col * cell_w;
-    let base_y = off_y + row * cell_h;
 
     for gy in 0..GLYPH_H {
         let bits = glyph[gy];
+        let py = row * GLYPH_H + gy;
+
+        if py >= h {
+            continue;
+        }
 
         for gx in 0..GLYPH_W {
-            let lit = bits & (0x80 >> gx) != 0;
-            let px0 = base_x + gx * scale;
-            let py0 = base_y + gy * scale;
+            let px = col * GLYPH_W + gx;
 
-            if px0 >= w || py0 >= h {
+            if px >= w {
                 continue;
             }
 
-            for sy in 0..scale {
-                let py = py0 + sy;
-                if py >= h {
-                    break;
-                }
+            let lit = bits & (0x80 >> gx) != 0;
 
-                for sx in 0..scale {
-                    let px = px0 + sx;
-                    if px >= w {
-                        break;
-                    }
-
-                    if lit {
-                        fb().set(px, py, rgb(fg.0, fg.1, fg.2));
-                    } else if transparent_bg {
-                        // Restore the pixel underneath from the background snapshot.
-                        unsafe {
-                            let c = CLEAN[py * fb().width + px];
-                            fb().set(px, py, c);
-                        }
-                    } else {
-                        fb().set(px, py, rgb(bg.0, bg.1, bg.2));
-                    }
+            if lit {
+                fb().set(px, py, rgb(fg.0, fg.1, fg.2));
+            } else if transparent_bg {
+                // Restore the pixel underneath from the background snapshot.
+                unsafe {
+                    let c = CLEAN[py * fb().width + px];
+                    fb().set(px, py, c);
                 }
+            } else {
+                fb().set(px, py, rgb(bg.0, bg.1, bg.2));
             }
         }
     }
