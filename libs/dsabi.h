@@ -6,13 +6,50 @@
 #define DS_MAGIC 0x4452565350414345ULL
 #define DS_RING_CAP 16
 
-#define SVC_SYS 0
+#define DS_INIT_PARAMS_VA 0x40000000ULL
+#define DS_K2D_VA 0x40001000ULL
+#define DS_D2K_VA 0x40002000ULL
+#define DS_SCRATCH_VA 0x40003000ULL
+#define DS_SCRATCH_SIZE 4096
+
+#define SVC_SYS   0
 #define SVC_VIDEO 1
 #define SVC_AUDIO 2
 #define SVC_INPUT 3
 #define SVC_BLOCK 4
+#define SVC_NET   5
 
-#define svc_cmd(cls, op) (((cls) << 8) | ((op) & 0xFF))
+#define svc_cmd(cls, op) ((((uint32_t)(cls)) << 8) | ((op) & 0xFF))
+
+/* SYS ops */
+#define OP_LOG        10
+#define OP_ALLOC      11
+#define OP_FREE       12
+#define OP_MAPMMIO    13
+#define OP_DEVCOUNT   14
+#define OP_BLKREAD    15
+#define OP_BLKWRITE   16
+#define OP_AUDIOINFO  48
+#define OP_PAGEPHYS   49
+
+/* VIDEO ops */
+#define VID_FB_INFO     1
+#define VID_FB_TAKEOVER 2
+#define VID_FB_RELEASE  3
+
+/* INPUT ops */
+#define IN_KEY_POLL 1
+
+/* AUDIO ops */
+#define AUD_PLAY 1
+#define AUD_STOP 2
+#define AUD_JACK 3
+#define AUD_AMP  4
+
+/* BLOCK ops */
+#define BLK_COUNT 1
+#define BLK_READ  2
+#define BLK_WRITE 3
 
 typedef struct {
     uint64_t id;
