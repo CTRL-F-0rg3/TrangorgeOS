@@ -1,17 +1,12 @@
-pub const DS_INIT_PARAMS_VA: u64 = 0x4000_0000;
-pub const DS_K2D_VA: u64 = 0x4000_1000;
-pub const DS_D2K_VA: u64 = 0x4000_2000;
-pub const DS_SCRATCH_VA: u64 = 0x4000_3000;
-pub const DS_SCRATCH_SIZE: usize = 4096;
+pub const DS_SWITCH_VA: u64 = 0x4000_4000;
+pub const DS_STACK_VA: u64 = 0x4FFF_0000;
+pub const DS_STACK_SIZE: u64 = 16 * 1024;
+
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
-pub struct DsInitParams {
-    pub magic: u64,
-    pub version: u32,
-    pub pad: u32,
-    pub k2d_va: u64,
-    pub d2k_va: u64,
-    pub ring_cap: u64,
-    pub ds_va_base: u64,
-    pub ds_va_size: u64,
+pub struct DsSwitch {
+    pub kernel_cr3: u64,
+    pub ds_cr3: u64,
+    pub kernel_resume: u64,
+    pub kernel_stack: u64,
 }

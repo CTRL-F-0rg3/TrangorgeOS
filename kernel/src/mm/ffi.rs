@@ -108,4 +108,5 @@ extern "C" {
                          len: usize,
                          prot: u32) -> bool;
     pub fn munmap(pa: *mut c_void, addr: u64, len: usize) -> bool;
+    pub fn paging_aspace_cr3(as: *mut c_void) -> u64;
 }
