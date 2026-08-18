@@ -54,6 +54,18 @@ fn grant_take(va: u64) -> Option<Grant> {
     None
 }
 
+fn grant_phys(va: u64) -> Option<(u64, u64)> {
+    unsafe {
+        for g in GRANTS.iter() {
+            if g.used && va >= g.va && va < g.va + g.pages * 4096 {
+                return Some((g.phys + (va - g.va), g.pages));
+            }
+        }
+    }
+
+    None
+}
+
 fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
     match m.cmd {
         x if x == DsCmd::Log as u32 => {
@@ -108,6 +120,30 @@ fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
                 }
                 _ => -1,
             }
+        }
+
+        x if x == DsCmd::JackQuery as u32 => {
+            r.arg0 = crate::audio::jack::query();
+            0
+        }
+
+        x if x == DsCmd::JackSetAmp as u32 => {
+            crate::audio::jack::set_amp(m.arg0 != 0);
+            0
+        }
+
+        x if x == DsCmd::AudioPlay as u32 => {
+            match grant_phys(m.arg0) {
+                Some((phys, _)) => {
+                    if crate::audio::jack::play_phys(phys, m.arg1 as u32) { 0 } else { -1 }
+                }
+                None => -1,
+            }
+        }
+
+        x if x == DsCmd::AudioStop as u32 => {
+            crate::audio::jack::stop();
+            0
         }
 
         x if x == DsCmd::MapMmio as u32 => {
