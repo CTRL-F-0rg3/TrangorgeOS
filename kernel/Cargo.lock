@@ -19,12 +19,21 @@ name = "bootloader"
 version = "0.9.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e22d5a0b9e11dd5bee9d24a68885de6dc7ed367f897323b1c1286150fd469374"
+dependencies = [
+ "font8x8",
+]
 
 [[package]]
 name = "const_fn"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413d67b29ef1021b4d60f4aa1e925ca031751e213832b4b1d588fae623c05c60"
+
+[[package]]
+name = "font8x8"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
 
 [[package]]
 name = "kernel"
