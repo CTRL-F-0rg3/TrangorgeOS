@@ -1,6 +1,14 @@
 [package]
 name = "driverspace"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+driverspacelib = { path = "../driverspacelib" }
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+
+[profile.dev]
+panic = "abort"
