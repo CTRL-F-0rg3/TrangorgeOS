@@ -83,7 +83,41 @@ fn grant_phys(va: u64) -> Option<(u64, u64)> {
     None
 }
 
+pub fn video_call(op: u32, m: &DsMsg, r: &mut DsMsg) -> i32 {
+    match op {
+        VID_FB_INFO => {
+            let (w, h, s, phys) = crate::gfx::console::fb_info();
+
+            r.arg0 = ((w as u64) << 16) | h as u64;
+            r.arg1 = s as u64;
+            r.arg2 = phys;
+            0
+        }
+        VID_FB_TAKEOVER => {
+            crate::gfx::console::set_enabled(false);
+            0
+        }
+        VID_FB_RELEASE => {
+            crate::gfx::console::set_enabled(true);
+            crate::gfx::console::refresh();
+            0
+        }
+        _ => -1,
+    }
+}
+
 fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
+    let class = m.cmd >> 8;
+    let op = m.cmd & 0xFF;
+
+    match class {
+        SVC_VIDEO => return video_call(op, &m, r),
+        SVC_INPUT => return input_call(op, &m, r),
+        SVC_AUDIO => return audio_call(op, &m, r),
+        SVC_BLOCK => return block_call(op, &m, r),
+        _ => {}
+    }
+
     match m.cmd {
         x if x == DsCmd::Log as u32 => {
             let scratch = match init::scratch_view() {
