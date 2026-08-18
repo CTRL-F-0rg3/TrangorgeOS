@@ -8,7 +8,7 @@ pub struct DriverRegistry<'a> {
 }
 
 impl<'a> DriverRegistry<'a> {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         DriverRegistry {
             devices: [None, None, None, None],
             count: 0,
@@ -30,5 +30,15 @@ impl<'a> DriverRegistry<'a> {
 
     pub fn len(&self) -> usize {
         self.count
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+}
+
+impl<'a> Default for DriverRegistry<'a> {
+    fn default() -> Self {
+        Self::new()
     }
 }
