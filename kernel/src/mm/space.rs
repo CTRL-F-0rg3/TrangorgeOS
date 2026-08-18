@@ -25,6 +25,14 @@ impl AddressSpace {
         }
     }
 
+    pub fn handle(&self) -> *mut c_void {
+    unsafe { ffi::aspace_paging_handle(self.ptr) }
+    }
+
+    pub fn map_phys(&self, virt: u64, phys: u64, len: usize, prot: u32) -> bool {
+        unsafe { ffi::paging_aspace_map(self.handle(), virt, phys, len, prot) }
+    }
+
     pub fn map_anon(&self, hint: u64, len: usize, prot: u32) -> Option<u64> {
         let at = unsafe { ffi::aspace_map_anon(self.ptr, hint, len, prot) };
 
