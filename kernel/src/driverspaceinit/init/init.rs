@@ -119,6 +119,44 @@ pub fn self_test() -> Result<(), DsError> {
     Ok(())
 }
 
+let scratch_phys = phys::alloc_frame().ok_or(DsError::NoMemory)?;
+
+unsafe { core::ptr::write_bytes(kv(scratch_phys), 0, 4096); }
+
+if !aspace.map_phys(DS_SCRATCH_VA, scratch_phys, 4096, prot) {
+    return Err(DsError::NoAspace);
+}
+
 pub fn ready() -> bool {
     unsafe { DS.as_ref().map(|d| d.prepared).unwrap_or(false) }
+}
+
+pub fn k2d_view() -> Option<RingView> {
+    unsafe { DS.as_ref().map(|d| RingView::new(kv(d.k2d_phys))) }
+}
+
+pub fn d2k_view() -> Option<RingView> {
+    unsafe { DS.as_ref().map(|d| RingView::new(kv(d.d2k_phys))) }
+}
+
+pub fn scratch_view() -> Option<*mut u8> {
+    unsafe { DS.as_ref().map(|d| kv(d.scratch_phys)) }
+}
+
+pub fn map_into_ds(va: u64, phys: u64, len: usize, prot: u32) -> bool {
+    unsafe {
+        match DS.as_ref() {
+            Some(d) => d.aspace.map_phys(va, phys, len, prot),
+            None => false,
+        }
+    }
+}
+
+pub fn unmap_from_ds(va: u64, len: usize) -> bool {
+    unsafe {
+        match DS.as_ref() {
+            Some(d) => d.aspace.munmap(va, len),
+            None => false,
+        }
+    }
 }

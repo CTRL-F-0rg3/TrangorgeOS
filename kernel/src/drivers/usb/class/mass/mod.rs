@@ -181,6 +181,12 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     Ok(true)
 }
 
+crate::driverspaceinit::init::service::post_event(
+    crate::driverspaceinit::abi::abi::DsCmd::EventDeviceAdded,
+    1,
+    0,
+);
+
 static mut MASS0: Option<UsbMass> = None;
 
 pub fn with_controller<F: FnOnce(&mut Xhci) -> R, R>(f: F) -> R {

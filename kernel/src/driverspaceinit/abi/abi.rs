@@ -17,6 +17,14 @@ pub enum DsCmd {
     MapDeviceMemory = 7,
     BindIrq = 8,
     Shutdown = 9,
+    Log = 10,
+    AllocPages = 11,
+    FreePages = 12,
+    MapMmio = 13,
+    GetDeviceCount = 14,
+    BlockRead = 15,
+    BlockWrite = 16,
+    EventDeviceAdded = 30,
 }
 
 #[repr(C)]
