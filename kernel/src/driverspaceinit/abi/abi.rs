@@ -25,6 +25,8 @@ pub enum DsCmd {
     BlockRead = 15,
     BlockWrite = 16,
     EventDeviceAdded = 30,
+    AudioInfo = 48,
+    PagePhys = 49,
 }
 
 #[repr(C)]

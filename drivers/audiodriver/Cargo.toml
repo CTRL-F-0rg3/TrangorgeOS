@@ -1,10 +1,17 @@
 [package]
-name = "driverspace-audio"
+name = "audiodriver"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "lib.rs"
+
+[[bin]]
+name = "audiodriver"
+path = "main.rs"
+
 [dependencies]
-driverspacelib = { path = "../driverspacelib" }
+driverspacelib = { path = "../../driverspacelib" }
 
 [profile.release]
 panic = "abort"

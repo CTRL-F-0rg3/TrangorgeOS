@@ -1,46 +1,38 @@
-#![no_std]
-#![no_main]
-
+use crate as ad;
 use driverspacelib as ds;
 
-mod jacklib;
-mod tone;
-
-static mut JACK: jacklib::JackMgr = jacklib::JackMgr::new();
-static mut BUF_VA: u64 = 0;
-static mut PLAYED: bool = false;
-
-#[link_section = ".text.ds_entry"]
-#[no_mangle]
-pub extern "C" fn ds_entry(params_va: u64) {
-    unsafe {
-        ds::init_once(params_va);
-
-        if BUF_VA == 0 {
-            let id = ds::mem::alloc_pages(4);
-            let _ = id;
-        }
-    }
-
-    unsafe {
-        JACK.tick();
-
-        if JACK.present() && !PLAYED && BUF_VA != 0 {
-            let scratch = ds::DS_SCRATCH_VA as *mut u8;
-            let mut tmp = [0u8; 4096];
-            tone::fill_square(&mut tmp, 40);
-
-            core::ptr::copy_nonoverlapping(tmp.as_ptr(), scratch, 4096);
-
-            ds::jack::play(BUF_VA, 4096 * 4);
-            PLAYED = true;
-        }
-    }
-
-    ds::yield_to_kernel();
+pub struct JackMgr {
+    present: bool,
+    amp_on: bool,
 }
 
-#[panic_handler]
-fn panic(_i: &core::panic::PanicInfo) -> ! {
-    loop {}
+impl JackMgr {
+    pub const fn new() -> Self {
+        Self { present: false, amp_on: false }
+    }
+
+    pub fn tick(&mut self) {
+        let now = ad::jack_present();
+
+        if now != self.present {
+            self.present = now;
+
+            if now {
+                ds::log::ds_log("jack: present");
+                self.set_amp(true);
+            } else {
+                ds::log::ds_log("jack: gone");
+                self.set_amp(false);
+            }
+        }
+    }
+
+    pub fn set_amp(&mut self, on: bool) {
+        self.amp_on = on;
+        ad::set_amp(on);
+    }
+
+    pub fn present(&self) -> bool {
+        self.present
+    }
 }

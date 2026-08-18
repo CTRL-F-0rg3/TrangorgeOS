@@ -28,6 +28,23 @@ static mut GRANTS: [Grant; 32] = [Grant {
 
 static mut NEXT_VA: u64 = 0x4100_0000;
 
+static mut AC97_BARS: (u64, u64) = (0, 0);
+
+fn ac97_bars() -> (u64, u64) {
+    unsafe {
+        if AC97_BARS.0 != 0 {
+            return AC97_BARS;
+        }
+
+        if let Some(d) = crate::drivers::pci::find_class(0x04, 0x01, 0x00) {
+            d.enable_mmio();
+            AC97_BARS = (d.bar(2), d.bar(3));
+        }
+
+        AC97_BARS
+    }
+}
+
 fn grant_add(va: u64, phys: u64, pages: u64, kind: u8) -> bool {
     unsafe {
         for g in GRANTS.iter_mut() {
@@ -211,6 +228,20 @@ fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
             match disk.write_block(m.arg1, &buf) {
                 Ok(()) => 0,
                 Err(_) => -1,
+            }
+        }
+
+        x if x == DsCmd::AudioInfo as u32 => {
+            let (nam, bm) = ac97_bars();
+            r.arg0 = nam;
+            r.arg1 = bm;
+            if nam == 0 { -1 } else { 0 }
+        }
+
+        x if x == DsCmd::PagePhys as u32 => {
+            match grant_phys(m.arg0) {
+                Some((p, _)) => { r.arg0 = p; 0 }
+                None => -1,
             }
         }
 
