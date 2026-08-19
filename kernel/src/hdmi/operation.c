@@ -117,6 +117,13 @@ uint64_t hdmi_submit_fill(uint32_t color, uint32_t x, uint32_t y,
     return hdmi_submit(&t);
 }
 
+void hdmi_op_set_mode(const hdmi_mode_t *m)
+{
+    cur.w = m->w;
+    cur.h = m->h;
+    cur.stride = m->w;
+}
+
 void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys)
 {
     hdmi_caps_t c;

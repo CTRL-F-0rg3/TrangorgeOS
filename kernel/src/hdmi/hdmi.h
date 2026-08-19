@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "mode.h"
 
+bool hdmi_mode_set_by_id(uint32_t id);
 #define HDMI_OP_FB_SET   1
 #define HDMI_OP_MODE_SET 2
 #define HDMI_OP_TRANSFER 3

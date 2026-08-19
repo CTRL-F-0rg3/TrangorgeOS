@@ -1,6 +1,8 @@
 #ifndef HDMI_OPERATION_H
 #define HDMI_OPERATION_H
+#include "mode.h"
 
+void hdmi_op_set_mode(const hdmi_mode_t *m);
 #include "hdmi.h"
 
 void hdmi_op_exec(hdmi_transfer_t *t);
