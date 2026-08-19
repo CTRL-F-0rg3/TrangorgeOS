@@ -1,6 +1,6 @@
 #include "kstd_video.h"
-#include "../../src/hdmi/hdmi.h"
-#include "../../src/dp/dp.h"
+#include "/home/ctrl/TrangorgeOS/kernel/src/hdmi/hdmi.h"
+#include "/home/ctrl/TrangorgeOS/kernel/src/displayport/dp.h"
 
 /* W kernelu wybieramy aktywny backend (np. ten, który się pierwszy zainicjował) */
 static bool use_dp = false;
