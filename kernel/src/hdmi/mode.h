@@ -27,5 +27,7 @@ const hdmi_mode_t *hdmi_mode_by_id(uint32_t id);
 bool hdmi_mode_valid(const hdmi_mode_t *m);
 bool hdmi_mode_apply(const hdmi_mode_t *m);
 const hdmi_mode_t *hdmi_mode_current(void);
+bool hdmi_mode_at_raw(uint32_t i, uint32_t *id, uint32_t *w,
+                      uint32_t *h, uint32_t *r);
 
 #endif
