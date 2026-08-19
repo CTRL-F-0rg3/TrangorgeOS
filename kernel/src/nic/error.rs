@@ -1,4 +1,3 @@
-/// Błędy urządzenia, kolejek oraz operacji wymagających czasu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NetworkError {
     DeviceNotReady,
@@ -15,7 +14,6 @@ pub enum NetworkError {
     Timeout,
 }
 
-/// Przyczyna odrzucenia niezaufanego pakietu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PacketError {
     Truncated,

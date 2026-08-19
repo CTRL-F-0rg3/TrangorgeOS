@@ -1,8 +1,3 @@
-//! Lekki stos sieciowy zintegrowany z crate'em kernel.
-//!
-//! Zasada: `virtio` obsługuje urządzenie i kolejki, natomiast pozostałe
-//! moduły parsują oraz budują pakiety bez zależności od MMIO/DMA.
-
 pub mod arp;
 pub mod checksum;
 pub mod device;
@@ -12,6 +7,7 @@ pub mod ethernet;
 pub mod icmp;
 pub mod ipv4;
 pub mod packet;
+pub mod ping;
 pub mod protocols;
 pub mod stack;
 pub mod types;

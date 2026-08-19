@@ -9,6 +9,6 @@ pub mod net;
 pub mod queue;
 pub mod transport;
 
-pub use net::VirtioNetDriver;
+pub use net::VirtioNetDevice;
 pub use queue::{Descriptor, DescriptorId, DescriptorPool, QueueMemory};
 pub use transport::{QueueSetup, VirtioTransport};
