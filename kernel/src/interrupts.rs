@@ -102,6 +102,9 @@ extern "x86-interrupt" fn page_fault_handler(
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);
+    // Tick aktualizuje predykcję, budżety i flagę reschedule. Nie wykonujemy
+    // switch_to z tego handlera, dopóki nie mamy pełnego trap frame ABI.
+    let _ = crate::cpu::shelduler::tick(0, 1_000_000);
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

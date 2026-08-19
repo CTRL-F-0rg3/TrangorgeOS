@@ -4,16 +4,17 @@
 
 pub mod acpi;
 pub mod lapic;
+pub mod shelduler;
 pub mod trampoline;
 
-use crate::testing::TestResult;
 use crate::println;
+use crate::testing::TestResult;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use x86_64::VirtAddr;
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable};
 use x86_64::structures::tss::TaskStateSegment;
+use x86_64::VirtAddr;
 
 /// Maksymalna liczba obsługiwanych CPU (indeks 0 = BSP).
 pub const MAX_CPUS: usize = 32;
@@ -73,7 +74,7 @@ fn load_cpu_gdt(ist_stack_top: VirtAddr) {
 
     gdt.load();
     unsafe {
-        use x86_64::instructions::segmentation::{CS, DS, ES, SS, Segment};
+        use x86_64::instructions::segmentation::{Segment, CS, DS, ES, SS};
         CS::set_reg(code_selector);
         DS::set_reg(data_selector);
         ES::set_reg(data_selector);
@@ -124,7 +125,6 @@ fn wait_for(flag: &AtomicBool, max_ms: u64) -> bool {
     flag.load(Ordering::SeqCst)
 }
 
-
 /// Wykrywa CPU (ACPI/MADT), inicjalizuje Local APIC i startuje AP.
 pub fn init(boot_info: &'static bootloader::BootInfo) {
     let phys_offset = boot_info.physical_memory_offset;
@@ -166,6 +166,7 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let aps: Vec<u32> = enabled.into_iter().filter(|&id| id != bsp_id).collect();
 
     TOTAL_CPUS.store(aps.len() as u32 + 1, Ordering::SeqCst);
+    shelduler::init(TOTAL_CPUS.load(Ordering::Acquire) as usize);
 
     if aps.is_empty() {
         println!("[cpu] single CPU (BSP only), APIC id {}", bsp_id);
@@ -199,7 +200,10 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         if wait_for(&AP_STARTED[cpu_index], 1000) {
             println!("[cpu] AP #{} (apic id {}) started", cpu_index, apic_id);
         } else {
-            println!("[cpu] AP #{} (apic id {}) FAILED to start", cpu_index, apic_id);
+            println!(
+                "[cpu] AP #{} (apic id {}) FAILED to start",
+                cpu_index, apic_id
+            );
         }
     }
 
