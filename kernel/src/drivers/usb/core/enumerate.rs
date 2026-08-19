@@ -17,6 +17,8 @@ pub fn enumerate(x: &mut Xhci, port: u32) -> Result<UsbDevice, UsbError> {
 
     let mut dev = UsbDevice::new(slot, speed, x.ctx_size)?;
 
+    dev.port = port;
+
     let mps = default_ep0_mps(speed);
     dev.ep0_mps = mps;
 

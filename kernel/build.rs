@@ -8,6 +8,13 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
+                let name = path.file_name().and_then(|n| n.to_str());
+                // Skip host-side reference backends and non-x86_64 ports.
+                // linuxcom/ pulls in host POSIX headers; aarch64/risc-v dirs
+                // contain code for architectures the kernel does not build.
+                if matches!(name, Some("linuxcom") | Some("wincom") | Some("aarch64") | Some("arm64") | Some("arm") | Some("risc-v") | Some("riscv")) {
+                    continue;
+                }
                 collect_c_files(&path, out);
             } else if matches!(path.extension().and_then(|e| e.to_str()), Some("c") | Some("s")) {
                 out.push(path);

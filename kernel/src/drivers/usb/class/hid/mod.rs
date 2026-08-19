@@ -6,8 +6,8 @@ use crate::drivers::usb::host::xhci::init::Xhci;
 use crate::drivers::usb::host::xhci::trb::*;
 use crate::drivers::usb::host::xhci::ring::TransferRing;
 use crate::drivers::usb::dma::DmaBuf;
-use crate::drivers::usb::usbcore::device::UsbDevice;
-use crate::drivers::usb::usbcore::speed::EP_INTERRUPT;
+use crate::drivers::usb::core::device::UsbDevice;
+use crate::drivers::usb::core::speed::EP_INTERRUPT;
 use crate::drivers::usb::UsbError;
 
 const SET_IDLE: u8 = 0x0A;
@@ -106,7 +106,7 @@ pub fn poll(x: &mut Xhci) {
     while let Some(t) = x.ev.pending() {
         let t = t;
         x.ev.pop();
-        x.regs.rt_write(super::super::host::xhci::init::RT_ERDP, x.ev.erdp());
+        x.regs.rt_write(super::super::host::xhci::init::RT_ERDP, x.ev.erdp() as u32);
 
         if t.typ() != TRB_TRANSFER_EVENT {
             continue;
@@ -118,7 +118,7 @@ pub fn poll(x: &mut Xhci) {
         unsafe {
             for kb in KEYS.iter_mut() {
                 let kb = match kb {
-                    Some(k) if k.slot == slot && k.ep_idx == ep => k,
+                    Some(k) if k.slot == slot && k.ep_idx == ep as u32 => k,
                     _ => continue,
                 };
 

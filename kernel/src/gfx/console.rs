@@ -130,37 +130,6 @@ pub fn test_fill(r: u32, g: u32, b: u32) {
     }
 }
 
-static mut CONSOLE_ON: bool = true;
-static mut FB_PHYS: u64 = 0;
-
-pub fn set_enabled(on: bool) {
-    unsafe { CONSOLE_ON = on; }
-}
-
-pub fn fb_info() -> (u32, u32, u32, u64) {
-    let (w, h, s) = unsafe {
-        let f = fb();
-        (f.width as u32, f.height as u32, f.stride as u32)
-    };
-
-    (w, h, s, unsafe { FB_PHYS })
-}
-
-pub fn input_call(op: u32, _m: &DsMsg, r: &mut DsMsg) -> i32 {
-    match op {
-        IN_KEY_POLL => {
-            match crate::drivers::usb::class::hid::keyboard::take_char() {
-                Some(c) => { r.arg0 = c as u64; 0 }
-                None => { r.arg0 = 0; 0 }
-            }
-        }
-        _ => -1,
-    }
-}
-
-pub fn audio_call(op: u32, m: &DsMsg, r: &mut DsMsg) -> i32 { /* map na jack::* */ }
-pub fn block_call(op: u32, m: &DsMsg, r: &mut DsMsg) -> i32 { /* map na registry */ }
-
 pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFormat) -> bool {
     if width == 0 || height == 0 || stride == 0 {
         return false;

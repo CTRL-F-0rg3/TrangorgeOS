@@ -14,6 +14,7 @@ mod interrupts;
 mod mm;
 mod nic;
 mod cpu;
+mod driverspaceinit;
 mod pci;
 mod serial;
 mod terminal;

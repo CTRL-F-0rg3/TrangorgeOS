@@ -15,7 +15,7 @@ impl BlockDevice for UsbMass {
     }
 
     fn read_block(&self, block: u64, buf: &mut [u8]) -> Result<(), DriverError> {
-        let m = unsafe { &mut *(self as *const Self as *mut Self) };
+        let m = unsafe { super::MASS0.as_mut().ok_or(DriverError::Io)? };
 
         super::with_controller(|x| {
             scsi::read10(x, m, block as u32, 1, m.data.phys)
@@ -30,7 +30,7 @@ impl BlockDevice for UsbMass {
     }
 
     fn write_block(&self, block: u64, buf: &[u8]) -> Result<(), DriverError> {
-        let m = unsafe { &mut *(self as *const Self as *mut Self) };
+        let m = unsafe { super::MASS0.as_mut().ok_or(DriverError::Io)? };
 
         unsafe {
             core::ptr::copy_nonoverlapping(buf.as_ptr(), m.data.virt,

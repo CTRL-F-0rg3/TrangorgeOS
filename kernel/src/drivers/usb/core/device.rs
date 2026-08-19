@@ -6,6 +6,7 @@ use crate::drivers::usb::UsbError;
 
 pub struct UsbDevice {
     pub slot: u8,
+    pub port: u32,
     pub speed: u32,
     pub ep0_mps: u16,
     pub desc: DeviceDesc,
@@ -23,6 +24,7 @@ impl UsbDevice {
     pub fn new(slot: u8, speed: u32, ctx_size: usize) -> Result<Self, UsbError> {
         Ok(Self {
             slot,
+            port: 0,
             speed,
             ep0_mps: 8,
             desc: DeviceDesc::default(),

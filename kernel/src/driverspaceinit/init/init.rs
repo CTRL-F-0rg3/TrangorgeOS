@@ -11,6 +11,7 @@ pub struct Driverspace {
     pub k2d_phys: u64,
     pub d2k_phys: u64,
     pub params_phys: u64,
+    pub scratch_phys: u64,
     pub prepared: bool,
 }
 
@@ -63,12 +64,23 @@ pub fn prepare() -> Result<(), DsError> {
         return Err(DsError::NoAspace);
     }
 
+    let scratch_phys = phys::alloc_frame().ok_or(DsError::NoMemory)?;
+
+    unsafe {
+        core::ptr::write_bytes(kv(scratch_phys), 0, 4096);
+    }
+
+    if !aspace.map_phys(DS_SCRATCH_VA, scratch_phys, 4096, prot) {
+        return Err(DsError::NoAspace);
+    }
+
     unsafe {
         DS = Some(Driverspace {
             aspace,
             k2d_phys,
             d2k_phys,
             params_phys,
+            scratch_phys,
             prepared: true,
         });
     }
@@ -117,14 +129,6 @@ pub fn self_test() -> Result<(), DsError> {
     }
 
     Ok(())
-}
-
-let scratch_phys = phys::alloc_frame().ok_or(DsError::NoMemory)?;
-
-unsafe { core::ptr::write_bytes(kv(scratch_phys), 0, 4096); }
-
-if !aspace.map_phys(DS_SCRATCH_VA, scratch_phys, 4096, prot) {
-    return Err(DsError::NoAspace);
 }
 
 pub fn ready() -> bool {

@@ -6,7 +6,7 @@ use crate::drivers::usb::host::xhci::control;
 use crate::drivers::usb::host::xhci::init::Xhci;
 use crate::drivers::usb::host::xhci::ring::TransferRing;
 use crate::drivers::usb::host::xhci::trb::*;
-use crate::drivers::usb::usbcore::device::UsbDevice;
+use crate::drivers::usb::core::device::UsbDevice;
 use crate::drivers::usb::UsbError;
 
 pub const CBW_SIG: u32 = 0x4342_5355;
@@ -90,7 +90,7 @@ impl UsbMass {
             let status = *csw.add(12);
 
             if sig != CSW_SIG || status != 0 {
-                return Err(UsbError::Io2);
+                return Err(UsbError::Transfer(status));
             }
         }
 
@@ -181,11 +181,8 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     Ok(true)
 }
 
-crate::driverspaceinit::init::service::post_event(
-    crate::driverspaceinit::abi::abi::DsCmd::EventDeviceAdded,
-    1,
-    0,
-);
+// TODO: post DsCmd::EventDeviceAdded to the driverspace once the service
+// dispatcher (driverspaceinit::init::service) is wired up.
 
 static mut MASS0: Option<UsbMass> = None;
 
