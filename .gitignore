@@ -5,3 +5,7 @@
 *.bin
 kernel/data.img
 
+# IDE garbage
+.idea/
+*.iml
+.vscode/
