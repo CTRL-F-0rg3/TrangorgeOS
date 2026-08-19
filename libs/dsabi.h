@@ -1,6 +1,9 @@
 #ifndef DSABI_H
 #define DSABI_H
+#define SVC_FS 8
 
+#define FS_READ   1
+#define FS_EXISTS 2
 #include <stdint.h>
 
 #define DS_MAGIC 0x4452565350414345ULL

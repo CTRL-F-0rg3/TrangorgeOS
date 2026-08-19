@@ -9,7 +9,6 @@
 #include "kstd_fs.h"
 #include "kstd_bt.h"
 
-/* Logi (działają wszędzie) */
-void tr_log(const char *fmt, ...);
+void tr_log(const char *s);
 
 #endif
