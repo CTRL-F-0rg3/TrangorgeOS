@@ -3,5 +3,5 @@ pub fn init() {
     vfs::register_fat32();
     vfs::register_tangfs();  // Nowy filesystem
     
-    // ... reszta inicjalizacji
+    // ... reszta inicjalizacji XD
 }
