@@ -4,6 +4,7 @@
 #include "../virtual/mapping.h"
 #include "../../arch/x86_64/paging.h"
 #include "../../arch/x86_64/memory.h"
+#include "../../core/smp_lock.h"
 
 extern void kprintf(const char *fmt, ...);
 
@@ -13,12 +14,31 @@ static const size_t slab_classes[SLAB_CACHE_COUNT] = {
     16, 32, 64, 128, 256, 512, 1024, 2048
 };
 
+/*
+ * Liczba bitów w `used_bitmap` — musi pokryć najgorszy przypadek liczby
+ * obiektów na slab, czyli najmniejszą klasę (16 B) w jednej stronie
+ * (ARCH_PAGE_SIZE / 16 = 256 dla stron 4 KiB).
+ */
+#define SLAB_MAX_OBJECTS_PER_SLAB 256
+#define SLAB_BITMAP_WORDS (SLAB_MAX_OBJECTS_PER_SLAB / 32)
+
 typedef struct slab_desc {
     uint32_t cache_id;
     uint32_t free_count;
     uint32_t free_head;
     int32_t next_partial;
     uint32_t state;
+
+    /*
+     * P0.2: bitmapa zajętości per obiekt (1 = obiekt aktualnie
+     * zaalokowany, 0 = wolny). Niezależna od intruzywnej listy wolnych
+     * obiektów (`free_head`/`free_count`), więc pozwala wykryć
+     * double-free: drugie `slab_free()` na ten sam wskaźnik znajdzie bit
+     * już wyczyszczony i zostanie odrzucone, zamiast ponownie wpisać
+     * adres do free-listy (co mogłoby podnieść `free_count` powyżej
+     * `objects_per_slab` i uszkodzić listę wolnych obiektów).
+     */
+    uint32_t used_bitmap[SLAB_BITMAP_WORDS];
 } slab_desc_t;
 
 typedef struct slab_cache {
@@ -37,47 +57,42 @@ static slab_cache_t slab_caches[SLAB_CACHE_COUNT];
 
 static bool slab_initialized = false;
 
-static size_t slab_lock_depth = 0;
-static uint64_t slab_lock_flags = 0;
+/*
+ * P0.1: rzeczywista blokada SMP zamiast `pushfq; cli` + lokalnego
+ * licznika, które nie chroniły przed drugim rdzeniem modyfikującym tę
+ * samą free-listę/slab jednocześnie.
+ */
+static smp_ticket_lock_t slab_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void slab_lock(void)
 {
-    uint64_t flags;
-
-    __asm__ volatile(
-        "pushfq\n"
-        "popq %0\n"
-        "cli"
-        : "=r"(flags)
-        :
-        : "memory"
-    );
-
-    if (slab_lock_depth == 0) {
-        slab_lock_flags = flags;
-    }
-
-    slab_lock_depth++;
+    smp_lock_acquire(&slab_smp_lock);
 }
 
 static void slab_unlock(void)
 {
-    if (slab_lock_depth == 0) {
-        return;
-    }
+    smp_lock_release(&slab_smp_lock);
+}
 
-    slab_lock_depth--;
+static inline bool slab_bit_test(const slab_desc_t *d, uint32_t idx)
+{
+    return ((d->used_bitmap[idx / 32] >> (idx % 32)) & 1u) != 0;
+}
 
-    if (slab_lock_depth == 0) {
-        uint64_t flags = slab_lock_flags;
+static inline void slab_bit_set(slab_desc_t *d, uint32_t idx)
+{
+    d->used_bitmap[idx / 32] |= (1u << (idx % 32));
+}
 
-        __asm__ volatile(
-            "pushq %0\n"
-            "popfq"
-            :
-            : "r"(flags)
-            : "memory"
-        );
+static inline void slab_bit_clear(slab_desc_t *d, uint32_t idx)
+{
+    d->used_bitmap[idx / 32] &= ~(1u << (idx % 32));
+}
+
+static inline void slab_bitmap_clear_all(slab_desc_t *d)
+{
+    for (size_t i = 0; i < SLAB_BITMAP_WORDS; i++) {
+        d->used_bitmap[i] = 0;
     }
 }
 
@@ -135,6 +150,9 @@ static bool slab_grow(uint32_t cache_id)
     d->state = 1;
     d->free_count = c->objects_per_slab;
     d->free_head = 0;
+
+    /* Nowa (lub odzyskana z pustej) strona: wszystkie obiekty wolne. */
+    slab_bitmap_clear_all(d);
 
     uint32_t *nexts = (uint32_t *)(uintptr_t)va;
     size_t stride = c->object_size / sizeof(uint32_t);
@@ -203,6 +221,7 @@ bool slab_init(uint64_t base, size_t size)
         slab_descs[i].free_head = UINT32_MAX;
         slab_descs[i].next_partial = -1;
         slab_descs[i].state = 0;
+        slab_bitmap_clear_all(&slab_descs[i]);
     }
 
     for (size_t i = 0; i < SLAB_CACHE_COUNT; i++) {
@@ -211,6 +230,11 @@ bool slab_init(uint64_t base, size_t size)
             (uint32_t)(ARCH_PAGE_SIZE / slab_classes[i]);
         slab_caches[i].partial_head = -1;
         slab_caches[i].total_slabs = 0;
+
+        /* objects_per_slab musi zmieścić się w used_bitmap (patrz P0.2). */
+        if (slab_caches[i].objects_per_slab > SLAB_MAX_OBJECTS_PER_SLAB) {
+            return false;
+        }
     }
 
     slab_initialized = true;
@@ -263,6 +287,9 @@ void *slab_alloc(size_t size)
     d->free_head = *(uint32_t *)(void *)obj;
     d->free_count--;
 
+    /* P0.2: oznacz obiekt jako zajęty niezależnie od intruzywnej free-listy. */
+    slab_bit_set(d, idx);
+
     if (d->free_count == 0) {
         c->partial_head = d->next_partial;
         d->next_partial = -1;
@@ -310,6 +337,16 @@ void slab_free(void *ptr)
     }
 
     slab_lock();
+
+    if (!slab_bit_test(d, idx)) {
+        kprintf("slab: double-free lub invalid-free wykryte: "
+                "ptr=%p page=%zu idx=%u\n",
+                ptr, page, (unsigned int)idx);
+        slab_unlock();
+        return;
+    }
+
+    slab_bit_clear(d, idx);
 
     bool was_full = (d->free_count == 0);
 
