@@ -4,8 +4,9 @@ cd "$(dirname "$0")"
 
 cargo build --release
 
-# deploy do obrazu FS / initrd
-cp init/target/x86_64-unknown-none/release/tr-init \
-   ../iso-root/bin/init.elf
+for app in init shell demo; do
+    cp $app/target/x86_64-unknown-none/release/$app \
+       ../iso-root/bin/$app.elf
+done
 
-echo "init.elf deployed"
+echo "userspace deployed: init shell demo"

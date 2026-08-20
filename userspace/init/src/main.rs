@@ -5,16 +5,20 @@ use trangorgelibc as tr;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    tr::log("tr-init: hello from ring 3");
-    tr::log("tr-init: session manager online");
+    tr::log("tr-init: session manager (pid self)");
+
+    tr::spawn("/bin/shell.elf");
+    tr::spawn("/bin/demo.elf");
 
     loop {
-        // tu później: tr::spawn("/bin/shell.elf") itd.
+        if let Some(m) = tr::ipc_recv() {
+            tr::log("tr-init: ipc from");
+            tr::put_u32(m.from);
+        }
+
         tr::yield_cpu();
     }
 }
 
 #[panic_handler]
-fn panic(_i: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
+fn panic(_i: &core::panic::PanicInfo) -> ! { loop {} }
