@@ -33,6 +33,38 @@ pub fn write32(d: PciDev, off: u32, v: u32) {
     }
 }
 
+pub fn port_out(port: u16, val: u32, size: u32) {
+    unsafe {
+        match size {
+            8 => core::arch::asm!("out dx, al", in("dx") port, in("al") val as u8),
+            16 => core::arch::asm!("out dx, ax", in("dx") port, in("ax") val as u16),
+            _ => core::arch::asm!("out dx, eax", in("dx") port, in("eax") val),
+        }
+    }
+}
+
+pub fn port_in(port: u16, size: u32) -> u32 {
+    unsafe {
+        match size {
+            8 => {
+                let v: u8;
+                core::arch::asm!("in al, dx", out("al") v, in("dx") port);
+                v as u32
+            }
+            16 => {
+                let v: u16;
+                core::arch::asm!("in ax, dx", out("ax") v, in("dx") port);
+                v as u32
+            }
+            _ => {
+                let v: u32;
+                core::arch::asm!("in eax, dx", out("eax") v, in("dx") port);
+                v
+            }
+        }
+    }
+}
+
 pub fn read16(d: PciDev, off: u32) -> u16 {
     (read32(d, off) >> ((off & 2) * 8)) as u16
 }

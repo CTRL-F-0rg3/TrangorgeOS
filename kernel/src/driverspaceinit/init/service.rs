@@ -93,6 +93,74 @@ fn grant_add(va: u64, phys: u64, pages: u64, kind: u8) -> bool {
     false
 }
 
+// service.rs
+pub fn pci_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
+    use crate::drivers::pci as kpci;
+
+    match op {
+        PCI_FIND => {
+            let class = (m.arg0 >> 8) as u8;
+            let sub = (m.arg0 & 0xFF) as u8;
+            let pi = m.arg1 as u8;
+
+            match kpci::find_class(class, sub, pi) {
+                Some(d) => {
+                    r.arg0 = ((d.bus as u64) << 8)
+                           | ((d.dev as u64) << 3)
+                           | d.func as u64;
+                    r.arg1 = (d.vendor() as u64) | ((d.device_id() as u64) << 16);
+                    0
+                }
+                None => 1,
+            }
+        }
+
+        PCI_BAR => {
+            let bdf = m.arg0;
+            let d = kpci::PciDev {
+                bus: (bdf >> 8) as u8,
+                dev: ((bdf >> 3) & 0x1F) as u8,
+                func: (bdf & 0x7) as u8,
+            };
+
+            r.arg0 = d.bar(m.arg1 as u32);
+            0
+        }
+
+        PCI_ENABLE => {
+            let bdf = m.arg0;
+            let d = kpci::PciDev {
+                bus: (bdf >> 8) as u8,
+                dev: ((bdf >> 3) & 0x1F) as u8,
+                func: (bdf & 0x7) as u8,
+            };
+
+            d.enable_mmio();
+            0
+        }
+
+        PORT_WRITE => {
+            if ring >= 3 {
+                return -1;
+            }
+
+            kpci::port_out(m.arg0 as u16, m.arg1 as u32, m.arg2 as u32);
+            0
+        }
+
+        PORT_READ => {
+            if ring >= 3 {
+                return -1;
+            }
+
+            r.arg0 = kpci::port_in(m.arg0 as u16, m.arg2 as u32) as u64;
+            0
+        }
+
+        _ => -1,
+    }
+}
+
 fn grant_take(va: u64) -> Option<Grant> {
     unsafe {
         for g in GRANTS.iter_mut() {

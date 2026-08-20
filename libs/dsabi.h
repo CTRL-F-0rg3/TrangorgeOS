@@ -54,6 +54,25 @@
 #define BLK_READ  2
 #define BLK_WRITE 3
 
+#define SVC_PCI 11
+
+#define PCI_FIND   1
+#define PCI_BAR    2
+#define PCI_ENABLE 3
+#define PORT_WRITE 4
+#define PORT_READ  5
+
+#define OP_REG_DRIVER 17
+
+#define DRIVER_KIND_VIDEO 1
+#define DRIVER_KIND_AUDIO 2
+#define DRIVER_KIND_NET   3
+
+static inline void ds_yield(void)
+{
+    __asm__ volatile("int $0x80" :: "a"(1));
+}
+
 typedef struct {
     uint64_t id;
     uint32_t cmd;
