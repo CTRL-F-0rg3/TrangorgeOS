@@ -2,10 +2,16 @@
 #include "../physical/pmm.h"
 #include "../virtual/vmm.h"
 #include "../../arch/x86_64/memory.h"
+#include "../../core/sizeutil.h"
 
-static size_t dma_bytes_to_frames(size_t bytes)
+/*
+ * P1.4: taki sam problem overflow jak w contiguous.c — patrz komentarz
+ * tam. Dodatkowo `frames * ARCH_PAGE_SIZE` (dlugosc mapowania) rowniez
+ * jest teraz liczone przez bezpieczny helper zamiast surowego mnozenia.
+ */
+static bool dma_bytes_to_frames(size_t bytes, size_t *out_frames)
 {
-    return (bytes + ARCH_PAGE_SIZE - 1) / ARCH_PAGE_SIZE;
+    return size_bytes_to_pages_checked(bytes, ARCH_PAGE_SIZE, out_frames);
 }
 
 bool dma_alloc_coherent(size_t bytes,
@@ -21,8 +27,17 @@ bool dma_alloc_coherent(size_t bytes,
         zone_max = DMA_ZONE_32BIT;
     }
 
-    size_t frames = dma_bytes_to_frames(bytes);
-    size_t len = frames * ARCH_PAGE_SIZE;
+    size_t frames;
+
+    if (!dma_bytes_to_frames(bytes, &frames)) {
+        return false;
+    }
+
+    size_t len;
+
+    if (!size_pages_to_bytes_checked(frames, ARCH_PAGE_SIZE, &len)) {
+        return false;
+    }
 
     uint64_t phys = 0;
 
@@ -49,8 +64,17 @@ void dma_free_coherent(uint64_t phys, void *virt, size_t bytes)
         return;
     }
 
-    size_t frames = dma_bytes_to_frames(bytes);
-    size_t len = frames * ARCH_PAGE_SIZE;
+    size_t frames;
+
+    if (!dma_bytes_to_frames(bytes, &frames)) {
+        return;
+    }
+
+    size_t len;
+
+    if (!size_pages_to_bytes_checked(frames, ARCH_PAGE_SIZE, &len)) {
+        return;
+    }
 
     if (virt != NULL) {
         vmm_unmap_device((uint64_t)(uintptr_t)virt, len);

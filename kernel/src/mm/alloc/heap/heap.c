@@ -11,6 +11,7 @@
 #include "../virtual/mapping.h"
 #include "../../arch/x86_64/paging.h"
 #include "../../arch/x86_64/memory.h"
+#include "../../core/sizeutil.h"
 
 #define HEAP_BUDDY_BASE 0xFFFFB00000000000ULL
 #define HEAP_BUDDY_SIZE (256ULL * 1024 * 1024)
@@ -150,9 +151,18 @@ void *heap_alloc(size_t size)
     return buddy_alloc(size);
 }
 
+/*
+ * P1.1: `align` musi być potęgą dwójki — kontrakt jest teraz sprawdzany
+ * na samym wejściu do warstwy heap, zanim trafi do gałęzi slab/buddy
+ * (patrz uzasadnienie w buddy_alloc_aligned()).
+ */
 void *heap_alloc_aligned(size_t size, size_t align)
 {
     if (!heap_initialized || size == 0) {
+        return NULL;
+    }
+
+    if (!size_is_pow2(align)) {
         return NULL;
     }
 

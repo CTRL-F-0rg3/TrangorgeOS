@@ -1,6 +1,7 @@
 #include "buddy.h"
 #include "../physical/pmm.h"
 #include "../../arch/x86_64/memory.h"
+#include "../../core/sizeutil.h"
 
 extern void kprintf(const char *fmt, ...);
 
@@ -224,9 +225,25 @@ void *buddy_alloc(size_t size)
     return (void *)(uintptr_t)va_of(idx);
 }
 
+/*
+ * P1.1: kontrakt `align` jest teraz jawny — MUSI być potęgą dwójki
+ * (zgodnie z powszechną konwencją C11 aligned_alloc/posix_memalign).
+ * Wcześniej dowolna wartość `align` (także nie-potęga dwójki, np. 100)
+ * była cicho akceptowana i błędnie interpretowana: zwracany blok był
+ * wyrównany do najbliższej WIĘKSZEJ POTĘGI DWÓJKI, co nie gwarantuje
+ * wyrównania do dowolnej liczby (np. wyrównanie do 128 nie implikuje
+ * wyrównania do 100). Teraz taka wartość jest jawnie odrzucana (NULL),
+ * zamiast po cichu zwracać blok, który nie spełnia żądania wywołującego.
+ * Dodatkowo pętla podwajająca `p` jest zastąpiona zaokrągleniem do
+ * potęgi dwójki z jawną kontrolą przepełnienia (patrz sizeutil.c).
+ */
 void *buddy_alloc_aligned(size_t size, size_t align)
 {
     if (!buddy_initialized || size == 0) {
+        return NULL;
+    }
+
+    if (!size_is_pow2(align)) {
         return NULL;
     }
 
@@ -240,10 +257,14 @@ void *buddy_alloc_aligned(size_t size, size_t align)
         need = align;
     }
 
-    size_t p = ARCH_PAGE_SIZE;
+    size_t p;
 
-    while (p < need) {
-        p <<= 1;
+    if (!size_round_up_pow2(need, &p)) {
+        return NULL;
+    }
+
+    if (p < ARCH_PAGE_SIZE) {
+        p = ARCH_PAGE_SIZE;
     }
 
     return buddy_alloc(p);

@@ -12,6 +12,14 @@ void *krealloc(void *ptr, size_t new_size);
 void *kmalloc_aligned(size_t size, size_t align);
 void kfree(void *ptr);
 
+/*
+ * Zwraca pojemność bloku alokatora stojącego za `ptr` (>= rozmiar
+ * faktycznie zażądany przy alokacji; dokładna wartość w budowie
+ * ALLOC_DEBUG, zaokrąglona w budowie release — patrz komentarz w
+ * alloc.c przy definicji).
+ */
+size_t kmalloc_usable_size(void *ptr);
+
 void *kalloc_pages(size_t pages);
 void kfree_pages(void *ptr, size_t pages);
 
