@@ -2,6 +2,7 @@
 #include "../alloc/physical/pmm.h"
 #include "../alloc/heap/heap.h"
 #include "../arch/x86_64/memory.h"
+#include "../core/range.h"
 
 #define USER_ADDR_MIN  0x0000000000001000ULL
 #define USER_MMAP_BASE 0x0000200000000000ULL
@@ -72,21 +73,18 @@ bool aspace_subsystem_init(void)
     return true;
 }
 
-static bool user_range_ok(uint64_t addr, uint64_t len)
+/*
+ * Waliduje i wyrównuje (do granic strony) dowolny zakres user-space
+ * podany jako (addr, len). Zastępuje dawne ręczne `a = align_down(addr)`
+ * / `b = align_up(addr + len)`, które nie sprawdzały overflow — patrz
+ * P0.3 w planie ulepszeń MM. Zwraca half-open [*out_start, *out_end).
+ */
+static bool user_range_ok(uint64_t addr, uint64_t len,
+                          uint64_t *out_start, uint64_t *out_end)
 {
-    if (len == 0) {
-        return false;
-    }
-
-    if (addr < USER_ADDR_MIN) {
-        return false;
-    }
-
-    if (addr > USER_STACK_TOP - len) {
-        return false;
-    }
-
-    return true;
+    return range_from_addr_len(addr, len, ARCH_PAGE_SIZE,
+                               USER_ADDR_MIN, USER_STACK_TOP,
+                               true, out_start, out_end);
 }
 
 static bool map_anon_pages(proc_aspace_t *pa,
@@ -353,16 +351,15 @@ uint64_t aspace_map_at(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t pr
         return 0;
     }
 
-    uint64_t a = arch_page_align_down((uint64_t)addr);
-    uint64_t bytes = arch_page_align_up((uint64_t)len + ((uint64_t)addr - a));
+    uint64_t a, b;
 
-    if (!user_range_ok(a, bytes)) {
+    if (!user_range_ok(addr, (uint64_t)len, &a, &b)) {
         return 0;
     }
 
     as_lock();
 
-    aspace_unmap(pa, a, bytes);
+    aspace_unmap(pa, a, b - a);
 
     vma_t *v = (vma_t *)heap_alloc(sizeof(vma_t));
 
@@ -372,13 +369,13 @@ uint64_t aspace_map_at(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t pr
     }
 
     v->start = a;
-    v->end = a + bytes;
+    v->end = b;
     v->prot = prot;
     v->flags = VMA_FLAG_ANON | VMA_FLAG_PRIVATE;
 
     vma_insert(pa, v);
 
-    if (!map_anon_pages(pa, a, a + bytes, prot)) {
+    if (!map_anon_pages(pa, a, b, prot)) {
         vma_remove(pa, v);
         heap_free(v);
         as_unlock();
@@ -396,8 +393,11 @@ bool aspace_unmap(proc_aspace_t *pa, uint64_t addr, size_t len)
         return false;
     }
 
-    uint64_t a = arch_page_align_down((uint64_t)addr);
-    uint64_t b = arch_page_align_up((uint64_t)addr + (uint64_t)len);
+    uint64_t a, b;
+
+    if (!user_range_ok(addr, (uint64_t)len, &a, &b)) {
+        return false;
+    }
 
     as_lock();
 
@@ -460,8 +460,11 @@ bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
         return false;
     }
 
-    uint64_t a = arch_page_align_down((uint64_t)addr);
-    uint64_t b = arch_page_align_up((uint64_t)addr + (uint64_t)len);
+    uint64_t a, b;
+
+    if (!user_range_ok(addr, (uint64_t)len, &a, &b)) {
+        return false;
+    }
 
     as_lock();
 
@@ -498,10 +501,9 @@ uint64_t aspace_reserve_at(proc_aspace_t *pa,
         return 0;
     }
 
-    uint64_t a = arch_page_align_down((uint64_t)addr);
-    uint64_t b = arch_page_align_up((uint64_t)addr + (uint64_t)len);
+    uint64_t a, b;
 
-    if (!user_range_ok(a, b - a)) {
+    if (!user_range_ok(addr, (uint64_t)len, &a, &b)) {
         return 0;
     }
 
@@ -559,12 +561,29 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
     uint64_t nb = arch_page_align_up(new_brk);
 
     if (nb > pa->brk) {
+        /*
+         * P0.4: najpierw mapujemy strony, a metadane VMA/`brk` zatwierdzamy
+         * dopiero po pełnym sukcesie. Wcześniej VMA było rozszerzane PRZED
+         * mapowaniem, więc częściowy błąd `map_anon_pages()` zostawiał
+         * VMA większe niż faktycznie zmapowane strony (rozjazd metadanych
+         * i tablic stron). `map_anon_pages()` sam wykonuje rollback
+         * częściowo zmapowanych stron przy błędzie, więc w razie porażki
+         * tutaj nic jeszcze nie zostało zmienione w VMA/`brk`.
+         */
+        if (!map_anon_pages(pa, pa->brk, nb, PROT_READ | PROT_WRITE)) {
+            as_unlock();
+            return pa->brk;
+        }
+
         vma_t *v = aspace_vma_find(pa, pa->brk_base);
 
         if (v == NULL) {
             v = (vma_t *)heap_alloc(sizeof(vma_t));
 
             if (v == NULL) {
+                /* Strony zmapowane, ale brak metadanych — wycofaj mapowanie,
+                 * żeby stan pozostał spójny (brak VMA opisującego te strony). */
+                unmap_pages_free(pa, pa->brk, nb);
                 as_unlock();
                 return pa->brk;
             }
@@ -577,11 +596,6 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
             vma_insert(pa, v);
         } else {
             v->end = nb;
-        }
-
-        if (!map_anon_pages(pa, pa->brk, nb, PROT_READ | PROT_WRITE)) {
-            as_unlock();
-            return pa->brk;
         }
 
         pa->brk = nb;
