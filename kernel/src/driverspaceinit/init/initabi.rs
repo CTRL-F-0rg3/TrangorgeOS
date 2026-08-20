@@ -19,11 +19,14 @@ pub const SVC_AUDIO: u32 = 2;
 pub const SVC_INPUT: u32 = 3;
 pub const SVC_BLOCK: u32 = 4;
 pub const SVC_NET: u32 = 5;
+pub const SVC_BT: u32 = 6;
 
 // VIDEO ops
 pub const VID_FB_INFO: u32 = 1;
 pub const VID_FB_TAKEOVER: u32 = 2;
 pub const VID_FB_RELEASE: u32 = 3;
+pub const VID_HDMI_FILL: u32 = 4;
+pub const VID_HDMI_CAPS: u32 = 6;
 
 // INPUT ops
 pub const IN_KEY_POLL: u32 = 1;

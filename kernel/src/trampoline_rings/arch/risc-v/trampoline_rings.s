@@ -18,7 +18,7 @@ kstack_top:
 
 .global trap_entry
 trap_entry:
-    csrrw sp, sscratch, sp        /* sp = kernel, sscratch = world sp */
+    csrrw sp, sscratch, sp        # sp = kernel, sscratch = world sp
     addi sp, sp, -288
 
     sd x1,   8(sp)
@@ -102,7 +102,7 @@ trap_entry:
     ld x31,  248(sp)
 
     addi sp, sp, 288
-    csrrw sp, sscratch, sp        /* sp = world, sscratch = kernel */
+    csrrw sp, sscratch, sp        # sp = world, sscratch = kernel
     sret
 
 /* tr_init(kernel_stack_top) */

@@ -4,24 +4,6 @@ use crate::nic::ping::{PingClient, PingResult};
 use crate::nic::stack::NetworkConfig;
 use crate::nic::types::{Ipv4Address, MacAddress};
 
-pub const HELP_TEXT: &str = "help\nping <adres-ipv4>\n";
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NetworkCommand {
-    Empty,
-    Help,
-    Ping(Ipv4Address),
-    Invalid,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CommandEvent {
-    Empty,
-    Help,
-    Ping(PingResult),
-    Invalid,
-}
-
 pub struct NetworkCommandRunner<const ARP_ENTRIES: usize> {
     ping: PingClient<ARP_ENTRIES>,
     identifier: u16,
@@ -36,22 +18,6 @@ impl<const ARP_ENTRIES: usize> NetworkCommandRunner<ARP_ENTRIES> {
             identifier,
             next_sequence: 1,
             active: false,
-        }
-    }
-
-    pub fn execute(
-        &mut self,
-        device: &mut dyn NetworkDevice,
-        now_ms: u64,
-        input: &str,
-    ) -> Result<CommandEvent, NetworkError> {
-        match parse(input) {
-            NetworkCommand::Empty => Ok(CommandEvent::Empty),
-            NetworkCommand::Help => Ok(CommandEvent::Help),
-            NetworkCommand::Invalid => Ok(CommandEvent::Invalid),
-            NetworkCommand::Ping(destination) => self
-                .start_ping(device, now_ms, destination)
-                .map(CommandEvent::Ping),
         }
     }
 
@@ -98,39 +64,6 @@ impl<const ARP_ENTRIES: usize> NetworkCommandRunner<ARP_ENTRIES> {
         }
         Ok(Some(result))
     }
-
-    pub const fn active(&self) -> bool {
-        self.active
-    }
-}
-
-pub fn parse(input: &str) -> NetworkCommand {
-    let input = input.trim();
-    if input.is_empty() {
-        return NetworkCommand::Empty;
-    }
-    if input == "help" {
-        return NetworkCommand::Help;
-    }
-    let mut parts = input.split_ascii_whitespace();
-    let command = match parts.next() {
-        Some(value) => value,
-        None => return NetworkCommand::Empty,
-    };
-    if command != "ping" {
-        return NetworkCommand::Invalid;
-    }
-    let address = match parts.next() {
-        Some(value) => value,
-        None => return NetworkCommand::Invalid,
-    };
-    if parts.next().is_some() {
-        return NetworkCommand::Invalid;
-    }
-    match parse_ipv4(address) {
-        Some(value) => NetworkCommand::Ping(value),
-        None => NetworkCommand::Invalid,
-    }
 }
 
 pub fn parse_ipv4(input: &str) -> Option<Ipv4Address> {
@@ -171,14 +104,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_ping_ipv4() {
-        assert_eq!(parse("ping 8.8.8.8"), NetworkCommand::Ping(Ipv4Address::new(8, 8, 8, 8)));
+    fn parses_ipv4() {
+        assert_eq!(parse_ipv4("8.8.8.8"), Some(Ipv4Address::new(8, 8, 8, 8)));
     }
 
     #[test]
     fn rejects_invalid_ipv4() {
-        assert_eq!(parse("ping 8.8.8.256"), NetworkCommand::Invalid);
-        assert_eq!(parse("ping 8.8.8"), NetworkCommand::Invalid);
-        assert_eq!(parse("ping 8.8.8.8 extra"), NetworkCommand::Invalid);
+        assert_eq!(parse_ipv4("8.8.8.256"), None);
+        assert_eq!(parse_ipv4("8.8.8"), None);
     }
 }

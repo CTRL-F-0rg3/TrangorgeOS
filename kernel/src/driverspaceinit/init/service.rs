@@ -22,41 +22,6 @@ struct Grant {
     used: bool,
 }
 
-8 => {
-    match op {
-        1 => {
-            let path = core::str::from_utf8_unchecked(
-                core::slice::from_raw_parts(scratch_ptr, m.arg0 as usize));
-
-            let mut n = 0usize;
-
-            if let Some(fs) = crate::fs::vfs::root() {
-                if let Some(got) = fs.read_path(path,
-                    core::slice::from_raw_parts_mut(scratch_ptr.add(256), 4096 - 256)) {
-                    n = got;
-                }
-            }
-
-            r.arg0 = n as u64;
-            0
-        }
-        2 => {
-            let path = core::str::from_utf8_unchecked(
-                core::slice::from_raw_parts(scratch_ptr, m.arg0 as usize));
-
-            let mut tmp = [0u8; 64];
-
-            r.arg0 = match crate::fs::vfs::root() {
-                Some(fs) if fs.read_path(path, &mut tmp).is_some() => 1,
-                _ => 0,
-            };
-
-            0
-        }
-        _ => -1,
-    }
-}
-
 static mut GRANTS: [Grant; 32] = [Grant {
     va: 0, phys: 0, pages: 0, kind: 0, used: false,
 }; 32];
@@ -299,6 +264,7 @@ pub fn video_call(op: u32, m: &DsMsg, r: &mut DsMsg) -> i32 {
             crate::gfx::console::refresh();
             0
         }
+        VID_HDMI_FILL | VID_HDMI_CAPS => crate::hdmi::bridge::hdmi_call(op, m, r, 0),
         _ => -1,
     }
 }
@@ -312,6 +278,7 @@ fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
         SVC_INPUT => return input_call(op, &m, r),
         SVC_AUDIO => return audio_call(op, &m, r),
         SVC_BLOCK => return block_call(op, &m, r),
+        SVC_BT => return crate::bluetooth::bridge::bt_call(op, m, r, 0),
         _ => {}
     }
 
