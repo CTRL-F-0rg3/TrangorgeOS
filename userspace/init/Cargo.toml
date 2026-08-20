@@ -1,0 +1,10 @@
+[package]
+name = "tr-init"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+trangorgelibc = { path = "../../trangorgelibc" }
+
+[profile.release]
+panic = "abort"

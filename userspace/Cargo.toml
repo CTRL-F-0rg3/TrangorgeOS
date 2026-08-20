@@ -1,0 +1,5 @@
+[workspace]
+members = ["init"]
+resolver = "2"
+
+# później: "shell", "terminal", "compositor"
