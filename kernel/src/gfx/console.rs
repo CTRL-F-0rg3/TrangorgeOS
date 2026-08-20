@@ -15,6 +15,8 @@ pub const MAX_COLS: usize = 80;
 pub const MAX_ROWS: usize = 25;
 
 static mut FB: Option<Framebuffer> = None;
+static mut FB_PHYS: u64 = 0;
+static mut ENABLED: bool = true;
 // Logical background snapshot (RGB888 per pixel), captured after the galaxy
 // fade-in. Used to restore the area underneath transparent text.
 static mut CLEAN: alloc::vec::Vec<u32> = alloc::vec::Vec::new();
@@ -56,6 +58,26 @@ pub fn cols() -> usize {
 /// Current number of text grid rows (resolution-dependent).
 pub fn rows() -> usize {
     unsafe { ROWS }
+}
+
+pub fn fb_info() -> (u32, u32, u32, u64) {
+    unsafe {
+        match FB.as_ref() {
+            Some(framebuffer) if framebuffer.format == PixelFormat::Rgb888 && FB_PHYS != 0 => (
+                framebuffer.width as u32,
+                framebuffer.height as u32,
+                (framebuffer.stride / 4) as u32,
+                FB_PHYS,
+            ),
+            _ => (0, 0, 0, 0),
+        }
+    }
+}
+
+pub fn set_enabled(enabled: bool) {
+    unsafe {
+        ENABLED = enabled;
+    }
 }
 
 fn set_palette_rgb332() {
@@ -146,6 +168,11 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     // Round up to a page (vmm_map_device requires alignment; the VGA window
     // is up to 64 KiB).
     let size = ((stride * height) + 0xFFF) & !0xFFF;
+
+    unsafe {
+        FB_PHYS = if fb_addr >= 0xFFFF800000000000 { 0 } else { fb_addr };
+        ENABLED = true;
+    }
 
     let ptr = if fb_addr >= 0xFFFF800000000000 {
         fb_addr as *mut u8
@@ -257,7 +284,7 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
 }
 
 pub fn refresh() {
-    if unsafe { FB.is_none() } {
+    if unsafe { FB.is_none() || !ENABLED } {
         return;
     }
 

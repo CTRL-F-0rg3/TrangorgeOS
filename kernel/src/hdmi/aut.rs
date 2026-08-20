@@ -1,5 +1,6 @@
-use crate::driverspaceinit::abi::{svc_cmd, SVC_VIDEO};
+use core::sync::atomic::{AtomicU32, Ordering};
 
+pub const VID_HDMI_INIT: u32 = 3;
 pub const VID_HDMI_FILL: u32 = 4;
 pub const VID_HDMI_POLL: u32 = 5;
 pub const VID_HDMI_CAPS: u32 = 6;
@@ -14,22 +15,28 @@ pub const VID_REVOKE_FB: u32 = 11;
 //     return false;
 // }
 const BUDGET_MAX: u32 = 8;
+static BUDGET: AtomicU32 = AtomicU32::new(BUDGET_MAX);
 
-static mut BUDGET: u32 = BUDGET_MAX;
+pub fn authorize(ring: u8, op: u32) -> bool {
+    if op == VID_HDMI_INIT {
+        return ring == 0;
+    }
 
-pub fn authorize(ring: u8, op: u8) -> bool {
     if ring == 0 {
         return true;
     }
 
-    if op == VID_MODE_SET as u8 && ring >= 3 {
+    if op == VID_MODE_SET && ring >= 3 {
         return false;
     }
 
-    if !crate::policy::bridge::check(ring, svc_cmd(SVC_VIDEO, op as u32), 0) {
-        return false;
+    if op == VID_HDMI_FILL {
+        return BUDGET
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |budget| budget.checked_sub(1))
+            .is_ok();
     }
 
+<<<<<<< Updated upstream
     if op == VID_GRANT_FB as u8 && ring >= 3 {
         return false;
     }
@@ -45,8 +52,11 @@ pub fn authorize(ring: u8, op: u8) -> bool {
     }
 
     true
+=======
+    ring < 4
+>>>>>>> Stashed changes
 }
 
 pub fn tick_reset() {
-    unsafe { BUDGET = BUDGET_MAX; }
+    BUDGET.store(BUDGET_MAX, Ordering::Release);
 }

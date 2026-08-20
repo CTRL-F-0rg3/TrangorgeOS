@@ -1,4 +1,3 @@
-// init.rs
 extern "C" {
     fn bt_init() -> bool;
     fn bt_ready() -> bool;

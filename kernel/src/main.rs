@@ -4,17 +4,19 @@
 
 extern crate alloc;
 
-use bootloader::{BootInfo, entry_point};
+use bootloader::{entry_point, BootInfo};
 
+mod bluetooth;
+mod cpu;
 mod drivers;
+mod driverspaceinit;
 mod fs;
 mod gdt;
 mod gfx;
+mod hdmi;
 mod interrupts;
 mod mm;
 mod nic;
-mod cpu;
-mod driverspaceinit;
 mod pci;
 mod serial;
 mod terminal;
@@ -124,15 +126,27 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     if gfx::init() {
         println!("[gfx] framebuffer initialized OK");
+        if hdmi::init::init() {
+            println!("[hdmi] framebuffer bridge initialized OK");
+        } else {
+            println!("[hdmi] framebuffer bridge initialization FAILED");
+        }
     } else {
         println!("[gfx] framebuffer initialization FAILED");
     }
 
     pci::init();
+
+    if bluetooth::init::init() {
+        println!("[bluetooth] initialized OK");
+    } else {
+        println!("[bluetooth] initialization FAILED");
+    }
+
     fs::init();
     cpu::init(boot_info);
     testing::run_all(TESTS);
-    println!("Welcome in my Galaxy{}", "!");
+    println!("Welcome in my Galaxy!");
 
     gfx::refresh();
 

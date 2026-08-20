@@ -4,9 +4,8 @@ extern "C" {
 }
 
 pub fn init() -> bool {
-    let (w, h, s, phys) = crate::gfx::console::fb_info();
-
-    unsafe { hdmi_init_with(phys, w, h, s) }
+    let (w, h, stride, phys) = crate::gfx::console::fb_info();
+    unsafe { hdmi_init_with(phys, w, h, stride) }
 }
 
 pub fn ready() -> bool {
