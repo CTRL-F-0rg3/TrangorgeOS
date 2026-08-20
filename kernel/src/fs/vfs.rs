@@ -43,7 +43,13 @@ impl Mounted {
 }
 
 static mut ROOT_FS: Option<Mounted> = None;
-
+pub fn register_tangfs() {
+    use alloc::boxed::Box;
+    
+    FILESYSTEMS.lock().push(Box::new(|device| {
+        tangfs::TangFs::mount(device).map(|fs| Box::new(fs) as Box<dyn FileSystem>)
+    }));
+}
 pub fn mount_all() {
     let n = registry::count();
 
