@@ -4,7 +4,7 @@
 
 use crate::fs::driver::block::BlockDevice;
 use crate::vga_buffer::{Color, WRITER};
-use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 
 /* ------------------------------------------------------------------ */
 /* Bufor klawiatury (SPSC ring buffer, IRQ-safe)                       */
@@ -143,6 +143,7 @@ static LINE_START_COL: AtomicUsize = AtomicUsize::new(0);
 
 // Current working directory (first block of its entry table).
 static CURRENT_DIR: AtomicU32 = AtomicU32::new(crate::fs::tfs::ROOT_DIR);
+static NET_TIME_MS: AtomicU64 = AtomicU64::new(0);
 
 fn line_as_str(buf: &mut [u8]) -> &str {
     let len = LINE_LEN.load(Ordering::Relaxed);
@@ -276,7 +277,7 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ls cd mkdir format write read rm res poweroff reboot");
+            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm res poweroff reboot");
             crate::println!("  write <name> <text...>  write a text file to disk");
             crate::println!("  read  <name>            read a file from disk");
             crate::println!("  rm    <name>            remove a file or empty folder");
@@ -284,6 +285,7 @@ fn execute(line: &str) {
             crate::println!("  mkdir <name>            create a folder");
             crate::println!("  cd    <name|/>          change folder ( / = root )");
             crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
+            crate::println!("  ping  <IPv4>            send one ICMP Echo Request");
             crate::println!("  poweroff                power off the machine");
             crate::println!("  reboot                  reboot the machine");
             crate::println!("  format                  format the disk (TFS)");
@@ -303,6 +305,21 @@ fn execute(line: &str) {
                 unsafe { crate::mm::ffi::mm_free_ram() } / 1024 / 1024
             );
             crate::println!("  CPUs: {}", crate::cpu::total_cpus());
+        }
+        "ping" => {
+            let address = match crate::nic::parse_ipv4(rest.trim()) {
+                Some(value) => value,
+                None => {
+                    crate::println!("usage: ping <IPv4>");
+                    crate::gfx::refresh();
+                    return;
+                }
+            };
+            let now_ms = NET_TIME_MS.load(Ordering::Relaxed);
+            match crate::nic::runtime::start_ping(address, now_ms) {
+                Ok(result) => print_ping_result(result),
+                Err(error) => crate::println!("ping failed: {:?}", error),
+            }
         }
         "ls" => {
             let dir = CURRENT_DIR.load(Ordering::Relaxed);
@@ -437,6 +454,31 @@ fn execute(line: &str) {
     crate::gfx::refresh();
 }
 
+fn print_ping_result(result: crate::nic::PingResult) {
+    match result {
+        crate::nic::PingResult::ArpRequestSent => crate::println!("ping: ARP request sent"),
+        crate::nic::PingResult::EchoRequestSent => crate::println!("ping: ICMP Echo Request sent"),
+        crate::nic::PingResult::EchoReply { source, sequence } => crate::println!(
+            "ping: ICMP Echo Reply from {}.{}.{}.{} seq={}",
+            source.0[0],
+            source.0[1],
+            source.0[2],
+            source.0[3],
+            sequence
+        ),
+        crate::nic::PingResult::Waiting => {}
+    }
+}
+
+fn poll_network() {
+    let now_ms = NET_TIME_MS.fetch_add(10, Ordering::Relaxed).wrapping_add(10);
+    match crate::nic::runtime::poll(now_ms) {
+        Ok(Some(result)) => print_ping_result(result),
+        Ok(None) => {}
+        Err(error) => crate::println!("ping failed: {:?}", error),
+    }
+}
+
 /// Sink for `tfs::list_dir` — prints via `println!`.
 struct Sink;
 
@@ -458,6 +500,7 @@ pub fn init() {
 
 pub fn run() -> ! {
     loop {
+        poll_network();
         let mut handled = false;
         while let Some(b) = kbuf_pop() {
             handle_char(b as char);

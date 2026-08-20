@@ -137,6 +137,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     pci::init();
 
+    match nic::runtime::init() {
+        Ok(()) => println!("[nic] virtio-net initialized OK"),
+        Err(error) => println!("[nic] virtio-net initialization FAILED: {:?}", error),
+    }
+
     if bluetooth::init::init() {
         println!("[bluetooth] initialized OK");
     } else {
