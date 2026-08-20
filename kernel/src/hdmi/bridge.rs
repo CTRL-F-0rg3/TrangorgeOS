@@ -9,6 +9,7 @@ extern "C" {
     fn hdmi_mode_set_by_id(id: u32) -> bool;
     fn hdmi_mode_current_raw(id: *mut u32, w: *mut u32, h: *mut u32, r: *mut u32) -> bool;
     fn hdmi_mode_at_raw(i: u32, id: *mut u32, w: *mut u32, h: *mut u32, r: *mut u32) -> bool;
+    fn hdmi_caps_raw(w: *mut u32, h: *mut u32, s: *mut u32, phys: *mut u64);
 }
 
 pub fn hdmi_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
@@ -87,7 +88,6 @@ pub fn hdmi_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
         aut::VID_MODE_SET => {
             if unsafe { hdmi_mode_set_by_id(m.arg0 as u32) } { 0 } else { -1 }
         }
-<<<<<<< Updated upstream
 
         x if x == aut::VID_GRANT_FB => {
             extern "C" { fn hdmi_fb_grant() -> bool; }
@@ -111,8 +111,6 @@ pub fn hdmi_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
             0
         }
 
-=======
->>>>>>> Stashed changes
         _ => -1,
     }
 }

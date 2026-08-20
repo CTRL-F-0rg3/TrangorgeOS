@@ -10,10 +10,6 @@ pub const VID_MODE_SET: u32 = 9;
 pub const VID_GRANT_FB: u32 = 10;
 pub const VID_REVOKE_FB: u32 = 11;
 
-// // w authorize():
-// if op == VID_GRANT_FB as u8 && ring >= 3 {
-//     return false;
-// }
 const BUDGET_MAX: u32 = 8;
 static BUDGET: AtomicU32 = AtomicU32::new(BUDGET_MAX);
 
@@ -30,31 +26,19 @@ pub fn authorize(ring: u8, op: u32) -> bool {
         return false;
     }
 
-    if op == VID_HDMI_FILL {
-        return BUDGET
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |budget| budget.checked_sub(1))
-            .is_ok();
-    }
-
-<<<<<<< Updated upstream
-    if op == VID_GRANT_FB as u8 && ring >= 3 {
+    if op == VID_GRANT_FB && ring >= 3 {
         return false;
     }
 
-    if op == VID_HDMI_FILL as u8 {
-        unsafe {
-            if BUDGET == 0 {
-                return false;
-            }
-
-            BUDGET -= 1;
-        }
+    if op == VID_HDMI_FILL {
+        return BUDGET
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |budget| {
+                budget.checked_sub(1)
+            })
+            .is_ok();
     }
 
-    true
-=======
     ring < 4
->>>>>>> Stashed changes
 }
 
 pub fn tick_reset() {
