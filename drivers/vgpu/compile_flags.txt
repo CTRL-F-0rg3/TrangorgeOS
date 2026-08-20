@@ -1,0 +1,4 @@
+-I../../libs
+-I.
+-std=c11
+-ffreestanding

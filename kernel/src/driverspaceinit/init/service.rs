@@ -93,6 +93,100 @@ fn grant_add(va: u64, phys: u64, pages: u64, kind: u8) -> bool {
     false
 }
 
+static mut VGPU_RING: u64 = 0;
+static mut VGPU_NEXT_ID: u64 = 1;
+
+#[repr(C)]
+struct Slot {
+    id: u64, op: u32, pad: u32,
+    a0: u64, a1: u64, a2: u64,
+    done: u32, status: i32,
+    r0: u64, r1: u64,
+}
+
+extern "C" {
+    fn arch_phys_to_virt(phys: u64) -> *mut u8;
+}
+
+fn ring() -> Option<*mut Slot> {
+    unsafe {
+        if VGPU_RING == 0 {
+            return None;
+        }
+
+        Some(arch_phys_to_virt(VGPU_RING) as *mut Slot)
+    }
+}
+
+pub fn vgpu_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring_lvl: u8) -> i32 {
+    match op {
+        VGPU_REGISTER => {
+            if ring_lvl >= 3 {
+                return -1;
+            }
+
+            unsafe { VGPU_RING = m.arg0; }
+            0
+        }
+
+        VGPU_INFO | VGPU_SURF_CREATE | VGPU_PRESENT => {
+            let base = match ring() {
+                Some(b) => b,
+                None => return -1,
+            };
+
+            unsafe {
+                for i in 0..VGPU_RING_SLOTS {
+                    let s = &mut *base.add(i);
+
+                    if s.id == 0 {
+                        s.op = op;
+                        s.a0 = m.arg0;
+                        s.a1 = m.arg1;
+                        s.a2 = m.arg2;
+                        s.done = 0;
+                        s.status = 0;
+                        s.id = VGPU_NEXT_ID;
+                        VGPU_NEXT_ID += 1;
+
+                        r.arg0 = s.id;
+                        return 0;
+                    }
+                }
+            }
+
+            -7
+        }
+
+        VGPU_POLL => {
+            let base = match ring() {
+                Some(b) => b,
+                None => return -1,
+            };
+
+            unsafe {
+                for i in 0..VGPU_RING_SLOTS {
+                    let s = &mut *base.add(i);
+
+                    if s.id == m.arg0 && s.done != 0 {
+                        r.status = s.status;
+                        r.arg0 = s.r0;
+                        r.arg1 = s.r1;
+
+                        s.id = 0;
+
+                        return 0;
+                    }
+                }
+            }
+
+            1
+        }
+
+        _ => -1,
+    }
+}
+
 // service.rs
 pub fn pci_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
     use crate::drivers::pci as kpci;

@@ -68,6 +68,26 @@
 #define DRIVER_KIND_AUDIO 2
 #define DRIVER_KIND_NET   3
 
+#define SVC_VGPU 12
+
+#define VGPU_REGISTER   1
+#define VGPU_SURF_CREATE 2
+#define VGPU_PRESENT    3
+#define VGPU_POLL       4
+#define VGPU_INFO       5
+
+#define VGPU_RING_SLOTS 16
+
+typedef struct vgpu_slot {
+    uint64_t id;
+    uint32_t op;
+    uint32_t pad;
+    uint64_t a0, a1, a2;
+    volatile uint32_t done;
+    volatile int32_t status;
+    volatile uint64_t r0, r1;
+} vgpu_slot_t;
+
 static inline void ds_yield(void)
 {
     __asm__ volatile("int $0x80" :: "a"(1));
