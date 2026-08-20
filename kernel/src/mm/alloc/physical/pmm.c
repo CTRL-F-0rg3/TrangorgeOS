@@ -1,6 +1,7 @@
 #include "pmm.h"
 #include "frame.h"
 #include "../../arch/x86_64/memory.h"
+#include "../../core/smp_lock.h"
 
 extern void kprintf(const char *fmt, ...);
 
@@ -16,47 +17,23 @@ static void pmm_panic(const char *msg)
 
 static bool pmm_initialized = false;
 
-static size_t pmm_lock_depth = 0;
-static uint64_t pmm_lock_flags = 0;
+/*
+ * P0.1: rzeczywista blokada SMP zamiast `pushfq; cli` + lokalnego licznika.
+ * Przy wielordzeniowej konfiguracji (`-smp 4`) dwa CPU mogły jednocześnie
+ * modyfikować bitmapę ramek; ticket lock daje prawdziwe wykluczanie
+ * międzyrdzeniowe, zachowując wariant irqsave i bezpieczną rekurencję.
+ */
+static smp_ticket_lock_t pmm_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void pmm_lock(void)
 {
-    uint64_t flags;
-
-    __asm__ volatile(
-        "pushfq\n"
-        "popq %0\n"
-        "cli"
-        : "=r"(flags)
-        :
-        : "memory"
-    );
-
-    if (pmm_lock_depth == 0) {
-        pmm_lock_flags = flags;
-    }
-
-    pmm_lock_depth++;
+    smp_lock_acquire(&pmm_smp_lock);
 }
 
 static void pmm_unlock(void)
 {
-    if (pmm_lock_depth == 0) {
+    if (!smp_lock_release(&pmm_smp_lock)) {
         pmm_panic("pmm_unlock without lock");
-    }
-
-    pmm_lock_depth--;
-
-    if (pmm_lock_depth == 0) {
-        uint64_t flags = pmm_lock_flags;
-
-        __asm__ volatile(
-            "pushq %0\n"
-            "popfq"
-            :
-            : "r"(flags)
-            : "memory"
-        );
     }
 }
 
