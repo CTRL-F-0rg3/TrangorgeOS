@@ -6,7 +6,13 @@ pub const VID_HDMI_CAPS: u32 = 6;
 pub const VID_MODE_GET: u32 = 7;
 pub const VID_MODE_LIST: u32 = 8;
 pub const VID_MODE_SET: u32 = 9;
+pub const VID_GRANT_FB: u32 = 10;
+pub const VID_REVOKE_FB: u32 = 11;
 
+// // w authorize():
+// if op == VID_GRANT_FB as u8 && ring >= 3 {
+//     return false;
+// }
 const BUDGET_MAX: u32 = 8;
 
 static mut BUDGET: u32 = BUDGET_MAX;
@@ -21,6 +27,10 @@ pub fn authorize(ring: u8, op: u8) -> bool {
     }
 
     if !crate::policy::bridge::check(ring, svc_cmd(SVC_VIDEO, op as u32), 0) {
+        return false;
+    }
+
+    if op == VID_GRANT_FB as u8 && ring >= 3 {
         return false;
     }
 

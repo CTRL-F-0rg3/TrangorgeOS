@@ -76,6 +76,28 @@ pub fn hdmi_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
             if unsafe { hdmi_mode_set_by_id(m.arg0 as u32) } { 0 } else { -1 }
         }
 
+        x if x == aut::VID_GRANT_FB => {
+            extern "C" { fn hdmi_fb_grant() -> bool; }
+
+            let mut w = 0u32; let mut h = 0u32; let mut s = 0u32; let mut phys = 0u64;
+            unsafe { hdmi_caps_raw(&mut w, &mut h, &mut s, &mut phys) };
+
+            if phys == 0 || !unsafe { hdmi_fb_grant() } {
+                return -1;
+            }
+
+            r.arg0 = phys;
+            r.arg1 = ((w as u64) << 32) | h as u64;
+            r.arg2 = s as u64;
+            0
+        }
+
+        x if x == aut::VID_REVOKE_FB => {
+            extern "C" { fn hdmi_fb_revoke(); }
+            unsafe { hdmi_fb_revoke() };
+            0
+        }
+
         _ => -1,
     }
 }

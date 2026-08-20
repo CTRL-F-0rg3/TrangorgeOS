@@ -124,6 +124,28 @@ void hdmi_op_set_mode(const hdmi_mode_t *m)
     cur.stride = m->w;
 }
 
+static bool fb_granted = false;
+
+bool hdmi_fb_grant(void)
+{
+    if (cur.fb_phys == 0) {
+        return false;
+    }
+
+    fb_granted = true;
+    return true;
+}
+
+void hdmi_fb_revoke(void)
+{
+    fb_granted = false;
+}
+
+bool hdmi_fb_granted(void)
+{
+    return fb_granted;
+}
+
 void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys)
 {
     hdmi_caps_t c;
