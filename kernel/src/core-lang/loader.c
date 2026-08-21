@@ -1,10 +1,11 @@
 #include "loader.h"
-#include "vm.h"
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
+#include "lexer.h"
+#include "parser.h"
+#include "sema.h"
+#include "native.h"
 
+/* codegen nie ma nagłówka — prototyp lokalnie */
+extern cl_prog_t *cl_codegen(ast_node_t *prog, arena_t *ar);
 extern void *cl_native_compile(cl_prog_t *P);
 
 cl_prog_t *cl_compile_source(const char *src, size_t len, arena_t *ar,
