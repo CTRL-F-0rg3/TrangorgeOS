@@ -451,8 +451,8 @@ cl_vm_err_t cl_vm_run(cl_vm_t *vm)
             int n = in.b > 6 ? 6 : in.b;
 
             for (int i = n - 1; i >= 0; i--) {
-                args[i] = val_u64(&(cl_val_t){ { 0 } }) , args[i] = val_u64(&vm->stack[vm->sp - 1]);
-                pop(vm);
+                cl_val_t v = pop(vm);
+                args[i] = val_u64(&v);
             }
 
             uint64_t ret = vm->externs[in.a](args[0], args[1], args[2],

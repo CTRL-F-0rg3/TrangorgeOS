@@ -540,20 +540,20 @@ static ast_node_t *parse_postfix(parser_t *p)
 
             ast_node_t *m = new_node(p, ND_SCOPECALL);
 
-            copy_name(m->name, sizeof(m->name), &((token_t){ .start = n->name, .len = 0 }));
+            for (size_t i = 0; i < sizeof(m->name); i++) {
+                m->name[i] = 0;
+            }
 
-            /* scope = lewa strona (musi być VAR) */
             if (n->kind == ND_VAR) {
                 for (size_t i = 0; n->name[i] && i < 63; i++) {
                     m->name[i] = n->name[i];
-                    m->name[i + 1] = '\0';
                 }
             }
 
             copy_name(m->name2, sizeof(m->name2),
                       expect(p, TK_IDENT, "scope fn"));
 
-            expect(p, TK_LPAREN, "::( ");
+            expect(p, TK_LPAREN, "scope (");
 
             nlist_t args = { { 0 }, 0 };
 

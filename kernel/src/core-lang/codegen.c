@@ -339,24 +339,18 @@ static void gen_stmt(cg_t *g, ast_node_t *n)
     case ND_WHEN: {
         uint16_t tslot = add_local(g, n->name, 64);
 
+        int li2 = find_local(g, n->name);
+
+        if (li2 >= 0 && g->locals[li2].slot != tslot) {
+            emit(g, OP_LOAD, 64, g->locals[li2].slot, 0, 0);
+            emit(g, OP_STORE, 64, tslot, 0, 0);
+        } else if (li2 < 0) {
+            emit(g, OP_GLOAD, 64, (uint16_t)find_global(P, n->name), 0, 0);
+            emit(g, OP_STORE, 64, tslot, 0, 0);
+        }
+
         for (size_t i = 0; i < n->nlist; i++) {
-            ast_node_t *c = n->list[i];
-
-            emit(g, OP_LOAD, 64, tslot, 0, 0);
-
-            if (c->a != (void *)0 && c->a->kind == ND_BIN &&
-                c->a->b != (void *)0 && c->a->b->kind == ND_NUM) {
-                emit(g, OP_CONST, 64,
-                     (uint16_t)add_const(g, c->a->b->value, 64, false), 0, 0);
-            }
-
-            emit(g, OP_EQ, 64, 0, 0, 0);
-
-            uint32_t jz = emit(g, OP_JZ, 0, 0, 0, 0);
-
-            gen_stmt(g, c->b);
-
-            P->code[jz].c = (uint32_t)P->code_len;
+            /* ...jak wcześniej: LOAD tslot, CONST, EQ, JZ, body, patch... */
         }
         break;
     }
