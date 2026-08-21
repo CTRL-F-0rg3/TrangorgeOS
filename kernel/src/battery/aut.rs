@@ -1,4 +1,3 @@
-// aut.rs
 pub const BATT_STATUS: u32 = 1;
 pub const BATT_THRESH: u32 = 2;
 

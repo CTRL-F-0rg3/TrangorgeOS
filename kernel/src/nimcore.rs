@@ -37,34 +37,3 @@ pub fn parse_u64(s: &str, base: u8) -> Option<u64> {
     let ok = unsafe { nim_parse_u64(s.as_ptr(), s.len() as u32, base, &mut v) };
     if ok == 1 { Some(v) } else { None }
 }
-
-// extern "C" fn cmd_status(_: *mut u8, _: u32) -> i32 {
-//     kalloc_dump();
-//     0
-// }
-
-// extern "C" fn cmd_fb(_: *mut u8, _: u32) -> i32 {
-//     crate::gfx::console::set_enabled(false);
-//     0
-// }
-
-// nimcore::shell_register("status", cmd_status);
-// nimcore::shell_register("fb", cmd_fb);
-
-// let mut b = [0u8; 2048];
-// let n = nimcore::banner(&mut b);
-// /* wypisz b[..n] przez kprintf */
-
-// while let Some(c) = hid_take_char() {
-//     match c {
-//         b'\n' => {
-//             nimcore::shell_run(&LINE);
-//             LINE.clear();
-//         }
-//         8 => { LINE.pop(); }
-//         c => {
-//             LINE.push(c);
-//             kprintf_char(c);
-//         }
-//     }
-// }

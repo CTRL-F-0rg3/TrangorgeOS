@@ -4,14 +4,11 @@ pub mod tfs;
 
 use crate::testing::TestResult;
 
-/// Initializes the filesystem subsystem: detects ATA/IDE disks and parses MBR.
 pub fn init() {
     driver::init();
     mbr::init();
 }
 
-/// FS self-test: detect a disk, read sector 0, verify the MBR, and run a TFS
-/// roundtrip (format, write, read, mkdir, rm) on the data disk.
 pub fn self_test() -> TestResult {
     if driver::registry::count() == 0 {
         driver::init();
@@ -50,7 +47,6 @@ pub fn self_test() -> TestResult {
 
     crate::println!("[fs] MBR valid, {} partition(s)", parts);
 
-    // --- TFS roundtrip on the data disk (slave) ---
     let data = match root_device() {
         Some(d) => d,
         None => return Err("no data disk"),
@@ -73,7 +69,6 @@ pub fn self_test() -> TestResult {
         _ => return Err("tfs readback mismatch"),
     }
 
-    // Directories: create one, put a file inside, read it back, remove it.
     if tfs::mkdir(data, tfs::ROOT_DIR, "docs").is_err() {
         return Err("tfs mkdir failed");
     }
@@ -107,7 +102,6 @@ pub fn self_test() -> TestResult {
     Ok("ATA + MBR + TFS (format/write/read/mkdir/rm) OK")
 }
 
-/// Returns the data disk (slave) or the boot disk if no data disk is present.
 pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
     if driver::registry::count() > 1 {
         driver::registry::get(1)
@@ -115,4 +109,3 @@ pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
         driver::registry::first()
     }
 }
-

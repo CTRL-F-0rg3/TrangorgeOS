@@ -1,7 +1,6 @@
-
 pub struct SystemState {
     pub packages: alloc::vec::Vec<InstalledPackage>,
-    pub last_update: u64,  // timestamp
+    pub last_update: u64,
 }
 
 pub struct InstalledPackage {
@@ -9,7 +8,7 @@ pub struct InstalledPackage {
     pub kind: ComponentKind,
     pub status: PackageStatus,
     pub installed_at: u64,
-    pub files: alloc::vec::Vec<alloc::string::String>,  // paths to files
+    pub files: alloc::vec::Vec<alloc::string::String>,
     pub dependencies: alloc::vec::Vec<alloc::string::String>,
 }
 

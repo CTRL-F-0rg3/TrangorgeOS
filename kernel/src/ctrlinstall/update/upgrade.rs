@@ -1,4 +1,3 @@
-
 pub struct UpgradePlan {
     pub actions: alloc::vec::Vec<UpdateAction>,
     pub transaction: Transaction,

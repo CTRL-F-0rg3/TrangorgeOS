@@ -25,6 +25,10 @@ pub enum DsCmd {
     BlockRead = 15,
     BlockWrite = 16,
     EventDeviceAdded = 30,
+    JackQuery = 40,
+    JackSetAmp = 41,
+    AudioPlay = 42,
+    AudioStop = 43,
     AudioInfo = 48,
     PagePhys = 49,
 }

@@ -1,20 +1,23 @@
-extern "C" {
-    fn kprintf(fmt: *const u8, ...);
-}
+const KSTD_PATH_MAX: usize = 256;
 
-fn cstr_len(p: *const u8) -> usize {
-    let mut n = 0;
+fn cstr_to_str<'a>(p: *const u8) -> Option<&'a str> {
+    if p.is_null() {
+        return None;
+    }
+
+    let mut n = 0usize;
+
     unsafe {
-        while *p.add(n) != 0 {
+        while n < KSTD_PATH_MAX {
+            if *p.add(n) == 0 {
+                return core::str::from_utf8(core::slice::from_raw_parts(p, n)).ok();
+            }
+
             n += 1;
         }
     }
-    n
-}
 
-fn cstr_to_str<'a>(p: *const u8) -> &'a str {
-    let n = cstr_len(p);
-    unsafe { core::str::from_utf8_unchecked(core::slice::from_raw_parts(p, n)) }
+    None
 }
 
 #[no_mangle]
@@ -27,17 +30,25 @@ pub extern "C" fn k_input_key() -> i32 {
 
 #[no_mangle]
 pub extern "C" fn k_fs_read(path: *const u8, buf: *mut u8, cap: u32) -> i32 {
+    if buf.is_null() || cap == 0 {
+        return -1;
+    }
+
     let fs = match crate::fs::vfs::root() {
         Some(f) => f,
         None => return -1,
     };
 
-    let s = cstr_to_str(path);
+    let path = match cstr_to_str(path) {
+        Some(value) => value,
+        None => return -1,
+    };
+
     let slice = unsafe { core::slice::from_raw_parts_mut(buf, cap as usize) };
 
-    match fs.read_path(s, slice) {
-        Some(n) => n as i32,
-        None => -1,
+    match fs.read_path(path, slice) {
+        Some(n) if n <= i32::MAX as usize => n as i32,
+        _ => -1,
     }
 }
 
@@ -48,14 +59,27 @@ pub extern "C" fn k_fs_exists(path: *const u8) -> i32 {
         None => return 0,
     };
 
+    let path = match cstr_to_str(path) {
+        Some(value) => value,
+        None => return 0,
+    };
+
     let mut tmp = [0u8; 64];
 
-    if fs.read_path(cstr_to_str(path), &mut tmp).is_some() { 1 } else { 0 }
+    if fs.read_path(path, &mut tmp).is_some() {
+        1
+    } else {
+        0
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn k_audio_play(phys: u64, len: u32) -> i32 {
-    if crate::audio::jack::play_phys(phys, len) { 0 } else { -1 }
+    if crate::audio::jack::play_phys(phys, len) {
+        0
+    } else {
+        -1
+    }
 }
 
 #[no_mangle]
@@ -68,7 +92,12 @@ pub extern "C" fn k_audio_stop() -> i32 {
 pub extern "C" fn k_audio_jack() -> i32 {
     unsafe {
         crate::audio::jack::poll_jack();
-        if crate::audio::jack::query() & 1 != 0 { 1 } else { 0 }
+
+        if crate::audio::jack::query() & 1 != 0 {
+            1
+        } else {
+            0
+        }
     }
 }
 

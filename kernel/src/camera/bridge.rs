@@ -1,4 +1,3 @@
-// bridge.rs
 use super::aut;
 use crate::driverspaceinit::abi::DsMsg;
 

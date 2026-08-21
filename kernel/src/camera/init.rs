@@ -1,4 +1,3 @@
-// init.rs
 extern "C" {
     fn camera_init() -> bool;
 }

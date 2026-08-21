@@ -1,5 +1,3 @@
-
-
 pub struct BootstrapResult {
     pub is_first_boot: bool,
     pub state: state::SystemState,

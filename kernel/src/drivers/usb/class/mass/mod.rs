@@ -181,9 +181,6 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     Ok(true)
 }
 
-// TODO: post DsCmd::EventDeviceAdded to the driverspace once the service
-// dispatcher (driverspaceinit::init::service) is wired up.
-
 static mut MASS0: Option<UsbMass> = None;
 
 pub fn with_controller<F: FnOnce(&mut Xhci) -> R, R>(f: F) -> R {

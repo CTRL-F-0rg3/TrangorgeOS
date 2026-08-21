@@ -1,4 +1,3 @@
-//! Low-cost scheduler accounting and observability.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CpuStats {
     pub ticks: u64,

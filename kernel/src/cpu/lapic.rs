@@ -1,12 +1,8 @@
-//! Local APIC driver (xAPIC via MMIO, with an x2APIC fallback via MSR).
-
 use core::ptr;
 use x86_64::registers::model_specific::Msr;
 
-/// IA32_APIC_BASE MSR — Local APIC status and location.
 const APIC_BASE_MSR: u32 = 0x1B;
 
-/* xAPIC register offsets (MMIO). */
 const REG_ID: u32 = 0x020;
 const REG_VERSION: u32 = 0x030;
 const REG_SVR: u32 = 0x0F0;
@@ -16,18 +12,15 @@ const REG_ICR1: u32 = 0x310;
 const REG_LVT_LINT0: u32 = 0x350;
 const REG_LVT_LINT1: u32 = 0x360;
 
-const SPURIOUS_ENABLE: u32 = 1 << 8; // APIC Software Enable
+const SPURIOUS_ENABLE: u32 = 1 << 8;
 
 static mut LAPIC_BASE: usize = 0;
 static mut X2APIC: bool = false;
 
-/// Mapowanie xAPIC -> x2APIC MSR: 0x800 + (offset >> 4).
 fn x2apic_msr(reg: u32) -> u32 {
     0x800 + (reg >> 4)
 }
 
-/// Inicjalizacja: wybiera tryb (xAPIC MMIO lub x2APIC MSR) na podstawie
-/// stanu MSR IA32_APIC_BASE.
 pub fn init(base_phys: u64) -> bool {
     unsafe {
         let msr = Msr::new(APIC_BASE_MSR).read();
@@ -74,7 +67,6 @@ pub fn write(reg: u32, val: u32) {
     }
 }
 
-/// Identyfikator Local APIC bieżącego rdzenia.
 pub fn id() -> u32 {
     if unsafe { X2APIC } {
         read(REG_ID)
@@ -83,33 +75,25 @@ pub fn id() -> u32 {
     }
 }
 
-/// Wersja i maksymalny LVT entry (starsze 8 bitów / młodsze 8 bitów).
 pub fn version() -> u32 {
     read(REG_VERSION)
 }
 
-/// Włącza Local APIC BSP: SVR + LINT0 jako ExtINT (virtual wire), żeby 8259
-/// PIC dalej dostarczał IRQ (timer/klawiatura) na BSP.
 pub fn enable_bsp() {
     write(REG_SVR, SPURIOUS_ENABLE | 0xFF);
-    write(REG_LVT_LINT0, 0x700); // ExtINT, unmasked
+    write(REG_LVT_LINT0, 0x700);
 }
 
-/// Włącza Local APIC AP: SVR + maskowanie LINT0/LINT1. AP nie ma podpiętego
-/// PIC/NMI, a odkryty LINT0 (ExtINT) kazałby mu obsługiwać timer 8259 i robić
-/// double-fault. IPI (fixed delivery) nadal docierają — nie idą przez LINT.
 pub fn enable_ap() {
     write(REG_SVR, SPURIOUS_ENABLE | 0xFF);
-    write(REG_LVT_LINT0, 1 << 16); // mask
-    write(REG_LVT_LINT1, 1 << 16); // mask
+    write(REG_LVT_LINT0, 1 << 16);
+    write(REG_LVT_LINT1, 1 << 16);
 }
 
-/// Sygnalizacja końca przerwania (EOI).
 pub fn eoi() {
     write(REG_EOI, 0);
 }
 
-/// Wysłanie IPI: `icr` = wartość ICR low, `dest_apic_id` = adresat.
 pub fn send_ipi(icr: u32, dest_apic_id: u32) {
     unsafe {
         if X2APIC {
@@ -122,18 +106,13 @@ pub fn send_ipi(icr: u32, dest_apic_id: u32) {
     }
 }
 
-/// INIT IPI (assert + deassert). Zgodnie z Intel SDM INIT jest ZAWSZE
-/// broadcastowany do wszystkich procesorów poza nadawcą — pole destination jest
-/// ignorowane. Wysyłamy go raz, przed startem AP, a potem budzimy każdy AP
-/// celowanym SIPI (SIPI potrafi adresować konkretny APIC ID).
 pub fn send_init_ipi() {
-    // delivery mode = 101 (INIT), level = 1 (assert), shorthand = all-excl-self
+
     send_ipi((5 << 8) | (1 << 14) | (1 << 15) | (3 << 18), 0);
-    // deassert (level = 0)
+
     send_ipi((5 << 8) | (3 << 18), 0);
 }
 
-/// Startup IPI (SIPI): delivery mode = 110, vector = numer strony startowej.
 pub fn send_startup_ipi(apic_id: u32, vector: u8) {
     send_ipi((6 << 8) | (vector as u32), apic_id);
 }

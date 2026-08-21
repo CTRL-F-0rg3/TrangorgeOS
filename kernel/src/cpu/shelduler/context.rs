@@ -1,4 +1,3 @@
-//! Minimalny kontekst ABI x86_64 używany przez dobrowolne przełączanie tasków.
 use core::arch::naked_asm;
 
 #[repr(C)]
@@ -12,10 +11,6 @@ impl Context {
         Self { rsp: 0 }
     }
 
-    /// Tworzy stos początkowy zgodny z sekwencją `switch_to`.
-    ///
-    /// `switch_to` zdejmie sześć rejestrów, a następnie wykona `ret`. Dlatego
-    /// układ zawiera sześć zerowanych rejestrów oraz adres funkcji wejściowej.
     pub fn bootstrap(stack_top: u64, entry: u64, argument: u64) -> Self {
         let top = (stack_top & !15u64).saturating_sub(8);
         unsafe {
@@ -35,7 +30,6 @@ impl Context {
     }
 }
 
-/// Przełącza dobrowolnie z jednego stosu kernela na drugi.
 #[unsafe(naked)]
 pub unsafe extern "C" fn switch_to(from: *mut Context, to: *const Context) {
     naked_asm!(

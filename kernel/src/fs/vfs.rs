@@ -43,13 +43,7 @@ impl Mounted {
 }
 
 static mut ROOT_FS: Option<Mounted> = None;
-pub fn register_tangfs() {
-    use alloc::boxed::Box;
-    
-    FILESYSTEMS.lock().push(Box::new(|device| {
-        tangfs::TangFs::mount(device).map(|fs| Box::new(fs) as Box<dyn FileSystem>)
-    }));
-}
+
 pub fn mount_all() {
     let n = registry::count();
 
@@ -71,23 +65,3 @@ pub fn mount_all() {
 pub fn root() -> Option<&'static Mounted> {
     unsafe { ROOT_FS.as_ref() }
 }
-
-
-
-
-
-
-// extern "C" fn cmd_ls(arg: *mut u8, len: u32) -> i32 {
-//     if let Some(fs) = vfs::root() {
-//         if let Some(entries) = fs.list_path("/") {
-//             for e in entries {
-//                 let kind = if e.is_dir { b"d" } else { b"-" };
-//                 kprintf(b"%s %s (%d B)\n\0", kind, e.name.as_ptr(), e.size);
-//             }
-//         }
-//     }
-
-//     0
-// }
-
-

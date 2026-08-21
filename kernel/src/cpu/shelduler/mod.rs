@@ -1,8 +1,3 @@
-//! Advanced CPU scheduler for TrangorgeOS.
-//!
-//! The implementation is deliberately split into policy, prediction, queue,
-//! accounting and orchestration layers.  The public API is usable from the
-//! kernel while the pure decision logic remains testable without hardware.
 #![allow(dead_code)]
 
 pub mod context;

@@ -1,5 +1,3 @@
-
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PackageId {
     pub name: alloc::string::String,

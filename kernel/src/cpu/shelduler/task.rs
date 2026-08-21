@@ -1,5 +1,3 @@
-
-
 use super::context::Context;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -30,14 +28,12 @@ pub struct Task {
     _stack: Vec<u8>,
 }
 
-
-/// `Task::new`.
 #[unsafe(naked)]
 unsafe extern "C" fn task_entry_trampoline() -> ! {
     core::arch::naked_asm!(
         "pop rdi",
         "call {run}",
-        "ud2", // run_boxed_closure nigdy nie wraca; to tylko siatka bezpieczeństwa
+        "ud2",
         run = sym run_boxed_closure,
     );
 }
@@ -67,19 +63,18 @@ impl Task {
         let double_boxed: Box<Box<dyn FnOnce() + Send + 'static>> = Box::new(boxed_fn);
         let closure_ptr = Box::into_raw(double_boxed) as u64;
 
- 
         unsafe {
             let write_u64 = |offset_from_top: u64, value: u64| {
                 let addr = (stack_top - offset_from_top) as *mut u64;
                 addr.write(value);
             };
             write_u64(8, task_entry_trampoline as usize as u64);
-            write_u64(16, 0); // rbp
-            write_u64(24, 0); // rbx
-            write_u64(32, 0); // r12
-            write_u64(40, 0); // r13
-            write_u64(48, 0); // r14
-            write_u64(56, 0); // r15
+            write_u64(16, 0);
+            write_u64(24, 0);
+            write_u64(32, 0);
+            write_u64(40, 0);
+            write_u64(48, 0);
+            write_u64(56, 0);
             write_u64(64, closure_ptr);
         }
 
@@ -92,7 +87,6 @@ impl Task {
             _stack: stack,
         })
     }
-
 
     pub fn new_idle(name: &'static str) -> Box<Task> {
         let mut t = Task::new(name, || loop {

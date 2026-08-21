@@ -11,13 +11,13 @@ pub fn init() {
     let mut d4 = Port::<u8>::new(COM1 + 4);
 
     unsafe {
-        d1.write(0x00); // disable interrupts
-        d3.write(0x80); // DLAB
-        d0.write(0x03); // divisor low (38400 baud)
-        d1.write(0x00); // divisor high
-        d3.write(0x03); // 8N1
-        d2.write(0xC7); // enable FIFO
-        d4.write(0x0B); // IRQs enabled, RTS/DSR set
+        d1.write(0x00);
+        d3.write(0x80);
+        d0.write(0x03);
+        d1.write(0x00);
+        d3.write(0x03);
+        d2.write(0xC7);
+        d4.write(0x0B);
     }
 }
 

@@ -1,5 +1,3 @@
-
-
 pub enum TransactionStep {
     InstallPackage(PackageId),
     RegisterDriver { package: PackageId, driver_name: alloc::string::String },
@@ -9,5 +7,5 @@ pub enum TransactionStep {
 
 pub struct Transaction {
     pub steps: alloc::vec::Vec<TransactionStep>,
-    pub rollback: alloc::vec::Vec<TransactionStep>,  
+    pub rollback: alloc::vec::Vec<TransactionStep>,
 }

@@ -142,8 +142,6 @@ const BLANK: ScreenChar = ScreenChar {
     color_code: ColorCode(0x07),
 };
 
-// Software text buffer (in RAM) — graphics mode 13h has no working 0xB8000
-// text buffer, so we keep the text here and gfx draws it onto the framebuffer.
 static mut TEXT_BUFFER: Buffer = Buffer {
     chars: [[BLANK; BUFFER_WIDTH]; BUFFER_HEIGHT],
 };
@@ -156,7 +154,6 @@ lazy_static! {
     });
 }
 
-/// Returns (character, color attribute) of a text cell — for the gfx module.
 pub fn text_cell(row: usize, col: usize) -> (u8, u8) {
     unsafe {
         let cell = TEXT_BUFFER.chars[row][col];
@@ -180,17 +177,14 @@ impl Writer {
         self.color_code = ColorCode::new(foreground, Color::Black);
     }
 
-    /// Bieżąca kolumna (dla terminala — edytor linii).
     pub fn column(&self) -> usize {
         self.column_position
     }
 
-    /// Ustawia kolumnę w bieżącym (ostatnim) wierszu.
     pub fn set_column(&mut self, col: usize) {
         self.column_position = col.min(BUFFER_WIDTH);
     }
 
-    /// Czyści od bieżącej kolumny do końca wiersza.
     pub fn clear_to_end(&mut self) {
         let row = BUFFER_HEIGHT - 1;
         let col = self.column_position;
@@ -203,7 +197,6 @@ impl Writer {
         }
     }
 
-    /// Czyści cały ekran (wszystkie wiersze).
     pub fn clear_screen(&mut self) {
         for row in 0..BUFFER_HEIGHT {
             self.clear_row(row);
@@ -211,7 +204,6 @@ impl Writer {
         self.column_position = 0;
     }
 
-    /// Zapisuje bajt z jawnym kolorem (bez zmiany stanu writer'a).
     pub fn write_byte_colored(&mut self, byte: u8, fg: Color) {
         let prev = self.color_code;
         self.color_code = ColorCode::new(fg, Color::Black);

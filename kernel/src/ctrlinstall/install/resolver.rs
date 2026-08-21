@@ -1,7 +1,5 @@
-
-
 pub struct ResolvedPlan {
-    pub order: alloc::vec::Vec<PackageId>,  
+    pub order: alloc::vec::Vec<PackageId>,
 }
 
 pub fn resolve(

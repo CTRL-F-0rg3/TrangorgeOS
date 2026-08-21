@@ -11,7 +11,6 @@ pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
 pub static KEYBOARD_HITS: AtomicU64 = AtomicU64::new(0);
 pub static IPI_HITS: AtomicU64 = AtomicU64::new(0);
 
-/// Inter-core IPI vector (fixed delivery via the Local APIC).
 pub const IPI_VECTOR: u8 = 0x30;
 
 crate::test_module!({
@@ -102,8 +101,7 @@ extern "x86-interrupt" fn page_fault_handler(
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);
-    // Tick aktualizuje predykcję, budżety i flagę reschedule. Nie wykonujemy
-    // switch_to z tego handlera, dopóki nie mamy pełnego trap frame ABI.
+
     let _ = crate::cpu::shelduler::tick(0, 1_000_000);
     unsafe {
         PICS.lock()

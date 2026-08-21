@@ -1,5 +1,3 @@
-
-
 pub struct RepositoryIndex {
     pub packages: alloc::vec::Vec<PackageManifest>,
 }

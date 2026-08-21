@@ -1,7 +1,3 @@
-//! Public configuration, control-plane validation and observability helpers.
-//! This module deliberately contains no hardware access and is safe to call
-//! from diagnostics, boot configuration and future system-call adapters.
-
 use super::policy::{Class, Policy, Priority};
 use super::{CpuMask, Deadline, TaskBudget, TaskConfig, TaskId, TaskState};
 

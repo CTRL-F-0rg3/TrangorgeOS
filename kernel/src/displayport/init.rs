@@ -1,4 +1,3 @@
-// init.rs
 extern "C" {
     fn dp_init() -> bool;
     fn dp_ready() -> bool;

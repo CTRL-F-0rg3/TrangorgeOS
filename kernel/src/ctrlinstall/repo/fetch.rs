@@ -1,4 +1,3 @@
-
 pub trait PackageFetcher {
     fn fetch(&mut self, manifest: &PackageManifest) -> Result<alloc::vec::Vec<u8>, CtrlInstallError>;
 }

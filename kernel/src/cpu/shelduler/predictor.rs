@@ -1,4 +1,3 @@
-//! CPU burst predictor based on EWMA and exponentially weighted variance.
 use super::policy::{Class, Priority};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BurstClass {

@@ -1,4 +1,3 @@
-//! Bounded-allocation run queue with per-policy lanes.
 use super::policy::{Policy, Priority, SchedulingKey};
 use super::{Deadline, TaskId};
 use alloc::collections::VecDeque;

@@ -1,4 +1,3 @@
-// aut.rs
 pub const CAM_CAPS: u32 = 1;
 pub const CAM_START: u32 = 2;
 pub const CAM_STOP: u32 = 3;

@@ -1,4 +1,3 @@
-// aut.rs
 pub const DP_STATUS: u32 = 1;
 pub const DP_LINK: u32 = 2;
 pub const DP_MODES: u32 = 3;

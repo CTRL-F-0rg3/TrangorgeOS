@@ -1,4 +1,3 @@
-//! Scheduling policy and deterministic ordering keys.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Class {
     Idle,

@@ -28,7 +28,6 @@ pub trait BlockDevice {
         ok(())
     }
 
-    
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PartitionTableKind {
@@ -57,5 +56,5 @@ impl <'a, D: BlockDevice + ?Sized> PartionalBlockDevice<'a, Result<Self> {
         .start_lba
         .checked_add(partition.length_blocks)
         .ok_or(DiscError::OutOfRange);
-        
+
 }

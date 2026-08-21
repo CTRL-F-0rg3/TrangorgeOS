@@ -1,7 +1,3 @@
-//! Minimal ACPI parser: finds the RSDP and extracts information from the MADT
-//! (CPU list, Local APIC address, I/O APIC). Physical memory is read through
-//! `physical_memory_offset` (the bootloader's map_physical_memory).
-
 use alloc::vec::Vec;
 use core::ptr;
 
@@ -22,7 +18,6 @@ pub struct MadtInfo {
     pub io_apics: Vec<IoApic>,
 }
 
-/// Fixed ACPI Description Table — only the power-management port is extracted.
 pub struct FadtInfo {
     pub pm1a_cnt_blk: u32,
 }
@@ -59,7 +54,6 @@ unsafe fn check_rsdp(phys_offset: u64, addr: u64) -> Option<u64> {
     Some(addr)
 }
 
-/// Wyszukuje RSDP w EBDA i obszarze 0xE0000..0xFFFFF.
 pub fn find_rsdp(phys_offset: u64) -> Option<u64> {
     unsafe {
         let ebda_seg = u16::from_le_bytes([
@@ -142,7 +136,6 @@ pub unsafe fn find_fadt(phys_offset: u64, rsdp: &Rsdp) -> Option<u64> {
     find_table(phys_offset, rsdp, FADT_SIGNATURE)
 }
 
-/// Reads the PM1a control-register port from the FADT (offset 64).
 pub unsafe fn parse_fadt(phys_offset: u64, fadt: u64) -> FadtInfo {
     let pm1a_cnt_blk = phys_read::<u32>(phys_offset, fadt + 64);
     FadtInfo { pm1a_cnt_blk }
@@ -156,7 +149,6 @@ pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {
     let mut io_apics = Vec::new();
     let mut lapic_base_override: Option<u64> = None;
 
-    // nagłówek (36) + adres LAPIC (4) + flagi (4) = 44
     let mut off = 44usize;
     while off + 2 <= len {
         let etype = phys_read::<u8>(phys_offset, madt + off as u64);
@@ -167,7 +159,7 @@ pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {
 
         match etype {
             0 => {
-                // Processor Local APIC
+
                 if off + 8 <= len {
                     let apic_id = phys_read::<u8>(phys_offset, madt + off as u64 + 3);
                     let flags = phys_read::<u32>(phys_offset, madt + off as u64 + 4);
@@ -178,7 +170,7 @@ pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {
                 }
             }
             1 => {
-                // I/O APIC
+
                 if off + 12 <= len {
                     let id = phys_read::<u8>(phys_offset, madt + off as u64 + 2);
                     let address = phys_read::<u32>(phys_offset, madt + off as u64 + 4);
@@ -191,7 +183,7 @@ pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {
                 }
             }
             9 => {
-                // Processor Local x2APIC
+
                 if off + 16 <= len {
                     let x2apic_id = phys_read::<u32>(phys_offset, madt + off as u64 + 4);
                     let flags = phys_read::<u32>(phys_offset, madt + off as u64 + 8);
@@ -202,7 +194,7 @@ pub unsafe fn parse_madt(phys_offset: u64, madt: u64) -> MadtInfo {
                 }
             }
             5 => {
-                // Local APIC Address Override (64-bit)
+
                 if off + 12 <= len {
                     lapic_base_override =
                         Some(phys_read::<u64>(phys_offset, madt + off as u64 + 4));

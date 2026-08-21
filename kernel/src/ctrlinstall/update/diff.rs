@@ -1,4 +1,3 @@
-
 pub enum UpdateAction {
     Upgrade { from: Version, to: Version },
     InstallNew(PackageId),

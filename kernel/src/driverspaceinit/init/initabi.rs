@@ -11,8 +11,6 @@ pub struct DsSwitch {
     pub kernel_stack: u64,
 }
 
-// Service classes and ops for the driverspace ABI. Values mirror
-// driverspacelib/src/abi.rs so the kernel-side dispatch uses the same numbers.
 pub const SVC_SYS: u32 = 0;
 pub const SVC_VIDEO: u32 = 1;
 pub const SVC_AUDIO: u32 = 2;
@@ -21,28 +19,23 @@ pub const SVC_BLOCK: u32 = 4;
 pub const SVC_NET: u32 = 5;
 pub const SVC_BT: u32 = 6;
 
-// VIDEO ops
 pub const VID_FB_INFO: u32 = 1;
 pub const VID_FB_TAKEOVER: u32 = 2;
 pub const VID_FB_RELEASE: u32 = 3;
 pub const VID_HDMI_FILL: u32 = 4;
 pub const VID_HDMI_CAPS: u32 = 6;
 
-// INPUT ops
 pub const IN_KEY_POLL: u32 = 1;
 
-// AUDIO ops
 pub const AUD_PLAY: u32 = 1;
 pub const AUD_STOP: u32 = 2;
 pub const AUD_JACK: u32 = 3;
 pub const AUD_AMP: u32 = 4;
 
-// BLOCK ops
 pub const BLK_COUNT: u32 = 1;
 pub const BLK_READ: u32 = 2;
 pub const BLK_WRITE: u32 = 3;
 
-// Virtual addresses handed to the driverspace (mirrors libs/dsabi.h).
 pub const DS_INIT_PARAMS_VA: u64 = 0x4000_0000;
 pub const DS_K2D_VA: u64 = 0x4000_1000;
 pub const DS_D2K_VA: u64 = 0x4000_2000;

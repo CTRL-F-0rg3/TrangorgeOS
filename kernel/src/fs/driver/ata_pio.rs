@@ -55,27 +55,20 @@ impl AtaPio {
         }
     }
 
-    /// Bajt rejestru drive dla LBA28 (bit 6 = LBA, bit 4 = slave).
     fn drive_lba(&self) -> u8 {
         if self.slave { 0xF0 } else { 0xE0 }
     }
 
-    /// Bajt rejestru drive dla IDENTIFY.
     fn drive_identify(&self) -> u8 {
         if self.slave { 0xB0 } else { 0xA0 }
     }
 
-    /// Whether the drive was detected by IDENTIFY.
     pub fn is_present(&self) -> bool {
         self.present.load(Ordering::Relaxed)
     }
 
-    /// Inhibit the drive's INTRQ (IRQ14/IRQ15) line. We poll the status
-    /// register instead of using interrupts, so this avoids delivering the
-    /// unmapped IRQ14/IRQ15 vectors (which would otherwise cause a #GP ->
-    /// double fault when IDENTIFY/READ assert INTRQ).
     fn disable_irq(&self) {
-        unsafe { port::outb(self.ctrl, 0x02) }; // nIEN = bit 1
+        unsafe { port::outb(self.ctrl, 0x02) };
     }
 
     fn status(&self) -> u8 {
@@ -257,7 +250,6 @@ fn probe_dev(dev: &AtaPio) -> bool {
     }
 }
 
-/// Wykrywa master i slave; zwraca liczbę znalezionych dysków.
 pub fn probe() -> usize {
     ATA0.disable_irq();
     ATA1.disable_irq();

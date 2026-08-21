@@ -152,7 +152,6 @@ pub fn vgpu_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring_lvl: u8) -> i32 {
     }
 }
 
-// service.rs
 pub fn pci_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
     use crate::drivers::pci as kpci;
 
@@ -337,29 +336,10 @@ fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
             }
         }
 
-        x if x == DsCmd::JackQuery as u32 => {
-            r.arg0 = crate::audio::jack::query();
-            0
-        }
-
-        x if x == DsCmd::JackSetAmp as u32 => {
-            crate::audio::jack::set_amp(m.arg0 != 0);
-            0
-        }
-
-        x if x == DsCmd::AudioPlay as u32 => {
-            match grant_phys(m.arg0) {
-                Some((phys, _)) => {
-                    if crate::audio::jack::play_phys(phys, m.arg1 as u32) { 0 } else { -1 }
-                }
-                None => -1,
-            }
-        }
-
-        x if x == DsCmd::AudioStop as u32 => {
-            crate::audio::jack::stop();
-            0
-        }
+        x if x == DsCmd::JackQuery as u32
+            || x == DsCmd::JackSetAmp as u32
+            || x == DsCmd::AudioPlay as u32
+            || x == DsCmd::AudioStop as u32 => -38,
 
         x if x == DsCmd::MapMmio as u32 => {
             let phys = m.arg0;

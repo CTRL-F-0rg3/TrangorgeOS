@@ -17,7 +17,6 @@ pub enum UsbError {
 
 use crate::testing::TestResult;
 
-/// Samotest USB: wykrycie kontrolera xHCI (PCI) i jego inicjalizacja.
 pub fn self_test() -> TestResult {
     let xhci_pci = match pci_glue::find_xhci() {
         Ok(p) => p,

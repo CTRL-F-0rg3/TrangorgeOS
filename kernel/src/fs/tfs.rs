@@ -1,37 +1,20 @@
-//! TFS — Trangorge FileSystem: a minimal but real on-disk filesystem.
-//!
-//! On-disk layout (512-byte blocks):
-//!   * block 0      — MBR (untouched),
-//!   * block 1      — superblock,
-//!   * blocks 2..17 — root directory table (16 blocks = 128 entries × 64 B),
-//!   * blocks 18..  — file data and sub-directory tables (contiguous allocation).
-//!
-//! A directory is a contiguous run of `DIR_BLOCKS` blocks holding its entries.
-//! The root directory is fixed at block 2; sub-directories are allocated from
-//! the free pool. Every operation takes the directory's first block (`dir`).
-//!
-//! All operations read/write physical blocks through `BlockDevice` (ATA), so
-//! data lives on disk, not in RAM.
-
 use crate::fs::driver::block::BlockDevice;
 use core::fmt::Write;
 
 pub const SUPER_MAGIC: [u8; 4] = *b"TFS1";
 
 const DIR_BLOCKS: u32 = 16;
-const DATA_START: u32 = 1 + 1 + DIR_BLOCKS; // MBR + superblock + root directory
+const DATA_START: u32 = 1 + 1 + DIR_BLOCKS;
 const ENTRY_SIZE: usize = 64;
-const ENTRIES_PER_BLOCK: usize = 512 / ENTRY_SIZE; // 8
+const ENTRIES_PER_BLOCK: usize = 512 / ENTRY_SIZE;
 const MAX_NAME: usize = 48;
 
-/// First block of the root directory table.
 pub const ROOT_DIR: u32 = 2;
 
 const KIND_EMPTY: u8 = 0;
 const KIND_FILE: u8 = 1;
 const KIND_DIR: u8 = 2;
 
-/// Filesystem error.
 #[derive(Debug)]
 pub enum FsError {
     NoDevice,
@@ -62,17 +45,16 @@ fn wr32(b: &mut [u8], off: usize, v: u32) {
     b[off..off + 4].copy_from_slice(&bytes);
 }
 
-/// Writes a fresh superblock and clears the root directory (formats the disk).
 pub fn format(dev: &dyn BlockDevice) -> Result<()> {
     let mut sb = [0u8; 512];
     sb[0..4].copy_from_slice(&SUPER_MAGIC);
-    wr32(&mut sb, 4, 1); // version
-    wr32(&mut sb, 8, 512); // block_size
+    wr32(&mut sb, 4, 1);
+    wr32(&mut sb, 8, 512);
     wr32(&mut sb, 12, dev.block_count() as u32);
     wr32(&mut sb, 16, DIR_BLOCKS);
     wr32(&mut sb, 20, DATA_START);
-    wr32(&mut sb, 24, DATA_START); // free_start
-    wr32(&mut sb, 28, 0); // file_count
+    wr32(&mut sb, 24, DATA_START);
+    wr32(&mut sb, 28, 0);
 
     dev.write_block(1, &sb).map_err(|_| FsError::Io)?;
 
@@ -151,7 +133,6 @@ fn entry_name(e: &DirEntry) -> &str {
     core::str::from_utf8(&e.name[..slen]).unwrap_or("?")
 }
 
-/// Finds an entry by name inside `dir`; returns its (index, entry).
 fn find_entry(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<(usize, DirEntry)> {
     for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
@@ -171,7 +152,6 @@ fn find_entry(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<(usize, Dir
     Err(FsError::NotFound)
 }
 
-/// Lists the entries of directory `dir` into `out`.
 pub fn list_dir(dev: &dyn BlockDevice, dir: u32, out: &mut impl Write) -> Result<()> {
     let sb = read_superblock(dev)?;
 
@@ -202,7 +182,6 @@ pub fn list_dir(dev: &dyn BlockDevice, dir: u32, out: &mut impl Write) -> Result
     Ok(())
 }
 
-/// Writes a text file into directory `dir` (allocates contiguous data blocks).
 pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> Result<()> {
     if name.is_empty() || name.len() >= MAX_NAME {
         return Err(FsError::NameTooLong);
@@ -210,7 +189,6 @@ pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> R
 
     let mut sb = read_superblock(dev)?;
 
-    // Overwrite: drop the existing entry first (blocks are re-allocated).
     if find_entry(dev, dir, name).is_ok() {
         remove(dev, dir, name)?;
         sb = read_superblock(dev)?;
@@ -222,7 +200,6 @@ pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> R
         return Err(FsError::DiskFull);
     }
 
-    // Write the data.
     for i in 0..blocks_needed {
         let mut block = [0u8; 512];
         let start = i as usize * 512;
@@ -233,7 +210,6 @@ pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> R
         dev.write_block(sb.free_start as u64 + i as u64, &block).map_err(|_| FsError::Io)?;
     }
 
-    // Find a free directory slot.
     let mut slot = None;
     'outer: for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
@@ -266,11 +242,9 @@ pub fn write_file(dev: &dyn BlockDevice, dir: u32, name: &str, data: &[u8]) -> R
     write_superblock(dev, &sb)
 }
 
-/// Removes an entry (file or empty directory) from directory `dir`.
 pub fn remove(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
     let (idx, e) = find_entry(dev, dir, name)?;
 
-    // Directories must be empty before removal.
     if e.kind == KIND_DIR {
         for blk in 0..DIR_BLOCKS as u64 {
             let mut buf = [0u8; 512];
@@ -296,13 +270,12 @@ pub fn remove(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
     write_superblock(dev, &sb)
 }
 
-/// Creates a sub-directory named `name` inside directory `dir`.
 pub fn mkdir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
     if name.is_empty() || name.len() >= MAX_NAME {
         return Err(FsError::NameTooLong);
     }
     if find_entry(dev, dir, name).is_ok() {
-        return Err(FsError::NotDir); // name already taken
+        return Err(FsError::NotDir);
     }
 
     let mut sb = read_superblock(dev)?;
@@ -311,14 +284,12 @@ pub fn mkdir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
         return Err(FsError::DiskFull);
     }
 
-    // Allocate and clear the sub-directory table.
     let first = sb.free_start;
     let zero = [0u8; 512];
     for i in 0..DIR_BLOCKS {
         dev.write_block(first as u64 + i as u64, &zero).map_err(|_| FsError::Io)?;
     }
 
-    // Add the directory entry.
     let mut slot = None;
     'outer: for blk in 0..DIR_BLOCKS as u64 {
         let mut buf = [0u8; 512];
@@ -350,7 +321,6 @@ pub fn mkdir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<()> {
     write_superblock(dev, &sb)
 }
 
-/// Returns the first block of the sub-directory `name` inside `dir`.
 pub fn find_dir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<u32> {
     let (_, e) = find_entry(dev, dir, name)?;
     if e.kind != KIND_DIR {
@@ -359,7 +329,6 @@ pub fn find_dir(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<u32> {
     Ok(e.first_block)
 }
 
-/// Returns (name, size, kind) of the entries in `dir` — for the terminal.
 pub fn entries(dev: &dyn BlockDevice, dir: u32) -> Result<alloc::vec::Vec<(alloc::string::String, u32, u8)>> {
     let mut out = alloc::vec::Vec::new();
 
@@ -379,7 +348,6 @@ pub fn entries(dev: &dyn BlockDevice, dir: u32) -> Result<alloc::vec::Vec<(alloc
     Ok(out)
 }
 
-/// Reads a file from directory `dir` into a byte vector.
 pub fn read_file(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<alloc::vec::Vec<u8>> {
     let (_, e) = find_entry(dev, dir, name)?;
 
