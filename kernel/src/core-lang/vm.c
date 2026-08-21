@@ -187,7 +187,7 @@ void cl_vm_init(cl_vm_t *vm, cl_prog_t *prog)
     vm->sp = 0;
     vm->depth = 0;
     vm->err = CL_OK;
-
+    vm->halt_req = false;
     for (size_t i = 0; i < 64; i++) {
         vm->globals[i] = prog->ginit[i];
         vm->glive[i] = 1;
@@ -270,7 +270,7 @@ cl_vm_err_t cl_vm_run(cl_vm_t *vm)
 
     vm->depth = 1;
 
-    while (vm->depth > 0 && vm->err == CL_OK) {
+    while (vm->depth > 0 && vm->err == CL_OK && !vm->halt_req) {
         vm_frame_t *f = &vm->frames[vm->depth - 1];
 
         if (f->pc >= P->code_len) {

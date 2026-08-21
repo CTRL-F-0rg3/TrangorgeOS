@@ -36,7 +36,7 @@ typedef struct {
 
     vm_frame_t frames[8];
     int depth;
-
+    bool halt_req;
     cl_vm_err_t err;
     uint32_t err_pc;
 } cl_vm_t;

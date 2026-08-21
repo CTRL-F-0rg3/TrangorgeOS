@@ -27,7 +27,62 @@ pub extern "C" fn k_input_key() -> i32 {
         None => -1,
     }
 }
+#[no_mangle]
+pub extern "C" fn k_getpid() -> u32 {
+    let w = crate::trampoline_rings::current();
+    crate::process::proc::by_world(w).map(|p| p.pid).unwrap_or(0)
+}
 
+#[no_mangle]
+pub extern "C" fn k_world_cr3() -> u64 {
+    crate::trampoline_rings::world_cr3(crate::trampoline_rings::current())
+}
+
+#[no_mangle]
+pub extern "C" fn k_kernel_cr3() -> u64 {
+    extern "C" { fn paging_read_cr3() -> u64; }
+    unsafe { paging_read_cr3() }
+}
+
+#[no_mangle]
+pub extern "C" fn k_spawn(path: *const u8, parent: u32, cr3: u64) -> i64 {
+    crate::process::syscall::do_spawn(cr3, path as u64, parent)
+}
+
+#[no_mangle]
+pub extern "C" fn k_ipc_send(dst: u32, a0: u64, a1: u64) -> i32 {
+    let w = crate::trampoline_rings::current();
+    let me = crate::process::proc::by_world(w).map(|p| p.pid).unwrap_or(0);
+
+    if crate::process::proc::send(dst, crate::process::proc::IpcMsg {
+        from: me, a0, a1, a2: 0, a3: 0,
+    }) { 0 } else { -1 }
+}
+
+#[no_mangle]
+pub extern "C" fn k_ipc_recv(out_a0: *mut u64, out_a1: *mut u64) -> i32 {
+    let w = crate::trampoline_rings::current();
+    let me = match crate::process::proc::by_world(w) {
+        Some(p) => p.pid,
+        None => return -1,
+    };
+
+    match crate::process::proc::recv(me) {
+        Some(m) => {
+            unsafe {
+                *out_a0 = m.a0;
+                *out_a1 = m.a1;
+            }
+            m.from as i32
+        }
+        None => -1,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn k_tick() -> u64 {
+    crate::process::syscall::tick_get()
+}
 #[no_mangle]
 pub extern "C" fn k_fs_read(path: *const u8, buf: *mut u8, cap: u32) -> i32 {
     if buf.is_null() || cap == 0 {
