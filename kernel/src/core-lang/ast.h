@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "tokens.h"   /* <- DODAJ: op w node'ach to tok_kind_t */
 typedef struct cl_type {
     uint16_t bits;   /* 4..512, str=64 */
     bool neg;        /* _=>-1 : zakres obejmuje ujemne */
