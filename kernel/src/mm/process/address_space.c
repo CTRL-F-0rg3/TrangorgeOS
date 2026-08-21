@@ -3,6 +3,7 @@
 #include "../alloc/heap/heap.h"
 #include "../arch/x86_64/memory.h"
 #include "../core/range.h"
+#include "../core/smp_lock.h"
 
 #define USER_ADDR_MIN  0x0000000000001000ULL
 #define USER_MMAP_BASE 0x0000200000000000ULL
@@ -14,48 +15,24 @@
 
 static bool aspace_ready = false;
 
-static size_t as_lock_depth = 0;
-static uint64_t as_lock_flags = 0;
+/*
+ * P0.1: zastąpione rzeczywistą blokadą SMP (ticket lock + irqsave) —
+ * dawny `pushfq; cli` + lokalny licznik chronił tylko przed przerwaniem
+ * na BIEŻĄCYM CPU, nie przed drugim rdzeniem modyfikującym listę VMA
+ * współbieżnie. `as_lock`/`as_unlock` zachowują dotychczasową semantykę
+ * (w tym bezpieczną rekurencję, potrzebną np. w `aspace_map_at`, który
+ * woła `aspace_unmap` trzymając już blokadę).
+ */
+static smp_ticket_lock_t as_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void as_lock(void)
 {
-    uint64_t flags;
-
-    __asm__ volatile(
-        "pushfq\n"
-        "popq %0\n"
-        "cli"
-        : "=r"(flags)
-        :
-        : "memory"
-    );
-
-    if (as_lock_depth == 0) {
-        as_lock_flags = flags;
-    }
-
-    as_lock_depth++;
+    smp_lock_acquire(&as_smp_lock);
 }
 
 static void as_unlock(void)
 {
-    if (as_lock_depth == 0) {
-        return;
-    }
-
-    as_lock_depth--;
-
-    if (as_lock_depth == 0) {
-        uint64_t flags = as_lock_flags;
-
-        __asm__ volatile(
-            "pushq %0\n"
-            "popfq"
-            :
-            : "r"(flags)
-            : "memory"
-        );
-    }
+    smp_lock_release(&as_smp_lock);
 }
 
 bool aspace_subsystem_init(void)
@@ -421,16 +398,37 @@ bool aspace_unmap(proc_aspace_t *pa, uint64_t addr, size_t len)
         uint64_t s = hit->start > a ? hit->start : a;
         uint64_t e = hit->end < b ? hit->end : b;
 
-        unmap_pages_free(pa, s, e);
+        bool needs_split = (hit->start < s && hit->end > e);
+        vma_t *tail = NULL;
 
-        if (hit->start < s && hit->end > e) {
-            vma_t *tail = (vma_t *)heap_alloc(sizeof(vma_t));
+        if (needs_split) {
+            /*
+             * P1 (mmap/VMA — atomowe rozbijanie VMA): metadane
+             * rozbicia MUSZĄ być zaalokowane PRZED faktycznym
+             * odmapowaniem/zwolnieniem stron w [s,e). Wcześniej
+             * `heap_alloc()` był wołany PO `unmap_pages_free()` —
+             * porażka alokacji (presja pamięciowa) zwracała `false`,
+             * zostawiając `hit` NIEZMIENIONE (nadal obejmujące cały
+             * stary zakres [hit->start, hit->end)), mimo że środkowy
+             * fragment [s,e) był już faktycznie odmapowany z tablic
+             * stron, a jego ramki fizyczne oddane z powrotem do PMM
+             * (i mogły trafić do zupełnie innego przydziału). Metadane
+             * VMA kłamałyby więc, że zakres jest wciąż zmapowany, choć
+             * fizycznie już nie był — kolejny dostęp do tego adresu
+             * mógłby np. zostać błędnie obsłużony przez logikę page
+             * faulta polegającą na tym, że VMA istnieje.
+             */
+            tail = (vma_t *)heap_alloc(sizeof(vma_t));
 
             if (tail == NULL) {
                 as_unlock();
                 return false;
             }
+        }
 
+        unmap_pages_free(pa, s, e);
+
+        if (needs_split) {
             tail->start = e;
             tail->end = hit->end;
             tail->prot = hit->prot;
@@ -454,7 +452,11 @@ bool aspace_unmap(proc_aspace_t *pa, uint64_t addr, size_t len)
     return true;
 }
 
-bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
+bool aspace_protect_checked(proc_aspace_t *pa, uint64_t addr, size_t len,
+                            uint32_t checked_prot,
+                            uint32_t apply_prot,
+                            bool (*allowed)(uint32_t old_prot,
+                                            uint32_t checked_prot))
 {
     if (pa == NULL || len == 0) {
         return false;
@@ -468,6 +470,15 @@ bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
 
     as_lock();
 
+    /*
+     * P1 (mmap/VMA): wyszukanie VMA, sprawdzenie dozwolonej zmiany
+     * uprawnien i sama zmiana sa TERAZ jedna, nieprzerywalna sekcja pod
+     * jednym trzymaniem `as_smp_lock`. Wczesniejszy `mprotect()` w
+     * process/mmap.c wolal `aspace_vma_find()` PRZED wejsciem w jakakolwiek
+     * blokade, po czym czytal `v->prot` z niezablokowanego wskaznika —
+     * scisly use-after-free, gdyby inny rdzen zwolnil ta VMA przez
+     * `aspace_unmap()`/`munmap()` w tym samym momencie.
+     */
     vma_t *v = aspace_vma_find(pa, a);
 
     if (v == NULL || b > v->end) {
@@ -475,16 +486,26 @@ bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
         return false;
     }
 
-    if (!paging_aspace_protect(pa->as, a, b - a, prot)) {
+    if (allowed != NULL && !allowed(v->prot, checked_prot)) {
         as_unlock();
         return false;
     }
 
-    v->prot = prot;
+    if (!paging_aspace_protect(pa->as, a, b - a, apply_prot)) {
+        as_unlock();
+        return false;
+    }
+
+    v->prot = apply_prot;
 
     as_unlock();
 
     return true;
+}
+
+bool aspace_protect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
+{
+    return aspace_protect_checked(pa, addr, len, prot, prot, NULL);
 }
 
 uint64_t aspace_stack_base(void)
