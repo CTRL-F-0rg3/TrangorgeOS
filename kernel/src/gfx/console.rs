@@ -80,6 +80,13 @@ pub fn set_enabled(enabled: bool) {
     }
 }
 
+/// Eksport C dla edytora jądra (kernel/src/editor/editor.c):
+/// `extern void console_set_enabled(int on);`
+#[no_mangle]
+pub extern "C" fn console_set_enabled(on: i32) {
+    set_enabled(on != 0);
+}
+
 fn set_palette_rgb332() {
     use x86_64::instructions::port::Port;
 

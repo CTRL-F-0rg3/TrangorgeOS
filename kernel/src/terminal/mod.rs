@@ -6,6 +6,12 @@ use crate::fs::driver::block::BlockDevice;
 use crate::vga_buffer::{Color, WRITER};
 use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 
+// Edytor jądra — `kernel/src/editor/editor.c`, skompilowany przez build.rs
+// i dołączany do `libmm.a`. Znak 0 kończy ścieżkę C-stringa.
+unsafe extern "C" {
+    fn editor_run(path: *const u8) -> i32;
+}
+
 /* ------------------------------------------------------------------ */
 /* Bufor klawiatury (SPSC ring buffer, IRQ-safe)                       */
 /* ------------------------------------------------------------------ */
@@ -15,6 +21,14 @@ static KBUF: [AtomicU8; KBUF_SIZE] = [const { AtomicU8::new(0) }; KBUF_SIZE];
 static KHEAD: AtomicUsize = AtomicUsize::new(0);
 static KTAIL: AtomicUsize = AtomicUsize::new(0);
 static SHIFT: AtomicBool = AtomicBool::new(false);
+
+/* Bufor kodów edytora (k_input_keycode). Napełniany tylko podczas pracy
+   edytora — wtedy scancode-y nie trafiają do bufora tekstu terminala. */
+const KCODE_SIZE: usize = 64;
+static KCODEBUF: [AtomicU32; KCODE_SIZE] = [const { AtomicU32::new(0) }; KCODE_SIZE];
+static KCODE_HEAD: AtomicUsize = AtomicUsize::new(0);
+static KCODE_TAIL: AtomicUsize = AtomicUsize::new(0);
+static CAPTURE_KEYCODE: AtomicBool = AtomicBool::new(false);
 
 fn kbuf_push(c: u8) {
     let tail = KTAIL.load(Ordering::Relaxed);
@@ -115,16 +129,73 @@ fn scancode_to_char(code: u8) -> Option<char> {
 }
 
 /// Wywoływane z przerwania klawiatury. Śledzi Shift i wrzuca znaki do bufora.
+///
+/// W trybie edytora (`set_keycode_capture(true)`) scancode-y trafiają do bufora
+/// kodów edytora zamiast do bufora tekstu terminala.
 pub fn push_scancode(code: u8) {
     match code {
         0x2A | 0x36 => SHIFT.store(true, Ordering::Relaxed),
         0xAA | 0xB6 => SHIFT.store(false, Ordering::Relaxed),
         _ => {
-            if let Some(c) = scancode_to_char(code) {
+            if CAPTURE_KEYCODE.load(Ordering::Relaxed) {
+                if let Some(k) = scancode_to_keycode(code) {
+                    keycode_push(k);
+                }
+            } else if let Some(c) = scancode_to_char(code) {
                 kbuf_push(c as u8);
             }
         }
     }
+}
+
+/// Scancode set 1 → kod edytora (kernel/src/editor/editor.h, EDK_* = 0x100+).
+fn scancode_to_keycode(code: u8) -> Option<u32> {
+    match code {
+        0x1C => Some(0x100), // EDK_ENTER
+        0x0E => Some(0x101), // EDK_BACKSPACE
+        0x01 => Some(0x102), // EDK_ESC
+        0x4D => Some(0x103), // EDK_RIGHT
+        0x4B => Some(0x104), // EDK_LEFT
+        0x50 => Some(0x105), // EDK_DOWN
+        0x48 => Some(0x106), // EDK_UP
+        0x47 => Some(0x107), // EDK_HOME
+        0x4F => Some(0x108), // EDK_END
+        0x53 => Some(0x109), // EDK_DELETE
+        0x0F => Some(0x10A), // EDK_TAB
+        0x3F => Some(0x110), // EDK_F5
+        0x42 => Some(0x111), // EDK_F8
+        _ => scancode_to_char(code).map(|c| c as u32),
+    }
+}
+
+fn keycode_push(k: u32) {
+    let tail = KCODE_TAIL.load(Ordering::Relaxed);
+    let next = (tail + 1) % KCODE_SIZE;
+
+    if next == KCODE_HEAD.load(Ordering::Acquire) {
+        return; // pełny — porzuć
+    }
+
+    KCODEBUF[tail].store(k, Ordering::Relaxed);
+    KCODE_TAIL.store(next, Ordering::Release);
+}
+
+/// Odczyt kodu edytora — używany przez `k_input_keycode()` (kstd_glue.rs).
+pub fn pop_keycode() -> Option<u32> {
+    let head = KCODE_HEAD.load(Ordering::Relaxed);
+
+    if head == KCODE_TAIL.load(Ordering::Acquire) {
+        return None;
+    }
+
+    let k = KCODEBUF[head].load(Ordering::Relaxed);
+    KCODE_HEAD.store((head + 1) % KCODE_SIZE, Ordering::Release);
+    Some(k)
+}
+
+/// Przekierowuje scancode-y PS/2 do bufora edytora (true = edytor aktywny).
+pub fn set_keycode_capture(on: bool) {
+    CAPTURE_KEYCODE.store(on, Ordering::Relaxed);
 }
 
 /* ------------------------------------------------------------------ */
@@ -277,10 +348,11 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm res poweroff reboot");
+            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm edit res poweroff reboot");
             crate::println!("  write <name> <text...>  write a text file to disk");
             crate::println!("  read  <name>            read a file from disk");
             crate::println!("  rm    <name>            remove a file or empty folder");
+            crate::println!("  edit  <file>            open a file in the kernel editor (ESC quits)");
             crate::println!("  ls                      list the current folder");
             crate::println!("  mkdir <name>            create a folder");
             crate::println!("  cd    <name|/>          change folder ( / = root )");
@@ -427,6 +499,32 @@ fn execute(line: &str) {
                         Err(e) => crate::println!("read failed: {:?}", e),
                     },
                     None => crate::println!("no disk"),
+                }
+            }
+        }
+        "edit" => {
+            let (name, _) = split_once_space(rest);
+
+            if name.is_empty() {
+                crate::println!("usage: edit <file>  (ESC wyjdzie z edytora)");
+            } else {
+                let mut path = [0u8; 128];
+                let n = name.len().min(path.len() - 1);
+                path[..n].copy_from_slice(&name.as_bytes()[..n]);
+                path[n] = 0;
+
+                set_keycode_capture(true);
+
+                let rc = unsafe { editor_run(path.as_ptr()) };
+
+                set_keycode_capture(false);
+                WRITER.lock().clear_screen();
+                crate::gfx::refresh();
+
+                match rc {
+                    0 => crate::println!("edytor: powrót do terminala"),
+                    -1 => crate::println!("edytor: brak framebuffera HDMI (gfx nieaktywne)"),
+                    other => crate::println!("edytor: kod wyjścia {}", other),
                 }
             }
         }

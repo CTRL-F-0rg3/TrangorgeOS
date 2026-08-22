@@ -95,3 +95,20 @@ pub const FONT8X8: [[u8; 8]; 95] = [
     [0x0E,0x18,0x18,0x70,0x18,0x18,0x0E,0x00],
     [0x00,0x00,0x76,0x49,0x00,0x00,0x00,0x00],
 ];
+
+/// 96-glifowa wersja fontu w układzie C: `uint8_t font8x8[96][8]`.
+/// Wiersz 95 odpowiada znakowi 0x7F i jest kopią glyfu '?'.
+const fn make_font8x8() -> [[u8; 8]; 96] {
+    let mut out = [[0u8; 8]; 96];
+    let mut i = 0;
+    while i < 95 {
+        out[i] = FONT8X8[i];
+        i += 1;
+    }
+    out[95] = FONT8X8[31]; // '?' (0x3F) → indeks 0x3F - 0x20 = 31
+    out
+}
+
+/// Eksport dla edytora jądra (`kernel/src/editor/editor.c`).
+#[no_mangle]
+pub static font8x8: [[u8; 8]; 96] = make_font8x8();

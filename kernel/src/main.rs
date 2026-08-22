@@ -15,6 +15,7 @@ mod gdt;
 mod gfx;
 mod hdmi;
 mod interrupts;
+mod kernel_glue;
 mod mm;
 mod nic;
 mod pci;
