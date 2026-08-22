@@ -147,7 +147,8 @@ pub fn scratch_view() -> Option<*mut u8> {
     unsafe { DS.as_ref().map(|d| kv(d.scratch_phys)) }
 }
 
-pub fn map_into_ds(va: u64, phys: u64, len: usize, prot: u32) -> bool {
+/* FIX 1: prot jako space::ProtFlags, nie u32 */
+pub fn map_into_ds(va: u64, phys: u64, len: usize, prot: space::ProtFlags) -> bool {
     unsafe {
         match DS.as_ref() {
             Some(d) => d.aspace.map_phys(va, phys, len, prot),
