@@ -1,5 +1,5 @@
 [package]
-name = "trangorgelib"
+name = "trangorgelibc"
 version = "0.1.0"
 edition = "2021"
 description = "Biblioteka systemowa TrangorgeOS - ABI jądra i helpery"
