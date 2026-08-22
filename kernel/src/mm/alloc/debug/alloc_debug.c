@@ -18,7 +18,16 @@ typedef struct dbg_header {
     uint64_t magic;
     uint64_t size;
     uint64_t caller;
-    uint64_t reserved;
+    /*
+     * Wcześniej zawsze 0 ("reserved"). Teraz: 1 jeśli ta alokacja została
+     * pomyślnie wpisana do tabeli leaków (leak_track_id() zwróciło true),
+     * 0 jeśli tabela była pełna w momencie alokacji. `dbg_free()` używa
+     * tego, żeby NIE wołać `leak_untrack()` (i nie zgłaszać fałszywego
+     * "double free") dla alokacji, których nigdy nie było w tabeli —
+     * patrz uzasadnienie w leak.h przy leak_track_id().
+     */
+    uint64_t tracked;
+    uint64_t alloc_id;
 } dbg_header_t;
 
 static uint64_t dbg_tail_canary(size_t size)
@@ -51,7 +60,8 @@ void *dbg_alloc(size_t size)
     h->magic = DBG_MAGIC;
     h->size = size;
     h->caller = caller;
-    h->reserved = 0;
+    h->tracked = 0;
+    h->alloc_id = 0;
 
     uint8_t *user = real + sizeof(dbg_header_t);
 
@@ -61,7 +71,27 @@ void *dbg_alloc(size_t size)
 
     *dbg_tail_ptr(user, size) = dbg_tail_canary(size);
 
-    leak_track(user, size, caller);
+    /*
+     * Naprawa błędu (sekcja 5 planu — "brak cichego nieśledzenia
+     * alokacji po przekroczeniu limitu"): wcześniej wynik leak_track()
+     * był całkowicie ignorowany. Gdy tabela leaków (LEAK_MAX=2048) była
+     * pełna, alokacja i tak "udawała się" (heap_alloc już zwrócił
+     * pamięć), ale zostawała cicho nieśledzona. Przy odpowiadającym
+     * dbg_free() taki wskaźnik nie był w tabeli, więc leak_untrack()
+     * zwracał false, dbg_free() zgłaszał FAŁSZYWY alarm "double free or
+     * unknown ptr" i — co gorsza — WRACAŁ PRZED wywołaniem heap_free(),
+     * czyli pamięć nigdy nie była faktycznie zwalniana: prawdziwy,
+     * trwały wyciek wywołany samym przepełnieniem tabeli diagnostycznej.
+     * Teraz zapamiętujemy w nagłówku, czy śledzenie się powiodło, i
+     * dbg_free() odpowiednio dostosowuje swoją ścieżkę (patrz tam).
+     */
+    uint64_t alloc_id = 0;
+
+    if (leak_track_id(user, size, caller, &alloc_id)) {
+        h->tracked = 1;
+        h->alloc_id = alloc_id;
+    }
+
     alloc_stats_note_alloc(size);
 
     return user;
@@ -89,12 +119,26 @@ void dbg_free(void *ptr)
                 (unsigned long long)h->caller);
     }
 
-    size_t leaked_size = 0;
-    uint64_t alloc_caller = 0;
+    /*
+     * Wołaj leak_untrack() TYLKO dla alokacji, które faktycznie zostały
+     * wpisane do tabeli przy dbg_alloc() (patrz komentarz przy
+     * `tracked` w definicji struktury i przy leak_track_id() w leak.h).
+     * Dla nieśledzonych alokacji (tabela była pełna) pomijamy ten
+     * krok — inaczej dostalibyśmy fałszywy "double free or unknown ptr"
+     * dla zwyczajnego, poprawnego pojedynczego zwolnienia. Prawdziwy
+     * double-free jest i tak wykrywany niezależnie od tabeli leaków:
+     * ta funkcja zeruje `h->magic` poniżej, więc DRUGIE wywołanie
+     * dbg_free() na tym samym wskaźniku zostanie odrzucone przez
+     * sprawdzenie magic na samej górze funkcji (`h->magic != DBG_MAGIC`).
+     */
+    if (h->tracked) {
+        size_t leaked_size = 0;
+        uint64_t alloc_caller = 0;
 
-    if (!leak_untrack(ptr, &leaked_size, &alloc_caller)) {
-        kprintf("dbg_free: double free or unknown ptr %p\n", ptr);
-        return;
+        if (!leak_untrack(ptr, &leaked_size, &alloc_caller)) {
+            kprintf("dbg_free: double free or unknown ptr %p\n", ptr);
+            return;
+        }
     }
 
     alloc_stats_note_free(size);
