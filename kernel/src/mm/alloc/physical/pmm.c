@@ -390,6 +390,42 @@ uint64_t pmm_stat_free_bytes(void)
     return frames * ARCH_PAGE_SIZE;
 }
 
+size_t pmm_stat_dma32_total_frames(void)
+{
+    if (!pmm_initialized) {
+        return 0;
+    }
+
+    return frame_zone_dma32_total();
+}
+
+size_t pmm_stat_dma32_free_frames(void)
+{
+    if (!pmm_initialized) {
+        return 0;
+    }
+
+    return frame_zone_dma32_free();
+}
+
+size_t pmm_stat_normal_total_frames(void)
+{
+    if (!pmm_initialized) {
+        return 0;
+    }
+
+    return frame_zone_normal_total();
+}
+
+size_t pmm_stat_normal_free_frames(void)
+{
+    if (!pmm_initialized) {
+        return 0;
+    }
+
+    return frame_zone_normal_free();
+}
+
 bool pmm_alloc_frames_below(size_t count,
                            size_t align_frames,
                            uint64_t max_phys,
@@ -435,6 +471,14 @@ void pmm_dump(void)
     kprintf("  allocated frames: %llu\n", (unsigned long long)allocated_frames);
     kprintf("  total memory:     %llu MiB\n", (unsigned long long)total_mb);
     kprintf("  free memory:      %llu MiB\n", (unsigned long long)free_mb);
+
+    /* P1 (sekcja 4.1): rozbicie na strefy DMA32 (< 4 GiB) / NORMAL. */
+    kprintf("  zone DMA32:  total=%llu free=%llu\n",
+            (unsigned long long)pmm_stat_dma32_total_frames(),
+            (unsigned long long)pmm_stat_dma32_free_frames());
+    kprintf("  zone NORMAL: total=%llu free=%llu\n",
+            (unsigned long long)pmm_stat_normal_total_frames(),
+            (unsigned long long)pmm_stat_normal_free_frames());
 }
 #ifdef PMM_DEBUG
 

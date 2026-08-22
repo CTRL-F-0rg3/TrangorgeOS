@@ -11,6 +11,44 @@ static bool frame_initialized = false;
 static size_t total_frames = 0;
 static size_t allocated_frames = 0;
 
+/*
+ * P1 (sekcja 4.1): granica strefy DMA32 w PFN-ach (< 4 GiB). Jeśli cała
+ * dostępna pamięć mieści się poniżej 4 GiB, `dma32_pfn_boundary ==
+ * total_frames` i cała pamięć jest strefą DMA32 (nie ma NORMAL) — to
+ * poprawny, bezpieczny przypadek brzegowy, obsłużony wprost poniżej.
+ */
+#define ZONE_DMA32_LIMIT_BYTES (4ULL * 1024 * 1024 * 1024)
+
+static size_t dma32_pfn_boundary = 0;
+static size_t dma32_allocated_frames = 0;
+
+static inline size_t count_dma32_in_range(size_t start_pfn, size_t count)
+{
+    if (start_pfn >= dma32_pfn_boundary) {
+        return 0;
+    }
+
+    size_t avail = dma32_pfn_boundary - start_pfn;
+
+    return count < avail ? count : avail;
+}
+
+static inline void dma32_account_alloc(size_t start_pfn, size_t count)
+{
+    dma32_allocated_frames += count_dma32_in_range(start_pfn, count);
+}
+
+static inline void dma32_account_free(size_t start_pfn, size_t count)
+{
+    size_t n = count_dma32_in_range(start_pfn, count);
+
+    if (dma32_allocated_frames >= n) {
+        dma32_allocated_frames -= n;
+    } else {
+        dma32_allocated_frames = 0;
+    }
+}
+
 size_t frame_to_pfn(frame_t frame)
 {
     return (size_t)(frame / ARCH_PAGE_SIZE);
@@ -68,6 +106,14 @@ bool frame_init(uint64_t bitmap_phys, size_t bit_count)
 
     total_frames = bit_count;
     allocated_frames = bit_count;
+
+    /* Cała pamięć startowo zaalokowana (patrz komentarz wyżej) — łącznie
+     * z częścią DMA32, którą liczymy tu tak samo jak allocated_frames. */
+    size_t max_dma32_pfn = (size_t)(ZONE_DMA32_LIMIT_BYTES / ARCH_PAGE_SIZE);
+    dma32_pfn_boundary = total_frames < max_dma32_pfn
+                            ? total_frames
+                            : max_dma32_pfn;
+    dma32_allocated_frames = dma32_pfn_boundary;
 
     frame_initialized = true;
 
@@ -146,6 +192,8 @@ bool frame_init_from_memory(void)
         } else {
             allocated_frames = 0;
         }
+
+        dma32_account_free(pfn_start, frame_count);
     }
 
     return true;
@@ -162,13 +210,30 @@ bool frame_alloc(frame_t *out)
         return false;
     }
 
-    size_t pfn = bitmap_alloc(&frame_bitmap);
+    /*
+     * P1 (sekcja 4.1 — polityka preferencji): jeśli istnieje strefa
+     * NORMAL (są ramki z PFN >= dma32_pfn_boundary), szukaj NAJPIERW
+     * tam — zwykłe alokacje nie powinny z czasem zjadać niskiej pamięci
+     * potrzebnej urządzeniom DMA32. `bitmap_alloc_from()` sama zawija do
+     * 0 (czyli w razie potrzeby także do DMA32), jeśli w NORMAL nic
+     * wolnego nie zostało — więc to wciąż JEDNO wywołanie, bez utraty
+     * gwarancji sukcesu, gdy pamięć jest wyczerpana tylko w jednej
+     * strefie.
+     */
+    size_t pfn;
+
+    if (dma32_pfn_boundary < total_frames) {
+        pfn = bitmap_alloc_from(&frame_bitmap, dma32_pfn_boundary);
+    } else {
+        pfn = bitmap_alloc(&frame_bitmap);
+    }
 
     if (pfn == BITMAP_INVALID) {
         return false;
     }
 
     allocated_frames++;
+    dma32_account_alloc(pfn, 1);
 
     *out = frame_from_pfn(pfn);
 
@@ -218,6 +283,7 @@ bool frame_alloc_contiguous(size_t count,
     }
 
     allocated_frames += count;
+    dma32_account_alloc(pfn, count);
 
     *out = frame_from_pfn(pfn);
 
@@ -244,6 +310,8 @@ bool frame_free(frame_t frame)
     if (allocated_frames > 0) {
         allocated_frames--;
     }
+
+    dma32_account_free(pfn, 1);
 
     return true;
 }
@@ -282,6 +350,8 @@ bool frame_free_contiguous(frame_t start, size_t count)
     } else {
         allocated_frames = 0;
     }
+
+    dma32_account_free(pfn_start, count);
 
     return true;
 }
@@ -338,6 +408,7 @@ bool frame_alloc_below(size_t count,
             bitmap_set_range(&frame_bitmap, aligned, count);
 
             allocated_frames += count;
+            dma32_account_alloc(aligned, count);
 
             *out = frame_from_pfn(aligned);
 
@@ -379,4 +450,58 @@ size_t frame_free_count(void)
     }
 
     return total_frames - allocated_frames;
+}
+
+size_t frame_zone_dma32_total(void)
+{
+    if (!frame_initialized) {
+        return 0;
+    }
+
+    return dma32_pfn_boundary;
+}
+
+size_t frame_zone_dma32_free(void)
+{
+    if (!frame_initialized) {
+        return 0;
+    }
+
+    if (dma32_allocated_frames >= dma32_pfn_boundary) {
+        return 0;
+    }
+
+    return dma32_pfn_boundary - dma32_allocated_frames;
+}
+
+size_t frame_zone_normal_total(void)
+{
+    if (!frame_initialized) {
+        return 0;
+    }
+
+    return total_frames - dma32_pfn_boundary;
+}
+
+size_t frame_zone_normal_free(void)
+{
+    if (!frame_initialized) {
+        return 0;
+    }
+
+    size_t normal_total = total_frames - dma32_pfn_boundary;
+
+    if (allocated_frames < dma32_allocated_frames) {
+        /* Nie powinno wystąpić przy poprawnym księgowaniu — obrona
+         * w głąb zamiast underflow (size_t jest bez znaku). */
+        return normal_total;
+    }
+
+    size_t normal_allocated = allocated_frames - dma32_allocated_frames;
+
+    if (normal_allocated >= normal_total) {
+        return 0;
+    }
+
+    return normal_total - normal_allocated;
 }

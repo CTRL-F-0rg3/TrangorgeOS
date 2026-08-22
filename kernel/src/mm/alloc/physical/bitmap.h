@@ -53,6 +53,17 @@ bool bitmap_test_range_free(const bitmap_t *bm, size_t start, size_t count);
 
 size_t bitmap_alloc(bitmap_t *bm);
 
+/*
+ * Jak bitmap_alloc(), ale skanowanie zaczyna się od bitu `min_bit`
+ * (zamiast od `bm->alloc_hint`), z zawijaniem do 0, jeśli nic wolnego nie
+ * znaleziono od `min_bit` do końca. Używane przez PMM (P1, sekcja 4.1
+ * planu ulepszeń: "strefy DMA32/NORMAL z polityką preferencji") do
+ * preferowania wysokiej pamięci (NORMAL) dla zwykłych alokacji, z
+ * zawinięciem do niskiej pamięci (DMA32) dopiero gdy NORMAL jest
+ * wyczerpana — bez utrzymywania osobnej bitmapy per strefa.
+ */
+size_t bitmap_alloc_from(bitmap_t *bm, size_t min_bit);
+
 size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align);
 
 void bitmap_free(bitmap_t *bm, size_t bit);

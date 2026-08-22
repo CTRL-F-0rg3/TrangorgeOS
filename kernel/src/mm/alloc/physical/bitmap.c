@@ -429,6 +429,32 @@ size_t bitmap_alloc(bitmap_t *bm)
     return idx;
 }
 
+size_t bitmap_alloc_from(bitmap_t *bm, size_t min_bit)
+{
+    if (bm == NULL || bm->bits == NULL || bm->bit_count == 0) {
+        return BITMAP_INVALID;
+    }
+
+    if (min_bit >= bm->bit_count) {
+        min_bit = 0;
+    }
+
+    size_t idx = find_next_zero_bit(bm, min_bit);
+
+    if (idx == BITMAP_INVALID && min_bit != 0) {
+        idx = find_next_zero_bit(bm, 0);
+    }
+
+    if (idx == BITMAP_INVALID) {
+        return BITMAP_INVALID;
+    }
+
+    bitmap_set(bm, idx);
+    bm->alloc_hint = idx / 64;
+
+    return idx;
+}
+
 size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align)
 {
     if (bm == NULL || bm->bits == NULL || count == 0 || bm->bit_count == 0) {
@@ -551,4 +577,3 @@ size_t bitmap_count_free(const bitmap_t *bm)
 
     return free_bits;
 }
-
