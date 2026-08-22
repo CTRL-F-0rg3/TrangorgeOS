@@ -3,6 +3,7 @@
 #include "bridge.h"
 
 extern long cl_kernel_read(const char *path, uint8_t *buf, size_t cap);
+extern void *cl_native_compile(cl_prog_t *P);
 
 int cl_run_script(const char *path, uint8_t ring, arena_t *ar)
 {
@@ -54,7 +55,7 @@ int cl_run_script(const char *path, uint8_t ring, arena_t *ar)
             exts[i] = vm.externs[i];
         }
 
-        ((cl_native_fn)code)(slots, globs, exts);
+        ((void (*)(uint64_t *, uint64_t *, cl_ext_fn *))code)(slots, globs, exts);
     } else {
         cl_vm_run(&vm);
     }
