@@ -6,12 +6,12 @@ extern void kprintf(const char *fmt, ...);
 #define LEAK_MAX 2048
 
 typedef struct leak_entry {
-    void *ptr;
-    size_t size;
-    uint64_t caller;
-    uint64_t alloc_id;
-    int64_t cpu_id;
-    bool used;
+	void *ptr;
+	size_t size;
+	uint64_t caller;
+	uint64_t alloc_id;
+	int64_t cpu_id;
+	bool used;
 } leak_entry_t;
 
 static leak_entry_t leak_table[LEAK_MAX];
@@ -31,125 +31,125 @@ static uint64_t next_alloc_id = 1;
 
 bool leak_track_id(void *ptr, size_t size, uint64_t caller, uint64_t *out_id)
 {
-    smp_lock_acquire(&leak_smp_lock);
+	smp_lock_acquire(&leak_smp_lock);
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (!leak_table[i].used) {
-            uint64_t id = next_alloc_id++;
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (!leak_table[i].used) {
+	        uint64_t id = next_alloc_id++;
 
-            leak_table[i].ptr = ptr;
-            leak_table[i].size = size;
-            leak_table[i].caller = caller;
-            leak_table[i].alloc_id = id;
-            leak_table[i].cpu_id = smp_current_cpu_id();
-            leak_table[i].used = true;
+	        leak_table[i].ptr = ptr;
+	        leak_table[i].size = size;
+	        leak_table[i].caller = caller;
+	        leak_table[i].alloc_id = id;
+	        leak_table[i].cpu_id = smp_current_cpu_id();
+	        leak_table[i].used = true;
 
-            smp_lock_release(&leak_smp_lock);
+	        smp_lock_release(&leak_smp_lock);
 
-            if (out_id != NULL) {
-                *out_id = id;
-            }
+	        if (out_id != NULL) {
+	            *out_id = id;
+	        }
 
-            return true;
-        }
-    }
+	        return true;
+	    }
+	}
 
-    smp_lock_release(&leak_smp_lock);
+	smp_lock_release(&leak_smp_lock);
 
-    return false;
+	return false;
 }
 
 bool leak_track(void *ptr, size_t size, uint64_t caller)
 {
-    return leak_track_id(ptr, size, caller, NULL);
+	return leak_track_id(ptr, size, caller, NULL);
 }
 
 bool leak_untrack(void *ptr, size_t *out_size, uint64_t *out_caller)
 {
-    smp_lock_acquire(&leak_smp_lock);
+	smp_lock_acquire(&leak_smp_lock);
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (leak_table[i].used && leak_table[i].ptr == ptr) {
-            if (out_size != NULL) {
-                *out_size = leak_table[i].size;
-            }
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (leak_table[i].used && leak_table[i].ptr == ptr) {
+	        if (out_size != NULL) {
+	            *out_size = leak_table[i].size;
+	        }
 
-            if (out_caller != NULL) {
-                *out_caller = leak_table[i].caller;
-            }
+	        if (out_caller != NULL) {
+	            *out_caller = leak_table[i].caller;
+	        }
 
-            leak_table[i].used = false;
+	        leak_table[i].used = false;
 
-            smp_lock_release(&leak_smp_lock);
+	        smp_lock_release(&leak_smp_lock);
 
-            return true;
-        }
-    }
+	        return true;
+	    }
+	}
 
-    smp_lock_release(&leak_smp_lock);
+	smp_lock_release(&leak_smp_lock);
 
-    return false;
+	return false;
 }
 
 bool leak_contains(void *ptr)
 {
-    smp_lock_acquire(&leak_smp_lock);
+	smp_lock_acquire(&leak_smp_lock);
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (leak_table[i].used && leak_table[i].ptr == ptr) {
-            smp_lock_release(&leak_smp_lock);
-            return true;
-        }
-    }
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (leak_table[i].used && leak_table[i].ptr == ptr) {
+	        smp_lock_release(&leak_smp_lock);
+	        return true;
+	    }
+	}
 
-    smp_lock_release(&leak_smp_lock);
+	smp_lock_release(&leak_smp_lock);
 
-    return false;
+	return false;
 }
 
 size_t leak_count(void)
 {
-    smp_lock_acquire(&leak_smp_lock);
+	smp_lock_acquire(&leak_smp_lock);
 
-    size_t n = 0;
+	size_t n = 0;
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (leak_table[i].used) {
-            n++;
-        }
-    }
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (leak_table[i].used) {
+	        n++;
+	    }
+	}
 
-    smp_lock_release(&leak_smp_lock);
+	smp_lock_release(&leak_smp_lock);
 
-    return n;
+	return n;
 }
 
 void leak_dump(void)
 {
-    smp_lock_acquire(&leak_smp_lock);
+	smp_lock_acquire(&leak_smp_lock);
 
-    size_t n = 0;
+	size_t n = 0;
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (leak_table[i].used) {
-            n++;
-        }
-    }
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (leak_table[i].used) {
+	        n++;
+	    }
+	}
 
-    kprintf("LEAKS: %llu live\n", (unsigned long long)n);
+	kprintf("LEAKS: %llu live\n", (unsigned long long)n);
 
-    for (size_t i = 0; i < LEAK_MAX; i++) {
-        if (!leak_table[i].used) {
-            continue;
-        }
+	for (size_t i = 0; i < LEAK_MAX; i++) {
+	    if (!leak_table[i].used) {
+	        continue;
+	    }
 
-        kprintf("  leak: %p size %llu caller 0x%llx id %llu cpu %lld\n",
-                leak_table[i].ptr,
-                (unsigned long long)leak_table[i].size,
-                (unsigned long long)leak_table[i].caller,
-                (unsigned long long)leak_table[i].alloc_id,
-                (long long)leak_table[i].cpu_id);
-    }
+	    kprintf("  leak: %p size %llu caller 0x%llx id %llu cpu %lld\n",
+	            leak_table[i].ptr,
+	            (unsigned long long)leak_table[i].size,
+	            (unsigned long long)leak_table[i].caller,
+	            (unsigned long long)leak_table[i].alloc_id,
+	            (long long)leak_table[i].cpu_id);
+	}
 
-    smp_lock_release(&leak_smp_lock);
+	smp_lock_release(&leak_smp_lock);
 }
