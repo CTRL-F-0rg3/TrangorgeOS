@@ -74,6 +74,30 @@ pub fn fb_info() -> (u32, u32, u32, u64) {
     }
 }
 
+/// Pomocznik dla gfx::gfx_fb_info_raw() — aktualny bufor gfx (wirtualny
+/// wskaźnik wspólny z konsole). Zwraca `(width, height, stride_px, virt_ptr,
+/// flip_y)` gdy Rgb888 jest aktywny, `None` w przeciwnym wypadku.
+fn framebuffer_info() -> Option<(u32, u32, u32, u64, bool)> {
+    unsafe {
+        match FB.as_ref() {
+            Some(fb)
+                if fb.format == PixelFormat::Rgb888
+                    && FB_PHYS != 0
+                    && fb.ptr.as_ptr() != 0 =>
+            {
+                Some((
+                    fb.width as u32,
+                    fb.height as u32,
+                    (fb.stride / 4) as u32,
+                    fb.ptr.as_ptr(),
+                    super::framebuffer::FLIP,
+                ))
+            }
+            _ => None,
+        }
+    }
+}
+
 pub fn set_enabled(enabled: bool) {
     unsafe {
         ENABLED = enabled;
