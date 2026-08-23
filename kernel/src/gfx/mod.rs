@@ -112,3 +112,37 @@ pub extern "C" fn gfx_init(fb_phys: u64,
                             stride: u32) -> bool {
     console::init(fb_phys, width, height, stride, PixelFormat::Indexed8)
 }
+
+/// Eksport C dla edytora jądra (kernel/src/editor/editor.c).
+///
+/// Zwraca geometrię + wirtualny wskaźnik aktualnego framebuffera gfx — dokładnie
+/// tego samego bufora, do którego rysuje konsolę. Edytor rysuje bezpośrednio
+/// w ten wskaźnik, więc w systemie idzie to, co jest na ekranie.
+///
+/// Zwraca `0` gdy bufor jest dostępny (Rgb888), `-1` praz njeuzbrowany.
+/// `flip` = 1 gdy kartka jest bottom-up (QEMU stdvga LFB) — edytor wtedy
+/// odwracuje rządj w pionie.
+#[no_mangle]
+pub extern "C" fn gfx_fb_info_raw(w: *mut u32,
+                                  h: *mut u32,
+                                  s: *mut u32,
+                                  base: *mut u64,
+                                  flip: *mut i32) -> i32 {
+    if w.is_null() || h.is_null() || s.is_null() || base.is_null() || flip.is_null() {
+        return -1;
+    }
+
+    unsafe {
+        match console::framebuffer_info() {
+            Some((fw, fh, fstride, ptr, fliprows)) => {
+                *w = fw;
+                *h = fh;
+                *s = fstride;
+                *base = ptr;
+                *flip = if fliprows { 1 } else { 0 };
+                0
+            }
+            None => -1,
+        }
+    }
+}
