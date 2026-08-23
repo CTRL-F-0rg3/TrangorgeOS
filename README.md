@@ -27,7 +27,7 @@ The project operates under an intensive development cycle aimed at producing a s
 TrangorgeOS decouples driver functionality and system privilege into 4 distinct operational layers (3 main domains + userspace abstraction):
 
 
-```
+
 
 +-----------------------------------------------------------------+
 |                         USERSPACE                               |
@@ -46,7 +46,7 @@ TrangorgeOS decouples driver functionality and system privilege into 4 distinct 
 |   - Fine-grained Kernel Policy Enforcement & Data Flow Control  |
 +-----------------------------------------------------------------+
 
-```
+
 
 1. **Kernel Core & Trusted Drivers:** Holds only maximum-trust drivers (e.g., base network, USB stack core) to eliminate IPC latency for essential paths without compromising core stability. Exports explicit system interfaces.
 2. **Driver Space (DS):** Modular driver execution environment with strict error margins:
