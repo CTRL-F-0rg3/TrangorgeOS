@@ -1,12 +1,12 @@
 CC = clang
 CFLAGS_COMMON = -ffreestanding -fno-builtin -fno-stack-protector -mno-red-zone \
-                -nostdlib -Iinclude -I../libs -Wall -Wextra -O2
+                -nostdlib -Iinclude -Wall -Wextra -O2
 
 CFLAGS_KERNEL = $(CFLAGS_COMMON) -DKSTD_KERNEL_BUILD
 CFLAGS_USER   = $(CFLAGS_COMMON) -DKSTD_USER_BUILD
 
-# Pliki wspólne (np. string.c, parsery) — src/common jest obecnie puste.
-COMMON_SRC =
+# Pliki wspólne (np. string.c, parsery)
+COMMON_SRC = src/common/string.c
 
 # Pliki specyficzne dla środowiska
 KERNEL_SRC = src/kernel/video.c src/kernel/audio.c src/kernel/bt.c

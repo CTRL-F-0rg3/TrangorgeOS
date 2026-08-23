@@ -14,7 +14,7 @@ pub extern "C" fn _start() -> ! {
     }
 
     tr::log("demo: exit 0");
-    tr::exit(0)
+    tr::exit(0);
 }
 
 #[panic_handler]

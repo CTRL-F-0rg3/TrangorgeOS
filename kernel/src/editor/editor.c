@@ -5,8 +5,10 @@
 #include "../core-lang/bridge.h"
 #include "../core-lang/vm.h"
 
-extern void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys);
-extern void *arch_phys_to_virt(uint64_t phys);
+/* Bufor: korzystamy z TEGO SAMEGO framebuffera co gfx (kernel/src/gfx/console.rs).
+   gfx_fb_info_raw zwraca wirtualny wskaźnik bufora konsoli + geometrię + flip. */
+extern int gfx_fb_info_raw(uint32_t *w, uint32_t *h, uint32_t *s,
+                           uint64_t *base, int32_t *flip);
 extern const uint8_t font8x8[96][8];
 extern void console_set_enabled(int on);
 extern int32_t k_fs_read(const char *path, void *buf, uint32_t cap);
@@ -47,6 +49,9 @@ static uint32_t fw, fh, fstride;
 static int mx = 200, my = 200;
 static int mbuttons = 0;
 
+/* 1 = karta bottom-up (QEMU stdvga LFB): rząd 0 ekranu leży na końcu bufora. */
+static int ed_flip_rows = 0;
+
 static char msg[ED_LINE_LEN] = "TrangEdit | F5=run F8=log ESC=exit";
 static char log_lines[8][ED_LINE_LEN];
 static int show_log = 0;
@@ -68,8 +73,10 @@ static size_t ed_strlen(const char *s)
 static void ed_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t c)
 {
     for (uint32_t yy = y; yy < y + h && yy < fh; yy++) {
+        uint32_t row = ed_flip_rows ? (fh - 1 - yy) : yy;
+
         for (uint32_t xx = x; xx < x + w && xx < fw; xx++) {
-            fb[yy * fstride + xx] = c;
+            fb[row * fstride + xx] = c;
         }
     }
 }
@@ -283,8 +290,12 @@ static void draw_mouse(void)
 
             uint32_t col = (c == 'X') ? 0xFF000000 : 0xFFFFFFFF;
 
-            if (mx + rx < (int)fw && my + ry < (int)fh) {
-                fb[(my + ry) * fstride + (mx + rx)] = col;
+            int sy = my + ry;
+            int sx = mx + rx;
+
+            if (sx >= 0 && sx < (int)fw && sy >= 0 && sy < (int)fh) {
+                int row = ed_flip_rows ? (int)fh - 1 - sy : sy;
+                fb[row * fstride + sx] = col;
             }
         }
     }
@@ -538,14 +549,17 @@ static void ed_compile_run(void)
 int editor_run(const char *path)
 {
     uint32_t w = 0, h = 0, s = 0;
-    uint64_t phys = 0;
+    uint64_t base = 0;
+    int32_t fliprows = 0;
 
-    hdmi_caps_raw(&w, &h, &s, &phys);
+    /* Ten sam bufor, który rysuje konsola gfx — edytor po prostu go przejmuje. */
+    if (gfx_fb_info_raw(&w, &h, &s, &base, &fliprows) != 0 || base == 0) {
+        return -1;
+    }
 
-    if (phys == 0) return -1;
-
-    fb = (uint32_t *)arch_phys_to_virt(phys);
+    fb = (uint32_t *)(uintptr_t)base;
     fw = w; fh = h; fstride = s;
+    ed_flip_rows = fliprows;
 
     nlines = 1;
     lines[0][0] = 0;

@@ -83,19 +83,23 @@ fn framebuffer_info() -> Option<(u32, u32, u32, u64, bool)> {
             Some(fb)
                 if fb.format == PixelFormat::Rgb888
                     && FB_PHYS != 0
-                    && fb.ptr.as_ptr() != 0 =>
+                    && !fb.ptr.is_null() =>
             {
                 Some((
                     fb.width as u32,
                     fb.height as u32,
                     (fb.stride / 4) as u32,
-                    fb.ptr.as_ptr(),
+                    fb.ptr as u64,
                     super::framebuffer::FLIP,
                 ))
             }
             _ => None,
         }
     }
+}
+
+pub(crate) fn framebuffer_info_pub() -> Option<(u32, u32, u32, u64, bool)> {
+    framebuffer_info()
 }
 
 pub fn set_enabled(enabled: bool) {

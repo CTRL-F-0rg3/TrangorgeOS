@@ -133,7 +133,7 @@ pub extern "C" fn gfx_fb_info_raw(w: *mut u32,
     }
 
     unsafe {
-        match console::framebuffer_info() {
+        match console::framebuffer_info_pub() {
             Some((fw, fh, fstride, ptr, fliprows)) => {
                 *w = fw;
                 *h = fh;

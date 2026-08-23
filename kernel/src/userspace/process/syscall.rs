@@ -7,7 +7,12 @@ pub const SYS_GETPID: u64  = 0x1002;
 pub const SYS_IPC_SEND: u64 = 0x1010;
 pub const SYS_IPC_RECV: u64 = 0x1011;
 pub const SYS_KEY: u64     = 0x1040;
+pub const SYS_READDIR: u64 = 0x1025;
+pub const SYS_RUNCL: u64   = 0x1050;
+pub const SYS_UI_OPEN: u64 = 0x1060;
 
+pub const UI_FB_VA: u64   = 0x5000_0000;
+pub const UI_FONT_VA: u64 = 0x6000_0000;
 extern "C" {
     fn paging_translate_in(pml4: u64, virt: u64) -> u64;
     fn kprintf(fmt: *const u8, ...);
@@ -162,6 +167,85 @@ pub fn handle(world: usize, c: &mut tr::CpuCtx) {
             match crate::drivers::usb::class::hid::keyboard::take_char() {
                 Some(ch) => ch as u64,
                 None => 0,
+            }
+        }
+        SYS_READDIR => {
+            let idx = a0 as usize;
+            let cap = (a2 as usize).min(127);
+
+            match crate::fs::vfs::root().and_then(|fs| fs.list_path("/")) {
+                Some(v) if idx < v.len() => {
+                    let e = &v[idx];
+                    let bytes = e.name.as_bytes();
+                    let n = bytes.len().min(cap);
+
+                    if !user_copy_out(cr3, a1, &bytes[..n]) {
+                        return c.rax = u64::MAX;
+                    }
+
+                    let _ = user_copy_out(cr3, a1 + n as u64, &[0u8]);
+
+                    r.arg1 = e.size;
+
+                    if e.is_dir { 2 } else { 1 }
+                }
+                _ => 0,
+            }
+        }
+
+        SYS_RUNCL => {
+            let mut tmp = [0u8; 128];
+
+            match user_cstr(cr3, a0, &mut tmp) {
+                Some(path) => super::runcl::run(path) as u64,
+                None => u64::MAX,
+            }
+        }
+
+        SYS_UI_OPEN => {
+            extern "C" {
+                fn hdmi_caps_raw(w: *mut u32, h: *mut u32,
+                                 s: *mut u32, phys: *mut u64);
+                fn kvirt_to_phys(p: *const u8) -> u64;
+                fn paging_map_page_in(pml4: u64, virt: u64,
+                                      phys: u64, flags: u64) -> bool;
+            }
+
+            extern "C" {
+                static font8x8: u8;
+            }
+
+            unsafe {
+                let (mut w, mut h, mut s, mut fp) = (0u32, 0u32, 0u32, 0u64);
+
+                hdmi_caps_raw(&mut w, &mut h, &mut s, &mut fp);
+
+                if fp == 0 || w == 0 {
+                    return c.rax = u64::MAX;
+                }
+
+                /* fb: RW + user + NX (W^X) */
+                let fb_bytes = (s * h * 4) as u64;
+                let pages = (fb_bytes + 4095) / 4096;
+
+                for i in 0..pages {
+                    paging_map_page_in(cr3,
+                                       UI_FB_VA + i * 4096,
+                                       fp + i * 4096,
+                                       0x1 | 0x2 | 0x4 | 0x8);
+                }
+
+                /* font: RO + user + NX */
+                let font_phys = kvirt_to_phys(&font8x8);
+
+                paging_map_page_in(cr3, UI_FONT_VA, font_phys,
+                                   0x1 | 0x4 | 0x8);
+
+                r.arg0 = ((w as u64) << 16) | h as u64;
+                r.arg1 = s as u64;
+                r.arg2 = UI_FB_VA;
+
+                0
             }
         }
 

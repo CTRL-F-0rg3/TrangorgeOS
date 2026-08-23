@@ -1,7 +1,5 @@
 #![no_std]
 
-use core::arch::asm;
-
 pub const SYS_YIELD: u64 = 1;
 pub const SYS_LOG: u64 = 2;
 pub const SYS_EXIT: u64 = 0x1000;
