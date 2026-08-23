@@ -4,7 +4,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#if defined(__x86_64__)
 #include "../arch/x86_64/memory.h"
+#elif defined(__aarch64__)
+#include "../arch/aarch64/memory.h"
+#endif
 
 typedef struct mm_boot_params {
     const arch_raw_mem_entry_t *memmap;
