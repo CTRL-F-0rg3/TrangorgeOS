@@ -9,3 +9,4 @@ kernel/data.img
 .idea/
 *.iml
 .vscode/
+*.kate-swp
