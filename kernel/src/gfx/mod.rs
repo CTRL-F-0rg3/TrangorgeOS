@@ -119,9 +119,9 @@ pub extern "C" fn gfx_init(fb_phys: u64,
 /// tego samego bufora, do którego rysuje konsolę. Edytor rysuje bezpośrednio
 /// w ten wskaźnik, więc w systemie idzie to, co jest na ekranie.
 ///
-/// Zwraca `0` gdy bufor jest dostępny (Rgb888), `-1` praz njeuzbrowany.
-/// `flip` = 1 gdy kartka jest bottom-up (QEMU stdvga LFB) — edytor wtedy
-/// odwracuje rządj w pionie.
+/// Zwraca `0` gdy bufor jest dostępny (Rgb888), `-1` gdy brak (np. tryb VGA).
+/// `flip` = 1 gdy karta jest bottom-up (QEMU stdvga LFB) — edytor odwraca
+/// wtedy rzędy w pionie.
 #[no_mangle]
 pub extern "C" fn gfx_fb_info_raw(w: *mut u32,
                                   h: *mut u32,
