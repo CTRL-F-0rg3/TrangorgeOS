@@ -5,6 +5,32 @@
  * interfejs/trangorge.h — główny nagłówek zbiorczy (umbrella header)
  * TrangorgeOS — dołącza wszystkie pozostałe nagłówki jądra.
  * Ścieżki względne wobec kernel/src/interfejs/.
+ *
+ * PEŁNA LISTA TEGO, CO UDOSTĘPNIAJĄ TE NAGŁÓWKI (typy, funkcje, stałe,
+ * sekcja po sekcji) znajduje się w pliku:  interfejs/trangorge_api.txt
+ *
+ * Skrótowy przegląd modułów:
+ *   types.h        — aliasy szerokości całkowitych (int8..uint64, uint)
+ *   safe.h/policy.h— bezpieczeństwo i polityki interfejsu
+ *   battery/       — status baterii (init/operation/backend)
+ *   bluetooth/     — HCI, ACL tx/rx, model zdarzeń
+ *   camera/        — przechwytywanie klatek, formaty RGB888/YUYV
+ *   core-lang/     — język wewnętrzny: lexer/parser/sema/codegen/VM,
+ *                    arytmetyka 4..512-bit, natywny JIT, bridge ringów
+ *   displayport/   — AUX/DPCD, EDID, trening linku, framebuffer DP
+ *   editor/        — edytor tekstu + mysz
+ *   hdmi/          — tryby ekranu, kolejka transferów (blit/fill/flip)
+ *   linuxcom/      — warstwa kompatybilności "lc_*" (wątki, VFS, sockety,
+ *                    blokady, workqueue/timery, urządzenia)
+ *   mm/alloc/      — kmalloc/kfree (api), debug+leaki+statystyki,
+ *                    heap/slab/buddy, ramki fizyczne+pmm+strefy DMA32/NORMAL,
+ *                    contiguous/dma-coherent, mapping/page/vmm
+ *   mm/arch/...    — pamięć/paging/TLB per architektura (warunkowe)
+ *   mm/cache/      — obiektowe cache (kcache), per-CPU
+ *   mm/core/       — adresy, zakresy, regiony, sizeutil, smp ticket lock
+ *   mm/paging/     — aspace wrapper, PML helpery, batch TLB
+ *   mm/process/    — VMA, mmap/munmap/mprotect, brk
+ *   mm/protection/ — guard page, SMEP/SMAP, sanity uprawnień (W^X)
  */
 
 /* === typy podstawowe === */
@@ -124,23 +150,5 @@
 #include "../mm/protection/guard.h"
 #include "../mm/protection/isolation.h"
 #include "../mm/protection/permissions.h"
-
-
-
-
-/*  memory management functions */
-
-/* page management */
-
-/*  paging functions */
-
-/*ipc*/
-
-/*devices   */
-
-/*shelduler*/
-
-
-
 
 #endif // TRANGORGE_H

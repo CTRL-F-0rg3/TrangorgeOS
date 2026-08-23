@@ -1,0 +1,790 @@
+================================================================================
+ TRANGORGE.H — PEŁNA LISTA TEGO, CO UDOSTĘPNIAJĄ DOŁĄCZONE NAGŁÓWKI JĄDRA
+ Spis typów, funkcji i stałych dostępnych po dołączeniu: #include "trangorge.h"
+ Ścieżki podano względem kernel/src/. Sekcje oznaczone [x86_64]/[aarch64]
+ są aktywne zależnie od architektury docelowej (guardy __x86_64__/__aarch64__).
+================================================================================
+
+== types.h ==
+  Typy: int8,int16,int32,int64,uint8,uint16,uint32,uint64,uint (aliasy stdint)
+
+== battery/battery.h ==
+  Stałe: BATT_STATE_DISCHARGING=0, BATT_STATE_CHARGING=1, BATT_STATE_FULL=2
+  Typy:  battery_status_t{present,state,percent,voltage_mv,temp_c,health}
+  Funkcje:
+    bool battery_init(void);
+    bool battery_present(void);
+    bool battery_status(battery_status_t *out);
+    bool battery_status_packed(uint64_t *a0, uint64_t *a1, uint64_t *a2);
+    bool battery_set_threshold(uint32_t low_pct);
+    uint32_t battery_threshold(void);
+    bool battery_low_pending(void);
+    void battery_sim_tick(void);
+
+== battery/init.h ==  (tylko include battery.h)
+
+== battery/operation.h ==
+  Typy:  battery_backend_t{bool(*present)(void); bool(*status)(battery_status_t*);}
+  Funkcje: void battery_register_backend(const battery_backend_t *b);
+
+== bluetooth/bt.h ==
+  Funkcje:
+    bool bt_init(void);  bool bt_ready(void);
+    void bt_info(uint8_t *hci_ver, uint8_t *bdaddr);
+    bool bt_hci_cmd(uint16_t opcode, const uint8_t *params, uint8_t len);
+    bool bt_event_poll(uint8_t *buf, uint8_t cap, uint8_t *len);
+    bool bt_acl_send(const uint8_t *data, uint16_t len);
+    bool bt_acl_recv(uint8_t *data, uint16_t cap, uint16_t *len);
+
+== bluetooth/hci.h ==  (stałe pakietów/komend/zdarzeń HCI)
+  HCI_CMD_PKT=0x01, HCI_ACL_PKT=0x02, HCI_EVT_PKT=0x04
+  HCI_RESET=0x0C03, HCI_READ_LOCAL_VERSION=0x1001, HCI_READ_BD_ADDR=0x1009,
+  HCI_SET_EVENT_MASK=0x0C01, HCI_LE_SET_ADV_ENABLE=0x200A,
+  HCI_LE_SET_SCAN_ENABLE=0x200C
+  EVT_CMD_COMPLETE=0x0E, EVT_CMD_STATUS=0x0F, EVT_CONN_COMPLETE=0x03,
+  EVT_LE_META=0x3E
+
+== bluetooth/init.h ==  (tylko include bt.h)
+
+== bluetooth/operation.h ==
+  Stałe: EVT_Q=16, EVT_MAX=64, ACL_Q=8, ACL_MAX=256
+  Funkcje:
+    void bt_op_model_init(void);
+    bool bt_op_model_run_cmd(uint16_t opcode, const uint8_t *params, uint8_t len);
+
+== camera/camera.h ==
+  Stałe: CAM_FMT_RGB888=1, CAM_FMT_YUYV=2
+  Typy:  camera_caps_t{present,width,height,format,fps}
+  Funkcje:
+    bool camera_init(void);  bool camera_present(void);
+    bool camera_caps_get(camera_caps_t *out);
+    bool camera_start(void);  bool camera_stop(void);
+    bool camera_frame(void *buf, uint32_t cap, uint64_t *frame_id);
+    bool camera_frame_to_phys(uint64_t phys, uint32_t cap, uint64_t *frame_id);
+
+== camera/init.h ==  (tylko include camera.h)
+
+== camera/operation.h ==
+  Typy:  camera_backend_t{present,start,stop,frame (wskaźniki funkcji)}
+  Funkcje: void camera_register_backend(const camera_backend_t *b);
+
+== core-lang/ast.h ==
+  Typy:  cl_type_t{uint16_t bits; bool neg}
+          enum {ND_PROGRAM, ND_FN, ND_LET, ND_STATIC, ND_ENUM, ND_EXTERN,
+                ND_DATAIMPL, ND_BLOCK, ND_IF, ND_WHEN, ND_CASE, ND_SET_FREE,
+                ND_ASSIGN, ND_BIN, ND_UN, ND_MEMBER, ND_VAR, ND_POOL,
+                ND_SCOPECALL, ND_CALL, ND_CALLIDX, ND_NUM, ND_STR, ND_CHAR}
+          ast_node_t{kind,type,line,op,pool_kind,is_array,value,arr_count,
+                     arr_init,name[64],name2[64],a,b,c,list,nlist}
+          arena_t{buf,cap,pos}
+  Funkcje:
+    void cl_arena_init(arena_t *a, uint8_t *buf, size_t cap);
+    void *cl_arena_alloc(arena_t *a, size_t n);
+    ast_node_t *cl_node(arena_t *ar, uint8_t kind, uint32_t line);
+
+== core-lang/bc.h ==
+  Typy:  cl_val_t{uint8_t b[64]} (LE, do 512 bit)
+          enum OP_{NOP,CONST,LOAD,STORE,GLOAD,GSTORE,ADD,SUB,MUL,DIV,MOD,AND,
+                   OR,XOR,SHL,SHR,NEG,NOT,EQ,NE,LT,GT,LE,GE,JMP,JZ,JNZ,CALL,
+                   RET,EXTERN,POP,FREE,SHARED,HALT}
+          cl_insn_t{op,bits,a,b,c}
+          cl_fn_t{start,nslots,nargs}
+          cl_prog_t{code,code_len,code_cap,consts[64],const_bits[64],nconsts,
+                    fns[16],fn_names[16][64],nfns,main_fn,ext_names[16][64],
+                    nexts,gnames[64][64],gbits[64],gneg[64],ginit[64],nglobals,ar}
+
+== core-lang/bridge.h ==
+  Funkcje:
+    int cl_bridge_init(cl_vm_t *vm, uint8_t ring);  /* ring 0/1/3 */
+    int cl_bridge_add(cl_vm_t *vm, const char *name, cl_ext_fn fn);
+
+== core-lang/lexer.h ==
+  Typy:  lexer_t{src,len,pos,line,col}
+  Funkcje:
+    void cl_lexer_init(lexer_t *l, const char *src, size_t len);
+    bool cl_lex_next(lexer_t *l, token_t *out);
+    int  cl_lex_all(lexer_t *l, token_t *buf, size_t cap, size_t *count);
+
+== core-lang/loader.h ==
+  Typy:  cl_module_t{cl_prog_t *bc; void *native;}
+  Funkcje:
+    cl_prog_t *cl_compile_source(const char *src, size_t len, arena_t *ar,
+                                 uint32_t *err_line, const char **err_msg);
+    size_t     cl_save_bc(cl_prog_t *P, uint8_t *buf, size_t cap);
+    cl_prog_t *cl_load_bc(const uint8_t *buf, size_t len, arena_t *ar);
+    cl_module_t *cl_load_path(const char *path, arena_t *ar, bool try_native);
+
+== core-lang/native.h ==
+  Typy:  typedef uint64_t (*cl_native_fn)(uint64_t*,uint64_t*,cl_ext_fn*);
+  Funkcje:
+    void *cl_native_compile(cl_prog_t *P);   /* NULL gdy arch nie wspiera */
+    size_t cl_native_size(void);
+
+== core-lang/parser.h ==
+  Typy:  parser_t{toks,n,pos,ar,failed,err,err_line}
+  Funkcje:
+    ast_node_t *cl_parse(parser_t *p, token_t *toks, size_t n, arena_t *ar);
+
+== core-lang/sema.h ==
+  Typy:  cl_diag_t{line,msg,name[64],is_warn}; sema_ctx_t (nieprzezroczysty)
+  Funkcje:
+    sema_ctx_t *cl_sema_new(arena_t *ar);
+    int   cl_sema_run(sema_ctx_t *s, ast_node_t *prog);
+    size_t cl_sema_diag_count(const sema_ctx_t *s);
+    const cl_diag_t *cl_sema_diag(const sema_ctx_t *s, size_t i);
+== core-lang/tokens.h ==
+  Typy:  tok_kind_t — enum TK_{EOF,ERR,IDENT,TYPE,NUM,STR,CHAR,IF,ELSE,WHEN,
+          CASE,FN,LET,STATIC,DATA,DATAIMPL,ENUM,EXTERN,CALL,SET_FREE,EXTERN_K,
+          CALL_K?,SEMI,COMMA,DOT,COLON,DCOLON,ASSIGN,EQCOLON,ARROW,EQ,NEQ,
+          LT,GT,LEQ,GEQ,PLUS,MINUS,STAR,SLASH,PERCENT,AMP,PIPE,CARET,TILDE,
+          BANG,SHL,SHR,LBRACE,RBRACE,LBRACK,RBRACK,LPAREN,RPAREN,UNDERSCORE,
+          DOLLAR,DOLLAR_BANG,DOLLAR_AT}
+          token_t{kind,start,len,num,type_bits,line,col}
+  Funkcje: const char *cl_tok_name(tok_kind_t kind);
+
+== core-lang/vm.h ==
+  Typy:  cl_vm_err_t — enum {CL_OK, CL_ERR_USE_AFTER_FREE, CL_ERR_DIV_ZERO,
+          CL_ERR_STACK, CL_ERR_EXTERN, CL_ERR_BADOP, CL_ERR_DEPTH}
+          typedef uint64_t (*cl_ext_fn)(uint64_t x6);
+          vm_frame_t{pc,fn_idx,slots[64],slive[64]}
+          cl_vm_t{prog,globals[64],glive[64],externs[16],stack[256],sp,
+                  frames[8],depth,halt_req,err,err_pc}
+  Funkcje:
+    void       cl_vm_init(cl_vm_t *vm, cl_prog_t *prog);
+    int        cl_vm_register_extern(cl_vm_t *vm, const char *name, cl_ext_fn fn);
+    cl_vm_err_t cl_vm_run(cl_vm_t *vm);
+    /* arytmetyka szeroka (4..512 bit): */
+    int  cl_wbytes(int bits);
+    void cl_mask(uint8_t *r, int w, int bits);
+    void cl_add/cl_sub/cl_mul(uint8_t *r, const uint8_t *a, const uint8_t *b, int w);
+    int  cl_cmp(const uint8_t *a, const uint8_t *b, int w, bool sign);
+    void cl_shl/cl_shr(uint8_t *r, const uint8_t *a, uint32_t n, int w);
+    void cl_divmod(const uint8_t *n, const uint8_t *d, int w, uint8_t *q, uint8_t *m);
+
+== displayport/aux.h ==  (adresy DPCD)
+  DPCD_REV=0x00000, DPCD_MAX_LINK_RATE=0x00001, DPCD_MAX_LANE_COUNT=0x00002,
+  DPCD_LINK_BW_SET=0x00100, DPCD_LANE_COUNT_SET=0x00101,
+  DPCD_TRAINING_SET=0x00102, DPCD_LANE_ADJUST=0x00200,
+  DPCD_LANE_STATUS=0x00202, DPCD_SYMBOL_LOCK=0x00204
+  Funkcje:
+    void dp_aux_sink_init(void);
+    bool dp_aux_read(uint32_t addr, void *buf, uint32_t len);
+    bool dp_aux_write(uint32_t addr, const void *buf, uint32_t len);
+    bool dp_aux_read_edid(void *buf, uint32_t len);
+
+== displayport/dp.h ==
+  Funkcje:
+    bool dp_init(void);  bool dp_ready(void);
+    void dp_link_info(uint32_t *rate_mbps, uint32_t *lanes);
+    uint32_t dp_mode_count(void);
+    bool dp_mode_at(uint32_t i, uint32_t *id, uint32_t *w, uint32_t *h, uint32_t *r);
+    bool dp_mode_set_by_id(uint32_t id);
+    void dp_caps(uint64_t *fb_phys, uint32_t *w, uint32_t *h, uint32_t *stride);
+    bool dp_fb_set(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride);
+    uint64_t dp_submit_fill(uint32_t color, uint32_t x, uint32_t y,
+                            uint32_t w, uint32_t h);
+
+== displayport/edid.h ==
+  Funkcje:
+    bool edid_parse(const uint8_t *b, hdmi_mode_t *out, uint32_t max, uint32_t *count);
+
+== displayport/init.h ==  (tylko include dp.h)
+
+== displayport/link.h ==
+  Funkcje: bool dp_link_train(void);  void dp_link_info(uint32_t*,uint32_t*);
+
+== displayport/operation.h ==
+  Funkcje:
+    void dp_op_set_fb(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride);
+    void dp_op_state(uint64_t *phys, uint32_t *w, uint32_t *h, uint32_t *stride);
+    void dp_op_fill(uint32_t color, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+
+== editor/editor.h ==
+  Stałe: ED_MAX_LINES=512, ED_LINE_LEN=128
+  Kody klawiszy: EDK_ENTER=0x100, EDK_BACKSPACE=0x101, EDK_ESC=0x102,
+  EDK_RIGHT=0x103, EDK_LEFT=0x104, EDK_DOWN=0x105, EDK_UP=0x106,
+  EDK_HOME=0x107, EDK_END=0x108, EDK_DELETE=0x109, EDK_TAB=0x10A,
+  EDK_F5=0x110, EDK_F8=0x111
+  Funkcje: int editor_run(const char *path);
+
+== editor/mouse.h ==
+  Funkcje:
+    void mouse_init(void);
+    int  mouse_poll(int *dx, int *dy, int *dz, int *buttons);  /* 1 = paczka */
+
+== hdmi/hdmi.h ==
+  Stałe: HDMI_OP_FB_SET=1, HDMI_OP_MODE_SET=2, HDMI_OP_TRANSFER=3, HDMI_OP_POLL=4
+         HDMI_TR_BLIT=1, HDMI_TR_FILL=2, HDMI_TR_FLIP=3, HDMI_MAX_TRANSFERS=16
+  Typy:  hdmi_transfer_t{kind,color,src_phys,dst_phys,x,y,w,h,stride}
+          hdmi_caps_t{fb_phys,w,h,stride,ready}
+  Funkcje:
+    bool hdmi_init_with(uint64_t fb_phys, uint32_t w, uint32_t h, uint32_t stride);
+    bool hdmi_ready(void);   void hdmi_caps(hdmi_caps_t *out);
+    bool hdmi_fb_set(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride);
+    bool hdmi_mode_set_by_id(uint32_t id);
+    bool hdmi_mode_current_raw(uint32_t *id, uint32_t *w, uint32_t *h, uint32_t *r);
+    uint64_t hdmi_submit(const hdmi_transfer_t *t);
+    bool hdmi_poll(uint64_t *out_seq);   uint32_t hdmi_pending(void);
+    uint64_t hdmi_submit_fill(uint32_t color, uint32_t x, uint32_t y,
+                              uint32_t w, uint32_t h);
+    void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys);
+
+== hdmi/init.h ==  (tylko include hdmi.h)
+
+== hdmi/mode.h ==
+  Stałe: HDMI_MODE_FLAG_INTERLACE=(1u<<0), HDMI_MODE_FLAG_PVSYNC=(1u<<1),
+         HDMI_MODE_FLAG_PHSYNC=(1u<<2)
+  Typy:  hdmi_mode_t{id,w,h,refresh,clock_khz,h_front,h_sync,h_blank,
+                     v_front,v_sync,v_blank,flags}
+  Funkcje:
+    uint32_t hdmi_mode_count(void);
+    const hdmi_mode_t *hdmi_mode_at(uint32_t i);
+    const hdmi_mode_t *hdmi_mode_find(uint32_t w, uint32_t h, uint32_t refresh);
+    const hdmi_mode_t *hdmi_mode_by_id(uint32_t id);
+    bool hdmi_mode_valid(const hdmi_mode_t *m);
+    bool hdmi_mode_apply(const hdmi_mode_t *m);
+    const hdmi_mode_t *hdmi_mode_current(void);
+    bool hdmi_mode_at_raw(uint32_t i, uint32_t *id, uint32_t *w, uint32_t *h, uint32_t *r);
+
+== hdmi/operation.h ==
+  Funkcje:
+    void hdmi_op_set_mode(const hdmi_mode_t *m);
+    void hdmi_op_exec(hdmi_transfer_t *t);
+    void hdmi_op_state(hdmi_caps_t *out);
+    void hdmi_op_set_fb(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride);
+    bool hdmi_op_ready(void);
+== linuxcom/compat.h ==  (warstwa abstrakcji typu linux-like; prefiks lc_)
+  Stałe/makra: LC_API, LC_VERSION_MAJOR=0/MINOR=1/PATCH=0, LC_NAME,
+    LC_PAGE_SIZE_DEFAULT=4096u, LC_MAX_CPUS=256u, LC_MAX_NAME=128u,
+    LC_INVALID_HANDLE=((uint64_t)0),
+    LC_CONTAINER_OF(ptr,type,member), LC_ARRAY_SIZE(a),
+    LC_LOG(ks,lvl,sub,fmt,...)
+  Kody błędów — typedef enum lc_status: LC_OK=0 oraz LC_EPERM, LC_ENOENT,
+    LC_EIO, LC_ENXIO, LC_E2BIG, LC_ENOMEM, LC_EACCES, LC_EFAULT, LC_EBUSY,
+    LC_EEXIST, LC_ENODEV, LC_ENOTDIR, LC_EISDIR, LC_EINVAL, LC_ENFILE,
+    LC_EMFILE, LC_ENOSPC, LC_EROFS, LC_ENAMETOOLONG, LC_ENOSYS, LC_ELOOP,
+    LC_ENODATA, LC_ETIMEDOUT, LC_ECANCELED, LC_EOVERFLOW, LC_EAGAIN
+  Funkcja: const char *lc_strerror(lc_status_t status);
+  Typy bazowe: lc_handle_t, lc_phys_addr_t, lc_virt_addr_t, lc_pid_t,
+    lc_cpu_id_t, lc_uid_t, lc_gid_t, lc_ssize_t, lc_off_t, lc_jiffies_t,
+    lc_uuid_t{b[16]}, lc_timespec_t{sec,nsec}, lc_iovec_t, lc_const_iovec_t
+  Alokator: callbacki lc_alloc_fn/lc_free_fn/lc_realloc_fn/lc_map_fn/
+    lc_unmap_fn; flagi LC_ALLOC_{ZERO,ATOMIC,DMA,NOSLEEP,PINNED,EXEC},
+    LC_PROT_{NONE,READ,WRITE,EXEC,USER}, LC_MAP_{ANON,SHARED,PRIVATE,FIXED,
+    DEVICE}; struktura lc_allocator_t{ctx,alloc,free,realloc,map,unmap,
+    page_size}
+  Logowanie: lc_log_level_t (LC_LOG_EMERG..LC_LOG_DEBUG), lc_log_fn,
+    lc_logger_t{ctx,write,min_level}
+  Synchronizacja: lc_spinlock_t, lc_mutex_t, lc_rwlock_t, lc_condvar_t,
+    lc_completion_t, lc_atomic32_t, lc_atomic64_t;
+    flagi lc_lock_flags_t: LC_LOCK_INTERRUPTIBLE, LC_LOCK_NOWAIT
+  Workqueue/timer: lc_work_fn, lc_work_t, lc_workqueue_t, lc_timer_t
+  Procesy: lc_task_state_t (LC_TASK_NEW..LC_TASK_DEAD), lc_thread_fn,
+    lc_task_attr_t{name,stack_size,priority,flags}
+  Pliki: lc_file_t, lc_inode_t, lc_dirent_t, lc_stat_t;
+    flagi LC_O_{RDONLY,WRONLY,RDWR,CREAT,EXCL,TRUNC,APPEND,NONBLOCK,DIRECTORY},
+    typy LC_S_IF{REG,DIR,CHR,BLK,LNK}
+  Sieć: lc_socket_t, lc_sockaddr_t{family,data[126]},
+    lc_socket_type_t (LC_SOCK_STREAM/DGRAM/RAW), lc_socket_family_t
+    (LC_AF_UNSPEC/UNIX/INET/INET6)
+  Urządzenia: lc_device_type_t (LC_DEV_BLOCK/CHAR/NET/MISC), lc_device_t,
+    lc_device_ops_t{open,close,read,write,ioctl}
+  Hooki/kernel: lc_vfs_ops_t{open,close,read,write,stat,mkdir,unlink,rename,
+    sync}, lc_net_ops_t{socket,close,bind,listen,connect,accept,send,recv},
+    lc_hooks_t{memory,logger,vfs,net,user}, lc_kernel_config_t{page_size,
+    cpu_count,max_tasks,max_handles,monotonic_hz,deterministic_time},
+    lc_kernel_t (nieprzezroczysty)
+  Funkcje publiczne:
+    lc_kernel_init(lc_kernel_t**,cfg,hooks), lc_kernel_shutdown(k)
+    lc_alloc(k,size,align,flags), lc_free(k,ptr,size,align), lc_zalloc
+    lc_log(k,lvl,sub,file,line,fmt,...)
+    lc_now_ns(k), lc_jiffies(k), lc_sleep_ns(k,ns)
+    lc_cpu_count(k), lc_current_cpu(k), lc_random_u64(k)
+    lc_spin_init/lock/trylock/unlock(l)
+    lc_mutex_init/destroy/lock/trylock/unlock(m)
+    lc_rwlock_init/destroy + lc_read_lock/lc_write_lock + unlocki
+    lc_cond_init/destroy/wait/signal/broadcast(c)
+    lc_completion_init(c), lc_complete(c), lc_complete_all(c),
+      lc_wait_for_completion(c,timeout_ns)
+    lc_atomic_read/set/add_return/cmpxchg 32 i 64
+    lc_thread_create(k,&h,fn,arg,attr), lc_thread_join/detach/cancel,
+      lc_current_pid()
+    lc_workqueue_create(k,name,workers,&q), lc_workqueue_destroy(q),
+      lc_queue_work(q,w), lc_flush_workqueue(q)
+    lc_timer_init(t,fn,arg), lc_timer_start(k,t,delay_ns), lc_timer_cancel(t)
+    lc_file_open/close/read/write/stat/sync
+    lc_socket_create/close/bind/connect/send/recv
+    lc_device_register/unregister
+    lc_hooks(k), lc_config(k)
+
+== mm/alloc/api/alloc.h ==  (główne API alokatora jądra)
+  Funkcje:
+    void  *kmalloc(size_t size);
+    void  *kzalloc(size_t size);
+    void  *kcalloc(size_t count, size_t size);
+    void  *krealloc(void *ptr, size_t new_size);
+    void  *kmalloc_aligned(size_t size, size_t align);
+    void   kfree(void *ptr);
+    size_t kmalloc_usable_size(void *ptr);
+    void  *kalloc_pages(size_t pages);
+    void   kfree_pages(void *ptr, size_t pages);
+    char  *kstrdup(const char *s);
+    uint64_t kvirt_to_phys(void *ptr);
+    void   kalloc_dump(void);
+
+== mm/alloc/debug/alloc_debug.h ==
+  Funkcje:
+    void *dbg_alloc(size_t size);   void dbg_free(void *ptr);
+    bool dbg_verify(void *ptr);     size_t dbg_usable_size(void *ptr);
+    void mm_debug_dump(void);
+
+== mm/alloc/debug/leak.h ==
+  Funkcje:
+    bool leak_track(void *ptr, size_t size, uint64_t caller);
+    bool leak_track_id(void *ptr, size_t size, uint64_t caller, uint64_t *out_id);
+    bool leak_untrack(void *ptr, size_t *out_size, uint64_t *out_caller);
+    bool leak_contains(void *ptr);   size_t leak_count(void);
+    void leak_dump(void);
+
+== mm/alloc/debug/stats.h ==
+  Funkcje:
+    void alloc_stats_note_alloc(size_t size);
+    void alloc_stats_note_free(size_t size);
+    size_t alloc_stats_live_count(void);  alloc_stats_live_bytes(void);
+    size_t alloc_stats_peak_bytes(void);
+    size_t alloc_stats_total_allocs(void); alloc_stats_total_frees(void);
+    void alloc_stats_dump(void);
+== mm/alloc/heap/buddy.h ==
+  Typy callbacków: buddy_map_cb(bool(*)(uint64_t virt,size_t)),
+    buddy_unmap_cb(void(*)(uint64_t,size_t))
+  Funkcje:
+    bool buddy_init(uint64_t base, size_t size, map_cb, unmap_cb);
+    bool buddy_ready(void);
+    void *buddy_alloc(size_t size);
+    void *buddy_alloc_aligned(size_t size, size_t align);
+    void  buddy_free(void *ptr);
+    size_t buddy_block_size(void *ptr);
+    size_t buddy_stat_used_bytes(void);  buddy_stat_free_bytes(void);
+    void   buddy_dump(void);
+
+== mm/alloc/heap/heap.h ==
+  Funkcje:
+    bool heap_init(void);  bool heap_ready(void);
+    void *heap_alloc(size_t size);
+    void *heap_alloc_aligned(size_t size, size_t align);
+    void *heap_zalloc(size_t size);
+    void  heap_free(void *ptr);
+    size_t heap_usable_size(void *ptr);
+    void  heap_dump(void);
+
+== mm/alloc/heap/slab.h ==
+  Stałe: SLAB_MAX_SIZE=2048
+  Funkcje:
+    bool slab_init(uint64_t base, size_t size);  bool slab_ready(void);
+    void *slab_alloc(size_t size);  void slab_free(void *ptr);
+    size_t slab_usable_size(void *ptr);
+    size_t slab_stat_used_bytes(void);  slab_stat_free_bytes(void);
+    void   slab_dump(void);
+
+== mm/alloc/physical/bitmap.h ==
+  Stałe: BITMAP_INVALID=((size_t)-1)
+  Typy:  bitmap_t{uint64_t *bits; bit_count; word_count; alloc_hint}
+  Funkcje:
+    size_t bitmap_words_for_bits(size_t bit_count);
+    size_t bitmap_bytes_for_bits(size_t bit_count);
+    void  bitmap_init_virt(bitmap_t *bm, void *storage, size_t bit_count);
+    bool  bitmap_init_phys(bitmap_t *bm, uint64_t storage_phys, size_t bit_count);
+    void  bitmap_fill(bitmap_t *bm, bool value);
+    void  bitmap_set/clear(bitmap_t *bm, size_t bit);  bool bitmap_test(...);
+    void  bitmap_set_range/clear_range(bitmap_t*, start, count);
+    bool  bitmap_test_range_free(const bitmap_t*, start, count);
+    size_t bitmap_alloc(bitmap_t *bm);
+    size_t bitmap_alloc_from(bitmap_t *bm, size_t min_bit);
+    size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align);
+    void  bitmap_free(bitmap_t *bm, size_t bit);
+    void  bitmap_free_range(bitmap_t *bm, size_t start, size_t count);
+    size_t bitmap_count_free(const bitmap_t *bm);
+== mm/alloc/physical/frame.h ==
+  Typy:  typedef uint64_t frame_t;  FRAME_INVALID=UINT64_MAX
+  Funkcje:
+    bool frame_init(uint64_t bitmap_phys, size_t bit_count);
+    bool frame_init_from_memory(void);  bool frame_ready(void);
+    bool frame_alloc(frame_t *out);     bool frame_alloc_zero(frame_t *out);
+    bool frame_alloc_contiguous(size_t count, size_t align_frames, frame_t *out);
+    bool frame_alloc_below(size_t count, size_t align_frames,
+                           uint64_t max_phys, frame_t *out);
+    bool frame_free(frame_t frame);
+    bool frame_free_contiguous(frame_t start, size_t count);
+    bool frame_is_valid(frame_t frame);  bool frame_zero(frame_t frame);
+    void *frame_virt(frame_t frame);  uint64_t frame_phys(frame_t frame);
+    size_t frame_to_pfn(frame_t);  frame_t frame_from_pfn(size_t pfn);
+    size_t frame_total(void);  frame_allocated(void);  frame_free_count(void);
+    /* strefy DMA32 (<4 GiB) / NORMAL — alokacje preferują NORMAL: */
+    size_t frame_zone_dma32_total(void);  frame_zone_dma32_free(void);
+    size_t frame_zone_normal_total(void); frame_zone_normal_free(void);
+
+== mm/alloc/physical/pmm.h ==
+  Stałe: PMM_INVALID_FRAME=UINT64_MAX
+  Funkcje:
+    bool pmm_init(void);  bool pmm_ready(void);
+    bool pmm_alloc_frame(uint64_t *out_phys);
+    bool pmm_alloc_zero_frame(uint64_t *out_phys);
+    bool pmm_alloc_frames(size_t count, uint64_t *out_phys);
+    bool pmm_alloc_frames_aligned(size_t count, size_t align_frames, uint64_t *out);
+    bool pmm_alloc_bytes(size_t bytes, uint64_t *out_phys);
+    bool pmm_alloc_zero_bytes(size_t bytes, uint64_t *out_phys);
+    bool pmm_alloc_contiguous_bytes(size_t bytes, size_t align_bytes, uint64_t *out);
+    bool pmm_alloc_frames_below(size_t count, size_t align_frames,
+                                uint64_t max_phys, uint64_t *out_phys);
+    bool pmm_free_frame(uint64_t phys);
+    bool pmm_free_frames(uint64_t phys, size_t count);
+    bool pmm_free_bytes(uint64_t phys, size_t bytes);
+    size_t pmm_stat_total_frames(void);  free_frames();  allocated_frames();
+    uint64_t pmm_stat_total_bytes(void); pmm_stat_free_bytes(void);
+    size_t pmm_stat_dma32_total_frames(void);  dma32_free_frames();
+    size_t pmm_stat_normal_total_frames(void); normal_free_frames();
+    void   pmm_dump(void);
+    #ifdef PMM_DEBUG: bool pmm_self_test(void);
+== mm/alloc/special/contiguous.h ==
+  Funkcje:
+    bool contig_alloc(size_t bytes, size_t align,
+                      uint64_t *out_phys, void **out_virt);
+    void contig_free(uint64_t phys, size_t bytes);
+
+== mm/alloc/special/dma.h ==
+  Stałe: DMA_ZONE_32BIT=0xFFFFFFFFULL, DMA_ZONE_64BIT=UINT64_MAX
+  Funkcje:
+    bool dma_alloc_coherent(size_t bytes, uint64_t zone_max,
+                            uint64_t *out_phys, void **out_virt);
+    void dma_free_coherent(uint64_t phys, void *virt, size_t bytes);
+    void dma_sync_for_device(void *virt, size_t len);
+    void dma_sync_for_cpu(void *virt, size_t len);
+
+== mm/alloc/virtual/mapping.h ==
+  Stałe: MAPPING_KERNEL=0; typedef uint64_t mapping_space_t;
+  Funkcje:
+    void mapping_init(void);
+    mapping_space_t mapping_kernel_space(void);
+    bool mapping_map_range(space, virt, phys, len, pte_flags);
+    bool mapping_unmap_range(space, virt, len);
+    bool mapping_protect_range(space, virt, len, pte_flags);
+    uint64_t mapping_translate(space, virt);
+    bool mapping_is_mapped(space, virt);
+    bool mapping_copy_range(dst_space, dst_virt, src_space, src_virt, len);
+
+== mm/alloc/virtual/page.h ==
+  Stałe typów stron: PAGE_TYPE_FREE=0, KERNEL=1, USER=2, SLAB=3,
+         TABLE=4, DEVICE=5
+  Typy:  page_t{refcount,type,flags,reserved}
+  Funkcje:
+    bool page_init(void);  bool page_ready(void);
+    page_t *page_alloc(uint32_t type);  page_t *page_alloc_zero(uint32_t type);
+    bool page_attach(uint64_t phys, uint32_t type);
+    bool page_get(page_t*);  bool page_put(page_t*);
+    uint64_t page_phys(const page_t*);  void *page_kva(const page_t*);
+    size_t page_pfn(const page_t*);
+    page_t *page_from_phys(uint64_t);  page_from_pfn(size_t);
+    page_t *page_from_kva(const void *va);
+    uint32_t page_refcount(const page_t*);  page_type();  page_set_type();
+    size_t page_stat_total(void);  page_stat_referenced(void);
+    void   page_dump(void);
+
+== mm/alloc/virtual/vmm.h ==
+  Stałe: VMM_INVALID=UINT64_MAX
+         flagi: VMM_FLAG_WRITE=(1<<0), USER=(1<<1), NX=(1<<2),
+                DEVICE=(1<<3), ZERO=(1<<4);  VMM_KERNEL_RW = WRITE|NX
+  Funkcje:
+    bool vmm_init(void);  bool vmm_ready(void);
+    bool vmm_alloc(size_t bytes, uint32_t flags, uint64_t *out_virt);
+    bool vmm_alloc_aligned(size_t bytes, size_t align, uint32_t flags, uint64_t *out);
+    bool vmm_map_device(uint64_t phys, size_t len, uint64_t *out_virt);
+    bool vmm_free(uint64_t virt, size_t bytes);
+    bool vmm_unmap_device(uint64_t virt, size_t len);
+    uint64_t vmm_translate(uint64_t virt);
+    size_t vmm_stat_total_pages(void); free_pages(); allocated_pages();
+    uint64_t vmm_stat_total_bytes(void); vmm_stat_free_bytes(void);
+    void   vmm_dump(void);
+== [x86_64] mm/arch/x86_64/memory.h ==
+  Stałe: ARCH_MAX_MEM_REGIONS=256, ARCH_PAGE_SHIFT=12,
+         ARCH_PAGE_SIZE=4096, ARCH_PAGE_MASK, ARCH_DIRECT_MAP_BASE=
+         0xFFFF888000000000UL
+         ARCH_RAW_MEM_{USABLE=1,RESERVED=2,ACPI_RECLAIM=3,ACPI_NVS=4,BAD=5,
+         BOOTLOADER=0x100}
+  Typy:  enum arch_mem_type (ARCH_MEM_TYPE_USABLE/RESERVED/ACPI_RECLAIM/
+         BOOTLOADER/BAD), arch_mem_region_t{base,len,type},
+         arch_raw_mem_entry_t{base,len,type,reserved},
+         arch_mem_info_t{regions[256],count,total_usable,max_address,
+         max_usable_address,direct_map_base}
+  Funkcje/makra inline:
+    void arch_memory_init(entries,count,kernel_phys_start,kernel_phys_end,
+                          initrd_phys_start,initrd_phys_end);
+    bool arch_memory_ready(void);
+    bool arch_memory_boot_alloc(uint64_t len, uint64_t align, uint64_t *out_base);
+    const arch_mem_info_t *arch_memory_get(void);
+    size_t arch_memory_regions(const arch_mem_region_t **out);
+    uint64_t arch_memory_total_usable(void);
+    bool arch_memory_range_is_usable(uint64_t base, uint64_t len);
+    void arch_memory_reserve_range(uint64_t base, uint64_t len);
+    bool arch_memory_find_usable(uint64_t len, uint64_t align, uint64_t *out_base);
+    void arch_memory_dump(void);
+    static inline: arch_page_align_down/up(v), arch_is_page_aligned(v),
+                   arch_phys_to_virt(phys), arch_virt_to_phys(virt)
+
+== [x86_64] mm/arch/x86_64/paging.h ==
+  Stałe: PAGING_PAGE_SIZE=4096, PAGING_2M_PAGE_SIZE, PAGING_1G_PAGE_SIZE
+         (+ odpowiadające maski)
+         PTE_PRESENT=(1<<0), PTE_WRITABLE=(1<<1), PTE_USER=(1<<2),
+         PTE_WRITE_THROUGH=(1<<3), PTE_CACHE_DISABLE=(1<<4),
+         PTE_ACCESSED=(1<<5), PTE_DIRTY=(1<<6), PTE_PAGE_SIZE=(1<<7),
+         PTE_GLOBAL=(1<<8), PTE_NX=(1<<63)
+         PAGING_ADDR_MASK=0x000FFFFFFFFFF000UL
+         PAGING_KERNEL_RW / PAGING_KERNEL_RO / PAGING_KERNEL_PML4_START=256
+  Funkcje:
+    void paging_set_boot_phys_offset(uint64_t);  valid?()
+    void paging_init_direct_map(void);  paging_init(uint64_t boot_phys_offset);
+    uint64_t paging_read_cr3(void);  void paging_write_cr3(uint64_t pml4_phys);
+    void paging_flush_tlb_all(void);  paging_flush_page(uint64_t addr);
+    bool paging_map_page(virt,phys,flags);
+    bool paging_map_range(virt,phys,len,flags);
+    /* Stage A — bieżąca przestrzeń (CR3): */
+    uint64_t paging_translate(uint64_t virt);  bool paging_is_mapped(virt);
+    bool paging_unmap_page(virt);  paging_set_flags(virt,flags);
+    bool paging_get_flags(virt, uint64_t *out_flags);
+    void paging_enable_nx(void);  bool paging_nx_enabled(void);
+    /* Stage B — jawny PML4: */
+    paging_map_page_in/unmap_page_in/translate_in/is_mapped_in/set_flags_in
+    /* Stage C — MMIO: */ bool paging_map_mmio(virt,phys,len);
+    /* Stage D: */ paging_enable/disable_write_protect(),
+    paging_write_protect_enabled(), paging_enable_smep/smap(),
+    paging_smep/smap_enabled(), paging_pcid_supported(),
+    paging_enable_pcid(), paging_pcid_enabled(),
+    paging_invpcid(type,pcid,addr), paging_la57_supported(),
+    paging_assert_4level_paging()
+
+== [x86_64] mm/arch/x86_64/tlb.h ==
+  Stałe: TLB_PAGE_SHIFT=12, TLB_PAGE_SIZE=4096, TLB_PAGE_MASK,
+         TLB_PCID_KERNEL=0
+  Funkcje:
+    bool tlb_init(void);  bool tlb_ready(void);
+    bool tlb_has_pcid(void);  bool tlb_has_invpcid(void);
+    void tlb_flush_all(void);  tlb_flush_all_including_global();
+    void tlb_flush_page(const void*);  tlb_flush_page_addr(uint64_t);
+    void tlb_flush_range(const void*, size_t pages);
+    void tlb_flush_range_addr(uint64_t, size_t pages);
+    void tlb_flush_pcid(uint16_t pcid);  tlb_flush_pcid_addr(pcid,addr);
+    void tlb_wbinvd(void);  void tlb_clflush(uint64_t addr);
+
+== [x86_64] mm/arch/x86_64/tlb_asm.h ==  (prymitywy asm)
+  Funkcje:
+    void tlb_asm_invlpg(uint64_t addr);
+    uint64_t tlb_asm_read_cr3(void);  write_cr3(value);
+    uint64_t tlb_asm_read_cr4(void);  write_cr4(value);
+    void tlb_asm_invpcid(uint64_t type, const void *desc);
+    void tlb_asm_wbinvd(void);  void tlb_asm_clflush(uint64_t addr);
+
+== [aarch64] mm/arch/aarch64/memory.h ==
+  Stałe: ARCH_PAGE_SIZE=4096ULL, ARCH_DIRECT_MAP_BASE=0xFFFF888000000000ULL
+  Typy:  arch_raw_mem_entry_t{base,len,typ,reserved}
+  Funkcje:
+    arch_memory_init(...), arch_memory_ready(),
+    arch_memory_boot_alloc(len,align,out), arch_memory_reserve_range(base,len),
+    arch_is_page_aligned(a), arch_page_align_up/down(a),
+    arch_phys_to_virt(phys), arch_virt_to_phys(virt),
+    arch_memory_max_phys(), arch_memory_dump()
+
+== [aarch64] mm/arch/aarch64/paging.h ==
+  Stałe: PTE_PRESENT=(1<<0), PTE_WRITABLE=(1<<1), PTE_USER=(1<<2),
+         PTE_NX=(1<<3), PTE_DEVICE=(1<<4), PTE_CACHE_DISABLE=(1<<5),
+         PTE_LARGE=(1<<6), PAGING_ADDR_MASK=0x0000FFFFFFFFF000ULL
+  Funkcje:
+    void paging_init(uint64_t boot_phys_offset);
+    bool paging_enable_nx(void);
+    uint64_t paging_read_cr3(void);  void paging_write_cr3(uint64_t pml4_phys);
+    paging_map_page_in/unmap_page_in/set_flags_in/is_mapped_in/translate_in
+
+== [aarch64] mm/arch/aarch64/tlb.h ==
+  Funkcje:
+    bool tlb_init(void);  bool tlb_ready(void);
+    tlb_flush_all(), tlb_flush_all_including_global(),
+    tlb_flush_page(const void*), tlb_flush_page_addr(uint64_t),
+    tlb_flush_range(const void*, size_t), tlb_flush_range_addr(uint64_t,size_t)
+== mm/cache/cache.h ==
+  Funkcje:
+    bool cache_init(void);  bool cache_ready(void);
+    void cache_register(kcache_t *c);
+    kcache_t *cache_find(const char *name);
+    void cache_dump(void);
+
+== mm/cache/object_cashe.h ==  (obiektowy slab-like cache)
+  Stałe: KCACHE_NAME_MAX=32, KCACHE_MAG_SIZE=16
+  Typy:  typedef void (*kcache_ctor_t)(void *obj);
+          kcache_chunk_t{next,va}, kcache_mag_t{objs[16],count},
+          kcache_t{name[32],object_size,chunk_size,ctor,chunks,free_head,
+                   free_count,total_objects,mags[PER_CPU_MAX],next}
+  Funkcje:
+    kcache_t *kcache_create(const char *name, size_t object_size,
+                            kcache_ctor_t ctor);
+    void  kcache_destroy(kcache_t *c);
+    void *kcache_alloc(kcache_t *c);   void *kcache_zalloc(kcache_t *c);
+    void  kcache_free(kcache_t *c, void *ptr);
+    size_t kcache_object_size(kcache_t *c);
+    size_t kcache_free_count(kcache_t *c);  kcache_total_count(kcache_t *c);
+
+== mm/cache/per_cpu.h ==
+  Stałe: PER_CPU_MAX=1 (domyślnie, jeśli niezdefiniowane)
+  Funkcje:
+    bool per_cpu_init(void);
+    size_t per_cpu_count(void);
+    size_t per_cpu_id(void);
+
+== mm/core/address.h ==
+  Stałe: ADDR_USER_MAX=0x0000800000000000ULL,
+         ADDR_KERNEL_MIN=0xFFFF800000000000ULL
+  Funkcje:
+    bool addr_is_canonical(uint64_t a);  addr_is_user(a);  addr_is_kernel(a);
+    bool addr_is_direct_map(uint64_t a);
+    uint64_t addr_align_up(uint64_t a, uint64_t align);
+    uint64_t addr_align_down(uint64_t a, uint64_t align);
+    uint64_t addr_phys_to_direct(uint64_t phys);
+    uint64_t addr_direct_to_phys(uint64_t va);
+    const char *addr_describe(uint64_t a);
+
+== mm/core/mm.h ==  (główny inicjalizator podsystemu pamięci)
+  Typy:  mm_boot_params_t{memmap,memmap_count,kernel_phys_start,
+          kernel_phys_end,initrd_phys_start,initrd_phys_end,boot_phys_offset}
+  Funkcje:
+    bool mm_init(const mm_boot_params_t *params);  bool mm_ready(void);
+    uint64_t mm_total_ram(void);  uint64_t mm_free_ram(void);
+    void mm_dump(void);
+
+== mm/core/range.h ==
+  Funkcje:
+    bool range_from_addr_len(uint64_t addr, uint64_t len, uint64_t align,
+                             uint64_t limit_min, uint64_t limit_max,
+                             bool require_canonical,
+                             uint64_t *out_start, uint64_t *out_end);
+    bool range_is_canonical(uint64_t addr);
+
+== mm/core/region.h ==
+  Typy:  region_t{uint64_t start; uint64_t end;}
+  Funkcje:
+    region_t region_make(uint64_t start, uint64_t len);
+    bool region_valid(region_t r);
+    uint64_t region_len(region_t r);
+    bool region_contains(region_t r, uint64_t addr);
+    bool region_overlaps(region_t a, region_t b);
+    region_t region_intersect(region_t a, region_t b);
+    size_t region_subtract(region_t r, region_t cut,
+                           region_t *out, size_t max_out);
+
+== mm/core/sizeutil.h ==
+  Funkcje (hostowo-testowalne helpery walidacji rozmiarów):
+    bool size_is_pow2(size_t v);
+    bool size_round_up_pow2(size_t v, size_t *out);
+    bool kfree_pages_validate(size_t pages, size_t page_size,
+                              size_t usable_bytes, size_t *out_requested_bytes);
+    bool size_bytes_to_pages_checked(size_t bytes, size_t page_size,
+                                     size_t *out_pages);
+    bool size_pages_to_bytes_checked(size_t pages, size_t page_size,
+                                     size_t *out_bytes);
+
+== mm/core/smp_lock.h ==
+  Typy:  smp_ticket_lock_t{next_ticket,now_serving,owner_cpu,depth,saved_flags}
+          SMP_TICKET_LOCK_INIT
+  Funkcje:
+    void smp_lock_init(smp_ticket_lock_t *lock);
+    void smp_lock_acquire(smp_ticket_lock_t *lock);   /* irqsave, reentrant */
+    bool smp_lock_release(smp_ticket_lock_t *lock);   /* false = błąd wywołania */
+    int64_t smp_current_cpu_id(void);   /* initial APIC id z CPUID */
+== mm/paging/paging.h ==  (wysokopoziomowy wrapper nad stronicowaniem)
+  Stałe uprawnień: PROT_READ=(1<<0), PROT_WRITE=(1<<1), PROT_EXEC=(1<<2),
+         PROT_USER=(1<<3), PROT_DEVICE=(1<<4)
+  Typy:  address_space_t{pml4_phys, kernel}
+  Funkcje:
+    bool paging_subsystem_init(void);
+    address_space_t *paging_aspace_create(void);
+    void paging_aspace_destroy(address_space_t *as);
+    void paging_aspace_switch(address_space_t *as);
+    uint64_t paging_aspace_cr3(const address_space_t *as);
+    bool paging_aspace_map(as, virt, phys, len, prot);
+    bool paging_aspace_unmap(as, virt, len);
+    bool paging_aspace_protect(as, virt, len, prot);
+    uint64_t paging_aspace_translate(as, virt);
+    bool paging_kernel_map(virt, phys, len, prot);
+    bool paging_kernel_unmap(virt, len);
+
+== mm/paging/pml.h ==  (operacje na poziomach tablic stron PML4..PT)
+  Stałe: PML_ENTRIES=512, PML_LEVEL_PT=1, PD=2, PDPT=3, PML4=4
+  Funkcje:
+    uint64_t pml_level_shift(int level);
+    uint64_t pml_index(uint64_t virt, int level);
+    bool pml_entry_present(uint64_t entry);  pml_entry_large(entry);
+    uint64_t pml_entry_addr(uint64_t entry);
+    uint64_t *pml_table_ptr(uint64_t table_phys);
+
+== mm/paging/tlb.h ==
+  Stałe: TLB_BATCH_MAX=16
+  Typy:  tlb_batch_t{pages[16],count,full_flush}
+  Funkcje:
+    void tlb_batch_begin(tlb_batch_t *batch);
+    void tlb_batch_add(tlb_batch_t *batch, uint64_t virt);
+    void tlb_batch_full(tlb_batch_t *batch);
+    void tlb_batch_commit(tlb_batch_t *batch);
+
+== mm/process/address_space.h ==  (przestrzenie adresowe procesów + VMA)
+  Stałe flag VMA: VMA_FLAG_ANON=(1<<0), PRIVATE=(1<<1), SHARED=(1<<2),
+         GUARD=(1<<3)
+  Typy:  vma_t{start,end,prot,flags,next},
+          proc_aspace_t{as,vmas,brk_base,brk,brk_max}
+  Funkcje:
+    bool aspace_subsystem_init(void);
+    proc_aspace_t *aspace_create(void);  void aspace_destroy(pa);
+    address_space_t *aspace_paging_handle(proc_aspace_t *pa);
+    uint64_t aspace_map_anon(pa, hint, len, prot);
+    uint64_t aspace_map_at(pa, addr, len, prot);
+    uint64_t aspace_reserve_at(pa, addr, len, flags);
+    bool aspace_unmap(pa, addr, len);
+    bool aspace_protect(pa, addr, len, prot);
+    bool aspace_protect_checked(pa, addr, len, checked_prot, apply_prot,
+                                bool (*allowed)(old_prot, checked_prot));
+    vma_t *aspace_vma_find(proc_aspace_t *pa, uint64_t addr);  /* patrz
+       komentarz w nagłówku: wskaźnik ważny tylko pod blokadą! */
+    uint64_t aspace_stack_base(void);
+    uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk);
+
+== mm/process/mmap.h ==
+  Stałe: MAP_ANONYMOUS=(1<<0), MAP_PRIVATE=(1<<1), MAP_SHARED=(1<<2),
+         MAP_FIXED=(1<<3)
+  Funkcje:
+    uint64_t mmap(proc_aspace_t *pa, uint64_t addr, size_t len,
+                  uint32_t prot, uint32_t flags);
+    bool munmap(proc_aspace_t *pa, uint64_t addr, size_t len);
+    bool mprotect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot);
+
+== mm/protection/guard.h ==
+  Funkcje:
+    uint64_t guard_install(proc_aspace_t *pa, uint64_t addr, size_t len);
+    bool guard_user_stack(proc_aspace_t *pa);
+
+== mm/protection/isolation.h ==  (SMEP/SMAP — x86_64)
+  Funkcje:
+    bool isolation_init(void);
+    bool isolation_has_smep(void);  has_smap();
+    bool isolation_enable_smep(void);  enable_smap();
+    size_t isolation_audit_kernel(void);
+
+== mm/protection/permissions.h ==
+  Funkcje:
+    uint32_t perm_sanitize(uint32_t prot);
+    bool perm_is_wx(uint32_t prot);
+    bool perm_mprotect_allowed(uint32_t old_prot, uint32_t new_prot);
+    void perm_set_strict_wx(bool on);
+    uint32_t perm_kernel_default(void);
+    uint32_t perm_user_default(void);
+
+================================================================================
+ UWAGA: Nagłówki z prefiksem [x86_64]/[aarch64] dołączają się warunkowo.
+ Sekcje interfejs/* oznaczone w trangorge.h jako placesholdery (ipc, devices,
+ fs, net) nie mają jeszcze plików nagłówkowych w kernel/src/.
+ Pełne sygnatury i dokumentacja kontraktów — w oryginalnych nagłówkach.
+================================================================================
