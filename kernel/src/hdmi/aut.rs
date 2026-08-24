@@ -9,6 +9,8 @@ pub const VID_MODE_LIST: u32 = 8;
 pub const VID_MODE_SET: u32 = 9;
 pub const VID_GRANT_FB: u32 = 10;
 pub const VID_REVOKE_FB: u32 = 11;
+pub const VID_HDMI_ACQUIRE: u32 = 12;
+pub const VID_HDMI_RELEASE: u32 = 13;
 
 const BUDGET_MAX: u32 = 8;
 static BUDGET: AtomicU32 = AtomicU32::new(BUDGET_MAX);

@@ -50,4 +50,8 @@ uint32_t hdmi_pending(void);
 uint64_t hdmi_submit_fill(uint32_t color, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys);
 
+bool hdmi_fb_grant(void);
+void hdmi_fb_revoke(void);
+bool hdmi_fb_granted(void);
+
 #endif
