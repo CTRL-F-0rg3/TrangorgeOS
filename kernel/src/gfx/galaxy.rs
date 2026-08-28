@@ -1,8 +1,8 @@
 use super::framebuffer::{Framebuffer, rgb};
 
-/* Kąt pasma (Q16) */
-const COS_A: i64 = 59636;
-const SIN_A: i64 = 27525;
+/* pasmo fioletowe (Q16): ~+25° */
+const P_COS: i64 = 59636;
+const P_SIN: i64 = 27525;
 
 fn hash2(x: i64, y: i64) -> u32 {
     let mut h = (x as u32)
@@ -12,7 +12,6 @@ fn hash2(x: i64, y: i64) -> u32 {
     h ^ (h >> 16)
 }
 
-/* value noise 0..255, wejście Q8 */
 fn vnoise(xq: i64, yq: i64) -> i64 {
     let xi = xq >> 8;
     let yi = yq >> 8;
@@ -33,7 +32,6 @@ fn vnoise(xq: i64, yq: i64) -> i64 {
     (top + ((bot - top) * sy >> 8)) >> 2
 }
 
-/* 3 oktawy — rozbija kwadraty na organiczną strukturę */
 fn fbm(xq: i64, yq: i64) -> i64 {
     let a = vnoise(xq, yq);
     let b = vnoise(xq * 2 + 12345, yq * 2 + 12345);
@@ -42,12 +40,12 @@ fn fbm(xq: i64, yq: i64) -> i64 {
     (a * 144 + b * 72 + c * 40) >> 8
 }
 
-/* natężenie pasma 0..256 */
+/* fioletowe pasmo po skosie — bez zmian */
 fn band_fall(x: i64, y: i64, w: i64, h: i64) -> i64 {
     let dx = x - w / 2;
     let dy = y - h / 2;
 
-    let dn = (-dx * SIN_A + dy * COS_A) >> 16;
+    let dn = (-dx * P_SIN + dy * P_COS) >> 16;
     let bw = h * 38 / 100;
     let ad = if dn < 0 { -dn } else { dn };
 
@@ -59,6 +57,49 @@ fn band_fall(x: i64, y: i64, w: i64, h: i64) -> i64 {
 
     (q / (bw * bw / 256)).min(256)
 }
+
+/* ZIELONA MGŁA: pionowa wstęga przy lewej krawędzi,
+   środek i szerokość falują nieregularnie wzdłuż Y */
+fn green_fall(x: i64, y: i64, w: i64, _h: i64) -> i64 {
+    let n1 = vnoise((y << 8) / 160 + 31337, 4242);   /* duża fala */
+    let n2 = vnoise((y << 8) / 55 + 777, 1234);      /* drobna fala */
+
+    let wave = ((n1 - 128) * (w / 10) + (n2 - 128) * (w / 26)) >> 8;
+
+    let xc = w * 20 / 100 + wave;
+
+    let bw = w * 11 / 100 + ((n2 * (w / 14)) >> 8);
+
+    let dx = x - xc;
+    let ad = if dx < 0 { -dx } else { dx };
+
+    if ad >= bw {
+        return 0;
+    }
+
+    let q = bw * bw - ad * ad;
+
+    (q / (bw * bw / 256)).min(256)
+}
+
+/*
+ * ALTERNATYWA — półokrąg wokół lewego dolnego rogu.
+ * Podmień green_fall na tę, jeśli wolisz łuk zamiast wstęgi:
+ *
+ * fn green_fall_arc(x: i64, y: i64, w: i64, h: i64) -> i64 {
+ *     let cx = w * 12 / 100;
+ *     let cy = h * 95 / 100;
+ *     let dx = x - cx;
+ *     let dy = y - cy;
+ *     let dist = ((dx * dx + dy * dy) as i64).isqrt(); // lub przybliżenie
+ *     let ring = h * 55 / 100;
+ *     let ad = (dist - ring).abs();
+ *     let bw = h * 12 / 100;
+ *     if ad >= bw { return 0; }
+ *     let q = bw * bw - ad * ad;
+ *     (q / (bw * bw / 256)).min(256)
+ * }
+ */
 
 fn px_add(fb: &mut Framebuffer, x: i64, y: i64,
           r: i64, g: i64, b: i64, m: i64)
@@ -78,7 +119,7 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
     let w = fb.width as i64;
     let h = fb.height as i64;
 
-    /* ---------- 1. tło + mgławica (fbm + dither = bez kwadratów) ---------- */
+    /* ---------- 1. tło + fioletowa mgła + zielona wstęga ---------- */
 
     for y in 0..fb.height {
         for x in 0..fb.width {
@@ -89,29 +130,47 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
             let mut g = 3 + yi * 4 / h;
             let mut b = 8 + yi * 8 / h;
 
-            let fall = band_fall(xi, yi, w, h);
+            let dith = ((hash2(xi, yi) & 15) as i64) - 8;
 
-            if fall > 0 {
+            let fp = band_fall(xi, yi, w, h);
+            let fg = green_fall(xi, yi, w, h);
+
+            if fp > 0 {
                 let n_f = fbm((xi << 8) / 26, (yi << 8) / 26);
                 let n_b = vnoise((xi << 8) / 110 + 7777,
                                  (yi << 8) / 110 + 7777);
 
                 let cloud = (n_f * 3 + n_b * 2) / 5;
 
-                /* dither ±8 rozbija banding i resztki siatki */
-                let dith = ((hash2(xi, yi) & 15) as i64) - 8;
-
-                let mut i = (fall * cloud >> 8) + dith;
-
+                let mut i = (fp * cloud >> 8) + dith;
                 if i < 0 { i = 0; }
                 if i > 255 { i = 255; }
 
-                /* kolor: duża skala blendowana z drobną -> miękkie strefy */
                 let mix = (n_b * 3 + n_f * 2) / 5;
 
                 let cr = 35 + (mix * 95 >> 8) + (n_f * 25 >> 8);
                 let cg = 25 + (mix * 45 >> 8);
                 let cb = 120 + (mix * 100 >> 8);
+
+                r += i * cr >> 8;
+                g += i * cg >> 8;
+                b += i * cb >> 8;
+            }
+
+            if fg > 0 {
+                let n_f = fbm((xi << 8) / 30 + 4444, (yi << 8) / 30 + 4444);
+                let n_b = vnoise((xi << 8) / 120 + 9999,
+                                 (yi << 8) / 120 + 9999);
+
+                let cloud = (n_f * 3 + n_b * 2) / 5;
+
+                let mut i = (fg * cloud >> 8) + dith;
+                if i < 0 { i = 0; }
+                if i > 255 { i = 255; }
+
+                let cr = 15 + (n_f * 45 >> 8);
+                let cg = 90 + (n_b * 110 >> 8);
+                let cb = 60 + (n_f * 90 >> 8);
 
                 r += i * cr >> 8;
                 g += i * cg >> 8;
@@ -136,7 +195,7 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 2. gwiazdy główne (gęstsze w paśmie) ---------- */
+    /* ---------- 2. gwiazdy główne — jeszcze gęściej ---------- */
 
     let cell: i64 = 6;
     let cw = (w + cell - 1) / cell;
@@ -148,19 +207,19 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
 
             let midx = cx * cell + cell / 2;
             let midy = cy * cell + cell / 2;
-            let fall = band_fall(midx, midy, w, h);
 
-            /* mocniejszy boost w paśmie niż wcześniej */
-            let thresh = 1600 + fall * 14;
+            let fp = band_fall(midx, midy, w, h);
+            let fg = green_fall(midx, midy, w, h);
+            let fall = if fp > fg { fp } else { fg };
 
-            if i64::from(hh & 0xFFFF) > thresh {
+            let thresh = (3200 + fall * 16) as u32;
+
+            if (hh & 0xFFFF) > thresh {
                 continue;
             }
 
             let jx = ((hh >> 4) % cell as u32) as i64;
             let jy = ((hh >> 12) % cell as u32) as i64;
-            let sx = cx * cell + jx;
-            let sy = cy * cell + jy;
 
             let br = 70 + ((hh >> 20) % 186) as i64;
 
@@ -170,59 +229,163 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
                 _ => (255, 255, 255),
             };
 
-            px_add(fb, sx, sy,
+            px_add(fb, cx * cell + jx, cy * cell + jy,
                    cr * br / 255, cg * br / 255, cb * br / 255, m);
 
             if br > 230 {
-                px_add(fb, sx + 1, sy, cr / 3, cg / 3, cb / 3, m);
-                px_add(fb, sx, sy + 1, cr / 3, cg / 3, cb / 3, m);
-                px_add(fb, sx - 1, sy, cr / 4, cg / 4, cb / 4, m);
+                px_add(fb, cx * cell + jx + 1, cy * cell + jy,
+                       cr / 3, cg / 3, cb / 3, m);
+                px_add(fb, cx * cell + jx, cy * cell + jy + 1,
+                       cr / 3, cg / 3, cb / 3, m);
             }
         }
     }
 
-    /* ---------- 3. DROBNA warstwa gwiazd TYLKO w paśmie ---------- */
+    /* ---------- 3. PUNKTOWY PYŁ — losowo po CAŁYM ekranie ---------- */
 
-    let cell2: i64 = 3;
-    let cw2 = (w + cell2 - 1) / cell2;
-    let ch2 = (h + cell2 - 1) / cell2;
+    let cell4: i64 = 3;
+    let cw4 = (w + cell4 - 1) / cell4;
+    let ch4 = (h + cell4 - 1) / cell4;
 
-    for cy in 0..ch2 {
-        for cx in 0..cw2 {
+    for cy in 0..ch4 {
+        for cx in 0..cw4 {
+            let hh = hash2(cx * 131 + 1, cy * 107 + 9);
+
+            if (hh & 0xFFFF) > 950 {
+                continue;
+            }
+
+            let jx = ((hh >> 3) % cell4 as u32) as i64;
+            let jy = ((hh >> 11) % cell4 as u32) as i64;
+
+            let br = 40 + ((hh >> 19) % 216) as i64;
+
+            let (cr, cg, cb) = match (hh >> 7) & 3 {
+                0 => (180, 205, 255),
+                1 => (255, 230, 190),
+                _ => (255, 255, 255),
+            };
+
+            px_add(fb, cx * cell4 + jx, cy * cell4 + jy,
+                   cr * br / 255, cg * br / 255, cb * br / 255, m);
+
+            /* najjaśniejsze dostają mini-poświatę */
+            if br > 240 {
+                px_add(fb, cx * cell4 + jx + 1, cy * cell4 + jy,
+                       cr / 4, cg / 4, cb / 4, m);
+                px_add(fb, cx * cell4 + jx - 1, cy * cell4 + jy,
+                       cr / 4, cg / 4, cb / 4, m);
+                px_add(fb, cx * cell4 + jx, cy * cell4 + jy + 1,
+                       cr / 4, cg / 4, cb / 4, m);
+                px_add(fb, cx * cell4 + jx, cy * cell4 + jy - 1,
+                       cr / 4, cg / 4, cb / 4, m);
+            }
+        }
+    }
+
+    /* ---------- 4. drobny pył w mgłach ---------- */
+
+    for cy in 0..ch4 {
+        for cx in 0..cw4 {
             let hh = hash2(cx * 57 + 11, cy * 43 + 5);
 
-            let midx = cx * cell2 + cell2 / 2;
-            let midy = cy * cell2 + cell2 / 2;
-            let fall = band_fall(midx, midy, w, h);
+            let midx = cx * cell4 + cell4 / 2;
+            let midy = cy * cell4 + cell4 / 2;
 
-            /* sieje tylko tam, gdzie jest mgła */
+            let fp = band_fall(midx, midy, w, h);
+            let fg = green_fall(midx, midy, w, h);
+            let fall = if fp > fg { fp } else { fg };
+
             if fall < 40 {
                 continue;
             }
 
-            let t2 = (fall * 6) as u32;   /* 240..1536 z 65536 */
+            let t2 = (fall * 8) as u32;
 
             if (hh & 0xFFFF) > t2 {
                 continue;
             }
 
-            let jx = ((hh >> 3) % cell2 as u32) as i64;
-            let jy = ((hh >> 11) % cell2 as u32) as i64;
-
             let br = 30 + ((hh >> 19) % 110) as i64;
 
-            let (cr, cg, cb) = if (hh >> 7) & 1 == 0 {
-                (200, 210, 255)
+            let (cr, cg, cb) = if fg > fp {
+                (180, 255, 220)
             } else {
-                (255, 255, 255)
+                (210, 220, 255)
             };
 
-            px_add(fb, cx * cell2 + jx, cy * cell2 + jy,
+            px_add(fb, cx * cell4 + ((hh >> 3) % cell4 as u32) as i64,
+                   cy * cell4 + ((hh >> 11) % cell4 as u32) as i64,
                    cr * br / 255, cg * br / 255, cb * br / 255, m);
         }
     }
 
-    /* ---------- 4. spadająca gwiazda ---------- */
+    /* ---------- 5. nieregularne gwiazdki w centrach mgieł ---------- */
+
+    let cell3: i64 = 4;
+    let cw3 = (w + cell3 - 1) / cell3;
+    let ch3 = (h + cell3 - 1) / cell3;
+
+    for cy in 0..ch3 {
+        for cx in 0..cw3 {
+            let hh = hash2(cx * 91 + 3, cy * 71 + 13);
+
+            let midx = cx * cell3 + cell3 / 2;
+            let midy = cy * cell3 + cell3 / 2;
+
+            let fp = band_fall(midx, midy, w, h);
+            let fg = green_fall(midx, midy, w, h);
+            let fall = if fp > fg { fp } else { fg };
+
+            if fall <= 140 {
+                continue;
+            }
+
+            let t3 = ((fall - 140) * 10) as u32;
+
+            if (hh & 0xFFFF) > t3 {
+                continue;
+            }
+
+            let bx = cx * cell3 + ((hh >> 5) % cell3 as u32) as i64;
+            let by = cy * cell3 + ((hh >> 13) % cell3 as u32) as i64;
+
+            let br = 50 + ((hh >> 21) % 160) as i64;
+
+            let (cr, cg, cb) = if fg > fp {
+                (200, 255, 230)
+            } else {
+                (230, 230, 255)
+            };
+
+            let r0 = cr * br / 255;
+            let g0 = cg * br / 255;
+            let b0 = cb * br / 255;
+
+            match (hh >> 16) & 7 {
+                0 => { px_add(fb, bx, by, r0, g0, b0, m); }
+                1 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx + 1, by, r0 * 2 / 3, g0 * 2 / 3, b0 * 2 / 3, m); }
+                2 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx, by + 1, r0 * 2 / 3, g0 * 2 / 3, b0 * 2 / 3, m); }
+                3 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx + 1, by + 1, r0 / 2, g0 / 2, b0 / 2, m); }
+                4 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx - 1, by + 1, r0 / 2, g0 / 2, b0 / 2, m); }
+                5 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx + 1, by, r0 / 2, g0 / 2, b0 / 2, m);
+                       px_add(fb, bx, by + 1, r0 / 2, g0 / 2, b0 / 2, m); }
+                6 => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx + 1, by, r0 / 2, g0 / 2, b0 / 2, m);
+                       px_add(fb, bx - 1, by, r0 / 2, g0 / 2, b0 / 2, m);
+                       px_add(fb, bx, by + 1, r0 / 2, g0 / 2, b0 / 2, m); }
+                _ => { px_add(fb, bx, by, r0, g0, b0, m);
+                       px_add(fb, bx + 2, by + 1, r0 / 3, g0 / 3, b0 / 3, m); }
+            }
+        }
+    }
+
+    /* ---------- 6. spadająca gwiazda ---------- */
 
     let x0 = w * 28 / 100;
     let y0 = h * 35 / 100;
