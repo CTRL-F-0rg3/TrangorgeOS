@@ -1,14 +1,5 @@
-//! Klej jądra ←→ C (core-lang / edytor).
-//!
-//! Definiuje symbole `k_*`, których potrzebuje `libmm.a`, gdy do linkowania
-//! trafia kod C core-lang (`bridge.c`, `loader.c`) oraz edytora (`editor.c`).
-//! Jest to działa odpowiednik `kstd_glue.rs`, ale zawiera TYLKO funkcje
-//! możliwe do zbudowania na istniejących modułach jądra — nie zależy od
-//! niedeklarowanych jeszcze modułów (audio/userspace/trampoline_rings).
-//!
-//! Funkcje bez wsparcia w obecnym jądrze (procesy, IPC, tick) zwracają
-//! wartości "puste" (−1 / 0), dzięki czemu mostek C linkuje się poprawnie.
-
+//! Kernel glue code for the C bridge.
+//! This file contains the functions that are called from the C bridge (bridge.c) and are used to interact with the kernel from user space.
 const KSTD_PATH_MAX: usize = 256;
 
 fn cstr_to_str<'a>(p: *const u8) -> Option<&'a str> {
@@ -63,11 +54,7 @@ pub extern "C" fn k_input_keycode() -> u32 {
     0
 }
 
-/// `extern int32_t k_fs_read(const char *path, void *buf, uint32_t cap);`
-///
-/// Czyta plik przez TFS (jedyny zamontowany system plików w tym buildzie).
-/// Ścieżka może zawierać katalogi rozdzielone `/`; względna od katalogu
-/// głównego (`ROOT_DIR`).
+
 #[no_mangle]
 pub extern "C" fn k_fs_read(path: *const u8, buf: *mut u8, cap: u32) -> i32 {
     if buf.is_null() || cap == 0 {
