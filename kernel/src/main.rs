@@ -1,32 +1,57 @@
 #![no_std]
 #![no_main]
-#![feature(abi_x86_interrupt)]
+#![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
+// The allocator is provided by the x86_64 MM subsystem. The RISC-V skeleton
+// does not pull in `alloc` until a real heap/MM backend is ported.
+#[cfg(target_arch = "x86_64")]
 extern crate alloc;
 
-use bootloader::{entry_point, BootInfo};
+// Architecture abstraction layer (bootstrap / panic / idle loop).
+pub mod arch;
 
+// ---- x86_64-specific subsystems -------------------------------------------
+// The RISC-V port is currently at the "scaffold" stage: these subsystems all
+// depend on x86_64 hardware facilities (IDT/APIC/PCI port-IO, VGA, bootloader
+// BitInfo framebuffer, ...) and are gated out until they gain arch-agnostic
+// backends. See TrangorgeOS — TODO.md / Architecture Documentation.
+#[cfg(target_arch = "x86_64")]
 mod bluetooth;
+#[cfg(target_arch = "x86_64")]
 mod cpu;
+#[cfg(target_arch = "x86_64")]
 mod drivers;
+#[cfg(target_arch = "x86_64")]
 mod driverspaceinit;
+#[cfg(target_arch = "x86_64")]
 mod fs;
+#[cfg(target_arch = "x86_64")]
 mod gdt;
+#[cfg(target_arch = "x86_64")]
 mod gfx;
+#[cfg(target_arch = "x86_64")]
 mod hdmi;
+#[cfg(target_arch = "x86_64")]
 mod interrupts;
+#[cfg(target_arch = "x86_64")]
 mod kernel_glue;
+#[cfg(target_arch = "x86_64")]
 mod mm;
+#[cfg(target_arch = "x86_64")]
 mod nic;
+#[cfg(target_arch = "x86_64")]
 mod pci;
-mod serial;
+#[cfg(target_arch = "x86_64")]
 mod terminal;
+
+// ---- architecture-portable modules ---------------------------------------
+mod serial;
 mod testing;
 mod vga_buffer;
 
-use core::panic::PanicInfo;
 use testing::Test;
 
+#[cfg(target_arch = "x86_64")]
 static TESTS: &[Test] = &[
     Test {
         module: "vga_buffer",
@@ -94,27 +119,22 @@ static TESTS: &[Test] = &[
     },
 ];
 
+#[cfg(not(target_arch = "x86_64"))]
+static TESTS: &[Test] = &[];
+
+// Kernel-wide init: delegates to the active architecture backend.
 pub fn init() {
-    serial::init();
-    gdt::init();
-    interrupts::init_idt();
-    unsafe { interrupts::PICS.lock().initialize() };
-    x86_64::instructions::interrupts::enable();
+    arch::init();
 }
 
+// Idle the CPU (hlt/wfi) for the active architecture.
 pub fn hlt_loop() -> ! {
-    loop {
-        x86_64::instructions::hlt();
-    }
+    arch::hlt_loop()
 }
 
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    gfx::panic_screen::show(info)
-}
-entry_point!(kernel_main);
-
-fn kernel_main(boot_info: &'static BootInfo) -> ! {
+/// x86_64 kernel main. Booted through `arch::x86_64` (bootloader `BitInfo`).
+#[cfg(target_arch = "x86_64")]
+pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
     init();
 
     if mm::init_from_boot_info(boot_info) {
@@ -156,4 +176,20 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     terminal::init();
     terminal::run();
+}
+
+/// RISC-V kernel main (skeleton bootstrap for now).
+#[cfg(target_arch = "riscv64")]
+pub fn kernel_main_riscv() -> ! {
+    init();
+
+    println!("TrangorgeOS RISC-V 64-bit — skeleton bootstrap OK");
+    println!("(architecture skeleton: serial + wfi idle loop)");
+
+    testing::run_all(TESTS);
+
+    println!("Idle. (riscv64 port under development)");
+    loop {
+        hlt_loop();
+    }
 }

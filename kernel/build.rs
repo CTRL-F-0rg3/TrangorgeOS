@@ -10,6 +10,8 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
             if path.is_dir() {
                 let name = path.file_name().and_then(|n| n.to_str());
 
+                // Architecture-specific / foreign-ABI sources are never
+                // compiled into the fallback `libmm` bridge archive.
                 if matches!(name, Some("linuxcom") | Some("wincom") | Some("aarch64") | Some("arm64") | Some("arm") | Some("risc-v") | Some("riscv")) {
                     continue;
                 }
@@ -21,6 +23,18 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// Map the current target architecture to the LLVM/clang triple used for the
+/// C bridge. Extend this match when adding further architectures.
+fn clang_target(arch: &str) -> &'static str {
+    match arch {
+        "x86_64" => "x86_64-unknown-none-elf",
+        "riscv64" => "riscv64gc-unknown-none-elf",
+        other => panic!(
+            "cannot build the C bridge for unsupported target architecture: {other}"
+        ),
+    }
+}
+
 fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR");
@@ -28,61 +42,79 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src");
 
+    // Current target architecture (available to build scripts on nightly).
+    let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| "x86_64".to_string());
+
     let mut c_files = Vec::new();
     collect_c_files(&src_dir, &mut c_files);
     c_files.sort();
 
-    let target = "x86_64-unknown-none-elf";
+    match arch.as_str() {
+        // ---- x86_64: legacy C bridge (unchanged behaviour) ----
+        "x86_64" => {
+            let llvm_target = clang_target("x86_64");
 
-    let mut objs = Vec::new();
-    for c_file in &c_files {
-        let rel = c_file.strip_prefix(&src_dir).expect("strip prefix");
-        let obj_name = rel.to_string_lossy().replace('/', "_") + ".o";
-        let obj = Path::new(&out_dir).join(obj_name);
+            let mut objs = Vec::new();
+            for c_file in &c_files {
+                let rel = c_file.strip_prefix(&src_dir).expect("strip prefix");
+                let obj_name = rel.to_string_lossy().replace('/', "_") + ".o";
+                let obj = Path::new(&out_dir).join(obj_name);
 
-        let status = Command::new("clang")
-            .arg(format!("--target={}", target))
-            .args([
-                "-ffreestanding",
-                "-fno-builtin",
-                "-fno-stack-protector",
-                "-mno-red-zone",
-                "-mcmodel=kernel",
-                "-mno-sse",
-                "-mno-sse2",
-                "-mno-mmx",
-                "-mno-80387",
-                "-std=gnu11",
-                "-O2",
-            ])
-            .arg("-I")
-            .arg(&src_dir)
-            .arg("-c")
-            .arg(c_file)
-            .arg("-o")
-            .arg(&obj)
-            .status()
-            .unwrap_or_else(|e| panic!("failed to run clang for {}: {}", c_file.display(), e));
+                let status = Command::new("clang")
+                    .arg(format!("--target={}", llvm_target))
+                    .args([
+                        "-ffreestanding",
+                        "-fno-builtin",
+                        "-fno-stack-protector",
+                        "-mno-red-zone",
+                        "-mcmodel=kernel",
+                        "-mno-sse",
+                        "-mno-sse2",
+                        "-mno-mmx",
+                        "-mno-80387",
+                        "-std=gnu11",
+                        "-O2",
+                    ])
+                    .arg("-I")
+                    .arg(&src_dir)
+                    .arg("-c")
+                    .arg(c_file)
+                    .arg("-o")
+                    .arg(&obj)
+                    .status()
+                    .unwrap_or_else(|e| panic!("failed to run clang for {}: {}", c_file.display(), e));
 
-        if !status.success() {
-            panic!("C compilation failed for {}", c_file.display());
+                if !status.success() {
+                    panic!("C compilation failed for {}", c_file.display());
+                }
+                objs.push(obj);
+            }
+
+            let lib = Path::new(&out_dir).join("libmm.a");
+            let _ = fs::remove_file(&lib);
+
+            let mut ar = Command::new("ar");
+            ar.arg("rcs").arg(&lib);
+            for o in &objs {
+                ar.arg(o);
+            }
+            let status = ar.status().expect("failed to run ar");
+            if !status.success() {
+                panic!("ar failed");
+            }
+
+            println!("cargo:rustc-link-search=native={}", out_dir);
+            println!("cargo:rustc-link-lib=static=mm");
         }
-        objs.push(obj);
-    }
 
-    let lib = Path::new(&out_dir).join("libmm.a");
-    let _ = fs::remove_file(&lib);
+        // ---- RISC-V: skeleton bootstrap ----
+        // The legacy `src` is x86_64-centric, so for now we do NOT build the
+        // C bridge on RISC-V at all. The Rust side links against no C symbols
+        // yet, so no `libmm.a` is produced. Link with our own linker script.
+        "riscv64" => {
+            println!("cargo:rustc-link-arg=-T{}", manifest_dir + "/riscv64-link.ld");
+        }
 
-    let mut ar = Command::new("ar");
-    ar.arg("rcs").arg(&lib);
-    for o in &objs {
-        ar.arg(o);
+        other => panic!("build.rs has no C-bridge configuration for architecture: {other}"),
     }
-    let status = ar.status().expect("failed to run ar");
-    if !status.success() {
-        panic!("ar failed");
-    }
-
-    println!("cargo:rustc-link-search=native={}", out_dir);
-    println!("cargo:rustc-link-lib=static=mm");
 }

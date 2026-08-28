@@ -9,16 +9,22 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
+# Dependencies shared by every supported architecture.
 [dependencies]
-bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
 volatile = "0.2.6"
 spin = "0.5.2"
-x86_64 = "0.15"
-pic8259 = "0.10.1"
 
 [dependencies.lazy_static]
 version = "1.0"
 features = ["spin_no_std"]
+
+# x86_64-specific crates (used only when building for the x86_64 target).
+# Ported over to `target.'cfg(target_arch = "x86_64")'` so the same manifest
+# can build for RISC-V without pulling in the x86-only crates.
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
+x86_64 = "0.15"
+pic8259 = "0.10.1"
 
 [package.metadata.bootimage]
 build-command = ["build"]

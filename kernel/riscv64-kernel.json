@@ -1,0 +1,27 @@
+{
+  "arch": "riscv64",
+  "code-model": "medium",
+  "cpu": "generic-rv64",
+  "crt-objects-fallback": "false",
+  "data-layout": "e-m:e-p:64:64-i64:64-i128:128-n32:64-S128",
+  "disable-redzone": true,
+  "executables": true,
+  "features": "+m,+a,+f,+d,+c,+zicsr,+zifencei",
+  "linker": "rust-lld",
+  "linker-flavor": "gnu-lld",
+  "llvm-abiname": "lp64d",
+  "llvm-target": "riscv64-unknown-none-elf",
+  "max-atomic-width": 64,
+  "metadata": {
+    "description": "Freestanding/bare-metal riscv64gc (RISC-V 64-bit, RV64GC)",
+    "host_tools": false,
+    "std": false,
+    "tier": 2
+  },
+  "os": "none",
+  "panic-strategy": "abort",
+  "relocation-model": "static",
+  "target-c-int-width": 32,
+  "target-endian": "little",
+  "target-pointer-width": 64
+}
