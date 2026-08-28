@@ -15,3 +15,4 @@ pub fn authorize(ring: u8, op: u8) -> bool {
 
     true
 }
+// Todo remake a autorisation system for displayport, this is a temporary solution to avoid the ring 0 to be used by other processes.
