@@ -66,7 +66,7 @@ pub fn format(dev: &dyn BlockDevice) -> Result<()> {
     Ok(())
 }
 
-fn read_superblock(dev: &dyn BlockDevice) -> Result<Superblock> {
+pub fn read_superblock(dev: &dyn BlockDevice) -> Result<Superblock> {
     let mut sb = [0u8; 512];
     dev.read_block(1, &mut sb).map_err(|_| FsError::Io)?;
 

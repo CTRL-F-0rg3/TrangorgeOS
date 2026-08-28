@@ -1,7 +1,9 @@
 pub mod driver;
 pub mod mbr;
 pub mod tfs;
-
+use crate::fs::driver::block::BlockDevice;
+use crate::fs::driver::registry;
+use crate::fs::tfs::{format, read_superblock, Result};
 use crate::testing::TestResult;
 
 pub fn init() {
@@ -52,8 +54,14 @@ pub fn self_test() -> TestResult {
         None => return Err("no data disk"),
     };
 
-    if tfs::format(data).is_err() {
-        return Err("tfs format failed");
+    pub fn ensure_formatted(dev: &dyn BlockDevice) -> Result<()> {
+        match read_superblock(dev) {
+            Ok(_) => Ok(()),
+            Err(_) => {
+                crate::println!("[fs] formatting disk with TFS...");
+                format(dev)
+            }
+        }
     }
 
     if tfs::write_file(data, tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {

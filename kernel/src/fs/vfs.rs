@@ -12,6 +12,7 @@ pub struct FsEntry {
 pub enum Mounted {
     Ext4(Ext4),
     Fat32(Fat32),
+    Tfs(&'static dyn BlockDevice),
 }
 
 impl Mounted {
@@ -19,6 +20,7 @@ impl Mounted {
         match self {
             Mounted::Ext4(f) => f.read_path(path, buf).ok(),
             Mounted::Fat32(f) => f.read_path(path, buf).ok(),
+            Mounted::Tfs(d) => tfs::read_file(*d, tfs::ROOT_DIR, path, buf).ok(),
         }
     }
 
@@ -32,6 +34,13 @@ impl Mounted {
                 }).collect()
             }),
             Mounted::Fat32(f) => f.list_path(path).ok().map(|v| {
+                v.into_iter().map(|e| FsEntry {
+                    name: e.name,
+                    is_dir: e.is_dir,
+                    size: e.size,
+                }).collect()
+            }),
+            Mounted::Tfs(d) => tfs::list_dir(*d, tfs::ROOT_DIR, path).ok().map(|v| {
                 v.into_iter().map(|e| FsEntry {
                     name: e.name,
                     is_dir: e.is_dir,
