@@ -110,10 +110,8 @@ pub fn hlt_loop() -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    hlt_loop();
+    gfx::panic_screen::show(info)
 }
-
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {

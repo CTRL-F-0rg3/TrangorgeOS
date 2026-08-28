@@ -2,6 +2,7 @@ pub mod console;
 pub mod font;
 pub mod framebuffer;
 pub mod galaxy;
+pub mod panic_screen;
 pub mod vga;
 
 use framebuffer::PixelFormat;

@@ -5,6 +5,12 @@ use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin::Mutex;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
+use x86_64::VirtAddr;
+use x86_64::registers::control::Cr2;
+use x86_64::instructions::port::Port;
+use crate::cpu::lapic;
+use crate::cpu::shelduler;
+
 
 pub static BREAKPOINT_HITS: AtomicU64 = AtomicU64::new(0);
 pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
@@ -52,6 +58,10 @@ impl InterruptIndex {
         self as u8
     }
 }
+extern "x86-interrupt" 
+fn breakpoint_handler(stack_frame: InterruptStackFrame) {
+    println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
 
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
@@ -74,9 +84,22 @@ pub fn init_idt() {
     IDT.load();
 }
 
-extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
-    BREAKPOINT_HITS.fetch_add(1, Ordering::SeqCst);
-    println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+extern "x86-interrupt" fn page_fault_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: PageFaultErrorCode,
+) {
+    use x86_64::registers::control::Cr2;
+
+    // Route through panic! (and therefore the panic screen) instead of
+    // println!() + hlt_loop() directly — previously a page fault only ever
+    // wrote into the invisible VGA text buffer, then halted, so it looked
+    // exactly like a silent freeze on whatever was already on screen.
+    panic!(
+        "EXCEPTION: PAGE FAULT\naccessed address: {:#x}\nerror code: {:?}\n{:#?}",
+        Cr2::read_raw(),
+        error_code,
+        stack_frame
+    );
 }
 
 extern "x86-interrupt" fn double_fault_handler(
@@ -86,18 +109,7 @@ extern "x86-interrupt" fn double_fault_handler(
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
 
-extern "x86-interrupt" fn page_fault_handler(
-    stack_frame: InterruptStackFrame,
-    error_code: PageFaultErrorCode,
-) {
-    use x86_64::registers::control::Cr2;
 
-    println!("EXCEPTION: PAGE FAULT");
-    println!("Accessed Address: {:#x}", Cr2::read_raw());
-    println!("Error Code: {:?}", error_code);
-    println!("{:#?}", stack_frame);
-    crate::hlt_loop();
-}
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);

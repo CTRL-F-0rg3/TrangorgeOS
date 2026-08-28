@@ -174,7 +174,11 @@ fn delay() {
     }
 }
 
-pub fn test_fill(r: u32, g: u32, b: u32) {
+pub fn test_fill(r: u32, g: u32, b: u32) -> bool {
+    if unsafe { FB.is_none() } {
+        return false;
+    }
+
     let (w, h) = {
         let f = fb();
         (f.width, f.height)
@@ -185,6 +189,32 @@ pub fn test_fill(r: u32, g: u32, b: u32) {
             fb().set(x, y, rgb(r, g, b));
         }
     }
+
+    true
+}
+
+pub fn resync_background() -> bool {
+    if unsafe { FB.is_none() } {
+        return false;
+    }
+
+    let (w, h) = {
+        let f = fb();
+        (f.width, f.height)
+    };
+
+    unsafe {
+        CLEAN.clear();
+        CLEAN.reserve(w * h);
+        for y in 0..h {
+            for x in 0..w {
+                CLEAN.push(fb().get(x, y));
+            }
+        }
+        CACHE_VALID = false;
+    }
+
+    true
 }
 
 pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFormat) -> bool {
