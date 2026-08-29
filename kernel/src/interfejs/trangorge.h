@@ -37,6 +37,10 @@
 #include "../types.h"
 #include "safe.h"
 #include "policy.h"
+/* === caps: złączony system uprawnień (capabilities + policy) === */
+#if __has_include("../caps/caps.h")
+#include "../caps/caps.h"
+#endif
 /* === battery === */
 #include "../battery/battery.h"
 #include "../battery/init.h"

@@ -31,3 +31,10 @@ pub fn init() {
 pub fn hlt_loop() -> ! {
     imp::hlt_loop()
 }
+
+/// Monotonic kernel time source: TSC (Time Stamp Counter) on x86_64,
+/// CLINT `mtime` on RISC-V. Used by the permission system for TTL grants
+/// and audit timestamps (see `caps::grant`, `caps::audit`).
+pub fn now() -> u64 {
+    imp::now()
+}

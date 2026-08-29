@@ -82,8 +82,8 @@ static TEMP: Mutex<[TempGrant; MAX_TEMP]> = Mutex::new([TempGrant {
 }; MAX_TEMP]);
 
 fn now_tick() -> u64 {
-    extern "C" { fn k_tick() -> u64; }
-    unsafe { k_tick() }
+    // Zegar arch-poziomu: TSC (x86_64) / CLINT mtime (RISC-V).
+    crate::arch::now()
 }
 
 /// Przyznaj capability na ograniczony czas

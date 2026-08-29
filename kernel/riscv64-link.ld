@@ -22,7 +22,7 @@ SECTIONS
 
     /* Boot and entry code, kept first so `_start` lands on load address. */
     .text : {
-        *(.text.entry)
+        KEEP(*(.text.entry))
         *(.text*)
     }
 
@@ -33,7 +33,10 @@ SECTIONS
     .data : { *(.data* .data.*) }
 
     . = ALIGN(4096);
-    .sdata : { *(.sdata* .sdata.*) }
+    .sdata : {
+        __global_pointer$ = . + 0x800;
+        *(.sdata* .sdata.*)
+    }
 
     . = ALIGN(4096);
     .bss : {

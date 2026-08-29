@@ -4,7 +4,7 @@ use super::types::{Capability, CapabilitySet, CapResult, CapabilityError};
 use super::hierarchy;
 use super::store;
 use super::audit;
-use spin::Mutex;
+use alloc::vec::Vec;
 
 /// Odbierz capability od worlda
 pub fn revoke_from_world(world_id: u32, cap: Capability) -> CapResult<()> {

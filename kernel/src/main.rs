@@ -2,9 +2,8 @@
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
-// The allocator is provided by the x86_64 MM subsystem. The RISC-V skeleton
-// does not pull in `alloc` until a real heap/MM backend is ported.
-#[cfg(target_arch = "x86_64")]
+// The allocator is provided by the x86_64 MM subsystem, and by the small
+// bump allocator in `arch::riscv64` when building for RISC-V.
 extern crate alloc;
 
 // Architecture abstraction layer (bootstrap / panic / idle loop).
@@ -45,6 +44,8 @@ mod pci;
 mod terminal;
 
 // ---- architecture-portable modules ---------------------------------------
+mod caps;
+mod policy;
 mod serial;
 mod testing;
 mod vga_buffer;
@@ -117,10 +118,17 @@ static TESTS: &[Test] = &[
         module: "gfx",
         func: gfx::self_test,
     },
+    Test {
+        module: "caps",
+        func: caps::self_test,
+    },
 ];
 
 #[cfg(not(target_arch = "x86_64"))]
-static TESTS: &[Test] = &[];
+static TESTS: &[Test] = &[Test {
+    module: "caps",
+    func: caps::self_test,
+}];
 
 // Kernel-wide init: delegates to the active architecture backend.
 pub fn init() {
@@ -130,6 +138,20 @@ pub fn init() {
 // Idle the CPU (hlt/wfi) for the active architecture.
 pub fn hlt_loop() -> ! {
     arch::hlt_loop()
+}
+
+/// Złączony system uprawnień: capabilities (`caps/` — co wolno) + polityka
+/// (`policy/` — czy przepuszcza). Instalowany raz na obu architekturach.
+pub fn init_permissions() {
+    match caps::init() {
+        Ok(()) => println!(
+            "[caps] capability store initialized OK (kernel world {})",
+            caps::check::kernel_world_id()
+        ),
+        Err(e) => println!("[caps] initialization FAILED: {}", e),
+    }
+    policy::install();
+    println!("[policy] unified permission engine installed (hook + audit)");
 }
 
 /// x86_64 kernel main. Booted through `arch::x86_64` (bootloader `BitInfo`).
@@ -142,6 +164,8 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
     } else {
         println!("[mm] allocator initialization FAILED");
     }
+
+    init_permissions();
 
     if gfx::init() {
         println!("[gfx] framebuffer initialized OK");
@@ -182,9 +206,11 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 #[cfg(target_arch = "riscv64")]
 pub fn kernel_main_riscv() -> ! {
     init();
+    println!("TrangorgeOS RISC-V: boot OK (heap + serial)");
+    init_permissions();
 
-    println!("TrangorgeOS RISC-V 64-bit — skeleton bootstrap OK");
-    println!("(architecture skeleton: serial + wfi idle loop)");
+    println!("TrangorgeOS RISC-V 64-bit — bootstrap OK");
+    println!("(bump heap + unified permissions: caps + policy)");
 
     testing::run_all(TESTS);
 

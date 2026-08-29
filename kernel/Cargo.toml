@@ -9,6 +9,14 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
+[features]
+default = []
+# Compile policy/bridge.rs (extern "C" policy_evaluate / nim_policy_log).
+# Requires the Ada/Nim policy objects to be linked into the kernel image —
+# see kernel/src/policy/ada and kernel/src/policy/nim. The default build uses
+# the portable Rust policy engine in kernel/src/policy/mod.rs instead.
+policy-foreign = []
+
 # Dependencies shared by every supported architecture.
 [dependencies]
 volatile = "0.2.6"

@@ -17,9 +17,11 @@ pub fn default_for_ring(ring: u8) -> CapabilitySet {
 
 /// Zainstaluj world kernela (ring0) przy starcie
 pub fn install_defaults() -> Result<(), &'static str> {
-    // World 0 = kernel (pełne uprawnienia)
-    store::register_world(None, sets::presets::kernel())?;
-    audit::log_register(0);
+    // World kernela = pierwszy zarejestrowany (pełne uprawnienia);
+    // zapamiętaj jego realne ID w check (check::kernel_world_id()).
+    let id = store::register_world(None, sets::presets::kernel())?;
+    crate::caps::check::set_kernel_world_id(id);
+    audit::log_register(id);
     Ok(())
 }
 

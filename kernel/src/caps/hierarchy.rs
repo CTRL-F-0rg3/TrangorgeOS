@@ -24,6 +24,8 @@
 //!      └─ CAP_SYSCALL_RESTRICTED
 
 use super::types::{Capability, CapabilitySet};
+use alloc::vec;
+use alloc::vec::Vec;
 
 /// Rodzic capability (None dla ROOT)
 pub fn parent(cap: Capability) -> Option<Capability> {

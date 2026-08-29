@@ -8,6 +8,8 @@ use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
 /// x86_64 panic handler — prints to the GFX panic screen then halts.
+/// (`not(test)`: on the host test harness std provides the panic handler.)
+#[cfg(not(test))]
 #[panic_handler]
 fn x86_panic(info: &PanicInfo) -> ! {
     crate::gfx::panic_screen::show(info)
@@ -29,10 +31,19 @@ pub fn hlt_loop() -> ! {
     }
 }
 
+/// Monotonic kernel time: the Time Stamp Counter. Monotonic per-CPU and good
+/// enough for TTL capability grants and audit timestamps on this platform.
+pub fn now() -> u64 {
+    unsafe { core::arch::x86_64::_rdtsc() }
+}
+
 /// Entry point produced by the `bootloader` crate; delegates to the shared
-/// kernel main passing the bootloader-provided memory map.
+/// kernel main passing the bootloader-provided memory map. Only for the real
+/// bare-metal build (the host `cargo test` harness provides its own entry).
+#[cfg(all(target_arch = "x86_64", not(test)))]
 entry_point!(x86_boot);
 
+#[cfg(all(target_arch = "x86_64", not(test)))]
 fn x86_boot(boot_info: &'static BootInfo) -> ! {
     crate::kernel_main(boot_info)
 }

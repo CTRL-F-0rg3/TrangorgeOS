@@ -138,7 +138,13 @@ impl Xhci {
             let speed = (sc & PORTSC_SPEED) >> 10;
 
             unsafe {
-                kprintf(b"usb: port %d connected, speed=%d\n\0".as_ptr(), p);
+                // Bug fix: this format string had two `%d` but only ever
+                // got `p` - `speed` was computed and then silently
+                // dropped, so the C varargs call read whatever garbage
+                // happened to be in the next register/stack slot as the
+                // second %d. Harmless-looking, but genuinely undefined
+                // behavior on every single connected port.
+                kprintf(b"usb: port %d connected, speed=%d\n\0".as_ptr(), p, speed);
             }
 
             if sc & PORTSC_PED == 0 && speed <= 3 {
@@ -154,12 +160,61 @@ impl Xhci {
             }
 
             let sc2 = self.regs.port_sc(p);
+            let enabled = sc2 & PORTSC_PED != 0;
 
             unsafe {
                 kprintf(b"usb: port %d enabled=%d\n\0".as_ptr(),
                         p,
-                        (sc2 & PORTSC_PED != 0) as u32);
+                        enabled as u32);
             }
+
+            if !enabled {
+                continue;
+            }
+
+            self.attach_port(p);
+        }
+    }
+
+    /// Enumerates the device on port `p` (get descriptors, set address,
+    /// set configuration) and hands it to the first class driver that
+    /// claims it. Previously nothing after `scan_ports`'s port-enable
+    /// check ever ran: `core::enumerate::enumerate`, `class::mass::attach`
+    /// and `class::hid::attach` all already existed and were already
+    /// correct, they were just never called from anywhere.
+    fn attach_port(&mut self, p: u32) {
+        // Fully-qualified path on purpose: this file already uses the
+        // *builtin* `core` crate below (`core::hint::spin_loop`), and a
+        // bare `use ...::core::enumerate;` at file scope would shadow
+        // that name and break every existing `core::` call in this file.
+        let mut dev = match crate::drivers::usb::core::enumerate::enumerate(self, p) {
+            Ok(d) => d,
+            Err(_) => {
+                unsafe {
+                    kprintf(b"usb: port %d enumeration failed\n\0".as_ptr(), p);
+                }
+                return;
+            }
+        };
+
+        use crate::drivers::usb::class::{hid, mass};
+
+        match mass::attach(self, &mut dev) {
+            Ok(true) => return,
+            Ok(false) => {}
+            Err(_) => unsafe {
+                kprintf(b"usb: port %d mass-storage attach failed\n\0".as_ptr(), p);
+            },
+        }
+
+        match hid::attach(self, &mut dev) {
+            Ok(true) => {}
+            Ok(false) => unsafe {
+                kprintf(b"usb: port %d: no matching class driver\n\0".as_ptr(), p);
+            },
+            Err(_) => unsafe {
+                kprintf(b"usb: port %d HID attach failed\n\0".as_ptr(), p);
+            },
         }
     }
 }

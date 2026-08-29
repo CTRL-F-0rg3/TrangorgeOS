@@ -10,8 +10,8 @@ use crate::caps::sets;
 fn test_full_flow() {
     init().unwrap();
 
-    // Kernel world
-    let kernel = 0;
+    // Kernel world (pierwszy zarejestrowany przez install_defaults)
+    let kernel = crate::caps::check::kernel_world_id();
 
     // Driver world
     let drv = store::register_world(Some(kernel), sets::presets::driver()).unwrap();

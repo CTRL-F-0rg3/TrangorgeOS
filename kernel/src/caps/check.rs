@@ -1,18 +1,42 @@
 //! Runtime capability checks: require_cap(), has_cap(), guards.
 
 use super::types::{Capability, CapabilitySet, CapabilityError, CapResult};
-use super::hierarchy;
 use super::store;
 use super::audit;
+use core::sync::atomic::{AtomicU32, Ordering};
 
-/// Current world ID (z trampoline_rings)
+/// World kernela: pierwszy zarejestrowany przez `defaults::install_defaults`
+/// (store nadaje ID od 1). Aktualizowany przy instalacji domyślnych worldów.
+static KERNEL_WORLD: AtomicU32 = AtomicU32::new(1);
+
+/// Bieżący world (kontekst wykonania). Ustawiany przy wejściu w world —
+/// integracja z `trampoline_rings` nastąpi w ramach portu x86_64 ringów;
+/// dopóki to punkt konfigurowany ręcznie (`set_current_world`).
+static CURRENT_WORLD: AtomicU32 = AtomicU32::new(1);
+
+/// ID worlda kernela (ma pełny zestaw capabilities).
+pub fn kernel_world_id() -> u32 {
+    KERNEL_WORLD.load(Ordering::Relaxed)
+}
+
+/// Rejestruj ID worlda kernela (wywoływane przez defaults::install_defaults).
+pub fn set_kernel_world_id(id: u32) {
+    KERNEL_WORLD.store(id, Ordering::Relaxed);
+}
+
+/// ID bieżącego worlda (publikowane dla syscalls/export/policy).
+pub fn current_world_id_pub() -> u32 {
+    CURRENT_WORLD.load(Ordering::Relaxed)
+}
+
+/// Przełącz bieżący world (punkt integracji z trampoline_rings / schedulerem).
+pub fn set_current_world(world_id: u32) {
+    CURRENT_WORLD.store(world_id, Ordering::Relaxed);
+}
+
+/// Current world ID (wewnętrzny alias).
 fn current_world_id() -> u32 {
-    // TODO: integracja z trampoline_rings::current()
-    // Na razie zwracamy 0 (kernel)
-    extern "C" {
-        fn trampoline_current_world() -> u32;
-    }
-    unsafe { trampoline_current_world() }
+    current_world_id_pub()
 }
 
 /// Sprawdź czy current world ma capability

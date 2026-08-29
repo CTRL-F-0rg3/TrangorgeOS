@@ -50,7 +50,7 @@ pub extern "C" fn caps_name(cap_id: u8, buf: *mut u8, len: u32) -> i32 {
     n as i32
 }
 
-/// Poproś o capability (wymaga Admin u grantera = kernel 0)
+/// Poproś o capability dla targetu (granter = world kernela, wymaga Admin)
 #[no_mangle]
 pub extern "C" fn caps_request(target: u32, cap_id: u8) -> i32 {
     let cap = match cap_from_id(cap_id) {
@@ -58,7 +58,7 @@ pub extern "C" fn caps_request(target: u32, cap_id: u8) -> i32 {
         None => return -1,
     };
 
-    match grant::grant_cap(0, target, cap) {
+    match grant::grant_cap(check::kernel_world_id(), target, cap) {
         Ok(()) => 0,
         Err(_) => -1,
     }

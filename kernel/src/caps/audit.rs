@@ -2,6 +2,7 @@
 
 use super::types::Capability;
 use spin::Mutex;
+use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventKind {
@@ -51,13 +52,13 @@ pub fn init_audit_log() -> Result<(), &'static str> {
 }
 
 fn now_tick() -> u64 {
-    extern "C" { fn k_tick() -> u64; }
-    unsafe { k_tick() }
+    // Zegar arch-poziomu: TSC (x86_64) / CLINT mtime (RISC-V).
+    crate::arch::now()
 }
 
 fn push(kind: EventKind, world: u32, target: u32, cap: Capability) {
     let mut a = AUDIT.lock();
-
+    let idx = a.head as usize % AUDIT_CAP;
     let ev = AuditEvent {
         seq: a.seq,
         tick: now_tick(),
@@ -66,9 +67,8 @@ fn push(kind: EventKind, world: u32, target: u32, cap: Capability) {
         cap,
         kind,
     };
-
-    a.buf[a.head] = Some(ev);
-    a.head = (a.head + 1) % AUDIT_CAP;
+    a.buf[idx] = Some(ev);
+    a.head = (idx + 1) % AUDIT_CAP;
     a.seq += 1;
     a.total += 1;
 }

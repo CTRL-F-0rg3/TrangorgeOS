@@ -7,25 +7,27 @@
 
 use super::types::{Capability, CapResult, CapabilityError};
 use super::store;
+use core::sync::atomic::{AtomicPtr, Ordering};
 
-/// Hook polityki (ustawiany przez policy/)
+/// Hook polityki (ustawiany przez policy/ — patrz policy/mod.rs::install).
 pub type PolicyHook = fn(world: u32, cap: Capability) -> bool;
 
-static mut HOOK: Option<PolicyHook> = None;
+static HOOK: AtomicPtr<()> = AtomicPtr::new(core::ptr::null_mut());
 
 /// Zarejestruj hook polityki
 pub fn set_hook(h: PolicyHook) {
-    unsafe { HOOK = Some(h); }
+    let raw: *mut () = unsafe { core::mem::transmute(h as PolicyHook) };
+    HOOK.store(raw, Ordering::Relaxed);
 }
 
 /// Czy polityka zezwala (domyślnie tak)
 fn policy_allows(world: u32, cap: Capability) -> bool {
-    unsafe {
-        match HOOK {
-            Some(h) => h(world, cap),
-            None => true,
-        }
+    let raw = HOOK.load(Ordering::Relaxed);
+    if raw.is_null() {
+        return true;
     }
+    let hook: PolicyHook = unsafe { core::mem::transmute(raw) };
+    hook(world, cap)
 }
 
 /// Pełna decyzja: capability + polityka
