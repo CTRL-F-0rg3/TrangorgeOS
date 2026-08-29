@@ -31,6 +31,11 @@ pub fn hlt_loop() -> ! {
     }
 }
 
+/// Current CPU ID (read-once hart identifier).
+pub fn current_cpu() -> usize {
+    x86_64::instructions::cpuid(1).get_eax() as usize
+}
+
 /// Monotonic kernel time: the Time Stamp Counter. Monotonic per-CPU and good
 /// enough for TTL capability grants and audit timestamps on this platform.
 pub fn now() -> u64 {
@@ -38,8 +43,7 @@ pub fn now() -> u64 {
 }
 
 /// Entry point produced by the `bootloader` crate; delegates to the shared
-/// kernel main passing the bootloader-provided memory map. Only for the real
-/// bare-metal build (the host `cargo test` harness provides its own entry).
+/// kernel main passing the bootloader-provided memory map.
 #[cfg(all(target_arch = "x86_64", not(test)))]
 entry_point!(x86_boot);
 

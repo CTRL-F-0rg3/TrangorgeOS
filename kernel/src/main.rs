@@ -9,14 +9,12 @@ extern crate alloc;
 // Architecture abstraction layer (bootstrap / panic / idle loop).
 pub mod arch;
 
-// ---- x86_64-specific subsystems -------------------------------------------
-// The RISC-V port is currently at the "scaffold" stage: these subsystems all
-// depend on x86_64 hardware facilities (IDT/APIC/PCI port-IO, VGA, bootloader
-// BitInfo framebuffer, ...) and are gated out until they gain arch-agnostic
-// backends. See TrangorgeOS — TODO.md / Architecture Documentation.
+/// x86_64-only hardware subsystems (PCI/IDT/PIC, VGA, bootloader BitInfo,
+/// driverspace, FS, NIC, gfx, terminal). These depend on x86_64 facilities
+/// and are gated out on RISC-V. `mm` and `cpu` are architecture-portable
+/// and live in this section too — they pick their backend by target_arch.
 #[cfg(target_arch = "x86_64")]
 mod bluetooth;
-#[cfg(target_arch = "x86_64")]
 mod cpu;
 #[cfg(target_arch = "x86_64")]
 mod drivers;
@@ -34,7 +32,6 @@ mod hdmi;
 mod interrupts;
 #[cfg(target_arch = "x86_64")]
 mod kernel_glue;
-#[cfg(target_arch = "x86_64")]
 mod mm;
 #[cfg(target_arch = "x86_64")]
 mod nic;
@@ -122,13 +119,27 @@ static TESTS: &[Test] = &[
         module: "caps",
         func: caps::self_test,
     },
+    Test {
+        module: "shelduler",
+        func: cpu::shelduler::self_test,
+    },
 ];
 
 #[cfg(not(target_arch = "x86_64"))]
-static TESTS: &[Test] = &[Test {
-    module: "caps",
-    func: caps::self_test,
-}];
+static TESTS: &[Test] = &[
+    Test {
+        module: "mm",
+        func: mm::self_test,
+    },
+    Test {
+        module: "shelduler",
+        func: cpu::shelduler::self_test,
+    },
+        Test {
+        module: "caps",
+        func: caps::self_test,
+    },
+];
 
 // Kernel-wide init: delegates to the active architecture backend.
 pub fn init() {
@@ -207,6 +218,16 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 pub fn kernel_main_riscv() -> ! {
     init();
     println!("TrangorgeOS RISC-V: boot OK (heap + serial)");
+
+    if mm::init_riscv() {
+        println!(
+            "[mm] riscv backend initialized (frames + heap + vmm + Sv39 tables)"
+        );
+    } else {
+        println!("[mm] riscv backend initialization FAILED");
+    }
+    cpu::init_riscv();
+
     init_permissions();
 
     println!("TrangorgeOS RISC-V 64-bit — bootstrap OK");

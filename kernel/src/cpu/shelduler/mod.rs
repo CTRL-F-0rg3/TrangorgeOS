@@ -250,12 +250,11 @@ impl Task {
         task.ctx = context::Context::bootstrap(top, task_entry as usize as u64, task.id.0);
         task
     }
-    pub fn new_idle(name: &'static str) -> Box<Self> {
+        pub fn new_idle(name: &'static str) -> Box<Self> {
         Self::with_config(
             name,
             || loop {
-                x86_64::instructions::hlt();
-                yield_now();
+                crate::hlt_loop()
             },
             TaskConfig {
                 is_idle: true,
@@ -621,9 +620,7 @@ pub fn exit_current_task() -> ! {
         }
         s.dequeue_next(cpu, clock_now());
     });
-    loop {
-        x86_64::instructions::hlt();
-    }
+    crate::hlt_loop()
 }
 pub fn schedule_from_interrupt() -> bool {
     tick(current_cpu(), DEFAULT_QUANTUM_NS)
@@ -663,7 +660,7 @@ pub fn enable_preemption() {
     });
 }
 pub fn current_cpu() -> usize {
-    0
+    crate::arch::current_cpu()
 }
 pub fn clock_now() -> u64 {
     TICKS
@@ -675,14 +672,125 @@ pub fn snapshot() -> Option<SchedulerSnapshot> {
 }
 
 unsafe extern "C" fn task_entry(_id: u64) -> ! {
-    let _ = with_global(|s| {
+    // Take the entry closure out UNDER the lock, then run it OUTSIDE — a
+    // task body must be free to call scheduler APIs (spawn/yield/…) without
+    // deadlocking on the GLOBAL mutex.
+    let entry = with_global(|s| {
         let cpu = current_cpu();
         let id = s.cpus[cpu].current?;
         let task = s.find_mut(id)?;
-        let entry = task.entry.take()?;
-        Some(entry())
+        task.entry.take()
     });
+    if let Some(Some(entry)) = entry {
+        entry();
+    }
     exit_current_task()
+}
+
+/// Cooperative executor: pops ready tasks and runs them to completion on the
+/// calling CPU. Entry closures run OUTSIDE the scheduler lock, so a task may
+/// spawn children (which this loop then picks up) or use scheduler APIs.
+/// True preemption needs the arch timer + asm context switch (`context.rs`)
+/// — that is the next milestone; this wires spawn → run → finish end to end.
+pub fn run_pending_tasks() -> usize {
+    let mut ran = 0usize;
+    loop {
+        let job = with_global(|s| {
+            let cpu = current_cpu();
+            let id = s.dequeue_next(cpu, clock_now())?;
+            let entry = s.find_mut(id)?.entry.take();
+            Some((id, entry))
+        });
+        let Some((id, entry)) = job else { break };
+        if let Some(entry) = entry {
+            entry();
+        }
+        with_global(|s| {
+            let cpu = current_cpu();
+            if let Some(t) = s.find_mut(id) {
+                t.mark_finished();
+            }
+            if s.cpus.get(cpu).and_then(|c| c.current) == Some(id) {
+                s.cpus[cpu].current = None;
+            }
+        });
+        ran += 1;
+    }
+    ran
+}
+
+/// Kompatybilny z `testing::Test` — pełny pipeline spawn → run → finish,
+/// w tym zagnieżdżony spawn wykonywany z wnętrza zadania.
+pub fn self_test() -> crate::testing::TestResult {
+    use alloc::sync::Arc;
+    use core::sync::atomic::AtomicU32;
+
+    if !is_initialized() {
+        init(1);
+    }
+
+    let done = Arc::new(AtomicU32::new(0));
+    let mut spawned = 0usize;
+
+    for i in 0..4usize {
+        let d = done.clone();
+        let name = match i {
+            0 => "sched-t0",
+            1 => "sched-t1",
+            2 => "sched-t2",
+            _ => "sched-t3",
+        };
+        if spawn(
+            name,
+            move || {
+                d.fetch_add(1, Ordering::Relaxed);
+            },
+            TaskConfig::default(),
+        )
+        .is_some()
+        {
+            spawned += 1;
+        }
+    }
+
+    // zagnieżdżony spawn: zadanie dopisuje dziecko w trakcie działania
+    let d = done.clone();
+    if spawn(
+        "sched-nested",
+        move || {
+            let child = done.clone();
+            let _ = spawn(
+                "sched-child",
+                move || {
+                    child.fetch_add(1, Ordering::Relaxed);
+                },
+                TaskConfig::default(),
+            );
+            d.fetch_add(1, Ordering::Relaxed);
+        },
+        TaskConfig::default(),
+    )
+    .is_some()
+    {
+        spawned += 1;
+    }
+
+    let ran = run_pending_tasks();
+
+    if ran < spawned {
+        return Err("shelduler: executor ran fewer tasks than spawned");
+    }
+    let observed = done.load(Ordering::Relaxed);
+    if observed != 5 {
+        return Err("shelduler: task bodies did not run");
+    }
+
+    let snap = snapshot().ok_or("shelduler: no snapshot")?;
+    if snap.task_count < 5 {
+        return Err("shelduler: tasks not registered");
+    }
+
+    Ok("spawn → run_pending → finish (cooperative)")
 }
 
 #[cfg(test)]

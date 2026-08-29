@@ -33,8 +33,18 @@ pub fn hlt_loop() -> ! {
 }
 
 /// Monotonic kernel time source: TSC (Time Stamp Counter) on x86_64,
-/// CLINT `mtime` on RISC-V. Used by the permission system for TTL grants
-/// and audit timestamps (see `caps::grant`, `caps::audit`).
+/// CLINT `mtime` (via the `time` CSR) on RISC-V. Used by the permission
+/// system for TTL grants and audit timestamps (see `caps::grant`, `caps::audit`).
 pub fn now() -> u64 {
     imp::now()
+}
+
+/// Index of the CPU executing this code.
+///
+/// Both backends currently return 0: the x86_64 scheduler integration runs
+/// on the BSP (per-CPU GS-base wiring is part of the SMP-scheduler
+/// milestone) and RISC-V is single-hart. The hook exists so scheduler code
+/// never hardcodes the value itself.
+pub fn current_cpu() -> usize {
+    imp::current_cpu()
 }

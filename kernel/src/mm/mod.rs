@@ -1,24 +1,55 @@
+//! Memory-management subsystem.
+//!
+//! Two backends, one API surface (`mm::phys`, `mm::api`, `mm::virt`,
+//! `mm::space`) and one shared `self_test`:
+//! * x86_64 — thin FFI wrappers over the C bridge (`libmm.a`, see `ffi.rs`);
+//! * riscv64 — the native Rust backend in `riscv.rs` (bitmap PMM, free-list
+//!   heap, VA range allocator, software-managed Sv39 tables).
+
+#[cfg(target_arch = "x86_64")]
 pub mod api;
+#[cfg(target_arch = "x86_64")]
 pub mod ffi;
+#[cfg(target_arch = "riscv64")]
+pub mod riscv;
+#[cfg(target_arch = "x86_64")]
 pub mod phys;
+#[cfg(target_arch = "x86_64")]
 pub mod space;
+#[cfg(target_arch = "x86_64")]
 pub mod virt;
+
+// One API surface: on RISC-V the backend modules ARE `mm::phys` etc.
+#[cfg(target_arch = "riscv64")]
+pub use riscv::{api, phys, space, virt};
 
 use core::cell::UnsafeCell;
 
+#[cfg(target_arch = "x86_64")]
 pub fn init(params: &ffi::MmBootParams) -> bool {
     unsafe { ffi::mm_init(params as *const ffi::MmBootParams) }
 }
 
+#[cfg(target_arch = "x86_64")]
 pub fn ready() -> bool {
     unsafe { ffi::mm_ready() }
 }
 
+#[cfg(target_arch = "x86_64")]
 pub fn dump() {
     unsafe { ffi::mm_dump() }
 }
 
+/// RISC-V: bring up the native backend (frames, heap, vmm, Sv39 tables).
+#[cfg(target_arch = "riscv64")]
+pub fn init_riscv() -> bool {
+    riscv::init()
+}
+
+#[cfg(target_arch = "x86_64")]
 const MAX_RAW_ENTRIES: usize = 256;
+
+#[cfg(target_arch = "x86_64")]
 const ZERO_ENTRY: ffi::RawMemEntry = ffi::RawMemEntry {
     base: 0,
     len: 0,
@@ -26,15 +57,18 @@ const ZERO_ENTRY: ffi::RawMemEntry = ffi::RawMemEntry {
     reserved: 0,
 };
 
+#[cfg(target_arch = "x86_64")]
 struct EntryStorage(UnsafeCell<[ffi::RawMemEntry; MAX_RAW_ENTRIES]>);
 
 // mm initialization happens exactly once, at startup, before any concurrency
 // exists — we safely force Sync.
+#[cfg(target_arch = "x86_64")]
 unsafe impl Sync for EntryStorage {}
 
 /// Builds the parameters for `mm_init` from the bootloader-provided
 /// information and initializes the whole memory subsystem (arch memory ->
 /// paging -> pmm -> vmm -> heap -> cache -> address spaces).
+#[cfg(target_arch = "x86_64")]
 pub fn init_from_boot_info(boot_info: &'static bootloader::BootInfo) -> bool {
     use bootloader::bootinfo::MemoryRegionType;
 
