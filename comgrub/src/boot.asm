@@ -13,7 +13,6 @@ mboot_header_start:
     dd MBOOT2_LENGTH
     dd MBOOT2_CHECKSUM
 
-    ; Tagi — terminator
     dw 0
     dw 0
     dd 8
@@ -22,27 +21,22 @@ mboot_header_end:
 section .bss
 align 16
 stack_bottom:
-    resb 65536            ; 64 KB stosu
-stack_top:
+    resb 65536            :
 
 section .text
 bits 32
 
 global _start
-extern kernel_main        ; wyeksportowane z kernel crate
+extern kernel_main
 
 _start:
-    ; Ustaw stos
     mov esp, stack_top
 
-    ; Przekaż magic i info do kernela
-    push ebx              ; multiboot2 info pointer
-    push eax              ; multiboot2 magic
+    push ebx
+    push eax
 
-    ; Wywołaj kernel
     call kernel_main
 
-    ; Jeśli kernel wróci — halt
 .hang:
     cli
     hlt

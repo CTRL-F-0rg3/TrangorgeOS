@@ -17,21 +17,14 @@ pub const fn svc_op(cmd: u32) -> u32 {
     cmd & 0xFF
 }
 
-// VIDEO ops
 pub const VID_FB_INFO: u32 = 1;
 pub const VID_FB_TAKEOVER: u32 = 2;
 pub const VID_FB_RELEASE: u32 = 3;
-
-// INPUT ops
 pub const IN_KEY_POLL: u32 = 1;
-
-// AUDIO ops
 pub const AUD_PLAY: u32 = 1;
 pub const AUD_STOP: u32 = 2;
 pub const AUD_JACK: u32 = 3;
 pub const AUD_AMP: u32 = 4;
-
-// BLOCK ops
 pub const BLK_COUNT: u32 = 1;
 pub const BLK_READ: u32 = 2;
 pub const BLK_WRITE: u32 = 3;

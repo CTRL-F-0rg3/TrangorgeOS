@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# kernel jako biblioteka statyczna — comgrub będzie go ładować
 kernel = { path = "../kernel" }
 
 [build-dependencies]
@@ -13,6 +12,7 @@ nasm-rs = "0.3"
 [profile.dev]
 panic = "abort"
 
+[dependencies]
 [profile.release]
 panic = "abort"
 lto = true

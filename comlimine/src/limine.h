@@ -1,5 +1,3 @@
-// comlimine/src/limine.h
-// Minimalny nagłówek protokołu Limine
 
 #ifndef _LIMINE_H
 #define _LIMINE_H
@@ -10,14 +8,12 @@
 #define LIMINE_REQUESTS_DELIMITER 0xadc0e0531bb10d03
 #define LIMINE_BASE_REVISION(n) uint64_t limine_base_revision[n] = {0x0};
 
-// Magic numbers dla requestów
 #define LIMINE_BOOTLOADER_INFO_REQUEST { 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
 #define LIMINE_FRAMEBUFFER_REQUEST     { 0x9d5827dcd881dd75, 0xa3148604f6fab11b }
 #define LIMINE_MEMMAP_REQUEST          { 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }
 #define LIMINE_HHDM_REQUEST            { 0x48dcf1cb8ad2b852, 0x63984e959a98244b }
 #define LIMINE_KERNEL_ADDRESS_REQUEST  { 0x71ba76863cc55f63, 0xb2644a48c516a487 }
 
-// Struktura framebuffer
 struct limine_framebuffer {
     void *address;
     uint64_t width;
@@ -52,7 +48,7 @@ struct limine_video_mode {
     uint8_t blue_mask_shift;
 };
 
-// Bootloader info
+
 struct limine_bootloader_info_response {
     uint64_t revision;
     const char *name;
@@ -65,7 +61,7 @@ struct limine_bootloader_info_request {
     struct limine_bootloader_info_response *response;
 };
 
-// Framebuffer
+
 struct limine_framebuffer_response {
     uint64_t revision;
     uint64_t framebuffer_count;
@@ -78,7 +74,6 @@ struct limine_framebuffer_request {
     struct limine_framebuffer_response *response;
 };
 
-// Memmap
 struct limine_memmap_entry {
     uint64_t base;
     uint64_t length;
@@ -109,7 +104,6 @@ struct limine_hhdm_request {
     struct limine_hhdm_response *response;
 };
 
-// Kernel address
 struct limine_kernel_address_response {
     uint64_t revision;
     uint64_t physical_base;

@@ -1,6 +1,4 @@
-// comlimine/build.rs
 fn main() {
-    // Kompiluj C
     cc::Build::new()
         .file("src/main.c")
         .include("src")

@@ -1,4 +1,4 @@
-// comlimine/src/main.c
+
 #include <stdint.h>
 #include <stddef.h>
 #include "limine.h"

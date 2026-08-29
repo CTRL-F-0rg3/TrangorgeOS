@@ -8,7 +8,6 @@ static vgpu_info_t g_info;
 static vgpu_surface_t g_surf[VGPU_MAX_SURFACES];
 static bool g_ready = false;
 
-/* ---------- PCI / port helpers ---------- */
 
 static void pci_void(uint32_t op, uint64_t a0, uint64_t a1, uint64_t a2)
 {
@@ -37,7 +36,6 @@ static void vbe_write(uint16_t idx, uint16_t val)
     pci_void(PORT_WRITE, VBE_DATA, val, 16);
 }
 
-/* ---------- init ---------- */
 
 bool vgpu_init(uint32_t w, uint32_t h)
 {
@@ -102,7 +100,6 @@ vgpu_info_t vgpu_get_info(void)
     return g_info;
 }
 
-/* ---------- fb ops ---------- */
 
 void vgpu_pixel(uint32_t x, uint32_t y, uint32_t color)
 {
@@ -127,7 +124,6 @@ void vgpu_clear(uint32_t color)
     }
 }
 
-/* ---------- surfaces ---------- */
 
 int32_t vgpu_surface_create(uint32_t w, uint32_t h, uint64_t *phys_out)
 {
@@ -191,8 +187,6 @@ bool vgpu_surface_present(int32_t id, uint32_t x, uint32_t y)
     return true;
 }
 
-/* ---------- ring server ---------- */
-
 void vgpu_process_ring(volatile vgpu_slot_t *ring)
 {
     if (ring == (void *)0) {
@@ -243,7 +237,6 @@ void vgpu_process_ring(volatile vgpu_slot_t *ring)
     }
 }
 
-/* ---------- entry ---------- */
 
 static volatile vgpu_slot_t *g_ring = (void *)0;
 
