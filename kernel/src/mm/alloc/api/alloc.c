@@ -142,8 +142,8 @@ void kfree_pages(void *ptr, const size_t pages) {
 	size_t requested_bytes = 0;
 	const size_t usable = heap_usable_size(ptr);
 	if (!kfree_pages_validate(pages, ARCH_PAGE_SIZE, usable, &requested_bytes)) {
-	    kprintf("kfree_pages: nieprawidlowy parametr pages=%zu (pojemnosc bloku=%zu B) dla ptr=%p — odmowa zwolnienia\n", pages, usable, ptr);
-	    return;
+		kprintf("kfree_pages: nieprawidlowy parametr pages=%zu (pojemnosc bloku=%zu B) dla ptr=%p — odmowa zwolnienia\n", pages, usable, ptr);
+		return;
 	}
 	heap_free(ptr);
 }
