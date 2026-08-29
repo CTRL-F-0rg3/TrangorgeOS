@@ -45,14 +45,20 @@ fn main() {
     // Current target architecture (available to build scripts on nightly).
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| "x86_64".to_string());
 
-    let mut c_files = Vec::new();
-    collect_c_files(&src_dir, &mut c_files);
-    c_files.sort();
-
     match arch.as_str() {
         // ---- x86_64: legacy C bridge (unchanged behaviour) ----
         "x86_64" => {
             let llvm_target = clang_target("x86_64");
+
+            // Host `cargo test` builds a normal PIE binary, which cannot link
+            // objects compiled with the kernel code model (absolute 32S
+            // relocations). Detect the test profile and relax the flags so
+            // the bridge archive links into the test binary as well.
+            let is_test = env::var("PROFILE").map(|p| p == "test").unwrap_or(false);
+
+            let mut c_files = Vec::new();
+            collect_c_files(&src_dir, &mut c_files);
+            c_files.sort();
 
             let mut objs = Vec::new();
             for c_file in &c_files {
@@ -60,21 +66,30 @@ fn main() {
                 let obj_name = rel.to_string_lossy().replace('/', "_") + ".o";
                 let obj = Path::new(&out_dir).join(obj_name);
 
-                let status = Command::new("clang")
-                    .arg(format!("--target={}", llvm_target))
+                let mut cmd = Command::new("clang");
+                cmd.arg(format!("--target={}", llvm_target))
                     .args([
                         "-ffreestanding",
                         "-fno-builtin",
                         "-fno-stack-protector",
+                        "-std=gnu11",
+                    ]);
+                if is_test {
+                    // Host test binary: position-independent, host code model.
+                    cmd.arg("-fPIC").arg("-O1");
+                } else {
+                    // Bare-metal kernel image: kernel code model, no SSE.
+                    cmd.args([
                         "-mno-red-zone",
                         "-mcmodel=kernel",
                         "-mno-sse",
                         "-mno-sse2",
                         "-mno-mmx",
                         "-mno-80387",
-                        "-std=gnu11",
                         "-O2",
-                    ])
+                    ]);
+                }
+                let status = cmd
                     .arg("-I")
                     .arg(&src_dir)
                     .arg("-c")

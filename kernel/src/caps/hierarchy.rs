@@ -17,6 +17,7 @@
 //!      ├─ CAP_MMAP
 //!      ├─ CAP_PROTECT
 //!      ├─ CAP_SPAWN
+//!      ├─ CAP_KILL (własność procesu sprawdzana osobno)
 //!      ├─ CAP_IPC_SEND
 //!      ├─ CAP_IPC_RECV
 //!      ├─ CAP_FS_READ
@@ -48,7 +49,11 @@ pub fn parent(cap: Capability) -> Option<Capability> {
 
         // Process
         Capability::Spawn => Capability::User,
-        Capability::Kill => Capability::Admin,
+        // Kill należy pod User: presety userspace przyznają Kill ("tylko
+        // własne procesy" — własność sprawdzana na poziomie syscalla).
+        // Pod Admin (→ Ring0) capability Kill powodowała, że zwykły user
+        // hierarchicznie implikował całe poddrzewo drivera (eskalacja).
+        Capability::Kill => Capability::User,
         Capability::Debug => Capability::Admin,
         Capability::Ptrace => Capability::Debug,
         Capability::Sched => Capability::Admin,

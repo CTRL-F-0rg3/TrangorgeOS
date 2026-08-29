@@ -14,6 +14,7 @@
 //! ```
 
 use alloc::vec::Vec;
+use crate::println;
 
 pub mod types;
 pub mod hierarchy;
@@ -73,36 +74,46 @@ pub struct SystemSnapshot {
 /// nie drukowany; run_test wypisze "caps ... [OK]" albo "[FAILED] msg".
 pub fn self_test() -> crate::testing::TestResult {
     let mut ok = true;
+    // Diagnostyka: każdy krok wypisuje swój numer przy niepowodzeniu, więc
+    // jeden przebieg (np. pod QEMU) wskazuje dokładne miejsce błędu.
+    let mut chk = |step: u32, cond: bool| -> bool {
+        if !cond {
+            println!("[caps] self_test step {} FAILED", step);
+        }
+        cond
+    };
 
     // 1) CapabilitySet: operacje na bitmapach
     let a = CapabilitySet::empty().add(Capability::User);
     let b = CapabilitySet::single(Capability::Driver);
-    ok &= a.union(b).count() == 2;
-    ok &= a.intersect(b).is_empty();
-    ok &= CapabilitySet::all().contains(a);
+    ok &= chk(101, a.union(b).count() == 2);
+    ok &= chk(102, a.intersect(b).is_empty());
+    ok &= chk(103, CapabilitySet::all().contains(a));
 
     // 2) hierarchia: parent implikuje child
-    ok &= hierarchy::implies(Capability::Root, Capability::DevPci);
-    ok &= !hierarchy::implies(Capability::DevPci, Capability::Driver);
-    ok &= hierarchy::depth(Capability::DevPci) == 3;
+    ok &= chk(201, hierarchy::implies(Capability::Root, Capability::DevPci));
+    ok &= chk(202, !hierarchy::implies(Capability::DevPci, Capability::Driver));
+    ok &= chk(203, hierarchy::depth(Capability::DevPci) == 3);
 
     // 3) store: rejestracja worlda user + ograniczenia dziedziczenia
     let wid = match store::register_world(None, sets::presets::standard_user()) {
         Ok(id) => id,
         Err(_) => return Err("store: register_world failed"),
     };
-    ok &= store::world_has_cap(wid, Capability::FsRead);
-    ok &= !store::world_has_cap(wid, Capability::DevPci);
+    ok &= chk(301, store::world_has_cap(wid, Capability::FsRead));
+    ok &= chk(302, !store::world_has_cap(wid, Capability::DevPci));
     // child nie może dostać capability, której nie ma parent
-    ok &= store::register_world(Some(wid), CapabilitySet::single(Capability::DevPci))
-        .is_err();
+    ok &= chk(
+        303,
+        store::register_world(Some(wid), CapabilitySet::single(Capability::DevPci)).is_err(),
+    );
 
     // 4) grant/revoke (kernel przyznaje, potem odbieramy DevMmio)
     let kw = check::kernel_world_id();
-    ok &= grant::grant_cap(kw, wid, Capability::DevMmio).is_ok();
-    ok &= store::world_has_cap(wid, Capability::DevMmio);
-    ok &= revoke::revoke_from_world(wid, Capability::DevMmio).is_ok();
-    ok &= !store::world_has_cap(wid, Capability::DevMmio);
+    ok &= chk(401, grant::grant_cap(kw, wid, Capability::DevMmio).is_ok());
+    ok &= chk(402, store::world_has_cap(wid, Capability::DevMmio));
+    ok &= chk(403, revoke::revoke_from_world(wid, Capability::DevMmio).is_ok());
+    ok &= chk(404, !store::world_has_cap(wid, Capability::DevMmio));
 
     // 5) silnik polityki (port SPARK Policy.Evaluate)
     ok &= crate::policy::evaluate(
@@ -138,9 +149,9 @@ pub fn self_test() -> crate::testing::TestResult {
     .is_err();
 
     // 7) audit caps + dziennik polityki żyją
-    ok &= audit::count() > 0;
-    ok &= crate::policy::total() > 0;
-    ok &= crate::policy::denies() > 0;
+    ok &= chk(701, audit::count() > 0);
+    ok &= chk(702, crate::policy::total() > 0);
+    ok &= chk(703, crate::policy::denies() > 0);
 
     let _ = store::unregister_world(wid);
 

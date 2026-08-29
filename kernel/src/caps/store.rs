@@ -48,10 +48,14 @@ pub fn global_caps() -> CapabilitySet {
 pub fn register_world(parent_world: Option<u32>, initial: CapabilitySet) -> Result<u32, &'static str> {
     let mut s = STORE.lock();
 
-    // Walidacja: jeśli parent, child musi być podzbiorem
+    // Walidacja: jeśli parent, child musi być podzbiorem.
+    // UWAGA: celowo BEZ expand_hierarchy — rozwinięcie zbioru rodzica "w górę"
+    // dodawałoby Root/Ring0 (bo User -> Root), a Root implikuje wszystko,
+    // co unieważniało by całe ograniczenie dziedziczenia (eskalacja uprawnień).
+    // set_implies samo wędruje w górę od wymaganej capability.
     if let Some(pwid) = parent_world {
         let parent_caps = find_world_inner(&s, pwid)?;
-        let parent_eff = hierarchy::expand_hierarchy(parent_caps.caps);
+        let parent_eff = parent_caps.caps.diff(s.global_revoked);
 
         for cap in initial.iter() {
             if !hierarchy::set_implies(parent_eff, cap) {
@@ -99,11 +103,12 @@ pub fn get_world_caps(world_id: u32) -> Result<CapabilitySet, &'static str> {
 pub fn set_world_caps(world_id: u32, new_caps: CapabilitySet) -> Result<(), &'static str> {
     let mut s = STORE.lock();
 
-    // Sprawdź parent
+    // Sprawdź parent (surowy zbiór rodzica — patrz uwaga w register_world:
+    // expand_hierarchy tutaj otwierałby furtkę eskalacji przez Root).
     let wc = find_world_inner(&s, world_id)?;
     if let Some(parent_id) = wc.inherited_from {
         let parent_caps = find_world_inner(&s, parent_id)?;
-        let parent_eff = hierarchy::expand_hierarchy(parent_caps.caps);
+        let parent_eff = parent_caps.caps.diff(s.global_revoked);
 
         for cap in new_caps.iter() {
             if !hierarchy::set_implies(parent_eff, cap) {
