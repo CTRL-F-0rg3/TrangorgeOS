@@ -1,12 +1,10 @@
 [unstable]
 json-target-spec = true
 build-std-features = ["compiler-builtins-mem"]
-# build-std is enabled on the command line (`-Z build-std=core,compiler-builtins,alloc`)
-# for the bare-metal kernel builds only. It is deliberately NOT configured
-# here per-target, because doing so requires `-Z unstable-options` and would
-# also affect `cargo test --target x86_64-unknown-linux-gnu` (host), which
-# would rebuild `core` against the std sysroot and trigger
-# "duplicate lang item `sized`".
+# Globally build `core`/`compiler_builtins`/`alloc` from source — the custom
+# JSON kernel targets (x86_64-kernel / riscv64-kernel) have no preinstalled
+# std, so this is required for `cargo build --target ...-kernel.json`.
+build-std = ["core", "compiler_builtins", "alloc", "panic_abort"]
 
 [build]
 target = "x86_64-kernel.json"

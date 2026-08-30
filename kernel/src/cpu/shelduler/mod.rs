@@ -701,7 +701,8 @@ pub fn run_pending_tasks() -> usize {
             let entry = s.find_mut(id)?.entry.take();
             Some((id, entry))
         });
-        let Some((id, entry)) = job else { break };
+        // with_global wraps in Option; the closure returns Option too.
+        let Some(Some((id, entry))) = job else { break };
         if let Some(entry) = entry {
             entry();
         }
@@ -754,11 +755,11 @@ pub fn self_test() -> crate::testing::TestResult {
     }
 
     // zagnieżdżony spawn: zadanie dopisuje dziecko w trakcie działania
-    let d = done.clone();
+    let done_nested = done.clone();
     if spawn(
         "sched-nested",
         move || {
-            let child = done.clone();
+            let child = done_nested.clone();
             let _ = spawn(
                 "sched-child",
                 move || {
@@ -766,7 +767,7 @@ pub fn self_test() -> crate::testing::TestResult {
                 },
                 TaskConfig::default(),
             );
-            d.fetch_add(1, Ordering::Relaxed);
+            done_nested.fetch_add(1, Ordering::Relaxed);
         },
         TaskConfig::default(),
     )

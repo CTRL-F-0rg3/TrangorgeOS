@@ -362,42 +362,39 @@ pub mod api {
         *(hdr as *const u64) as usize
     }
 
-    pub fn kmalloc(size: usize) -> *mut c_void {
+    /// Allocate `size` bytes; returns `None` on failure (matches x86 `mm::api`).
+    pub fn kmalloc(size: usize) -> Option<*mut u8> {
         if size == 0 {
-            return core::ptr::null_mut();
+            return None;
         }
-        raw_alloc(size, MIN_ALIGN) as *mut c_void
+        let p = raw_alloc(size, MIN_ALIGN);
+        if p.is_null() { None } else { Some(p) }
     }
 
-    pub fn kmalloc_aligned(size: usize, align: usize) -> *mut c_void {
+    pub fn kmalloc_aligned(size: usize, align: usize) -> Option<*mut u8> {
         if size == 0 || align == 0 || !align.is_power_of_two() {
-            return core::ptr::null_mut();
+            return None;
         }
-        raw_alloc(size, align.max(MIN_ALIGN)) as *mut c_void
+        let p = raw_alloc(size, align.max(MIN_ALIGN));
+        if p.is_null() { None } else { Some(p) }
     }
 
-    pub fn kzalloc(size: usize) -> *mut c_void {
-        let p = kmalloc(size) as *mut u8;
-        if !p.is_null() {
-            unsafe { core::ptr::write_bytes(p, 0, size) };
-        }
-        p as *mut c_void
+    pub fn kzalloc(size: usize) -> Option<*mut u8> {
+        let p = kmalloc(size)?;
+        unsafe { core::ptr::write_bytes(p, 0, size) };
+        Some(p)
     }
 
-    pub fn kcalloc(count: usize, size: usize) -> *mut c_void {
-        match count.checked_mul(size) {
-            Some(total) => kzalloc(total),
-            None => core::ptr::null_mut(),
-        }
+    pub fn kcalloc(count: usize, size: usize) -> Option<*mut u8> {
+        count.checked_mul(size).and_then(kzalloc)
     }
 
-    pub fn kfree(ptr: *mut c_void) {
-        let p = ptr as *mut u8;
-        if p.is_null() {
+    pub fn kfree(ptr: *mut u8) {
+        if ptr.is_null() {
             return;
         }
         unsafe {
-            let hdr = p as usize - HDR;
+            let hdr = ptr as usize - HDR;
             if hdr < pool_base() || hdr >= pool_base() + HEAP_BYTES {
                 return; // foreign pointer — ignore
             }
@@ -410,39 +407,33 @@ pub mod api {
         }
     }
 
-    pub fn krealloc(ptr: *mut c_void, size: usize) -> *mut c_void {
+    pub fn krealloc(ptr: *mut u8, size: usize) -> Option<*mut u8> {
         if ptr.is_null() {
             return kmalloc(size);
         }
         if size == 0 {
             kfree(ptr);
-            return core::ptr::null_mut();
+            return None;
         }
         unsafe {
-            let old = data_size(ptr as *mut u8);
-            let p = kmalloc(size) as *mut u8;
-            if p.is_null() {
-                return core::ptr::null_mut();
-            }
-            core::ptr::copy_nonoverlapping(ptr as *const u8, p, old.min(size));
+            let old = data_size(ptr);
+            let p = kmalloc(size)?;
+            core::ptr::copy_nonoverlapping(ptr, p, old.min(size));
             kfree(ptr);
-            p as *mut c_void
+            Some(p)
         }
     }
 
-    pub fn kalloc_pages(pages: usize) -> *mut c_void {
-        match pages.checked_mul(4096) {
-            Some(bytes) => kmalloc_aligned(bytes, 4096),
-            None => core::ptr::null_mut(),
-        }
+    pub fn kalloc_pages(pages: usize) -> Option<*mut u8> {
+        pages.checked_mul(4096).and_then(|b| kmalloc_aligned(b, 4096))
     }
 
-    pub fn kfree_pages(ptr: *mut c_void, _pages: usize) {
+    pub fn kfree_pages(ptr: *mut u8, _pages: usize) {
         kfree(ptr)
     }
 
     /// Identity map in bare mode: VA == PA for the heap pool.
-    pub fn kvirt_to_phys(ptr: *mut c_void) -> u64 {
+    pub fn kvirt_to_phys(ptr: *mut u8) -> u64 {
         let p = ptr as usize;
         if p >= pool_base() && p < pool_base() + HEAP_BYTES {
             p as u64
@@ -1003,7 +994,7 @@ pub mod space {
                 }
             }
             for t in inner.tables.drain(..) {
-                super::api::kfree(t as *mut c_void);
+                super::api::kfree(t as *mut u8);
             }
         }
     }

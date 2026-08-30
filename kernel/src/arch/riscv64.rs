@@ -82,12 +82,6 @@ pub fn now() -> u64 {
     t
 }
 
-/// Index of the CPU executing this code (single-hart: 0; SBI HSM brings
-/// per-hart state with the SMP milestone).
-pub fn current_cpu() -> usize {
-    0
-}
-
 // ---- bootstrap ---------------------------------------------------------------
 
 /// RISC-V panic handler: dump the message over the serial console and idle.
@@ -114,13 +108,6 @@ pub fn current_cpu() -> usize {
 }
 
 /// Park the CPU in the machine's idle state (hlt on x86_64, wfi on RISC-V).
-pub fn hlt_loop() -> ! {
-    loop {
-        unsafe {
-            core::arch::asm!("wfi", options(nomem, nostack, preserves_flags));
-        }
-    }
-}
 pub fn hlt_loop() -> ! {
     loop {
         unsafe {

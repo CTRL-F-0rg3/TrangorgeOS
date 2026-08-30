@@ -31,9 +31,18 @@ pub fn hlt_loop() -> ! {
     }
 }
 
-/// Current CPU ID (read-once hart identifier).
+/// Current CPU ID (read-once). Reads the initial APIC id from CPUID leaf 1,
+/// EBX bits 31:24. Falls back to 0 (BSP) if the leaf is unavailable.
 pub fn current_cpu() -> usize {
-    x86_64::instructions::cpuid(1).get_eax() as usize
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        use core::arch::x86_64::__cpuid;
+        (__cpuid(1).ebx >> 24) as usize
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        0
+    }
 }
 
 /// Monotonic kernel time: the Time Stamp Counter. Monotonic per-CPU and good
