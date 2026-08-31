@@ -8,10 +8,7 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                let name = path.file_name().and_then(|n| n.to_str());
-
-                // Architecture-specific / foreign-ABI sources are never
-                // compiled into the fallback `libmm` bridge archive.
+                let name = path.file_name().and_then(|n| n.to_str());.
                 if matches!(name, Some("linuxcom") | Some("wincom") | Some("aarch64") | Some("arm64") | Some("arm") | Some("risc-v") | Some("riscv")) {
                     continue;
                 }
@@ -23,8 +20,6 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Map the current target architecture to the LLVM/clang triple used for the
-/// C bridge. Extend this match when adding further architectures.
 fn clang_target(arch: &str) -> &'static str {
     match arch {
         "x86_64" => "x86_64-unknown-none-elf",
@@ -42,18 +37,11 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src");
 
-    // Current target architecture (available to build scripts on nightly).
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| "x86_64".to_string());
 
     match arch.as_str() {
-        // ---- x86_64: legacy C bridge (unchanged behaviour) ----
         "x86_64" => {
             let llvm_target = clang_target("x86_64");
-
-            // Host `cargo test` builds a normal PIE binary, which cannot link
-            // objects compiled with the kernel code model (absolute 32S
-            // relocations). Detect the test profile and relax the flags so
-            // the bridge archive links into the test binary as well.
             let is_test = env::var("PROFILE").map(|p| p == "test").unwrap_or(false);
 
             let mut c_files = Vec::new();
@@ -75,10 +63,8 @@ fn main() {
                         "-std=gnu11",
                     ]);
                 if is_test {
-                    // Host test binary: position-independent, host code model.
                     cmd.arg("-fPIC").arg("-O1");
                 } else {
-                    // Bare-metal kernel image: kernel code model, no SSE.
                     cmd.args([
                         "-mno-red-zone",
                         "-mcmodel=kernel",
@@ -121,11 +107,6 @@ fn main() {
             println!("cargo:rustc-link-search=native={}", out_dir);
             println!("cargo:rustc-link-lib=static=mm");
         }
-
-        // ---- RISC-V: skeleton bootstrap ----
-        // The legacy `src` is x86_64-centric, so for now we do NOT build the
-        // C bridge on RISC-V at all. The Rust side links against no C symbols
-        // yet, so no `libmm.a` is produced. Link with our own linker script.
         "riscv64" => {
             println!("cargo:rustc-link-arg=-T{}", manifest_dir + "/riscv64-link.ld");
         }

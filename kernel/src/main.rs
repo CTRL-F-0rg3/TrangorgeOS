@@ -2,17 +2,10 @@
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
-// The allocator is provided by the x86_64 MM subsystem, and by the small
-// bump allocator in `arch::riscv64` when building for RISC-V.
 extern crate alloc;
 
-// Architecture abstraction layer (bootstrap / panic / idle loop).
 pub mod arch;
 
-/// x86_64-only hardware subsystems (PCI/IDT/PIC, VGA, bootloader BitInfo,
-/// driverspace, FS, NIC, gfx, terminal). These depend on x86_64 facilities
-/// and are gated out on RISC-V. `mm` and `cpu` are architecture-portable
-/// and live in this section too — they pick their backend by target_arch.
 #[cfg(target_arch = "x86_64")]
 mod bluetooth;
 mod cpu;
@@ -40,7 +33,6 @@ mod pci;
 #[cfg(target_arch = "x86_64")]
 mod terminal;
 
-// ---- architecture-portable modules ---------------------------------------
 mod caps;
 mod policy;
 mod serial;
@@ -141,18 +133,14 @@ static TESTS: &[Test] = &[
     },
 ];
 
-// Kernel-wide init: delegates to the active architecture backend.
 pub fn init() {
     arch::init();
 }
 
-// Idle the CPU (hlt/wfi) for the active architecture.
 pub fn hlt_loop() -> ! {
     arch::hlt_loop()
 }
 
-/// Złączony system uprawnień: capabilities (`caps/` — co wolno) + polityka
-/// (`policy/` — czy przepuszcza). Instalowany raz na obu architekturach.
 pub fn init_permissions() {
     match caps::init() {
         Ok(()) => println!(
@@ -165,7 +153,6 @@ pub fn init_permissions() {
     println!("[policy] unified permission engine installed (hook + audit)");
 }
 
-/// x86_64 kernel main. Booted through `arch::x86_64` (bootloader `BitInfo`).
 #[cfg(target_arch = "x86_64")]
 pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
     init();
@@ -213,7 +200,6 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
     terminal::run();
 }
 
-/// RISC-V kernel main (skeleton bootstrap for now).
 #[cfg(target_arch = "riscv64")]
 pub fn kernel_main_riscv() -> ! {
     init();

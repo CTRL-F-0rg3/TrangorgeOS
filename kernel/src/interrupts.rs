@@ -91,10 +91,6 @@ extern "x86-interrupt" fn page_fault_handler(
 ) {
     use x86_64::registers::control::Cr2;
 
-    // Route through panic! (and therefore the panic screen) instead of
-    // println!() + hlt_loop() directly — previously a page fault only ever
-    // wrote into the invisible VGA text buffer, then halted, so it looked
-    // exactly like a silent freeze on whatever was already on screen.
     panic!(
         "EXCEPTION: PAGE FAULT\naccessed address: {:#x}\nerror code: {:?}\n{:#?}",
         Cr2::read_raw(),

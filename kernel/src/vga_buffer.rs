@@ -1,14 +1,5 @@
-//! Console output shared by every supported architecture.
-//!
-//! On x86_64 this drives the classic memory-mapped VGA text buffer (0xB8000).
-//! RISC-V has no such hardware, so the same `print!`/`println!`/`print_colored!`
-//! macros simply route to the architecture serial console (the real sink there).
-//! Every line is still mirrored to serial on both architectures via
-//! [`crate::serial::print_args`].
-
 use core::fmt;
 
-/// Console colour palette (the same on VGA and on the serial console).
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -31,7 +22,6 @@ pub enum Color {
     White = 15,
 }
 
-// ---- x86_64: real VGA text-mode driver -----------------------------------=
 #[cfg(target_arch = "x86_64")]
 mod x86_impl {
     use super::Color;
@@ -124,12 +114,10 @@ mod x86_impl {
             self.color_code = ColorCode::new(foreground, Color::Black);
         }
 
-        /// Set the cursor column (clamped to the screen width).
         pub fn set_column(&mut self, col: usize) {
             self.column_position = col.min(BUFFER_WIDTH);
         }
 
-        /// Clear from the cursor to the end of the line.
         pub fn clear_to_end(&mut self) {
             let row = BUFFER_HEIGHT - 1;
             let col = self.column_position;
@@ -142,7 +130,6 @@ mod x86_impl {
             }
         }
 
-        /// Write a single byte in a given foreground colour.
         pub fn write_byte_colored(&mut self, byte: u8, fg: Color) {
             let prev = self.color_code;
             self.set_color(fg);
@@ -150,12 +137,10 @@ mod x86_impl {
             self.color_code = prev;
         }
 
-        /// Current cursor column (used by the terminal/editor).
         pub fn column(&self) -> usize {
             self.column_position
         }
 
-        /// Clear the whole screen and reset the cursor.
         pub fn clear_screen(&mut self) {
             for row in 0..BUFFER_HEIGHT {
                 self.clear_row(row);
@@ -188,7 +173,6 @@ mod x86_impl {
         });
     }
 
-    /// Read a VGA text cell back (used by the graphical console to blit text).
     pub fn text_cell(row: usize, col: usize) -> (u8, u8) {
         unsafe {
             let cell = TEXT_BUFFER.chars[row][col];
@@ -196,13 +180,11 @@ mod x86_impl {
         }
     }
 
-    /// Mirror a fmt-argument stream to the VGA buffer.
     pub(super) fn write(args: fmt::Arguments) {
         use core::fmt::Write as _;
         WRITER.lock().write_fmt(args).unwrap();
     }
 
-    /// Mirror a fmt-argument stream using a foreground colour.
     pub(super) fn write_colored(color: Color, args: fmt::Arguments) {
         use core::fmt::Write as _;
         let mut writer = WRITER.lock();
@@ -212,7 +194,6 @@ mod x86_impl {
         writer.color_code = previous;
     }
 
-    /// VGA self-test: ascii + colour roundtrip against the text buffer.
     pub(super) fn self_test() -> crate::testing::TestResult {
         let s = "roundtrip";
         let expected_color = ColorCode::new(Color::Yellow, Color::Black);
@@ -235,7 +216,6 @@ mod x86_impl {
     }
 }
 
-// ---- console plumbing used by the macros below --------------------------
 #[cfg(target_arch = "x86_64")]
 pub use x86_impl::{WRITER, Writer, text_cell};
 #[doc(hidden)]
@@ -270,7 +250,6 @@ macro_rules! print_colored {
     );
 }
 
-// ---- self-tests ----------------------------------------------------------
 #[cfg(target_arch = "x86_64")]
 crate::test_module!({ x86_impl::self_test() });
 

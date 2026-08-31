@@ -1,5 +1,3 @@
-//! Kernel glue code for the C bridge.
-//! This file contains the functions that are called from the C bridge (bridge.c) and are used to interact with the kernel from user space.
 const KSTD_PATH_MAX: usize = 256;
 
 fn cstr_to_str<'a>(p: *const u8) -> Option<&'a str> {
@@ -22,7 +20,6 @@ fn cstr_to_str<'a>(p: *const u8) -> Option<&'a str> {
     None
 }
 
-/// `extern int32_t k_input_key(void);` (bridge.c br_key)
 #[no_mangle]
 pub extern "C" fn k_input_key() -> i32 {
     match crate::drivers::usb::class::hid::keyboard::take_char() {
@@ -31,21 +28,17 @@ pub extern "C" fn k_input_key() -> i32 {
     }
 }
 
-/// `extern uint32_t k_input_keycode(void);` (editor.c) — kod edytora,
-/// 0 = brak zdarzenia, 0x100+ = EDK_* z editor.h.
 #[no_mangle]
 pub extern "C" fn k_input_keycode() -> u32 {
-    // 1. PS/2 scancode-y wprost z terminala (strzałki, F-klawisze, ESC, ...).
     if let Some(k) = crate::terminal::pop_keycode() {
         return k;
     }
 
-    // 2. Klawiatura USB HID (tylko znaki — mapuj na kody edytora).
     if let Some(c) = crate::drivers::usb::class::hid::keyboard::take_char() {
         return match c {
-            b'\n' => 0x100, // EDK_ENTER
-            8 => 0x101,     // EDK_BACKSPACE
-            b'\t' => 0x10A, // EDK_TAB
+            b'\n' => 0x100, 
+            8 => 0x101,     
+            b'\t' => 0x10A, 
             c if (c as u32) >= 32 && (c as u32) < 0x100 => c as u32,
             _ => 0,
         };
@@ -81,7 +74,6 @@ pub extern "C" fn k_fs_read(path: *const u8, buf: *mut u8, cap: u32) -> i32 {
     n as i32
 }
 
-/// `extern int32_t k_fs_exists(const char *path);`
 #[no_mangle]
 pub extern "C" fn k_fs_exists(path: *const u8) -> i32 {
     let dev = match crate::fs::root_device() {
@@ -101,7 +93,6 @@ pub extern "C" fn k_fs_exists(path: *const u8) -> i32 {
     }
 }
 
-/// Pomocnik: czyta plik przez TFS, obsługując proste ścieżki `a/b/c`.
 fn tfs_read_path(dev: &dyn crate::fs::driver::block::BlockDevice, path: &str) -> Option<alloc::vec::Vec<u8>> {
     let trimmed = path.trim_start_matches('/');
     let mut parts = trimmed.split('/').filter(|p| !p.is_empty());
@@ -109,7 +100,6 @@ fn tfs_read_path(dev: &dyn crate::fs::driver::block::BlockDevice, path: &str) ->
 
     let mut dir = crate::fs::tfs::ROOT_DIR;
 
-    // Wszystkie człony poza ostatnim to katalogi — schodź w dół.
     for part in parts {
         dir = crate::fs::tfs::find_dir(dev, dir, part).ok()?;
     }
@@ -117,9 +107,6 @@ fn tfs_read_path(dev: &dyn crate::fs::driver::block::BlockDevice, path: &str) ->
     crate::fs::tfs::read_file(dev, dir, file).ok()
 }
 
-/// `extern bool k_user_cstr(uint64_t ptr, char *buf, uint32_t cap);`
-/// Kopiuje łańcuch z pamięci (ptr) do buf z limitem cap.
-/// Zwraca true, gdy osiągnięto NUL.
 #[no_mangle]
 pub extern "C" fn k_user_cstr(ptr: u64, buf: *mut u8, cap: u32) -> bool {
     if ptr == 0 || buf.is_null() || cap == 0 {
@@ -140,7 +127,6 @@ pub extern "C" fn k_user_cstr(ptr: u64, buf: *mut u8, cap: u32) -> bool {
     false
 }
 
-/// Procesy nie są jeszcze w tym buildzie — zwracamy 0.
 #[no_mangle]
 pub extern "C" fn k_getpid() -> u32 {
     0
@@ -163,7 +149,6 @@ pub extern "C" fn k_kernel_cr3() -> u64 {
     Cr3::read().0.start_address().as_u64()
 }
 
-/// Spawn procesów jest niedostępny w tym buildzie.
 #[no_mangle]
 pub extern "C" fn k_spawn(_path: *const u8, _parent: u32, _cr3: u64) -> i64 {
     -1

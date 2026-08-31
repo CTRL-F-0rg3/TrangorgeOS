@@ -1,15 +1,3 @@
-/*
- * Linker script for the bare-metal RISC-V (riscv64gc) kernel.
- *
- * The kernel is loaded by OpenSBI / QEMU virt at 0x8020_0000.
- * Plain Rust generation (rust-lld) with --no-reloc requires this script
- * to lay out the standard sections, reserve a boot stack and export the
- * entry/interrupt stubs referenced by _start.
- *
- * NOTE: this is the *skeleton* linker script used while the full RISC-V
- * port is brought up. The staging link/early-boot layout will evolve.
- */
-
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 

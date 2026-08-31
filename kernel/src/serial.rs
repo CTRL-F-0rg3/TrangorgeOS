@@ -1,14 +1,5 @@
-//! Architecture-portable serial console.
-//!
-//! On x86_64 this drives the legacy 16550A COM1 port. On RISC-V it drives the
-//! NS16550A UART exposed over MMIO (QEMU `virt` maps it at 0x1000_0000). The
-//! `println!`/`print!` macros in [`crate::vga_buffer`] funnel their output into
-//! [`print_args`], so everything printed on screen (x86_64) also appears on
-//! the serial console on both architectures.
-
 use core::fmt;
 
-// ---- x86_64: 16550A / PC16550 COM1 (port-IO) ----
 #[cfg(target_arch = "x86_64")]
 mod x86_impl {
     use x86_64::instructions::port::Port;
@@ -24,10 +15,10 @@ mod x86_impl {
 
         unsafe {
             d1.write(0x00);
-            d3.write(0x80); // Enable DLAB
+            d3.write(0x80); 
             d0.write(0x03);
             d1.write(0x00);
-            d3.write(0x03); // 8N1, no DLAB
+            d3.write(0x03); 
             d2.write(0xC7);
             d4.write(0x0B);
         }
@@ -47,16 +38,13 @@ mod x86_impl {
     }
 }
 
-// ---- RISC-V: NS16550A UART over MMIO (QEMU virt @ 0x1000_0000) ----
 #[cfg(target_arch = "riscv64")]
 mod rv_impl {
-    const BASE: usize = 0x1000_0000; // MMIO base (QEMU virt)
-    const THR: usize = 0; // transmit hold register (write)
-    const LSR: usize = 5; // line status register (read)
+    const BASE: usize = 0x1000_0000; 
+    const THR: usize = 0; 
+    const LSR: usize = 5; 
 
     pub fn init() {
-        // QEMU's 16550 is pre-configured by the firmware; nothing to set here
-        // for a working console on the `virt` machine.
     }
 
     fn tx_empty() -> bool {

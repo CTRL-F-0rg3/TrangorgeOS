@@ -28,21 +28,17 @@ pub extern "C" fn k_input_key() -> i32 {
     }
 }
 
-/// Kod klawisza dla edytora jądra (kernel/src/editor/editor.c).
-/// 0 = brak zdarzenia; 0x100+ = kody EDK_* z editor.h.
 #[no_mangle]
 pub extern "C" fn k_input_keycode() -> u32 {
-    // 1. PS/2 scancode-y wprost z terminala (strzałki, F-klawisze, ESC, ...).
     if let Some(k) = crate::terminal::pop_keycode() {
         return k;
     }
 
-    // 2. Klawiatura USB HID (tylko znaki — mapuj na kody edytora).
     if let Some(c) = crate::drivers::usb::class::hid::keyboard::take_char() {
         return match c {
-            b'\n' => 0x100, // EDK_ENTER
-            8 => 0x101,     // EDK_BACKSPACE
-            b'\t' => 0x10A, // EDK_TAB
+            b'\n' => 0x100, 
+            8 => 0x101,     
+            b'\t' => 0x10A, 
             c if (c as u32) >= 32 && (c as u32) < 0x100 => c as u32,
             _ => 0,
         };

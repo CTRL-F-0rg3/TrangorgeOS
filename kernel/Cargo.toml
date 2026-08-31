@@ -11,13 +11,9 @@ panic = "abort"
 
 [features]
 default = []
-# Compile policy/bridge.rs (extern "C" policy_evaluate / nim_policy_log).
-# Requires the Ada/Nim policy objects to be linked into the kernel image —
-# see kernel/src/policy/ada and kernel/src/policy/nim. The default build uses
-# the portable Rust policy engine in kernel/src/policy/mod.rs instead.
+
 policy-foreign = []
 
-# Dependencies shared by every supported architecture.
 [dependencies]
 volatile = "0.2.6"
 spin = "0.5.2"
@@ -26,9 +22,7 @@ spin = "0.5.2"
 version = "1.0"
 features = ["spin_no_std"]
 
-# x86_64-specific crates (used only when building for the x86_64 target).
-# Ported over to `target.'cfg(target_arch = "x86_64")'` so the same manifest
-# can build for RISC-V without pulling in the x86-only crates.
+
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
 x86_64 = "0.15"
