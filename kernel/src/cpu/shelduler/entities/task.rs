@@ -62,7 +62,44 @@ bitflags::bitflags! {
     }
 }
 
-// Stan zadania
+#[repr(transparent)]
+pub struct AtomicTaskFlags {
+    value: AtomicU32,
+}
+
+impl AtomicTaskFlags {
+    pub const fn new(flags: TaskFlags) -> Self {
+        Self { value: AtomicU32::new(flags.bits()) }
+    }
+
+    #[inline]
+    pub fn load(&self, order: Ordering) -> TaskFlags {
+        TaskFlags::from_bits_truncate(self.value.load(order))
+    }
+
+    #[inline]
+    pub fn store(&self, flags: TaskFlags, order: Ordering) {
+        self.value.store(flags.bits(), order);
+    }
+
+    #[inline]
+    pub fn insert(&self, flags: TaskFlags, order: Ordering) -> TaskFlags {
+        let old = self.value.fetch_or(flags.bits(), order);
+        TaskFlags::from_bits_truncate(old)
+    }
+
+    #[inline]
+    pub fn remove(&self, flags: TaskFlags, order: Ordering) -> TaskFlags {
+        let old = self.value.fetch_and(!flags.bits(), order);
+        TaskFlags::from_bits_truncate(old)
+    }
+
+    #[inline]
+    pub fn contains(&self, flags: TaskFlags, order: Ordering) -> bool {
+        self.value.load(order) & flags.bits() != 0
+    }
+}
+
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -341,6 +378,7 @@ pub struct CpuContext {
     pub rip: u64,
     pub fs_base: u64,
     pub gs_base: u64,
+    pub fpu_state: *mut u8, //12 bajtów
 }
 
 // Encje szeregujące (CFS/EEVDF, RT, Deadline)
@@ -642,7 +680,7 @@ impl Default for ListHead {
     }
 }
 
-// Spinlock (placeholder do czasu modułu sync)
+
 
 #[repr(C)]
 #[derive(Debug, Default)]
@@ -674,6 +712,21 @@ impl SpinLock {
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::Relaxed)
     }
+
+    #[inline]
+    pub fn lock_irqsave(&self) -> u64 {
+        let flags = unsafe{x86_64::instructions::interrupts::save_flags()};
+
+        unsafe { x86_64::instructions::interrupts::disable() };
+        self.lock();
+        flags
+    }
+
+    #[inline]
+    pub fn unlock_irqrestore(&self, flags: u64) {
+        self.unlock();
+        unsafe { x86_64::instructions::interrupts::restore_flags(flags) 
+        };
 }
 
 // Błędy
@@ -705,16 +758,37 @@ impl fmt::Display for TaskError {
     }
 }
 
+// pub fn set_state(&self, new_state: TaskState) -> Result<(), TaskError> {
+//     let current = self.state();
+//     if !current.can_transition_to(new_state) {
+//         return Err(TaskError::InvalidStateTransition { from: current, to: new_state });
+//     }
+//     self.state.store(new_state as u8, Ordering::Release);
+//     Ok(())
+// }
+
+// pub fn wake_up(&self) -> Result<(), TaskError> {
+//     match self.state() {
+//         TaskState::Interruptible | TaskState::Uninterruptible => {
+//             self.set_state(TaskState::Runnable)
+//         }
+//         TaskState::Runnable => Ok(()),
+//         other => Err(TaskError::InvalidStateTransition { from: other, to: TaskState::Runnable }),
+//     }
+// }
+
 // TaskStruct
 #[repr(C)]
 pub struct TaskStruct {
+    pub rq: *mut core::ffi::c_void, 
     pub pid: TaskId,
     pub tgid: TaskId,
     pub ppid: TaskId,
     pub comm: [u8; TASK_COMM_LEN],
-    pub flags: TaskFlags,
+    pub flags: AtomicTaskFlags,
     state: AtomicU8,
-
+    pub need_resched: AtomicBool,
+    pub in_iowait: AtomicBool,
     pub policy: SchedPolicy,
     pub sched_class: SchedClass,
     pub static_prio: i32,
@@ -783,7 +857,7 @@ impl TaskStruct {
         self.pid = pid;
         self.tgid = tgid;
         self.ppid = ppid;
-        self.flags = TaskFlags::empty();
+        self.flags = AtomicTaskFlags::new(TaskFlags::empty());
         self.state = AtomicU8::new(TaskState::Dead as u8);
 
         self.set_comm(name);
@@ -859,7 +933,7 @@ impl TaskStruct {
             self.prio = 0;
         }
 
-        self.flags |= TaskFlags::PF_FORKNOEXEC;
+        self.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
         self.set_state_unchecked(TaskState::Runnable);
         Ok(())
     }
@@ -887,7 +961,7 @@ impl TaskStruct {
         child.rlimits = self.rlimits;
         child.se.cpus_allowed = self.se.cpus_allowed;
         child.rt.nr_cpus_allowed = self.rt.nr_cpus_allowed;
-        child.flags |= TaskFlags::PF_FORKNOEXEC;
+        child.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
         child.parent = self as *const TaskStruct as *mut TaskStruct;
         Ok(())
     }
@@ -998,11 +1072,11 @@ impl TaskStruct {
     }
 
     pub fn is_kernel_thread(&self) -> bool {
-        self.flags.contains(TaskFlags::PF_KTHREAD)
+        self.flags.contains(TaskFlags::PF_KTHREAD, Ordering::Acquire)
     }
 
     pub fn is_idle_task(&self) -> bool {
-        self.flags.contains(TaskFlags::PF_IDLE) || self.state() == TaskState::Idle
+        self.flags.contains(TaskFlags::PF_IDLE, Ordering::Acquire) || self.state() == TaskState::Idle
     }
 
     pub fn is_zombie(&self) -> bool {
@@ -1108,6 +1182,28 @@ impl TaskStruct {
         let end = self.comm.iter().position(|&b| b == 0).unwrap_or(TASK_COMM_LEN);
         str::from_utf8(&self.comm[..end]).unwrap_or("")
     }
+
+    pub unsafe fn fork (&self, child: &mut TaskStruct, child_pid: TaskId, entry_point: usize, arg: usize) -> Result<(), TaskError> {
+        let name = self.comm_str();
+        child.init(
+            child_pid,
+            child_pid,
+            self.pid,
+            self.policy,
+            weight_to_nice(self.se.weight),
+            entry_point,
+            arg,
+            name,
+        )?;
+
+        child.cred = self.cred;
+        child.rlimits = self.rlimits;
+        child.se.cpus_allowed = self.se.cpus_allowed;
+        child.rt.nr_cpus_allowed = self.rt.nr_cpus_allowed;
+        child.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
+        child.parent = self as *const TaskStruct as *mut TaskStruct;
+        Ok(())
+    } // tymczasowo sie tu zajmuje polecam go przenieść 
 }
 
 impl fmt::Debug for TaskStruct {
