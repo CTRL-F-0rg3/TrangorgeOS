@@ -358,6 +358,9 @@ pub struct LoadAvg {
 
 #[repr(C)]
 pub struct SchedEntity {
+    pub rb_left: *mut TaskStruct,
+    pub rb_right: *mut TaskStruct,
+    pub rb_parent_color: usize, // Lowest bit = color (1=black, 0=red), rest = parent pointer
     pub run_list: *mut TaskStruct,
     pub vruntime: u64,
     pub vlag: i64,
