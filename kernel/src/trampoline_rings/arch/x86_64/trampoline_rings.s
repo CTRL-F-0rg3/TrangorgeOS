@@ -3,12 +3,12 @@
 .global tr_gdt
 tr_gdt:
     .quad 0x0000000000000000
-    .quad 0x00209A0000000000      /* kcode  DPL0 L=1 */
-    .quad 0x0000920000000000      /* kdata  DPL0 */
-    .quad 0x0020BA0000000000      /* r1code DPL1 */
-    .quad 0x0000B20000000000      /* r1data DPL1 */
-    .quad 0x0020FA0000000000      /* r3code DPL3 */
-    .quad 0x0000F20000000000      /* r3data DPL3 */
+    .quad 0x00209A0000000000      
+    .quad 0x0000920000000000      
+    .quad 0x0020BA0000000000      
+    .quad 0x0000B20000000000      
+    .quad 0x0020FA0000000000      
+    .quad 0x0000F20000000000      
 .global tr_tss_desc
 tr_tss_desc:
     .space 16
@@ -24,14 +24,13 @@ tr_tss:
 
 .section .text
 
-/* tr_init(rsp0) */
 .global tr_init
 .type tr_init, @function
 tr_init:
     mov %rdi, %rax
-    mov %eax, (tr_tss + 4)        /* RSP0 lo */
+    mov %eax, (tr_tss + 4)        
     shr $32, %rax
-    mov %eax, (tr_tss + 8)        /* RSP0 hi */
+    mov %eax, (tr_tss + 8)        
 
     lgdt gdt_ptr
 
@@ -50,11 +49,7 @@ tr_init:
 
     ret
 
-/*
- * CpuCtx (kolejność = kolejność push):
- * r15 r14 r13 r12 r11 r10 r9 r8 rbp rdi rsi rdx rcx rbx rax
- * rip cs rflags rsp ss
- */
+
 
 .global isr_hypercall
 .type isr_hypercall, @function
@@ -101,7 +96,6 @@ isr_hypercall:
 isr_default:
     iretq
 
-/* tr_restore_ctx(rdi = CpuCtx*) — wejście/wznowienie świata */
 .global tr_restore_ctx
 .type tr_restore_ctx, @function
 tr_restore_ctx:

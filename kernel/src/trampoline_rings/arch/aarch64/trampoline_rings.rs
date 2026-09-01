@@ -138,33 +138,3 @@ extern "C" fn tr_hyper(ctx: *mut CpuCtx) {
         }
     }
 }
-
-// unsafe { core::arch::asm!("svc #0", in("x0") 1u64); }          // yield
-// unsafe { core::arch::asm!("svc #0", in("x0") 2u64, in("x1") msg.as_ptr()); } // log
-
-// register long x0 __asm__("x0") = 1;
-// __asm__ volatile("svc #0" : "+r"(x0));
-
-// foreign arm {
-// 	@(link_name="ds_hyper") hyper :: proc(call: u64, arg: u64) ---
-// }
-
-// trampoline_rings::init();
-
-// trampoline_rings::add_world(
-//     RING_DRIVER,
-//     ds_ttbr0,          // dolna połówka aspace driverspace
-//     DS_CODE_VA,
-//     DS_STACK_TOP,
-//     DS_INIT_PARAMS_VA,
-// );
-
-// trampoline_rings::add_world(
-//     RING_USER,
-//     user_ttbr0,
-//     USER_ENTRY,
-//     USER_STACK_TOP,
-//     0,
-// );
-
-// trampoline_rings::start();

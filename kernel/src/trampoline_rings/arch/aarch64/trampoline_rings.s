@@ -1,17 +1,7 @@
 .section .text
 
-/*
- * CpuCtx:
- *   x0..x30  : 0..240
- *   sp       : 248
- *   elr      : 256
- *   spsr     : 264
- *   size     : 272
- */
-
 .align 11
 vector_table:
-    /* Current EL with SP_EL0 */
     .align 7
     b vector_default
     .align 7
@@ -21,7 +11,6 @@ vector_table:
     .align 7
     b vector_default
 
-    /* Current EL with SP_ELx (kernel fault — na później) */
     .align 7
     b vector_default
     .align 7
@@ -31,7 +20,6 @@ vector_table:
     .align 7
     b vector_default
 
-    /* Lower EL AArch64 — tu ląduje svc ze światów */
     .align 7
     b vector_hyper
     .align 7
@@ -41,7 +29,6 @@ vector_table:
     .align 7
     b vector_default
 
-    /* Lower EL AArch32 */
     .align 7
     b vector_default
     .align 7
@@ -84,7 +71,6 @@ vector_hyper:
     mov x0, sp
     bl tr_hyper
 
-    /* powrót (jeśli tr_hyper nie przełączył świata) */
     ldr x9, [sp, #248]
     msr sp_el0, x9
     ldr x9, [sp, #256]
@@ -112,7 +98,7 @@ vector_hyper:
     add sp, sp, #272
     eret
 
-/* tr_init() — ustaw VBAR */
+
 .global tr_init
 .type tr_init, @function
 tr_init:
@@ -121,7 +107,7 @@ tr_init:
     isb
     ret
 
-/* tr_restore_ctx(x0 = CpuCtx*) — wejście/wznowienie świata */
+
 .global tr_restore_ctx
 .type tr_restore_ctx, @function
 tr_restore_ctx:

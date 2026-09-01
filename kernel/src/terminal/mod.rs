@@ -1,20 +1,12 @@
-//! Interaktywny terminal + shell z obsługą plików na dysku (TFS).
-//!
-//! Prompt: `#$-=>` (biały) + `_` (czerwony kursor) + wpisywany tekst (niebieski).
-
 use crate::fs::driver::block::BlockDevice;
 use crate::vga_buffer::{Color, WRITER};
 use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 
-// Edytor jądra — `kernel/src/editor/editor.c`, skompilowany przez build.rs
-// i dołączany do `libmm.a`. Znak 0 kończy ścieżkę C-stringa.
+
 unsafe extern "C" {
     fn editor_run(path: *const u8) -> i32;
 }
 
-/* ------------------------------------------------------------------ */
-/* Bufor klawiatury (SPSC ring buffer, IRQ-safe)                       */
-/* ------------------------------------------------------------------ */
 
 const KBUF_SIZE: usize = 256;
 static KBUF: [AtomicU8; KBUF_SIZE] = [const { AtomicU8::new(0) }; KBUF_SIZE];
@@ -22,8 +14,7 @@ static KHEAD: AtomicUsize = AtomicUsize::new(0);
 static KTAIL: AtomicUsize = AtomicUsize::new(0);
 static SHIFT: AtomicBool = AtomicBool::new(false);
 
-/* Bufor kodów edytora (k_input_keycode). Napełniany tylko podczas pracy
-   edytora — wtedy scancode-y nie trafiają do bufora tekstu terminala. */
+
 const KCODE_SIZE: usize = 64;
 static KCODEBUF: [AtomicU32; KCODE_SIZE] = [const { AtomicU32::new(0) }; KCODE_SIZE];
 static KCODE_HEAD: AtomicUsize = AtomicUsize::new(0);
@@ -34,7 +25,7 @@ fn kbuf_push(c: u8) {
     let tail = KTAIL.load(Ordering::Relaxed);
     let next = (tail + 1) % KBUF_SIZE;
     if next == KHEAD.load(Ordering::Acquire) {
-        return; // pełny — porzuć
+        return; 
     }
     KBUF[tail].store(c, Ordering::Relaxed);
     KTAIL.store(next, Ordering::Release);
@@ -43,29 +34,24 @@ fn kbuf_push(c: u8) {
 fn kbuf_pop() -> Option<u8> {
     let head = KHEAD.load(Ordering::Relaxed);
     if head == KTAIL.load(Ordering::Acquire) {
-        return None; // pusty
+        return None; 
     }
     let c = KBUF[head].load(Ordering::Relaxed);
     KHEAD.store((head + 1) % KBUF_SIZE, Ordering::Release);
     Some(c)
 }
 
-/* ------------------------------------------------------------------ */
-/* Scancode set 1 → znak                                              */
-/* ------------------------------------------------------------------ */
 
-/// Zamienia scancode na znak (z obsługą Shift). Zwraca None dla klawiszy
-/// specjalnych (np. samego Shift/Ctrl/Alt).
 fn scancode_to_char(code: u8) -> Option<char> {
     let shift = SHIFT.load(Ordering::Relaxed);
 
     let c: char = match code {
-        // Enter / Backspace / Space
+        
         0x1C => '\n',
         0x0E => '\x08',
         0x39 => ' ',
 
-        // rząd liczb
+        
         0x02 => if shift { '!' } else { '1' },
         0x03 => if shift { '@' } else { '2' },
         0x04 => if shift { '#' } else { '3' },
@@ -77,7 +63,6 @@ fn scancode_to_char(code: u8) -> Option<char> {
         0x0A => if shift { '(' } else { '9' },
         0x0B => if shift { ')' } else { '0' },
 
-        // litery górny rząd q-p
         0x10 => if shift { 'Q' } else { 'q' },
         0x11 => if shift { 'W' } else { 'w' },
         0x12 => if shift { 'E' } else { 'e' },
@@ -89,7 +74,7 @@ fn scancode_to_char(code: u8) -> Option<char> {
         0x18 => if shift { 'O' } else { 'o' },
         0x19 => if shift { 'P' } else { 'p' },
 
-        // a-l
+        
         0x1E => if shift { 'A' } else { 'a' },
         0x1F => if shift { 'S' } else { 's' },
         0x20 => if shift { 'D' } else { 'd' },
@@ -100,7 +85,7 @@ fn scancode_to_char(code: u8) -> Option<char> {
         0x25 => if shift { 'K' } else { 'k' },
         0x26 => if shift { 'L' } else { 'l' },
 
-        // z-m
+        
         0x2C => if shift { 'Z' } else { 'z' },
         0x2D => if shift { 'X' } else { 'x' },
         0x2E => if shift { 'C' } else { 'c' },
@@ -109,7 +94,7 @@ fn scancode_to_char(code: u8) -> Option<char> {
         0x31 => if shift { 'N' } else { 'n' },
         0x32 => if shift { 'M' } else { 'm' },
 
-        // interpunkcja
+        
         0x0C => if shift { '_' } else { '-' },
         0x0D => if shift { '+' } else { '=' },
         0x1A => if shift { '{' } else { '[' },
@@ -128,10 +113,6 @@ fn scancode_to_char(code: u8) -> Option<char> {
     Some(c)
 }
 
-/// Wywoływane z przerwania klawiatury. Śledzi Shift i wrzuca znaki do bufora.
-///
-/// W trybie edytora (`set_keycode_capture(true)`) scancode-y trafiają do bufora
-/// kodów edytora zamiast do bufora tekstu terminala.
 pub fn push_scancode(code: u8) {
     match code {
         0x2A | 0x36 => SHIFT.store(true, Ordering::Relaxed),
@@ -148,22 +129,22 @@ pub fn push_scancode(code: u8) {
     }
 }
 
-/// Scancode set 1 → kod edytora (kernel/src/editor/editor.h, EDK_* = 0x100+).
+
 fn scancode_to_keycode(code: u8) -> Option<u32> {
     match code {
-        0x1C => Some(0x100), // EDK_ENTER
-        0x0E => Some(0x101), // EDK_BACKSPACE
-        0x01 => Some(0x102), // EDK_ESC
-        0x4D => Some(0x103), // EDK_RIGHT
-        0x4B => Some(0x104), // EDK_LEFT
-        0x50 => Some(0x105), // EDK_DOWN
-        0x48 => Some(0x106), // EDK_UP
-        0x47 => Some(0x107), // EDK_HOME
-        0x4F => Some(0x108), // EDK_END
-        0x53 => Some(0x109), // EDK_DELETE
-        0x0F => Some(0x10A), // EDK_TAB
-        0x3F => Some(0x110), // EDK_F5
-        0x42 => Some(0x111), // EDK_F8
+        0x1C => Some(0x100), 
+        0x0E => Some(0x101), 
+        0x01 => Some(0x102), 
+        0x4D => Some(0x103), 
+        0x4B => Some(0x104), 
+        0x50 => Some(0x105),
+        0x48 => Some(0x106), 
+        0x47 => Some(0x107), 
+        0x4F => Some(0x108), 
+        0x53 => Some(0x109), 
+        0x0F => Some(0x10A), 
+        0x3F => Some(0x110), 
+        0x42 => Some(0x111), 
         _ => scancode_to_char(code).map(|c| c as u32),
     }
 }
@@ -173,14 +154,13 @@ fn keycode_push(k: u32) {
     let next = (tail + 1) % KCODE_SIZE;
 
     if next == KCODE_HEAD.load(Ordering::Acquire) {
-        return; // pełny — porzuć
+        return; 
     }
 
     KCODEBUF[tail].store(k, Ordering::Relaxed);
     KCODE_TAIL.store(next, Ordering::Release);
 }
 
-/// Odczyt kodu edytora — używany przez `k_input_keycode()` (kstd_glue.rs).
 pub fn pop_keycode() -> Option<u32> {
     let head = KCODE_HEAD.load(Ordering::Relaxed);
 
@@ -193,14 +173,10 @@ pub fn pop_keycode() -> Option<u32> {
     Some(k)
 }
 
-/// Przekierowuje scancode-y PS/2 do bufora edytora (true = edytor aktywny).
+
 pub fn set_keycode_capture(on: bool) {
     CAPTURE_KEYCODE.store(on, Ordering::Relaxed);
 }
-
-/* ------------------------------------------------------------------ */
-/* Stan terminala                                                     */
-/* ------------------------------------------------------------------ */
 
 const MAX_LINE: usize = 120;
 const PROMPT: &str = "#$-=>";
@@ -212,7 +188,7 @@ static LINE: [AtomicU8; MAX_LINE] = [const { AtomicU8::new(0) }; MAX_LINE];
 static LINE_LEN: AtomicUsize = AtomicUsize::new(0);
 static LINE_START_COL: AtomicUsize = AtomicUsize::new(0);
 
-// Current working directory (first block of its entry table).
+
 static CURRENT_DIR: AtomicU32 = AtomicU32::new(crate::fs::tfs::ROOT_DIR);
 static NET_TIME_MS: AtomicU64 = AtomicU64::new(0);
 
@@ -246,7 +222,7 @@ fn draw_prompt() {
     crate::gfx::refresh();
 }
 
-/// Rysuje prompt + wpisany tekst (niebieski) + kursor (czerwony).
+
 fn redraw_line() {
     let mut line = [0u8; MAX_LINE];
     let text = line_as_str(&mut line);
@@ -276,7 +252,6 @@ fn handle_char(c: char) {
             let owned = alloc::string::String::from(text);
             let start_col = LINE_START_COL.load(Ordering::Relaxed);
 
-            // usuń kursor, zostaw prompt + tekst, potem nowa linia
             {
                 let mut w = WRITER.lock();
                 w.set_column(start_col);
@@ -316,9 +291,7 @@ fn handle_char(c: char) {
     }
 }
 
-/* ------------------------------------------------------------------ */
-/* Komendy                                                            */
-/* ------------------------------------------------------------------ */
+
 
 fn split_once_space(s: &str) -> (&str, &str) {
     match s.find(' ') {
@@ -327,7 +300,7 @@ fn split_once_space(s: &str) -> (&str, &str) {
     }
 }
 
-/// Parses a resolution specifier of the form `WxH` or `W:H` (e.g. `1920:1080`).
+
 fn parse_resolution(s: &str) -> Option<(u32, u32)> {
     let sep = s.find(|c| c == 'x' || c == 'X' || c == ':')?;
     let (w, h) = (&s[..sep], &s[sep + 1..]);
@@ -577,7 +550,6 @@ fn poll_network() {
     }
 }
 
-/// Sink for `tfs::list_dir` — prints via `println!`.
 struct Sink;
 
 impl core::fmt::Write for Sink {
@@ -587,9 +559,7 @@ impl core::fmt::Write for Sink {
     }
 }
 
-/* ------------------------------------------------------------------ */
-/* Main loop                                                          */
-/* ------------------------------------------------------------------ */
+
 
 pub fn init() {
     WRITER.lock().set_color(CONSOLE_COLOR);

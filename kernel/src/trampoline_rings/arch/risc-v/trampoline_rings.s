@@ -6,16 +6,6 @@ kstack_top:
 .section .text
 .align 2
 
-/*
- * CpuCtx:
- *   x0..x31 : 0..248   (x0 nieużywane)
- *   sp      : 256
- *   epc     : 264
- *   sstatus : 272
- *   pad     : 280
- *   size    : 288
- */
-
 .global trap_entry
 trap_entry:
     csrrw sp, sscratch, sp        # sp = kernel, sscratch = world sp
@@ -53,7 +43,7 @@ trap_entry:
     sd x31,  248(sp)
 
     csrr t0, sscratch
-    sd t0, 256(sp)                /* world sp */
+    sd t0, 256(sp)                
     csrr t0, sepc
     sd t0, 264(sp)
     csrr t0, sstatus
@@ -62,7 +52,6 @@ trap_entry:
     mv a0, sp
     call tr_hyper
 
-    /* powrót bez przełączenia świata */
     ld t0, 264(sp)
     csrw sepc, t0
     ld t0, 272(sp)
@@ -105,7 +94,7 @@ trap_entry:
     csrrw sp, sscratch, sp        # sp = world, sscratch = kernel
     sret
 
-/* tr_init(kernel_stack_top) */
+
 .global tr_init
 .type tr_init, @function
 tr_init:
@@ -117,13 +106,11 @@ tr_init:
     la t0, trap_entry
     csrw stvec, t0
 
-    /* SUM=1: kernel może czytać strony U w tr_hyper (logi itd.) */
     li t0, (1 << 18)
     csrs sstatus, t0
 
     ret
 
-/* tr_restore_ctx(a0 = CpuCtx*) — wejście/wznowienie świata */
 .global tr_restore_ctx
 .type tr_restore_ctx, @function
 tr_restore_ctx:
@@ -167,6 +154,6 @@ tr_restore_ctx:
     ld x29, 232(a0)
     ld x30, 240(a0)
     ld x31, 248(a0)
-    ld x10, 80(a0)                /* a0 na samym końcu */
+    ld x10, 80(a0)                
 
     sret

@@ -8,7 +8,7 @@ pub const RING_KERNEL: u8 = 0;
 pub const RING_DRIVER: u8 = 1;
 pub const RING_USER: u8 = 3;
 
-/* SPIE=1 -> po sret przerwania włączone w świecie */
+
 pub const SSTATUS_WORLD: u64 = 1 << 5;
 
 #[repr(C)]
@@ -55,7 +55,7 @@ pub fn add_world(ring: u8, satp: u64, entry: u64,
             if WORLDS[i].is_none() {
                 let mut ctx = CpuCtx::default();
 
-                ctx.x[10] = arg;          /* a0 */
+                ctx.x[10] = arg;          
                 ctx.epc = entry;
                 ctx.sp = stack;
                 ctx.sstatus = SSTATUS_WORLD;
@@ -144,28 +144,3 @@ extern "C" fn tr_hyper(ctx: *mut CpuCtx) {
     }
 }
 
-// unsafe { core::arch::asm!("ecall", in("a0") 1u64); }
-// unsafe { core::arch::asm!("ecall", in("a0") 2u64, in("a1") msg.as_ptr()); }
-
-// register long a0 __asm__("a0") = 1;
-// __asm__ volatile("ecall" : "+r"(a0));
-
-// trampoline_rings::init();
-
-// trampoline_rings::add_world(
-//     RING_DRIVER,
-//     ds_satp,             /* Sv39: (8 << 60) | ppn */
-//     DS_CODE_VA,
-//     DS_STACK_TOP,
-//     DS_INIT_PARAMS_VA,
-// );
-
-// trampoline_rings::add_world(
-//     RING_USER,
-//     user_satp,
-//     USER_ENTRY,
-//     USER_STACK_TOP,
-//     0,
-// );
-
-// trampoline_rings::start();
