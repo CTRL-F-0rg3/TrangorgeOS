@@ -1,6 +1,5 @@
 use super::framebuffer::{Framebuffer, rgb};
 
-/* pasmo fioletowe (Q16): ~+25° */
 const P_COS: i64 = 59636;
 const P_SIN: i64 = 27525;
 
@@ -40,7 +39,6 @@ fn fbm(xq: i64, yq: i64) -> i64 {
     (a * 144 + b * 72 + c * 40) >> 8
 }
 
-/* fioletowe pasmo po skosie — bez zmian */
 fn band_fall(x: i64, y: i64, w: i64, h: i64) -> i64 {
     let dx = x - w / 2;
     let dy = y - h / 2;
@@ -58,11 +56,10 @@ fn band_fall(x: i64, y: i64, w: i64, h: i64) -> i64 {
     (q / (bw * bw / 256)).min(256)
 }
 
-/* ZIELONA MGŁA: pionowa wstęga przy lewej krawędzi,
-   środek i szerokość falują nieregularnie wzdłuż Y */
+
 fn green_fall(x: i64, y: i64, w: i64, _h: i64) -> i64 {
-    let n1 = vnoise((y << 8) / 160 + 31337, 4242);   /* duża fala */
-    let n2 = vnoise((y << 8) / 55 + 777, 1234);      /* drobna fala */
+    let n1 = vnoise((y << 8) / 160 + 31337, 4242);   
+    let n2 = vnoise((y << 8) / 55 + 777, 1234);      
 
     let wave = ((n1 - 128) * (w / 10) + (n2 - 128) * (w / 26)) >> 8;
 
@@ -82,24 +79,6 @@ fn green_fall(x: i64, y: i64, w: i64, _h: i64) -> i64 {
     (q / (bw * bw / 256)).min(256)
 }
 
-/*
- * ALTERNATYWA — półokrąg wokół lewego dolnego rogu.
- * Podmień green_fall na tę, jeśli wolisz łuk zamiast wstęgi:
- *
- * fn green_fall_arc(x: i64, y: i64, w: i64, h: i64) -> i64 {
- *     let cx = w * 12 / 100;
- *     let cy = h * 95 / 100;
- *     let dx = x - cx;
- *     let dy = y - cy;
- *     let dist = ((dx * dx + dy * dy) as i64).isqrt(); // lub przybliżenie
- *     let ring = h * 55 / 100;
- *     let ad = (dist - ring).abs();
- *     let bw = h * 12 / 100;
- *     if ad >= bw { return 0; }
- *     let q = bw * bw - ad * ad;
- *     (q / (bw * bw / 256)).min(256)
- * }
- */
 
 fn px_add(fb: &mut Framebuffer, x: i64, y: i64,
           r: i64, g: i64, b: i64, m: i64)
@@ -119,7 +98,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
     let w = fb.width as i64;
     let h = fb.height as i64;
 
-    /* ---------- 1. tło + fioletowa mgła + zielona wstęga ---------- */
 
     for y in 0..fb.height {
         for x in 0..fb.width {
@@ -195,7 +173,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 2. gwiazdy główne — jeszcze gęściej ---------- */
 
     let cell: i64 = 6;
     let cw = (w + cell - 1) / cell;
@@ -241,7 +218,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 3. PUNKTOWY PYŁ — losowo po CAŁYM ekranie ---------- */
 
     let cell4: i64 = 3;
     let cw4 = (w + cell4 - 1) / cell4;
@@ -269,7 +245,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
             px_add(fb, cx * cell4 + jx, cy * cell4 + jy,
                    cr * br / 255, cg * br / 255, cb * br / 255, m);
 
-            /* najjaśniejsze dostają mini-poświatę */
             if br > 240 {
                 px_add(fb, cx * cell4 + jx + 1, cy * cell4 + jy,
                        cr / 4, cg / 4, cb / 4, m);
@@ -283,7 +258,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 4. drobny pył w mgłach ---------- */
 
     for cy in 0..ch4 {
         for cx in 0..cw4 {
@@ -320,7 +294,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 5. nieregularne gwiazdki w centrach mgieł ---------- */
 
     let cell3: i64 = 4;
     let cw3 = (w + cell3 - 1) / cell3;
@@ -385,7 +358,6 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
         }
     }
 
-    /* ---------- 6. spadająca gwiazda ---------- */
 
     let x0 = w * 28 / 100;
     let y0 = h * 35 / 100;

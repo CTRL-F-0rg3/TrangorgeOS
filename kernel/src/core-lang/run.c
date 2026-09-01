@@ -1,4 +1,3 @@
-/* kernel/src/corelang/run.c — wykonaj skrypt z VFS */
 #include "loader.h"
 #include "bridge.h"
 
@@ -31,7 +30,6 @@ int cl_run_script(const char *path, uint8_t ring, arena_t *ar)
     cl_vm_init(&vm, P);
     cl_bridge_init(&vm, ring);
 
-    /* native jeśli arch wspiera — externy działają tak samo */
     void *code = cl_native_compile(P);
 
     if (code != (void *)0) {
@@ -49,9 +47,8 @@ int cl_run_script(const char *path, uint8_t ring, arena_t *ar)
             }
         }
 
-        /* externy w native idą przez tę samą tablicę co VM */
+
         for (size_t i = 0; i < P->nexts; i++) {
-            /* vm.externs już wypełnione przez bridge — skopiuj */
             exts[i] = vm.externs[i];
         }
 

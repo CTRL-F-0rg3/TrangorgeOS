@@ -1,12 +1,3 @@
-//! TangFS - Trangorge Next-Gen Filesystem
-//! 
-//! Features:
-//! - B+tree directories (O(log n) lookup)
-//! - Extent-based allocation
-//! - Write-ahead journaling
-//! - Extended attributes
-//! - Checksums for data integrity
-
 pub mod superblock;
 pub mod btree;
 pub mod extent;
@@ -24,7 +15,6 @@ use core::cell::RefCell;
 pub use superblock::Superblock;
 pub use inode::Inode;
 
-/// TangFS filesystem instance
 pub struct TangFs {
     device: &'static dyn crate::fs::driver::BlockDevice,
     superblock: RefCell<Superblock>,
@@ -46,7 +36,6 @@ impl TangFs {
         
         let journal = journal::Journal::open(device, &sb)?;
         
-        // Replay journal if needed
         journal.replay()?;
         
         Ok(Self {
@@ -76,13 +65,11 @@ impl TangFs {
             return Err("Block size mismatch");
         }
         
-        // Write to journal first
+
         self.journal.borrow_mut().write_block(block, data)?;
         
-        // Then write to disk
         self.device.write_blocks(block, 1, data)?;
         
-        // Update cache
         let mut cache = self.block_cache.borrow_mut();
         cache.insert(block, data.to_vec());
         
@@ -105,7 +92,7 @@ impl FileSystem for TangFs {
             total_blocks: sb.total_blocks,
             free_blocks: sb.free_blocks,
             block_size: sb.block_size,
-            total_inodes: sb.total_blocks / 256, // rough estimate
+            total_inodes: sb.total_blocks / 256, 
             free_inodes: sb.free_blocks / 256,
         })
     }

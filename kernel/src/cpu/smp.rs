@@ -1,7 +1,3 @@
-//! x86_64 SMP bring-up (moved verbatim from `cpu/mod.rs` when the module
-//! became architecture-portable): ACPI/MADT discovery, LAPIC init, AP
-//! trampoline boot, per-AP self-test state and IPI roundtrip checks.
-
 use super::acpi;
 use super::lapic;
 use super::shelduler;

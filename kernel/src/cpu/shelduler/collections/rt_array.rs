@@ -3,7 +3,7 @@ use core::ptr;
 
 pub struct RtArray {
     pub queue: [ListHead; MAX_RT_PRIO as usize],
-    pub bitmap: [u64; 2], // 128 bitów, pokrywa MAX_RT_PRIO = 100
+    pub bitmap: [u64; 2], 
     pub nr_running: usize,
 }
 
@@ -49,9 +49,8 @@ impl RtArray {
             self.set_bit(prio);
         }
         
-        list.insert_before(task as *mut ListHead); // Wstawia na koniec (FIFO)
-        (*task).rt.run_list = ptr::null_mut(); // Reset wskaźnika
-        self.nr_running += 1;
+        list.insert_before(task as *mut ListHead); 
+        (*task).rt.run_list = ptr::null_mut(); 
     }
 
     pub unsafe fn dequeue(&mut self, task: *mut TaskStruct) {
@@ -71,7 +70,6 @@ impl RtArray {
             let list = &mut self.queue[prio];
             if !list.is_empty() {
                 let next = list.next;
-                // Rotacja FIFO: zdejmij z przodu, wstaw na koniec
                 (next).remove();
                 list.insert_before(next);
                 return next as *mut TaskStruct;

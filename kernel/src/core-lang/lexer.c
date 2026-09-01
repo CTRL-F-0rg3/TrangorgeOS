@@ -201,7 +201,7 @@ static void lex_ident(lexer_t *l, token_t *t,
 static void lex_string(lexer_t *l, token_t *t,
                        uint32_t line, uint32_t col)
 {
-    take(l); /* " */
+    take(l); 
 
     const char *start = l->src + l->pos;
 
@@ -228,7 +228,7 @@ static void lex_string(lexer_t *l, token_t *t,
 static void lex_char(lexer_t *l, token_t *t,
                      uint32_t line, uint32_t col)
 {
-    take(l); /* ' */
+    take(l); 
 
     uint64_t v = 0;
 
@@ -296,7 +296,6 @@ bool cl_lex_next(lexer_t *l, token_t *t)
 
     const char *start = l->src + l->pos;
 
-    /* $x / $!x / $@x */
     if (c == '$') {
         take(l);
 
@@ -313,7 +312,6 @@ bool cl_lex_next(lexer_t *l, token_t *t)
         return true;
     }
 
-    /* dwuznaki */
     char d = peek2(l);
 
     if (c == '=' && d == '=') { take(l); take(l); emit(l, t, TK_EQ, start, 2, line, col); return true; }

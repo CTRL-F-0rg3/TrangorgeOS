@@ -1,18 +1,3 @@
-//! System uprawnień (capabilities) dla TrangorgeOS.
-//!
-//! Każda operacja w kernelu wymaga odpowiedniej capability.
-//! System jest niezależny od `policy/` - polityka decyduje co zrobić,
-//! capabilities mówią co WOLNO.
-//!
-//! Hierarchia:
-//!   CAP_ROOT > CAP_RING0 > CAP_DRIVER > CAP_USER
-//!
-//! Przykład użycia:
-//! ```rust
-//! caps::require_cap(Capability::PhysAlloc)?;
-//! let frame = pmm::alloc_frame()?;
-//! ```
-
 use alloc::vec::Vec;
 use crate::println;
 
@@ -43,7 +28,6 @@ pub use audit::*;
 pub use export::*;
 pub use defaults::*;
 
-/// Inicjalizacja systemu capabilities (wywołaj raz przy starcie kernela)
 pub fn init() -> Result<(), &'static str> {
     store::init_store()?;
     audit::init_audit_log()?;
@@ -51,7 +35,6 @@ pub fn init() -> Result<(), &'static str> {
     Ok(())
 }
 
-/// Snapshot całego systemu (do debug/testów)
 pub fn snapshot() -> SystemSnapshot {
     SystemSnapshot {
         global_caps: store::global_caps(),
@@ -69,13 +52,9 @@ pub struct SystemSnapshot {
     pub world_count: usize,
 }
 
-/// Pełny self-test złączonego systemu uprawnień (caps + policy).
-/// Konwencja jak pozostałe moduły (testing::Test) — komunikat zwracany,
-/// nie drukowany; run_test wypisze "caps ... [OK]" albo "[FAILED] msg".
 pub fn self_test() -> crate::testing::TestResult {
     let mut ok = true;
-    // Diagnostyka: każdy krok wypisuje swój numer przy niepowodzeniu, więc
-    // jeden przebieg (np. pod QEMU) wskazuje dokładne miejsce błędu.
+
     let mut chk = |step: u32, cond: bool| -> bool {
         if !cond {
             println!("[caps] self_test step {} FAILED", step);
@@ -83,39 +62,34 @@ pub fn self_test() -> crate::testing::TestResult {
         cond
     };
 
-    // 1) CapabilitySet: operacje na bitmapach
     let a = CapabilitySet::empty().add(Capability::User);
     let b = CapabilitySet::single(Capability::Driver);
     ok &= chk(101, a.union(b).count() == 2);
     ok &= chk(102, a.intersect(b).is_empty());
     ok &= chk(103, CapabilitySet::all().contains(a));
 
-    // 2) hierarchia: parent implikuje child
     ok &= chk(201, hierarchy::implies(Capability::Root, Capability::DevPci));
     ok &= chk(202, !hierarchy::implies(Capability::DevPci, Capability::Driver));
     ok &= chk(203, hierarchy::depth(Capability::DevPci) == 3);
 
-    // 3) store: rejestracja worlda user + ograniczenia dziedziczenia
     let wid = match store::register_world(None, sets::presets::standard_user()) {
         Ok(id) => id,
         Err(_) => return Err("store: register_world failed"),
     };
     ok &= chk(301, store::world_has_cap(wid, Capability::FsRead));
     ok &= chk(302, !store::world_has_cap(wid, Capability::DevPci));
-    // child nie może dostać capability, której nie ma parent
+
     ok &= chk(
         303,
         store::register_world(Some(wid), CapabilitySet::single(Capability::DevPci)).is_err(),
     );
 
-    // 4) grant/revoke (kernel przyznaje, potem odbieramy DevMmio)
     let kw = check::kernel_world_id();
     ok &= chk(401, grant::grant_cap(kw, wid, Capability::DevMmio).is_ok());
     ok &= chk(402, store::world_has_cap(wid, Capability::DevMmio));
     ok &= chk(403, revoke::revoke_from_world(wid, Capability::DevMmio).is_ok());
     ok &= chk(404, !store::world_has_cap(wid, Capability::DevMmio));
 
-    // 5) silnik polityki (port SPARK Policy.Evaluate)
     ok &= crate::policy::evaluate(
         crate::policy::RING_KERNEL, crate::policy::CLS_NET, 1, 0,
     ) == crate::policy::ALLOW;
@@ -133,14 +107,10 @@ pub fn self_test() -> crate::testing::TestResult {
         crate::policy::RING_DRIVER, crate::policy::CLS_NET, 1, 0,
     ) == crate::policy::ALLOW;
 
-    // 6) złączona decyzja: polityka AND capability
     ok &= crate::policy::decide(kw, crate::policy::cmd(crate::policy::CLS_NET, 1), 0).is_ok();
     ok &= crate::policy::decide(wid, crate::policy::cmd(crate::policy::CLS_SYS, 0), 0).is_ok();
-    // user bez DevMmio -> odmowa warstwy caps
     ok &= crate::policy::decide(wid, crate::policy::cmd(crate::policy::CLS_VIDEO, 1), 0).is_err();
-    // user + NET -> odmowa reguły polityki
     ok &= crate::policy::decide(wid, crate::policy::cmd(crate::policy::CLS_NET, 1), 0).is_err();
-    // user + BLOCK/BLK_WRITE -> odmowa reguły polityki
     ok &= crate::policy::decide(
         wid,
         crate::policy::cmd(crate::policy::CLS_BLOCK, crate::policy::BLK_WRITE),
@@ -148,7 +118,6 @@ pub fn self_test() -> crate::testing::TestResult {
     )
     .is_err();
 
-    // 7) audit caps + dziennik polityki żyją
     ok &= chk(701, audit::count() > 0);
     ok &= chk(702, crate::policy::total() > 0);
     ok &= chk(703, crate::policy::denies() > 0);

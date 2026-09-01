@@ -5,10 +5,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "tokens.h"   /* <- DODAJ: op w node'ach to tok_kind_t */
+#include "tokens.h"   
 typedef struct cl_type {
-    uint16_t bits;   /* 4..512, str=64 */
-    bool neg;        /* _=>-1 : zakres obejmuje ujemne */
+    uint16_t bits;   
+    bool neg;        
 } cl_type_t;
 
 enum {
@@ -27,8 +27,8 @@ struct ast_node {
     cl_type_t type;
     uint32_t line;
 
-    int op;             /* token kind dla BIN/UN */
-    int pool_kind;      /* 0=$ 1=$! 2=$@ */
+    int op;             
+    int pool_kind;      
     bool is_array;
     uint64_t value;
     uint64_t arr_count, arr_init;

@@ -19,31 +19,8 @@ pub enum UsbError {
 
 use crate::testing::TestResult;
 
-/// The one live xHCI controller, if any.
-///
-/// Previously the `Xhci` built by `host::xhci::init::init()` only ever
-/// existed as a local variable inside `self_test()` and was dropped the
-/// instant that function returned - so nothing could ever poll it again
-/// after boot, and a plugged-in USB keyboard would never produce a single
-/// keystroke no matter how correctly the rest of the stack worked.
-///
-/// This is its real persistent home. Kept as a bare `static mut` (matching
-/// the convention already used for device state elsewhere in this driver -
-/// see `class::mass::MASS0`, `class::hid::KEYS`) rather than
-/// `spin::Mutex<Xhci>`, since `Xhci` holds raw MMIO/DMA pointers that
-/// aren't `Send`, and this kernel doesn't run USB driver code concurrently
-/// from more than one context.
 static mut CONTROLLER: Option<Xhci> = None;
 
-/// Brings up the xHCI controller if one is present, scans every port for a
-/// connected device, and hands each one to whichever class driver claims
-/// it (mass storage first, then HID keyboard). Idempotent - a second call
-/// is a cheap no-op if a controller is already up.
-///
-/// This is the function that actually needs to run once at boot for USB
-/// keyboard input and USB mass storage to work at all; `self_test()` below
-/// is now just a thin diagnostic wrapper around this same path so the test
-/// harness still reports pass/fail the way it always did.
 pub fn init() -> Result<(), UsbError> {
     if unsafe { CONTROLLER.is_some() } {
         return Ok(());
@@ -72,11 +49,6 @@ pub fn init() -> Result<(), UsbError> {
 
     let mut xhci = host::xhci::init::init(regs)?;
 
-    // Detects connected ports, resets/enables them, reads their
-    // descriptors, and attaches a class driver (mass storage / HID) to
-    // each one. See host::xhci::init::Xhci::scan_ports /
-    // Xhci::attach_port - previously this only detected and reset ports
-    // and never went any further.
     xhci.scan_ports();
 
     unsafe {
@@ -86,11 +58,6 @@ pub fn init() -> Result<(), UsbError> {
     Ok(())
 }
 
-/// Services pending USB interrupt-transfer completions - currently, HID
-/// keyboard reports (see `class::hid::poll`). Must be called repeatedly
-/// after `init()` for `class::hid::keyboard::take_char()` to ever produce
-/// a keystroke; it's wired into the timer interrupt in `interrupts.rs`.
-/// Safe (and cheap) to call even if no controller was ever brought up.
 pub fn poll() {
     if let Some(x) = unsafe { CONTROLLER.as_mut() } {
         class::hid::poll(x);

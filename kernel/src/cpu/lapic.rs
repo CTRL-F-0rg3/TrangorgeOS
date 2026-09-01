@@ -1,4 +1,4 @@
-use core::ptr;
+use core::ptr; 
 use x86_64::registers::model_specific::Msr;
 
 const APIC_BASE_MSR: u32 = 0x1B;

@@ -18,7 +18,6 @@ extern bool battery_status_packed(uint64_t *a0, uint64_t *a1, uint64_t *a2);
 static cl_vm_t *g_vm = (void *)0;
 static uint8_t g_ring = 0;
 
-/* ---- externy ---- */
 
 static uint64_t br_put(uint64_t v, uint64_t b, uint64_t c,
                        uint64_t d, uint64_t e, uint64_t f)
@@ -130,7 +129,6 @@ static uint64_t br_ipc_recv(uint64_t a, uint64_t b, uint64_t c,
     uint64_t a0 = 0, a1 = 0;
     int32_t from = k_ipc_recv(&a0, &a1);
 
-    /* v1: zwraca from; argi przepadają — rozszerz przez globalne out */
     return (uint64_t)(int64_t)from;
 }
 
@@ -174,10 +172,9 @@ static uint64_t br_bat(uint64_t a, uint64_t b, uint64_t c,
         return (uint64_t)-1;
     }
 
-    return a0;   /* present|state|percent */
+    return a0;   
 }
 
-/* ---- rejestracja ---- */
 
 int cl_bridge_add(cl_vm_t *vm, const char *name, cl_ext_fn fn)
 {
@@ -189,7 +186,6 @@ int cl_bridge_init(cl_vm_t *vm, uint8_t ring)
     g_vm = vm;
     g_ring = ring;
 
-    /* zawsze */
     cl_bridge_add(vm, "put", br_put);
     cl_bridge_add(vm, "putc", br_putc);
     cl_bridge_add(vm, "log", br_log);

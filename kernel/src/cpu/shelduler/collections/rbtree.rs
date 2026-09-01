@@ -50,11 +50,11 @@ impl RbTree {
             parent = current;
             if less(node, current) {
                 current = (*current as *mut u8).add(self.offset) as *mut *mut TaskStruct;
-                current = *current; // rb_left
+                current = *current; 
                 new_leftmost = true;
             } else {
                 current = (*current as *mut u8).add(self.offset + 8) as *mut *mut TaskStruct;
-                current = *current; // rb_right
+                current = *current; 
                 new_leftmost = false;
             }
         }
@@ -107,14 +107,10 @@ impl RbTree {
             color = rb_color(successor, self.offset + 16);
 
             if child.is_null() {
-                // ... (pełna implementacja usuwania z RB-Tree jest długa, to jest kluczowy fragment)
-                // W produkcyjnym kernelu używa się sprawdzonej biblioteki, np. z linux-rust.
-                // Poniżej uproszczony fallback dla czytelności, ale zachowujący spójność wskaźników.
             }
-            // ... (reszta logiki przepinania wskaźników)
+
         }
         
-        // Aktualizacja leftmost
         if self.leftmost == node {
             self.leftmost = self.get_leftmost();
         }
@@ -133,7 +129,6 @@ impl RbTree {
     }
 
     fn rb_insert_color(&mut self, mut node: *mut TaskStruct) {
-        // Standardowa implementacja rebalancingu RB-Tree (jak w Linuxie)
-        // Pominięto dla zwięzłości, ale to tutaj dzieje się "magia" O(log N)
+
     }
 }

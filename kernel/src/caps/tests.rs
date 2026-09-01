@@ -1,5 +1,3 @@
-//! Testy całego systemu capabilities.
-
 #![cfg(test)]
 
 use crate::caps::*;
@@ -10,24 +8,19 @@ use crate::caps::sets;
 fn test_full_flow() {
     init().unwrap();
 
-    // Kernel world (pierwszy zarejestrowany przez install_defaults)
     let kernel = crate::caps::check::kernel_world_id();
 
-    // Driver world
     let drv = store::register_world(Some(kernel), sets::presets::driver()).unwrap();
     assert!(store::world_has_cap(drv, Capability::DevPci));
     assert!(!store::world_has_cap(drv, Capability::Admin));
 
-    // User world
     let usr = store::register_world(Some(kernel), sets::presets::standard_user()).unwrap();
     assert!(store::world_has_cap(usr, Capability::FsRead));
     assert!(!store::world_has_cap(usr, Capability::DevPci));
 
-    // Grant od kernel do user
     grant::grant_cap(kernel, usr, Capability::Mmap).unwrap();
     assert!(store::world_has_cap(usr, Capability::Mmap));
 
-    // Revoke
     revoke::revoke_from_world(usr, Capability::Mmap).unwrap();
     assert!(!store::world_has_cap(usr, Capability::Mmap));
 }
@@ -38,7 +31,6 @@ fn test_hierarchy_enforcement() {
 
     let parent = store::register_world(None, sets::presets::standard_user()).unwrap();
 
-    // Child nie może dostać DevPci (parent nie ma)
     let bad = store::register_world(Some(parent),
         CapabilitySet::single(Capability::DevPci));
     assert!(bad.is_err());

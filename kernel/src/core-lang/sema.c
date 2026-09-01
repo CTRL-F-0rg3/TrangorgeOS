@@ -32,7 +32,6 @@ struct sema_ctx {
     cl_diag_t diags[64];
     size_t ndiags;
 
-    /* $@ pairing per statement */
     char sh_name[2][64];
     cl_type_t sh_type[2];
     uint32_t sh_line[2];
@@ -83,7 +82,6 @@ static void push_scope(sema_ctx_t *s)
 
 static void pop_scope(sema_ctx_t *s)
 {
-    /* warn: lokalna zmienna żywa bez set_free */
     for (symbol_t *sym = s->scopes[s->top].head; sym; sym = sym->next) {
         if (sym->kind == SYM_VAR && sym->live) {
             diag(s, 0, "warning: variable left alive without set_free",
@@ -163,7 +161,6 @@ static symbol_t *lookup(sema_ctx_t *s, const char *name)
     return (void *)0;
 }
 
-/* ---- zakresy wartości ---- */
 
 static bool value_fits(uint64_t v, bool negative, cl_type_t t)
 {
@@ -250,13 +247,12 @@ static etype_t check_expr(sema_ctx_t *s, ast_node_t *n)
         return r;
 
     case ND_STR:
-        r.t.bits = 64;   /* str = 64-bit */
-        return r;
+        r.t.bits = 64;   
 
     case ND_UN:
         r = check_expr(s, n->a);
 
-        if (n->op == 45 /* '-' */) {
+        if (n->op == 45 ) {
             if (r.is_const) {
                 r.cneg = true;
             } else if (r.t.bits != 0 && !r.t.neg) {
@@ -524,7 +520,6 @@ static etype_t check_expr(sema_ctx_t *s, ast_node_t *n)
     }
 }
 
-/* ---- statementy ---- */
 
 static void check_block(sema_ctx_t *s, ast_node_t *n);
 
@@ -658,7 +653,6 @@ static void check_block(sema_ctx_t *s, ast_node_t *n)
     pop_scope(s);
 }
 
-/* ---- top level ---- */
 
 static void declare_top(sema_ctx_t *s, ast_node_t *n)
 {
@@ -728,12 +722,10 @@ int cl_sema_run(sema_ctx_t *s, ast_node_t *prog)
         return -1;
     }
 
-    /* pass 1: deklaracje top-level */
     for (size_t i = 0; i < prog->nlist; i++) {
         declare_top(s, prog->list[i]);
     }
 
-    /* pass 2: ciała funkcji */
     for (size_t i = 0; i < prog->nlist; i++) {
         ast_node_t *n = prog->list[i];
 

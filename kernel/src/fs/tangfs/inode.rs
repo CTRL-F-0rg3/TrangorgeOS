@@ -40,10 +40,10 @@ pub struct InodeHandle {
 impl InodeHandle {
     fn load_inode(&self) -> Result<Inode> {
         let fs = unsafe { &*self.fs };
-        let block = self.ino / 8; // 8 inodes per block (4KB / 512B)
+        let block = self.ino / 8; 
         let offset = (self.ino % 8) as usize * 512;
         
-        let buf = fs.read_block(block + 1)?; // Skip superblock
+        let buf = fs.read_block(block + 1)?; 
         
         let inode: Inode = unsafe {
             core::ptr::read_unaligned(buf.as_ptr().add(offset) as *const Inode)
@@ -80,7 +80,6 @@ impl VfsInode for InodeHandle {
             return Err("Not a directory");
         }
         
-        // Use B+tree to find directory entry
         let child_ino = super::btree::lookup_dir_entry(
             unsafe { &*self.fs },
             self.ino,

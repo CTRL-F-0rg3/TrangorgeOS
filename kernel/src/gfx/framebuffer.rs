@@ -1,30 +1,16 @@
-//! Framebuffer abstraction supporting two pixel formats:
-//!   * `Indexed8` — VGA mode 13h (320x200, 1 byte/pixel, RGB332),
-//!   * `Planar4`  — VGA mode 12h (640x480, 4 bitplanes).
-//!
-//! The public API works on RGB888 (`u32`); conversion to the underlying format
-//! happens inside `set`/`get`.
-
 use x86_64::instructions::port::Port;
 
 pub static mut FLIP: bool = false;
 
-// Like FLIP (Y axis): enable if text/background comes out mirrored
-// horizontally. Default false — see the note in console::init().
 pub static mut FLIP_X: bool = false;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum PixelFormat {
-    /// Mode 13h: 1 byte per pixel, RGB332 index.
     Indexed8,
-    /// Mode 12h: 4 bitplanes, 4 bits per pixel (color index 0..15).
     Planar4,
-    /// Linear framebuffer (Bochs VBE): 32 bpp true color, 0x00RRGGBB stored
-    /// little-endian (memory byte order is B, G, R, then an unused byte).
     Rgb888,
 }
 
-/// Default 16-color VGA palette (used by planar mode and the text console).
 pub const PALETTE16: [(u32, u32, u32); 16] = [
     (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
     (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
@@ -51,7 +37,6 @@ fn rgb332_from_index(idx: u8) -> (u32, u32, u32) {
     (r, g, b)
 }
 
-/// Nearest color in `PALETTE16` for an RGB888 triple.
 fn rgb_to_index4(r: u32, g: u32, b: u32) -> u8 {
     let mut best = 0u8;
     let mut best_dist = u32::MAX;
@@ -119,8 +104,6 @@ impl Framebuffer {
         }
     }
 
-    /// Byte offset of a logical (x, y) for the chunky format, honoring
-    /// FLIP/FLIP_X. Only meaningful for `Indexed8`.
     pub fn offset(&self, x: usize, y: usize) -> usize {
         self.ry(y) * self.stride + self.rx(x)
     }
@@ -140,9 +123,9 @@ impl Framebuffer {
         unsafe {
             let mut gfx = Port::<u8>::new(0x3CE);
             let mut gdata = Port::<u8>::new(0x3CF);
-            gfx.write(0x08); gdata.write(bit); // Bit Mask
-            gfx.write(0x00); gdata.write(color); // Set/Reset
-            gfx.write(0x01); gdata.write(0x0F); // Enable Set/Reset (all planes)
+            gfx.write(0x08); gdata.write(bit); 
+            gfx.write(0x00); gdata.write(color); 
+            gfx.write(0x01); gdata.write(0x0F); 
             let dummy = self.ptr.add(off).read_volatile();
             self.ptr.add(off).write_volatile(dummy);
         }
@@ -157,7 +140,7 @@ impl Framebuffer {
             let mut gfx = Port::<u8>::new(0x3CE);
             let mut gdata = Port::<u8>::new(0x3CF);
             for plane in 0..4u8 {
-                gfx.write(0x04); gdata.write(plane); // Read Map Select
+                gfx.write(0x04); gdata.write(plane); 
                 if self.ptr.add(off).read_volatile() & bit != 0 {
                     color |= 1 << plane;
                 }

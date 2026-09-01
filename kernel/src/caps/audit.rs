@@ -1,5 +1,3 @@
-//! Audit trail: kto, kiedy, jaką capability sprawdził/dostał/stracił.
-
 use super::types::Capability;
 use spin::Mutex;
 use alloc::vec::Vec;
@@ -52,7 +50,6 @@ pub fn init_audit_log() -> Result<(), &'static str> {
 }
 
 fn now_tick() -> u64 {
-    // Zegar arch-poziomu: TSC (x86_64) / CLINT mtime (RISC-V).
     crate::arch::now()
 }
 
@@ -98,12 +95,10 @@ pub fn log_unregister(world: u32) {
     push(EventKind::Unregister, world, world, Capability::User);
 }
 
-/// Łączna liczba zdarzeń
 pub fn count() -> usize {
     AUDIT.lock().total as usize
 }
 
-/// Ostatnie N zdarzeń (od najnowszego)
 pub fn recent(n: usize) -> Vec<AuditEvent> {
     let a = AUDIT.lock();
     let mut out = Vec::new();
@@ -121,7 +116,6 @@ pub fn recent(n: usize) -> Vec<AuditEvent> {
     out
 }
 
-/// Filtr po world
 pub fn by_world(world: u32, limit: usize) -> Vec<AuditEvent> {
     recent(AUDIT_CAP).into_iter()
         .filter(|e| e.world_id == world || e.target_world == world)
@@ -129,7 +123,6 @@ pub fn by_world(world: u32, limit: usize) -> Vec<AuditEvent> {
         .collect()
 }
 
-/// Filtr po rodzaju
 pub fn by_kind(kind: EventKind, limit: usize) -> Vec<AuditEvent> {
     recent(AUDIT_CAP).into_iter()
         .filter(|e| e.kind == kind)
@@ -137,7 +130,6 @@ pub fn by_kind(kind: EventKind, limit: usize) -> Vec<AuditEvent> {
         .collect()
 }
 
-/// Liczba odmów (do wykrywania ataków)
 pub fn deny_count() -> usize {
     by_kind(EventKind::CheckDeny, AUDIT_CAP).len()
 }

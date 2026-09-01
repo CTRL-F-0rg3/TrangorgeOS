@@ -1,19 +1,7 @@
-// stats.rs
-// Moduł statystyk i monitorowania wydajności dla szkieletu jądra.
-// Zapewnia:
-// - globalne liczniki atomowe,
-// - per-CPU struktury statystyk (do umieszczenia w RunQueue),
-// - funkcje do śledzenia czasów wykonywania, przełączeń, migracji,
-// - proste obliczanie load average,
-// - snapshoty i formatowanie do celów debugowania.
-
 use crate::cpu::scheduler::task::TaskStruct;
 use core::fmt;
 use core::sync::atomic::{AtomicU64, Ordering};
 
-// ---------------------------------------------------------------------
-// Globalne liczniki atomowe – sumaryczne dla całego systemu
-// ---------------------------------------------------------------------
 
 static TOTAL_SWITCHES: AtomicU64 = AtomicU64::new(0);
 static TOTAL_VOLUNTARY_SWITCHES: AtomicU64 = AtomicU64::new(0);
@@ -24,8 +12,6 @@ static TOTAL_SYSTEM_TIME_NS: AtomicU64 = AtomicU64::new(0);
 static TOTAL_IDLE_TIME_NS: AtomicU64 = AtomicU64::new(0);
 static TOTAL_IOWAIT_TIME_NS: AtomicU64 = AtomicU64::new(0);
 static TOTAL_RUNNING_TIME_NS: AtomicU64 = AtomicU64::new(0);
-
-// Wygodne funkcje globalne (dla kompatybilności i szybkiego użycia)
 
 pub fn account_switch() {
     TOTAL_SWITCHES.fetch_add(1, Ordering::Relaxed);
@@ -80,40 +66,21 @@ pub fn total_idle_time_ns() -> u64 { TOTAL_IDLE_TIME_NS.load(Ordering::Relaxed) 
 pub fn total_iowait_time_ns() -> u64 { TOTAL_IOWAIT_TIME_NS.load(Ordering::Relaxed) }
 pub fn total_running_time_ns() -> u64 { TOTAL_RUNNING_TIME_NS.load(Ordering::Relaxed) }
 
-// ---------------------------------------------------------------------
-// Per-CPU Statystyki (do umieszczenia w RunQueue)
-// ---------------------------------------------------------------------
-
-/// Struktura przechowująca statystyki per procesor.
-/// Powinna być umieszczona w `RunQueue` i aktualizowana przez scheduler.
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct RqStats {
-    /// Liczba przełączeń kontekstu na tym CPU.
     pub nr_switches: u64,
-    /// Liczba dobrowolnych przełączeń.
     pub nr_voluntary_switches: u64,
-    /// Liczba przymusowych przełączeń.
     pub nr_involuntary_switches: u64,
-    /// Liczba migracji zadań z/do tego CPU.
     pub nr_migrations: u64,
-    /// Czas spędzony w trybie użytkownika (ns).
     pub user_time_ns: u64,
-    /// Czas spędzony w trybie jądra (ns).
     pub system_time_ns: u64,
-    /// Czas bezczynności CPU (ns).
     pub idle_time_ns: u64,
-    /// Czas oczekiwania na I/O (ns).
     pub iowait_time_ns: u64,
-    /// Czas wykonywania zadań ogółem (user+system+...).
     pub running_time_ns: u64,
-    /// Sumaryczny `vruntime` wszystkich zadań Fair (do load tracking).
     pub sum_vruntime: u64,
-    /// Suma wag wszystkich zadań Fair.
     pub sum_weight: u64,
-    /// Liczba zadań w kolejce (wszystkie klasy).
     pub nr_running: u32,
-    /// Liczba zadań nieprzerywalnych.
     pub nr_uninterruptible: u32,
 }
 
@@ -144,7 +111,6 @@ impl RqStats {
         } else {
             self.nr_involuntary_switches += 1;
         }
-        // Aktualizuj globalne liczniki
         TOTAL_SWITCHES.fetch_add(1, Ordering::Relaxed);
         if voluntary {
             TOTAL_VOLUNTARY_SWITCHES.fetch_add(1, Ordering::Relaxed);
@@ -203,7 +169,6 @@ impl RqStats {
         self.sum_weight = sum_weight;
     }
 
-    /// Oblicza przybliżone obciążenie CPU (0-100).
     pub fn load_percent(&self) -> u32 {
         if self.running_time_ns == 0 {
             return 0;
@@ -215,21 +180,15 @@ impl RqStats {
         ((self.running_time_ns * 100) / total) as u32
     }
 
-    /// Zwraca 1-minutowy load average na podstawie ostatnich próbek (uproszczone).
-    /// W rzeczywistości wymagałoby to próbkowania; tutaj podajemy natychmiastowe obciążenie.
     pub fn load_avg_1min(&self) -> f32 {
         self.load_percent() as f32 / 100.0
     }
 }
 
-// ---------------------------------------------------------------------
-// Histogramy – do analizy rozkładów czasów (opcjonalnie)
-// ---------------------------------------------------------------------
 
-/// Prosty histogram czasów wykonania (w ns) w skali logarytmicznej.
+
 #[derive(Debug, Clone, Copy)]
 pub struct ExecTimeHistogram {
-    // 16 przedziałów: 0-1us, 1-2us, 2-4us, 4-8us, ...  >8ms
     buckets: [u64; 16],
     total_samples: u64,
     total_time_ns: u64,
@@ -248,9 +207,8 @@ impl ExecTimeHistogram {
         self.total_samples += 1;
         self.total_time_ns += exec_ns;
 
-        // Wyznacz indeks na podstawie log2, z dolnym progiem 1024 ns
         let mut idx = 0;
-        let mut threshold = 1024u64; // 1us
+        let mut threshold = 1024u64; 
         let mut upper = 2048u64;
         for i in 0..15 {
             if exec_ns < upper {
@@ -285,11 +243,7 @@ impl Default for ExecTimeHistogram {
     }
 }
 
-// ---------------------------------------------------------------------
-// Kolekcja statystyk globalnych i per-CPU
-// ---------------------------------------------------------------------
 
-/// Zbiorcza struktura do raportowania wszystkich statystyk systemu.
 #[derive(Debug, Default, Clone)]
 pub struct SystemStats {
     pub total_switches: u64,
@@ -316,8 +270,6 @@ pub struct CpuStatsSnapshot {
     pub load_percent: u32,
 }
 
-/// Funkcja zbierająca globalne statystyki (do wywołania przy raportowaniu).
-/// Wymaga dostępu do tablicy per-CPU runqueues, więc tutaj uproszczona.
 pub fn collect_system_stats() -> SystemStats {
     SystemStats {
         total_switches: TOTAL_SWITCHES.load(Ordering::Relaxed),
@@ -329,13 +281,11 @@ pub fn collect_system_stats() -> SystemStats {
         total_idle_time_ns: TOTAL_IDLE_TIME_NS.load(Ordering::Relaxed),
         total_iowait_time_ns: TOTAL_IOWAIT_TIME_NS.load(Ordering::Relaxed),
         total_running_time_ns: TOTAL_RUNNING_TIME_NS.load(Ordering::Relaxed),
-        per_cpu: Vec::new(), // W praktyce wypełnić z tablicy CPU
+        per_cpu: Vec::new(), 
     }
 }
 
-// ---------------------------------------------------------------------
-// Implementacja Display dla łatwego debugowania
-// ---------------------------------------------------------------------
+-
 
 impl fmt::Display for RqStats {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

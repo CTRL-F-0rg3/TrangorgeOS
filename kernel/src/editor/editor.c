@@ -5,8 +5,6 @@
 #include "../core-lang/bridge.h"
 #include "../core-lang/vm.h"
 
-/* Bufor: korzystamy z TEGO SAMEGO framebuffera co gfx (kernel/src/gfx/console.rs).
-   gfx_fb_info_raw zwraca wirtualny wskaźnik bufora konsoli + geometrię + flip. */
 extern int gfx_fb_info_raw(uint32_t *w, uint32_t *h, uint32_t *s,
                            uint64_t *base, int32_t *flip);
 extern const uint8_t font8x8[96][8];
@@ -14,7 +12,6 @@ extern void console_set_enabled(int on);
 extern int32_t k_fs_read(const char *path, void *buf, uint32_t cap);
 extern uint32_t k_input_keycode(void);
 
-/* ---------- layout ---------- */
 
 #define TOP_BAR 24
 #define BOT_BAR 24
@@ -36,7 +33,6 @@ extern uint32_t k_input_keycode(void);
 #define COL_BAR    0xFF252526
 #define COL_CARET  0xFFAEAFAD
 
-/* ---------- stan ---------- */
 
 static char lines[ED_MAX_LINES][ED_LINE_LEN];
 static int nlines = 1;
@@ -49,7 +45,6 @@ static uint32_t fw, fh, fstride;
 static int mx = 200, my = 200;
 static int mbuttons = 0;
 
-/* 1 = karta bottom-up (QEMU stdvga LFB): rząd 0 ekranu leży na końcu bufora. */
 static int ed_flip_rows = 0;
 
 static char msg[ED_LINE_LEN] = "TrangEdit | F5=run F8=log ESC=exit";
@@ -61,7 +56,6 @@ static arena_t ed_arena;
 static cl_vm_t ed_vm;
 static char srcbuf[ED_MAX_LINES * (ED_LINE_LEN + 1)];
 
-/* ---------- pomocnicze ---------- */
 
 static size_t ed_strlen(const char *s)
 {
@@ -125,7 +119,6 @@ static void ed_num(char *buf, int v)
     buf[i] = 0;
 }
 
-/* ---------- log ---------- */
 
 static void log_append(const char *s)
 {
@@ -173,7 +166,6 @@ static uint64_t ed_putc(uint64_t v, uint64_t b, uint64_t c,
     return 0;
 }
 
-/* ---------- highlight (lexer core-lang!) ---------- */
 
 static uint32_t tok_color(tok_kind_t k)
 {
@@ -203,7 +195,6 @@ static void draw_hl(int row, uint32_t x, uint32_t y)
 
     tmp[i] = 0;
 
-    /* komentarz: reszta linii szaro-zielona */
     int com_at = -1;
 
     for (int k = 0; tmp[k]; k++) {
@@ -217,7 +208,6 @@ static void draw_hl(int row, uint32_t x, uint32_t y)
     cl_lexer_init(&l, tmp, ed_strlen(tmp));
 
     if (com_at >= 0) {
-        /* lex do komentarza, komentarz osobno */
         char cut[ED_LINE_LEN + 1];
 
         for (int k = 0; k < com_at; k++) cut[k] = tmp[k];
@@ -259,7 +249,6 @@ static void draw_hl(int row, uint32_t x, uint32_t y)
     }
 }
 
-/* ---------- kursor myszy ---------- */
 
 static const char *CURSOR_SPRITE[] = {
     "X.........",
@@ -301,7 +290,6 @@ static void draw_mouse(void)
     }
 }
 
-/* ---------- render ---------- */
 
 static void render(void)
 {
@@ -332,7 +320,6 @@ static void render(void)
         draw_hl(row, GUTTER + 4, y);
     }
 
-    /* caret */
     {
         int r = caret_l - top_line;
 
@@ -344,7 +331,6 @@ static void render(void)
         }
     }
 
-    /* panel log */
     if (show_log) {
         uint32_t ly = fh - BOT_BAR - 8 * CHAR_H;
 
@@ -355,7 +341,6 @@ static void render(void)
         }
     }
 
-    /* status bar */
     ed_fill(0, fh - BOT_BAR, fw, BOT_BAR, COL_BAR);
 
     char st[64];
@@ -377,7 +362,6 @@ static void render(void)
     draw_mouse();
 }
 
-/* ---------- edycja ---------- */
 
 static void ins_char(char ch)
 {
@@ -476,7 +460,6 @@ static void clamp_scroll(int rows)
     if (top_line > nlines - 1) top_line = nlines - 1;
 }
 
-/* ---------- kompilacja + uruchomienie ---------- */
 
 static int flatten(void)
 {
@@ -528,7 +511,6 @@ static void ed_compile_run(void)
     cl_vm_init(&ed_vm, P);
     cl_bridge_init(&ed_vm, 0);
 
-    /* podmień wyjście na panel edytora */
     cl_vm_register_extern(&ed_vm, "put", ed_put);
     cl_vm_register_extern(&ed_vm, "putc", ed_putc);
 
@@ -544,7 +526,6 @@ static void ed_compile_run(void)
     show_log = 1;
 }
 
-/* ---------- pętla główna ---------- */
 
 int editor_run(const char *path)
 {
@@ -552,7 +533,6 @@ int editor_run(const char *path)
     uint64_t base = 0;
     int32_t fliprows = 0;
 
-    /* Ten sam bufor, który rysuje konsola gfx — edytor po prostu go przejmuje. */
     if (gfx_fb_info_raw(&w, &h, &s, &base, &fliprows) != 0 || base == 0) {
         return -1;
     }
@@ -605,7 +585,6 @@ int editor_run(const char *path)
         int dirty = 0;
         int rows = (int)((fh - TOP_BAR - BOT_BAR) / CHAR_H);
 
-        /* mysz */
         int dx = 0, dy = 0, dz = 0, btn = 0;
 
         if (mouse_poll(&dx, &dy, &dz, &btn)) {
@@ -645,7 +624,6 @@ int editor_run(const char *path)
             dirty = 1;
         }
 
-        /* klawiatura */
         uint32_t k = k_input_keycode();
 
         if (k != 0) {

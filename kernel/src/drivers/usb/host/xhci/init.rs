@@ -138,12 +138,6 @@ impl Xhci {
             let speed = (sc & PORTSC_SPEED) >> 10;
 
             unsafe {
-                // Bug fix: this format string had two `%d` but only ever
-                // got `p` - `speed` was computed and then silently
-                // dropped, so the C varargs call read whatever garbage
-                // happened to be in the next register/stack slot as the
-                // second %d. Harmless-looking, but genuinely undefined
-                // behavior on every single connected port.
                 kprintf(b"usb: port %d connected, speed=%d\n\0".as_ptr(), p, speed);
             }
 
@@ -176,17 +170,7 @@ impl Xhci {
         }
     }
 
-    /// Enumerates the device on port `p` (get descriptors, set address,
-    /// set configuration) and hands it to the first class driver that
-    /// claims it. Previously nothing after `scan_ports`'s port-enable
-    /// check ever ran: `core::enumerate::enumerate`, `class::mass::attach`
-    /// and `class::hid::attach` all already existed and were already
-    /// correct, they were just never called from anywhere.
     fn attach_port(&mut self, p: u32) {
-        // Fully-qualified path on purpose: this file already uses the
-        // *builtin* `core` crate below (`core::hint::spin_loop`), and a
-        // bare `use ...::core::enumerate;` at file scope would shadow
-        // that name and break every existing `core::` call in this file.
         let mut dev = match crate::drivers::usb::core::enumerate::enumerate(self, p) {
             Ok(d) => d,
             Err(_) => {

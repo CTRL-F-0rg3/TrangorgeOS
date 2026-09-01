@@ -42,16 +42,15 @@ static void mouse_rate(uint8_t r)
 
 void mouse_init(void)
 {
-    wait_write(); outb(0x64, 0xA8);   /* enable aux */
+    wait_write(); outb(0x64, 0xA8);   
 
-    mouse_cmd(0xF6);                  /* defaults */
+    mouse_cmd(0xF6);                 
 
-    /* magia IntelliMouse: odblokuj kółko */
     mouse_rate(200);
     mouse_rate(100);
     mouse_rate(80);
 
-    mouse_cmd(0xF4);                  /* enable reporting */
+    mouse_cmd(0xF4);                  
 }
 
 int mouse_poll(int *dx, int *dy, int *dz, int *buttons)
@@ -65,11 +64,11 @@ int mouse_poll(int *dx, int *dy, int *dz, int *buttons)
         uint8_t d = inb(0x60);
 
         if (!(st & 0x20)) {
-            continue;                 /* dane klawiatury — ignoruj */
+            continue;                 
         }
 
         if (idx == 0 && !(d & 0x08)) {
-            continue;                 /* desync */
+            continue;                
         }
 
         pkt[idx++] = d;

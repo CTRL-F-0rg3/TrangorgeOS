@@ -13,7 +13,6 @@ pub fn read_file(fs: &TangFs, inode: &Inode, mut offset: u64, buf: &mut [u8]) ->
         let logical_block = offset / 4096;
         let block_offset = (offset % 4096) as usize;
         
-        // Find extent containing logical_block
         let mut physical_block = None;
         
         for extent in &inode.extents {
@@ -55,7 +54,6 @@ pub fn write_file(fs: &TangFs, inode: &mut Inode, mut offset: u64, data: &[u8]) 
         let logical_block = offset / 4096;
         let block_offset = (offset % 4096) as usize;
         
-        // Allocate block if needed
         let physical_block = allocate_block_for_inode(fs, inode, logical_block)?;
         
         let mut block_data = if block_offset > 0 {
@@ -85,7 +83,6 @@ pub fn write_file(fs: &TangFs, inode: &mut Inode, mut offset: u64, data: &[u8]) 
 }
 
 fn allocate_block_for_inode(fs: &TangFs, inode: &mut Inode, logical_block: u64) -> Result<u64> {
-    // Check if block already allocated
     for extent in &inode.extents {
         if extent.length == 0 {
             continue;
@@ -98,10 +95,9 @@ fn allocate_block_for_inode(fs: &TangFs, inode: &mut Inode, logical_block: u64) 
         }
     }
     
-    // Allocate new block
     let new_block = super::extent::allocate_block(fs)?;
     
-    // Add to inode extents
+
     for extent in &mut inode.extents {
         if extent.length == 0 {
             extent.logical_block = logical_block;

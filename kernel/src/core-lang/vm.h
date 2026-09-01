@@ -45,7 +45,6 @@ void cl_vm_init(cl_vm_t *vm, cl_prog_t *prog);
 int cl_vm_register_extern(cl_vm_t *vm, const char *name, cl_ext_fn fn);
 cl_vm_err_t cl_vm_run(cl_vm_t *vm);
 
-/* arytmetyka szeroka (używana też przez testy) */
 int cl_wbytes(int bits);
 void cl_mask(uint8_t *r, int w, int bits);
 void cl_add(uint8_t *r, const uint8_t *a, const uint8_t *b, int w);

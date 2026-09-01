@@ -29,7 +29,6 @@ impl Superblock {
         
         let sb: Self = unsafe { core::ptr::read_unaligned(buf.as_ptr() as *const Self) };
         
-        // Verify checksum
         let expected_checksum = sb.checksum;
         let mut sb_copy = sb.clone();
         sb_copy.checksum = 0;
@@ -54,7 +53,6 @@ impl Superblock {
     }
     
     fn calculate_checksum(sb: &Superblock) -> u32 {
-        // Simple CRC32 implementation
         let bytes = unsafe {
             core::slice::from_raw_parts(
                 sb as *const Superblock as *const u8,
@@ -77,13 +75,12 @@ impl Superblock {
     }
     
     pub fn generate_uuid() -> [u8; 16] {
-        // Simple UUID v4 generation
         let mut uuid = [0u8; 16];
         for i in 0..16 {
             uuid[i] = (i as u8 * 17 + 42) ^ 0xA5;
         }
-        uuid[6] = (uuid[6] & 0x0F) | 0x40; // Version 4
-        uuid[8] = (uuid[8] & 0x3F) | 0x80; // Variant 1
+        uuid[6] = (uuid[6] & 0x0F) | 0x40; 
+        uuid[8] = (uuid[8] & 0x3F) | 0x80; 
         uuid
     }
 }

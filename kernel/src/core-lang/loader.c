@@ -1,21 +1,12 @@
-/* TrangorgeOS core-lang
- * loader.c — kompilacja źródeł, save/load image bytecode, load z VFS/hosta
- *
- * build:
- *   kernel: bez makr (domyślnie) -> czyta przez k_fs_read
- *   host:   -DCL_HOST            -> czyta przez stdio
- */
-
 #include "loader.h"
 #include "lexer.h"
 #include "parser.h"
 #include "sema.h"
 #include "native.h"
 
-/* codegen nie ma nagłówka w drzewie — prototyp lokalnie */
+
 extern cl_prog_t *cl_codegen(ast_node_t *prog, arena_t *ar);
 
-/* ================= kompilacja ze źródła ================= */
 
 cl_prog_t *cl_compile_source(const char *src, size_t len, arena_t *ar,
                              uint32_t *err_line, const char **err_msg)
@@ -77,7 +68,6 @@ cl_prog_t *cl_compile_source(const char *src, size_t len, arena_t *ar,
     return P;
 }
 
-/* ================= image CLBC1 (safe reader/writer) ================= */
 
 typedef struct {
     uint8_t *b;
@@ -303,7 +293,7 @@ cl_prog_t *cl_load_bc(const uint8_t *buf, size_t len, arena_t *ar)
     return P;
 }
 
-/* ================= IO: kernel (domyślnie) / host (CL_HOST) ================= */
+
 
 #ifdef CL_HOST
 #include <stdio.h>
@@ -331,7 +321,6 @@ static long read_all(const char *path, uint8_t *buf, size_t cap)
 }
 #endif
 
-/* ================= load path ================= */
 
 cl_module_t *cl_load_path(const char *path, arena_t *ar, bool try_native)
 {

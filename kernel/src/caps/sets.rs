@@ -1,9 +1,6 @@
-//! Zaawansowane operacje na zbiorach capabilities.
-
 use super::types::{Capability, CapabilitySet};
 use super::hierarchy;
 
-/// Builder dla CapabilitySet
 pub struct CapSetBuilder {
     set: CapabilitySet,
 }
@@ -52,11 +49,9 @@ impl CapSetBuilder {
     }
 }
 
-/// Typowe zestawy predefiniowane
 pub mod presets {
     use super::*;
 
-    /// Minimalny zestaw dla zwykłego userspace
     pub fn minimal_user() -> CapabilitySet {
         CapSetBuilder::new()
             .add(Capability::User)
@@ -69,14 +64,13 @@ pub mod presets {
             .build()
     }
 
-    /// Standardowy userspace
     pub fn standard_user() -> CapabilitySet {
         CapSetBuilder::new()
             .add(Capability::User)
             .add(Capability::Mmap)
             .add(Capability::Protect)
             .add(Capability::Spawn)
-            .add(Capability::Kill)  // tylko własne procesy (sprawdzane osobno)
+            .add(Capability::Kill)  
             .add(Capability::IpcSend)
             .add(Capability::IpcRecv)
             .add(Capability::IpcBroadcast)
@@ -87,7 +81,6 @@ pub mod presets {
             .build()
     }
 
-    /// Privileged userspace (init, shell)
     pub fn privileged_user() -> CapabilitySet {
         CapSetBuilder::new()
             .add(Capability::User)
@@ -102,7 +95,6 @@ pub mod presets {
             .build()
     }
 
-    /// Driverspace
     pub fn driver() -> CapabilitySet {
         CapSetBuilder::new()
             .add(Capability::Driver)
@@ -116,12 +108,10 @@ pub mod presets {
             .build()
     }
 
-    /// Kernel space (pełne uprawnienia)
     pub fn kernel() -> CapabilitySet {
         CapabilitySet::all()
     }
 
-    /// Sandbox (minimalne, tylko odczyt)
     pub fn sandbox() -> CapabilitySet {
         CapSetBuilder::new()
             .add(Capability::User)
@@ -132,8 +122,6 @@ pub mod presets {
     }
 }
 
-/// Walidacja: czy zbiór jest spójny hierarchicznie?
-/// (Jeśli ma child, powinien mieć parent)
 pub fn validate_hierarchy(set: CapabilitySet) -> Result<(), &'static str> {
     for cap in set.iter() {
         let mut cur = cap;
@@ -150,20 +138,16 @@ pub fn validate_hierarchy(set: CapabilitySet) -> Result<(), &'static str> {
     Ok(())
 }
 
-/// Oblicz "efektywne" capabilities (po rozszerzeniu hierarchii)
 pub fn effective(set: CapabilitySet) -> CapabilitySet {
     hierarchy::expand_hierarchy(set)
 }
 
-/// Różnica z uwzględnieniem hierarchii:
-/// capabilities które `a` ma, a `b` nie ma (ani przez parent)
 pub fn effective_diff(a: CapabilitySet, b: CapabilitySet) -> CapabilitySet {
     let a_eff = effective(a);
     let b_eff = effective(b);
     a_eff.diff(b_eff)
 }
 
-/// Czy `subset` jest podzbiorem `superset` z uwzględnieniem hierarchii?
 pub fn is_subset_with_hierarchy(subset: CapabilitySet, superset: CapabilitySet) -> bool {
     let sub_eff = effective(subset);
     let sup_eff = effective(superset);

@@ -832,7 +832,6 @@ impl RunQueue {
 
     pub unsafe fn resched_curr(&mut self) {
         if !self.curr.is_null() {
-            // TaskStruct flags should be atomic; placeholder for future.
         }
     }
 }

@@ -350,7 +350,6 @@ static void gen_stmt(cg_t *g, ast_node_t *n)
         }
 
         for (size_t i = 0; i < n->nlist; i++) {
-            /* ...jak wcześniej: LOAD tslot, CONST, EQ, JZ, body, patch... */
         }
         break;
     }
@@ -382,7 +381,6 @@ cl_prog_t *cl_codegen(ast_node_t *prog, arena_t *ar)
 
     if (P->code == (void *)0) return (void *)0;
 
-    /* pass 1: globale + externy + nagłówki fn */
     for (size_t i = 0; i < prog->nlist; i++) {
         ast_node_t *n = prog->list[i];
 
@@ -424,7 +422,6 @@ cl_prog_t *cl_codegen(ast_node_t *prog, arena_t *ar)
         }
     }
 
-    /* pass 2: ciała funkcji */
     for (size_t i = 0; i < prog->nlist; i++) {
         ast_node_t *n = prog->list[i];
 

@@ -1,29 +1,20 @@
-//! Direct VGA register programming to switch video modes without the BIOS.
-//!
-//! Supports mode 13h (320x200x8, chunky) and mode 12h (640x480x16, planar).
-
 use x86_64::instructions::port::Port;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum VideoMode {
-    /// 320x200, 8 bpp, chunky (linear).
     Mode13h,
-    /// 640x480, 4 bpp, planar (4 planes).
     Mode12h,
 }
 
 fn write_regs(misc: u8, seq: &[u8], crtc: &[u8], gfx: &[u8], attr: &[u8]) {
     unsafe {
-        // Miscellaneous output register.
         Port::<u8>::new(0x3C2).write(misc);
 
-        // Sequencer.
         for (i, v) in seq.iter().enumerate() {
             Port::<u8>::new(0x3C4).write(i as u8);
             Port::<u8>::new(0x3C5).write(*v);
         }
 
-        // Unlock CRTC protection (registers 0-7 are write-protected).
         Port::<u8>::new(0x3D4).write(0x03);
         let v = Port::<u8>::new(0x3D5).read();
         Port::<u8>::new(0x3D5).write(v | 0x80);
@@ -31,32 +22,28 @@ fn write_regs(misc: u8, seq: &[u8], crtc: &[u8], gfx: &[u8], attr: &[u8]) {
         let v = Port::<u8>::new(0x3D5).read();
         Port::<u8>::new(0x3D5).write(v & !0x80);
 
-        // CRTC.
         for (i, v) in crtc.iter().enumerate() {
             Port::<u8>::new(0x3D4).write(i as u8);
             Port::<u8>::new(0x3D5).write(*v);
         }
 
-        // Graphics controller.
         for (i, v) in gfx.iter().enumerate() {
             Port::<u8>::new(0x3CE).write(i as u8);
             Port::<u8>::new(0x3CF).write(*v);
         }
 
-        // Attribute controller (reset flip-flop first).
+
         for (i, v) in attr.iter().enumerate() {
             let _ = Port::<u8>::new(0x3DA).read();
             Port::<u8>::new(0x3C0).write(i as u8);
             Port::<u8>::new(0x3C0).write(*v);
         }
 
-        // Re-enable the attribute palette.
         let _ = Port::<u8>::new(0x3DA).read();
         Port::<u8>::new(0x3C0).write(0x20);
     }
 }
 
-/// Programs the VGA registers for the given mode.
 pub fn set_mode(mode: VideoMode) {
     match mode {
         VideoMode::Mode13h => write_regs(
@@ -82,9 +69,6 @@ pub fn set_mode(mode: VideoMode) {
     }
 }
 
-/* ------------------------------------------------------------------ */
-/* Bochs VBE (BGA) — linear-framebuffer mode setting (QEMU stdvga).    */
-/* ------------------------------------------------------------------ */
 
 const DISPI_INDEX_PORT: u16 = 0x01CE;
 const DISPI_DATA_PORT: u16 = 0x01CF;
@@ -118,8 +102,6 @@ fn dispi_read(index: u16) -> u16 {
     }
 }
 
-/// Returns the Bochs VBE extension version, or `None` if the card does not
-/// expose the DISPI interface (e.g. a non-Bochs VGA card).
 pub fn bochs_version() -> Option<u16> {
     let id = dispi_read(DISPI_INDEX_ID);
     if (0xB0C0..=0xB0C5).contains(&id) {
@@ -129,16 +111,12 @@ pub fn bochs_version() -> Option<u16> {
     }
 }
 
-/// Disables a linear-framebuffer mode and returns the card to plain VGA.
 pub fn bochs_disable() {
     if bochs_version().is_some() {
         dispi_write(DISPI_INDEX_ENABLE, DISPI_DISABLED);
     }
 }
 
-/// Sets an arbitrary linear-framebuffer mode via the Bochs VBE DISPI registers
-/// (works on QEMU's standard VGA card). Returns false on hardware that does
-/// not support the extension or rejects the requested geometry.
 pub fn bochs_set_mode(width: u32, height: u32, bpp: u32) -> bool {
     if bochs_version().is_none() {
         return false;
@@ -154,12 +132,10 @@ pub fn bochs_set_mode(width: u32, height: u32, bpp: u32) -> bool {
     dispi_write(DISPI_INDEX_Y_OFFSET, 0);
     dispi_write(DISPI_INDEX_ENABLE, DISPI_ENABLED | DISPI_LFB_ENABLED | DISPI_NOCLEARMEM);
 
-    // Verify the card accepted the requested width.
+
     dispi_read(DISPI_INDEX_XRES) == width as u16
 }
 
-/// Physical base address of the linear framebuffer (PCI BAR0 of the Bochs VBE
-/// card). Returns `None` if no Bochs VBE card is present.
 pub fn bochs_lfb_base() -> Option<u64> {
     for dev in crate::pci::enumerate() {
         if dev.vendor_id == 0x1234 && dev.device_id == 0x1111 && dev.class_code == 0x03 {

@@ -4,7 +4,6 @@
 #define ED_MAX_LINES 512
 #define ED_LINE_LEN  128
 
-/* kody rozszerzone z k_input_keycode() */
 #define EDK_ENTER      0x100
 #define EDK_BACKSPACE  0x101
 #define EDK_ESC        0x102

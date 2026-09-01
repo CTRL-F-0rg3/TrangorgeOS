@@ -280,7 +280,7 @@ cl_vm_err_t cl_vm_run(cl_vm_t *vm)
         cl_insn_t in = P->code[f->pc++];
 
         int w = cl_wbytes(in.bits);
-        bool sign = false;   /* v1: signedness z gneg/slotów pomijana w op */
+        bool sign = false;  
 
         cl_val_t a, b, r;
 

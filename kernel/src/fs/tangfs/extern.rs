@@ -8,16 +8,14 @@ pub fn allocate_block(fs: &TangFs) -> Result<u64> {
         return Err("No free blocks");
     }
     
-    // Simple bitmap allocator (find first free block)
-    let bitmap_block = 2; // Block 2 contains allocation bitmap
+
+    let bitmap_block = 2; 
     let mut bitmap = fs.read_block(bitmap_block)?;
     
     for i in 0..bitmap.len() {
         if bitmap[i] != 0xFF {
-            // Found byte with free bit
             for bit in 0..8 {
                 if bitmap[i] & (1 << bit) == 0 {
-                    // Mark as used
                     bitmap[i] |= 1 << bit;
                     fs.write_block(bitmap_block, &bitmap)?;
                     

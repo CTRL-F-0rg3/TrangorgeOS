@@ -7,8 +7,6 @@ use core::ptr;
 use core::str;
 use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, AtomicU32, Ordering};
 
-// Stałe i typy podstawowe
-
 pub type TaskId = u64;
 pub type Pid = TaskId;
 pub type Tgid = TaskId;
@@ -352,7 +350,6 @@ pub fn weight_to_nice(weight: u64) -> i8 {
     NICE_MIN + best_idx as i8
 }
 
-// Kontekst wykonania (x86_64 System V ABI)
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -381,7 +378,6 @@ pub struct CpuContext {
     pub fpu_state: *mut u8, //12 bajtów
 }
 
-// Encje szeregujące (CFS/EEVDF, RT, Deadline)
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -398,7 +394,7 @@ pub struct LoadAvg {
 pub struct SchedEntity {
     pub rb_left: *mut TaskStruct,
     pub rb_right: *mut TaskStruct,
-    pub rb_parent_color: usize, // Lowest bit = color (1=black, 0=red), rest = parent pointer
+    pub rb_parent_color: usize, 
     pub run_list: *mut TaskStruct,
     pub vruntime: u64,
     pub vlag: i64,
@@ -484,7 +480,6 @@ impl Default for DlSchedEntity {
     }
 }
 
-// Statystyki
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -504,7 +499,6 @@ pub struct TaskStats {
     pub last_enqueue_time: u64,
 }
 
-// Uprawnienia i limity zasobów
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -596,7 +590,6 @@ pub const fn default_rlimits() -> [RLimit; RLIM_NLIMITS] {
     limits
 }
 
-// Sygnały (minimalny stan)
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -623,7 +616,6 @@ impl SignalState {
     }
 }
 
-// Lista wewnętrzna (intruzywna, cykliczna, jak list_head)
 
 #[repr(C)]
 #[derive(Debug)]
@@ -758,26 +750,7 @@ impl fmt::Display for TaskError {
     }
 }
 
-// pub fn set_state(&self, new_state: TaskState) -> Result<(), TaskError> {
-//     let current = self.state();
-//     if !current.can_transition_to(new_state) {
-//         return Err(TaskError::InvalidStateTransition { from: current, to: new_state });
-//     }
-//     self.state.store(new_state as u8, Ordering::Release);
-//     Ok(())
-// }
 
-// pub fn wake_up(&self) -> Result<(), TaskError> {
-//     match self.state() {
-//         TaskState::Interruptible | TaskState::Uninterruptible => {
-//             self.set_state(TaskState::Runnable)
-//         }
-//         TaskState::Runnable => Ok(()),
-//         other => Err(TaskError::InvalidStateTransition { from: other, to: TaskState::Runnable }),
-//     }
-// }
-
-// TaskStruct
 #[repr(C)]
 pub struct TaskStruct {
     pub rq: *mut core::ffi::c_void, 
@@ -1203,7 +1176,7 @@ impl TaskStruct {
         child.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
         child.parent = self as *const TaskStruct as *mut TaskStruct;
         Ok(())
-    } // tymczasowo sie tu zajmuje polecam go przenieść 
+    } 
 }
 
 impl fmt::Debug for TaskStruct {
@@ -1237,7 +1210,6 @@ impl fmt::Display for TaskStruct {
 unsafe impl Send for TaskStruct {}
 unsafe impl Sync for TaskStruct {}
 
-// Funkcje pomocnicze
 
 pub const fn default_time_slice(policy: SchedPolicy) -> u32 {
     match policy {
@@ -1258,7 +1230,6 @@ pub fn deadline_has_priority(a: &TaskStruct, b: &TaskStruct) -> bool {
     a.dl.deadline < b.dl.deadline
 }
 
-// Testy
 
 #[cfg(test)]
 mod tests {

@@ -7,7 +7,7 @@
 #include "ast.h"
 
 typedef struct {
-    uint8_t b[64];   /* little-endian, do 512 bit */
+    uint8_t b[64];   
 } cl_val_t;
 
 enum {
@@ -28,7 +28,7 @@ enum {
 
 typedef struct {
     uint8_t op;
-    uint8_t bits;    /* szerokość typu operacji */
+    uint8_t bits;    
     uint16_t a, b;
     uint32_t c;
 } cl_insn_t;
