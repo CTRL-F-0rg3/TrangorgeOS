@@ -15,14 +15,6 @@
 
 static bool aspace_ready = false;
 
-/*
- * P0.1: zastąpione rzeczywistą blokadą SMP (ticket lock + irqsave) —
- * dawny `pushfq; cli` + lokalny licznik chronił tylko przed przerwaniem
- * na BIEŻĄCYM CPU, nie przed drugim rdzeniem modyfikującym listę VMA
- * współbieżnie. `as_lock`/`as_unlock` zachowują dotychczasową semantykę
- * (w tym bezpieczną rekurencję, potrzebną np. w `aspace_map_at`, który
- * woła `aspace_unmap` trzymając już blokadę).
- */
 static smp_ticket_lock_t as_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void as_lock(void)
@@ -50,12 +42,6 @@ bool aspace_subsystem_init(void)
 	return true;
 }
 
-/*
- * Waliduje i wyrównuje (do granic strony) dowolny zakres user-space
- * podany jako (addr, len). Zastępuje dawne ręczne `a = align_down(addr)`
- * / `b = align_up(addr + len)`, które nie sprawdzały overflow — patrz
- * P0.3 w planie ulepszeń MM. Zwraca half-open [*out_start, *out_end).
- */
 static bool user_range_ok(uint64_t addr, uint64_t len,
 	                      uint64_t *out_start, uint64_t *out_end)
 {
@@ -402,22 +388,6 @@ bool aspace_unmap(proc_aspace_t *pa, uint64_t addr, size_t len)
 	    vma_t *tail = NULL;
 
 	    if (needs_split) {
-	        /*
-	         * P1 (mmap/VMA — atomowe rozbijanie VMA): metadane
-	         * rozbicia MUSZĄ być zaalokowane PRZED faktycznym
-	         * odmapowaniem/zwolnieniem stron w [s,e). Wcześniej
-	         * `heap_alloc()` był wołany PO `unmap_pages_free()` —
-	         * porażka alokacji (presja pamięciowa) zwracała `false`,
-	         * zostawiając `hit` NIEZMIENIONE (nadal obejmujące cały
-	         * stary zakres [hit->start, hit->end)), mimo że środkowy
-	         * fragment [s,e) był już faktycznie odmapowany z tablic
-	         * stron, a jego ramki fizyczne oddane z powrotem do PMM
-	         * (i mogły trafić do zupełnie innego przydziału). Metadane
-	         * VMA kłamałyby więc, że zakres jest wciąż zmapowany, choć
-	         * fizycznie już nie był — kolejny dostęp do tego adresu
-	         * mógłby np. zostać błędnie obsłużony przez logikę page
-	         * faulta polegającą na tym, że VMA istnieje.
-	         */
 	        tail = (vma_t *)heap_alloc(sizeof(vma_t));
 
 	        if (tail == NULL) {
@@ -469,16 +439,6 @@ bool aspace_protect_checked(proc_aspace_t *pa, uint64_t addr, size_t len,
 	}
 
 	as_lock();
-
-	/*
-	 * P1 (mmap/VMA): wyszukanie VMA, sprawdzenie dozwolonej zmiany
-	 * uprawnien i sama zmiana sa TERAZ jedna, nieprzerywalna sekcja pod
-	 * jednym trzymaniem `as_smp_lock`. Wczesniejszy `mprotect()` w
-	 * process/mmap.c wolal `aspace_vma_find()` PRZED wejsciem w jakakolwiek
-	 * blokade, po czym czytal `v->prot` z niezablokowanego wskaznika —
-	 * scisly use-after-free, gdyby inny rdzen zwolnil ta VMA przez
-	 * `aspace_unmap()`/`munmap()` w tym samym momencie.
-	 */
 	vma_t *v = aspace_vma_find(pa, a);
 
 	if (v == NULL || b > v->end) {
@@ -582,15 +542,6 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
 	uint64_t nb = arch_page_align_up(new_brk);
 
 	if (nb > pa->brk) {
-	    /*
-	     * P0.4: najpierw mapujemy strony, a metadane VMA/`brk` zatwierdzamy
-	     * dopiero po pełnym sukcesie. Wcześniej VMA było rozszerzane PRZED
-	     * mapowaniem, więc częściowy błąd `map_anon_pages()` zostawiał
-	     * VMA większe niż faktycznie zmapowane strony (rozjazd metadanych
-	     * i tablic stron). `map_anon_pages()` sam wykonuje rollback
-	     * częściowo zmapowanych stron przy błędzie, więc w razie porażki
-	     * tutaj nic jeszcze nie zostało zmienione w VMA/`brk`.
-	     */
 	    if (!map_anon_pages(pa, pa->brk, nb, PROT_READ | PROT_WRITE)) {
 	        as_unlock();
 	        return pa->brk;
@@ -602,8 +553,6 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
 	        v = (vma_t *)heap_alloc(sizeof(vma_t));
 
 	        if (v == NULL) {
-	            /* Strony zmapowane, ale brak metadanych — wycofaj mapowanie,
-	             * żeby stan pozostał spójny (brak VMA opisującego te strony). */
 	            unmap_pages_free(pa, pa->brk, nb);
 	            as_unlock();
 	            return pa->brk;

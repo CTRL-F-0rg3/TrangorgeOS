@@ -15,15 +15,6 @@ typedef struct leak_entry {
 
 static leak_entry_t leak_table[LEAK_MAX];
 
-/*
- * Sekcja 5 planu ulepszeń ("Diagnostyka i obserwowalność"): tabela leaków
- * nie miała żadnej synchronizacji — pod SMP dwa rdzenie mogły jednocześnie
- * przejść `if (!leak_table[i].used)` dla tego samego `i` i oba zapisać do
- * TEGO SAMEGO slotu (klasyczny check-then-act race), trwale gubiąc jeden
- * z wpisów (ten sam efekt co przepełnienie tabeli — patrz komentarz przy
- * `leak_track_result_t` w leak.h). Używamy tego samego prymitywu co reszta
- * MM (core/smp_lock.h), zgodnie z ustaloną konwencją tego projektu.
- */
 static smp_ticket_lock_t leak_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static uint64_t next_alloc_id = 1;

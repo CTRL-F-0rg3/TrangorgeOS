@@ -1,8 +1,5 @@
 #include "bitmap.h"
 
-/*
- * Note: if your include path is different, fix this path or use -I flags.
- */
 #include "../../arch/x86_64/memory.h"
 
 #define BITMAP_SIZE_MAX ((size_t)-1)
@@ -80,10 +77,7 @@ static void bitmap_mark_tail_used(bitmap_t *bm)
 	    return;
 	}
 
-	/*
-	 * Set the bits above bit_count to 1 so the allocator never hands them
-	 * out.
-	 */
+
 	bm->bits[bm->word_count - 1] |= ~((1ULL << rem) - 1);
 }
 
@@ -509,10 +503,7 @@ size_t bitmap_alloc_range(bitmap_t *bm, size_t count, size_t align)
 	        return candidate;
 	    }
 
-	    /*
-	     * If the range is not free, skip past the first used bit in the
-	     * checked range.
-	     */
+
 	    size_t used = find_next_used_bit(bm, candidate, candidate + count);
 
 	    if (used == BITMAP_INVALID) {

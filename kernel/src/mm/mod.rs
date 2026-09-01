@@ -1,11 +1,3 @@
-//! Memory-management subsystem.
-//!
-//! Two backends, one API surface (`mm::phys`, `mm::api`, `mm::virt`,
-//! `mm::space`) and one shared `self_test`:
-//! * x86_64 — thin FFI wrappers over the C bridge (`libmm.a`, see `ffi.rs`);
-//! * riscv64 — the native Rust backend in `riscv.rs` (bitmap PMM, free-list
-//!   heap, VA range allocator, software-managed Sv39 tables).
-
 #[cfg(target_arch = "x86_64")]
 pub mod api;
 #[cfg(target_arch = "x86_64")]
@@ -19,7 +11,6 @@ pub mod space;
 #[cfg(target_arch = "x86_64")]
 pub mod virt;
 
-// One API surface: on RISC-V the backend modules ARE `mm::phys` etc.
 #[cfg(target_arch = "riscv64")]
 pub use riscv::{api, phys, space, virt};
 
@@ -40,7 +31,6 @@ pub fn dump() {
     unsafe { ffi::mm_dump() }
 }
 
-/// RISC-V: bring up the native backend (frames, heap, vmm, Sv39 tables).
 #[cfg(target_arch = "riscv64")]
 pub fn init_riscv() -> bool {
     riscv::init()
@@ -60,14 +50,9 @@ const ZERO_ENTRY: ffi::RawMemEntry = ffi::RawMemEntry {
 #[cfg(target_arch = "x86_64")]
 struct EntryStorage(UnsafeCell<[ffi::RawMemEntry; MAX_RAW_ENTRIES]>);
 
-// mm initialization happens exactly once, at startup, before any concurrency
-// exists — we safely force Sync.
 #[cfg(target_arch = "x86_64")]
 unsafe impl Sync for EntryStorage {}
 
-/// Builds the parameters for `mm_init` from the bootloader-provided
-/// information and initializes the whole memory subsystem (arch memory ->
-/// paging -> pmm -> vmm -> heap -> cache -> address spaces).
 #[cfg(target_arch = "x86_64")]
 pub fn init_from_boot_info(boot_info: &'static bootloader::BootInfo) -> bool {
     use bootloader::bootinfo::MemoryRegionType;
@@ -122,9 +107,7 @@ pub fn init_from_boot_info(boot_info: &'static bootloader::BootInfo) -> bool {
     unsafe { ffi::mm_init(&params) }
 }
 
-/// Dokładny test alokatora: ramki fizyczne, heap, vmm i przestrzenie adresowe.
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // --- 1. Ramki fizyczne (PMM) ---
     let mut frames = [0u64; 8];
 
     for f in frames.iter_mut() {
@@ -148,7 +131,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
         }
     }
 
-    // --- 2. Heap: kmalloc różnych rozmiarów + write/read ---
     let sizes: [usize; 6] = [8, 64, 256, 1024, 4096, 16384];
     let mut keep: [*mut u8; 6] = [core::ptr::null_mut(); 6];
 
@@ -171,7 +153,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
         api::kfree(*p);
     }
 
-    // --- 3. kzalloc musi zerować ---
     let z = api::kzalloc(512).ok_or("heap: kzalloc failed")?;
 
     for k in 0..512 {
@@ -183,7 +164,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     api::kfree(z);
 
-    // --- 4. krealloc: rośnięcie + zachowanie danych ---
     let a = api::kmalloc(64).ok_or("heap: kmalloc(a) failed")?;
 
     unsafe { core::ptr::write_bytes(a, 0x33, 64); }
@@ -199,7 +179,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     api::kfree(b);
 
-    // --- 5. vmm: alokacja/zwolnienie regionu ---
     let v = virt::alloc(8192, virt::WRITE).ok_or("vmm: alloc failed")?;
 
     if v == 0 {
@@ -210,7 +189,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
         return Err("vmm: free failed");
     }
 
-    // --- 6. AddressSpace: create / map_anon / munmap ---
+
     let aspace = space::AddressSpace::new().ok_or("aspace: create failed")?;
     let addr = aspace
         .map_anon(0, 4096, space::PROT_READ | space::PROT_WRITE)

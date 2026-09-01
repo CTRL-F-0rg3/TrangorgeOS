@@ -22,26 +22,22 @@ pub struct MmBootParams {
 }
 
 extern "C" {
-    /* core */
     pub fn mm_init(params: *const MmBootParams) -> bool;
     pub fn mm_ready() -> bool;
     pub fn mm_total_ram() -> u64;
     pub fn mm_free_ram() -> u64;
     pub fn mm_dump();
 
-    /* arch memory */
     pub fn arch_memory_ready() -> bool;
     pub fn arch_memory_reserve_range(base: u64, len: u64);
     pub fn arch_memory_boot_alloc(len: u64, align: u64, out: *mut u64) -> bool;
 
-    /* paging */
     pub fn paging_init(boot_phys_offset: u64);
     pub fn paging_enable_nx();
     pub fn paging_read_cr3() -> u64;
     pub fn paging_aspace_switch(aspace: *mut c_void);
     pub fn paging_map_page(virt: u64, phys: u64, flags: u64) -> bool;
 
-    /* pmm */
     pub fn pmm_init() -> bool;
     pub fn pmm_alloc_frame(out: *mut u64) -> bool;
     pub fn pmm_alloc_zero_frame(out: *mut u64) -> bool;
@@ -59,7 +55,6 @@ extern "C" {
     pub fn vmm_map_device(phys: u64, len: usize, out: *mut u64) -> bool;
     pub fn vmm_unmap_device(virt: u64, len: usize) -> bool;
 
-    /* heap api */
     pub fn kmalloc(size: usize) -> *mut c_void;
     pub fn kzalloc(size: usize) -> *mut c_void;
     pub fn kcalloc(count: usize, size: usize) -> *mut c_void;
@@ -70,7 +65,6 @@ extern "C" {
     pub fn kfree_pages(ptr: *mut c_void, pages: usize);
     pub fn kvirt_to_phys(ptr: *mut c_void) -> u64;
 
-    /* special */
     pub fn contig_alloc(bytes: usize,
                         align: usize,
                         out_phys: *mut u64,

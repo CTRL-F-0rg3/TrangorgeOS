@@ -6,7 +6,7 @@ pub struct Process {
     pub parent: u32,
     pub alive: bool,
     pub exit_code: i32,
-    pub fds: [Fd; FD_MAX],          /* <- nowe */
+    pub fds: [Fd; FD_MAX],          
     pub mbox: [IpcMsg; MAILBOX_LEN],
     pub mbox_head: u32,
     pub mbox_tail: u32,

@@ -102,8 +102,7 @@ void arch_memory_init_multiboot2(uint32_t magic,
 	                 initrd_phys_end);
 }
 
-#endif /* ARCH_MEMORY_MULTIBOOT2 */
-/* kprintf jest dostarczany przez kprintf.c (silna definicja -> port szeregowy). */
+#endif 
 extern void kprintf(const char *fmt, ...);
 
 static void arch_mem_panic(const char *msg) __attribute__((noreturn));
@@ -124,7 +123,6 @@ static bool mem_ready = false;
 static arch_raw_mem_entry_t raw_sorted[ARCH_MAX_MEM_REGIONS];
 static arch_mem_region_t tmp_regions[ARCH_TMP_REGIONS];
 
-// helpers
 
 bool arch_memory_boot_alloc(uint64_t len, uint64_t align, uint64_t *out_base)
 {
@@ -216,10 +214,6 @@ static arch_mem_type_t raw_type_to_arch(uint32_t raw_type)
 
 static void sort_raw_entries(arch_raw_mem_entry_t *entries, size_t count)
 {
-	/*
-	 * Insertion sort is fine, because there are usually a dozen or a few
-	 * dozen memory map entries, not thousands.
-	 */
 	for (size_t i = 1; i < count; i++) {
 	    arch_raw_mem_entry_t key = entries[i];
 	    size_t j = i;
@@ -233,7 +227,6 @@ static void sort_raw_entries(arch_raw_mem_entry_t *entries, size_t count)
 	}
 }
 
-//operation 
 
 static void map_add(arch_mem_region_t *list,
 	                size_t *count,
@@ -248,11 +241,6 @@ static void map_add(arch_mem_region_t *list,
 	    arch_mem_region_t *last = &list[*count - 1];
 	    uint64_t last_end = safe_end(last->base, last->len);
 
-	    /*
-	     * If the new region overlaps the previous one, trim it. This is a
-	     * safeguard; normally the input is sorted and prepared so there is
-	     * no overlap.
-	     */
 	    if (r.base < last_end) {
 	        uint64_t delta = last_end - r.base;
 
@@ -264,9 +252,7 @@ static void map_add(arch_mem_region_t *list,
 	        r.len -= delta;
 	    }
 
-	    /*
-	     * Merge adjacent regions of the same type.
-	     */
+	    
 	    if (safe_end(last->base, last->len) == r.base &&
 	        last->type == r.type) {
 	        last->len += r.len;
@@ -289,10 +275,7 @@ static void map_reserve_range(uint64_t base, uint64_t len)
 
 	uint64_t end = safe_end(base, len);
 
-	/*
-	 * We align reservations outward to pages. This way kernel/initrd/PMM
-	 * structures do not cut pages in half.
-	 */
+	
 	base = align_down_page(base);
 	end = align_up_page_safe(end);
 
@@ -306,13 +289,13 @@ static void map_reserve_range(uint64_t base, uint64_t len)
 	    arch_mem_region_t r = mem.regions[i];
 	    uint64_t r_end = safe_end(r.base, r.len);
 
-	    /* No intersection. */
+	   
 	    if (r_end <= base || r.base >= end) {
 	        map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, r);
 	        continue;
 	    }
 
-	    /* Part before the reservation. */
+	    
 	    if (r.base < base) {
 	        arch_mem_region_t before;
 	        before.base = r.base;
@@ -322,7 +305,7 @@ static void map_reserve_range(uint64_t base, uint64_t len)
 	        map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, before);
 	    }
 
-	    /* Reserved part. */
+	    
 	    uint64_t ov_base = u64_max(r.base, base);
 	    uint64_t ov_end = u64_min(r_end, end);
 
@@ -335,7 +318,7 @@ static void map_reserve_range(uint64_t base, uint64_t len)
 	        map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, reserved);
 	    }
 
-	    /* Part after the reservation. */
+	
 	    if (r_end > end) {
 	        arch_mem_region_t after;
 	        after.base = end;
@@ -373,11 +356,6 @@ static void map_align_usable_regions(void)
 	    uint64_t aligned_base = align_up_page_safe(r.base);
 	    uint64_t aligned_end = align_down_page(r_end);
 
-	    /*
-	     * A usable region smaller than one page, or one that cannot be
-	     * aligned — mark the whole thing reserved, rather than pretending
-	     * pages can be allocated from it.
-	     */
 	    if (aligned_end <= aligned_base) {
 	        arch_mem_region_t tiny;
 	        tiny.base = r.base;
@@ -388,7 +366,7 @@ static void map_align_usable_regions(void)
 	        continue;
 	    }
 
-	    /* Front partial page -> reserved. */
+	    
 	    if (r.base < aligned_base) {
 	        arch_mem_region_t before;
 	        before.base = r.base;
@@ -398,7 +376,7 @@ static void map_align_usable_regions(void)
 	        map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, before);
 	    }
 
-	    /* The actual usable region. */
+	
 	    {
 	        arch_mem_region_t usable;
 	        usable.base = aligned_base;
@@ -408,7 +386,7 @@ static void map_align_usable_regions(void)
 	        map_add(tmp_regions, &tcount, ARCH_TMP_REGIONS, usable);
 	    }
 
-	    /* Rear partial page -> reserved. */
+	    
 	    if (aligned_end < r_end) {
 	        arch_mem_region_t after;
 	        after.base = aligned_end;
@@ -462,9 +440,6 @@ static void recalc_stats(void)
 	mem.max_usable_address = max_usable_address;
 	mem.direct_map_base = ARCH_DIRECT_MAP_BASE;
 }
-/* ------------------------------------------------------------------ */
-/* Public API                                                         */
-/* ------------------------------------------------------------------ */
 
 void arch_memory_init(const arch_raw_mem_entry_t *entries,
 	                  size_t count,
@@ -493,11 +468,6 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
 
 	sort_raw_entries(raw_sorted, count);
 
-	/*
-	 * Build the initial region map. We assume the bootloader provided
-	 * sensible, non-overlapping entries. If there is slight overlap, we trim
-	 * the current entry to the end of the previous one.
-	 */
 	for (size_t i = 0; i < count; i++) {
 	    uint64_t base = raw_sorted[i].base;
 	    uint64_t end = safe_end(base, raw_sorted[i].len);
@@ -531,12 +501,7 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
 	    arch_mem_panic("no valid memory regions after parsing");
 	}
 
-	/*
-	 * Absolute safety minimum:
-	 * - leave the first 1 MiB alone,
-	 * - the kernel is reserved,
-	 * - the initrd is reserved.
-	 */
+
 	map_reserve_range(0, 0x100000);
 
 	if (kernel_phys_end > kernel_phys_start) {
@@ -549,10 +514,7 @@ void arch_memory_init(const arch_raw_mem_entry_t *entries,
 	                      initrd_phys_end - initrd_phys_start);
 	}
 
-	/*
-	 * PMM operates on pages, so usable regions must have page-aligned start
-	 * and end.
-	 */
+
 	map_align_usable_regions();
 
 	recalc_stats();
@@ -646,9 +608,7 @@ bool arch_memory_find_usable(uint64_t len,
 	    align = ARCH_PAGE_SIZE;
 	}
 
-	/*
-	 * Alignment must be a power of two. If not, fall back to page size.
-	 */
+
 	if ((align & (align - 1)) != 0) {
 	    align = ARCH_PAGE_SIZE;
 	}
@@ -676,9 +636,7 @@ bool arch_memory_find_usable(uint64_t len,
 	return false;
 }
 
-/* ------------------------------------------------------------------ */
-/* Debug                                                              */
-/* ------------------------------------------------------------------ */
+
 
 static const char *region_type_name(arch_mem_type_t type)
 {

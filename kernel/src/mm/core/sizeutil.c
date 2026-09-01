@@ -21,7 +21,6 @@ bool size_round_up_pow2(size_t v, size_t *out)
 	    return true;
 	}
 
-	/* Największa potęga dwójki reprezentowalna w size_t. */
 	size_t highest_pow2 = ((size_t)1) << (sizeof(size_t) * 8 - 1);
 
 	if (v > highest_pow2) {
@@ -75,7 +74,6 @@ bool size_bytes_to_pages_checked(size_t bytes,
 	    return false;
 	}
 
-	/* bytes + (page_size - 1) nie moze przepelnic size_t. */
 	if (bytes > SIZE_MAX - (page_size - 1)) {
 	    return false;
 	}

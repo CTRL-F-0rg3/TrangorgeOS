@@ -2,28 +2,6 @@ use super::ffi;
 use core::ffi::c_void;
 use core::ops::BitOr;
 
-/*
- * P1 (sekcja 4.5 planu ulepszeń: "bezpieczne flagi ochrony"). Wcześniej
- * `PROT_*`/`MAP_*` były zwykłymi stałymi `u32`, dokładnie tego samego
- * typu co niepowiązane `virt::*` (kernel/src/mm/virt.rs, flagi VMM_FLAG_*
- * z INNĄ numeracją bitów — np. `virt::WRITE == 1` to co innego niż
- * `space::PROT_WRITE == 2`). Ponieważ oba zestawy to gołe `u32`, nic nie
- * chroniło przed pomyleniem ich przy wywołaniu (np. przez pomyłkę
- * `virt::alloc(len, space::PROT_WRITE)` skompilowałoby się i po cichu
- * ustawiłoby zupełnie inne uprawnienia niż zamierzone). Dodatkowo
- * `AddressSpace::mmap(addr, len, prot: u32, flags: u32)` miało dwa
- * sąsiadujące parametry TEGO SAMEGO typu — łatwo je pomylić przy
- * wywołaniu, a kompilator by tego nie wyłapał.
- *
- * `ProtFlags`/`MapFlags` to `#[repr(transparent)]` opakowania nad `u32`
- * (więc wciąż w pełni zgodne z ABI C na granicy FFI — `.bits()` daje
- * dokładnie tę samą wartość liczbową co wcześniej), ale jako ODRĘBNE
- * typy Rust: przekazanie `VmmFlags` tam, gdzie oczekiwane jest
- * `ProtFlags` (albo odwrotnie), jest teraz błędem kompilacji, a nie
- * cichym niedopasowaniem numeracji bitów w czasie wykonania. Istniejące
- * wywołania w stylu `space::PROT_READ | space::PROT_WRITE` działają bez
- * zmian, bo `ProtFlags` implementuje `BitOr` z tym samym zachowaniem.
- */
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ProtFlags(u32);
@@ -34,14 +12,7 @@ impl ProtFlags {
     pub const WRITE: ProtFlags = ProtFlags(1 << 1);
     pub const EXEC: ProtFlags = ProtFlags(1 << 2);
     pub const USER: ProtFlags = ProtFlags(1 << 3);
-    /*
-     * Wcześniej BRAKUJĄCE w Rust, mimo że C (paging.h: `PROT_DEVICE (1u
-     * << 4)`) je definiuje i `driverspaceinit/init/service.rs` już się
-     * do niego odwoływał jako `space::PROT_DEVICE` — co bez tej stałej
-     * jest błędem kompilacji "cannot find value `PROT_DEVICE`"
-     * (E0425), a nie problemem uruchomieniowym. Naprawione przy okazji
-     * wprowadzania tego typu, z tą samą wartością bitową co po stronie C.
-     */
+
     pub const DEVICE: ProtFlags = ProtFlags(1 << 4);
 
     pub const fn bits(self) -> u32 {

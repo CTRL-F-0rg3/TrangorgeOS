@@ -14,11 +14,6 @@ static const size_t slab_classes[SLAB_CACHE_COUNT] = {
 	16, 32, 64, 128, 256, 512, 1024, 2048
 };
 
-/*
- * Liczba bitów w `used_bitmap` — musi pokryć najgorszy przypadek liczby
- * obiektów na slab, czyli najmniejszą klasę (16 B) w jednej stronie
- * (ARCH_PAGE_SIZE / 16 = 256 dla stron 4 KiB).
- */
 #define SLAB_MAX_OBJECTS_PER_SLAB 256
 #define SLAB_BITMAP_WORDS (SLAB_MAX_OBJECTS_PER_SLAB / 32)
 
@@ -29,15 +24,7 @@ typedef struct slab_desc {
 	int32_t next_partial;
 	uint32_t state;
 
-	/*
-	 * P0.2: bitmapa zajętości per obiekt (1 = obiekt aktualnie
-	 * zaalokowany, 0 = wolny). Niezależna od intruzywnej listy wolnych
-	 * obiektów (`free_head`/`free_count`), więc pozwala wykryć
-	 * double-free: drugie `slab_free()` na ten sam wskaźnik znajdzie bit
-	 * już wyczyszczony i zostanie odrzucone, zamiast ponownie wpisać
-	 * adres do free-listy (co mogłoby podnieść `free_count` powyżej
-	 * `objects_per_slab` i uszkodzić listę wolnych obiektów).
-	 */
+
 	uint32_t used_bitmap[SLAB_BITMAP_WORDS];
 } slab_desc_t;
 
@@ -57,11 +44,7 @@ static slab_cache_t slab_caches[SLAB_CACHE_COUNT];
 
 static bool slab_initialized = false;
 
-/*
- * P0.1: rzeczywista blokada SMP zamiast `pushfq; cli` + lokalnego
- * licznika, które nie chroniły przed drugim rdzeniem modyfikującym tę
- * samą free-listę/slab jednocześnie.
- */
+
 static smp_ticket_lock_t slab_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void slab_lock(void)
@@ -151,7 +134,7 @@ static bool slab_grow(uint32_t cache_id)
 	d->free_count = c->objects_per_slab;
 	d->free_head = 0;
 
-	/* Nowa (lub odzyskana z pustej) strona: wszystkie obiekty wolne. */
+
 	slab_bitmap_clear_all(d);
 
 	uint32_t *nexts = (uint32_t *)(uintptr_t)va;
@@ -231,7 +214,7 @@ bool slab_init(uint64_t base, size_t size)
 	    slab_caches[i].partial_head = -1;
 	    slab_caches[i].total_slabs = 0;
 
-	    /* objects_per_slab musi zmieścić się w used_bitmap (patrz P0.2). */
+
 	    if (slab_caches[i].objects_per_slab > SLAB_MAX_OBJECTS_PER_SLAB) {
 	        return false;
 	    }
@@ -287,7 +270,7 @@ void *slab_alloc(size_t size)
 	d->free_head = *(uint32_t *)(void *)obj;
 	d->free_count--;
 
-	/* P0.2: oznacz obiekt jako zajęty niezależnie od intruzywnej free-listy. */
+
 	slab_bit_set(d, idx);
 
 	if (d->free_count == 0) {

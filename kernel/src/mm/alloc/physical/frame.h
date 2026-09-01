@@ -42,25 +42,10 @@ size_t frame_total(void);
 size_t frame_allocated(void);
 size_t frame_free_count(void);
 
-/*
- * P1 (sekcja 4.1 planu ulepszeń: "strefy DMA32/NORMAL... z osobnymi
- * statystykami oraz polityką preferencji"). Granica strefy DMA32 jest
- * stała (< 4 GiB, standardowa definicja x86), ustalana raz w
- * frame_init()/frame_init_from_memory(). Strefa HIGHMEM nie ma
- * zastosowania w tym jądrze — cała pamięć fizyczna jest bezpośrednio
- * adresowalna przez arch_phys_to_virt() (bez potrzeby tymczasowego
- * mapowania), więc dzielimy tylko na DMA32/NORMAL.
- *
- * Polityka preferencji: `frame_alloc()` (zwykła alokacja bez ograniczeń)
- * PREFERUJE strefę NORMAL (>= 4 GiB), zawijając do DMA32 dopiero gdy
- * NORMAL jest wyczerpana — żeby zwykłe alokacje nie zjadały z czasem
- * całej niskiej pamięci potrzebnej urządzeniom DMA32. `frame_alloc_below()`
- * (używana przez dma.c) jest tym niezależna — zawsze może sięgnąć do
- * DMA32, bo to jej jedyny cel.
- */
+
 size_t frame_zone_dma32_total(void);
 size_t frame_zone_dma32_free(void);
 size_t frame_zone_normal_total(void);
 size_t frame_zone_normal_free(void);
 
-#endif /* MM_ALLOC_PHYSICAL_FRAME_H */
+#endif 

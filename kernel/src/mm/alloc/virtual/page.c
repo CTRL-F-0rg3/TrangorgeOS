@@ -1,6 +1,5 @@
 #include "page.h"
 #include "../physical/pmm.h"
-//#include "../physical/frame.h"
 #include "../../arch/x86_64/memory.h"
 
 extern void kprintf(const char *fmt, ...);

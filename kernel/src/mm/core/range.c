@@ -34,17 +34,14 @@ bool range_from_addr_len(uint64_t addr,
 	    return false;
 	}
 
-	/* (1) addr + len bez przepełnienia u64. */
 	if (addr > UINT64_MAX - len) {
 	    return false;
 	}
 
 	uint64_t raw_end = addr + len;
 
-	/* (2) wyrównanie początku w dół — tylko czyści bity, nie przepełnia. */
 	uint64_t start = addr & ~(align - 1);
 
-	/* (3) wyrównanie końca w górę — jawnie sprawdzone pod kątem overflow. */
 	uint64_t misalign = raw_end & (align - 1);
 	uint64_t end;
 
@@ -64,16 +61,12 @@ bool range_from_addr_len(uint64_t addr,
 	    return false;
 	}
 
-	/* (4) kanoniczność (opcjonalna — np. helper bywa też używany dla
-	 * zakresów fizycznych/wewnętrznych, gdzie pojęcie "kanoniczny" nie
-	 * ma zastosowania). */
 	if (require_canonical) {
 	    if (!range_is_canonical(start) || !range_is_canonical(end - 1)) {
 	        return false;
 	    }
 	}
 
-	/* (5) granice przestrzeni narzucone przez wywołującego. */
 	if (start < limit_min) {
 	    return false;
 	}

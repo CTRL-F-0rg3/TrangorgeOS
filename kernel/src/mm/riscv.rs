@@ -1,26 +1,10 @@
-//! Native RISC-V (riscv64gc) memory-management backend.
-//!
-//! The x86_64 build backs `mm::` with the C bridge (`libmm.a` — `mm/ffi.rs`).
-//! RISC-V has no such bridge yet, so this module provides the same public
-//! API surface (`mm::phys`, `mm::api`, `mm::virt`, `mm::space`) natively:
-//!
-//! * `phys`  — bitmap physical-frame allocator over a static 4 MiB pool,
-//! * `api`   — kmalloc/kfree/krealloc… over a size-headered free-list heap,
-//! * `virt`  — virtual-range allocator (VA window; no MMU backing yet),
-//! * `space` — Sv39 page tables maintained in software (3 levels, 4 KiB
-//!             pages). The MMU stays in bare mode under OpenSBI for now —
-//!             tables are built and walked, but `satp` is not switched.
-//!
-//! Identity mapping: in bare mode VA == PA in the low half, which makes
-//! direct frame access (`phys_to_virt`) trivial here.
-
 pub mod phys {
     use spin::Mutex;
 
     const FRAME_SIZE: usize = 4096;
     const FRAME_POOL_BYTES: usize = 4 * 1024 * 1024;
-    const FRAME_COUNT: usize = FRAME_POOL_BYTES / FRAME_SIZE; // 1024 frames
-    const BITMAP_WORDS: usize = FRAME_COUNT / 64; // 16 x u64
+    const FRAME_COUNT: usize = FRAME_POOL_BYTES / FRAME_SIZE; 
+    const BITMAP_WORDS: usize = FRAME_COUNT / 64; 
 
     #[repr(C, align(4096))]
     struct FramePool([u8; FRAME_POOL_BYTES]);
@@ -41,8 +25,7 @@ pub mod phys {
         &POOL as *const FramePool as u64
     }
 
-    /// Zero the bitmap explicitly (QEMU's ELF loader already clears BSS;
-    /// this keeps the invariant obvious and re-init safe).
+
     pub fn init() {
         let mut s = STATE.lock();
         s.bitmap = [0; BITMAP_WORDS];
@@ -61,7 +44,6 @@ pub mod phys {
         b[idx / 64] & (1u64 << (idx % 64)) != 0
     }
 
-    /// Reserve [base, base+len) — marks frames overlapping the pool as used.
     pub fn reserve(base: u64, len: u64) {
         let mut s = STATE.lock();
         let start = base.max(pool_base());
@@ -81,8 +63,6 @@ pub mod phys {
         }
     }
 
-    /// Find `count` consecutive free frames; the first must satisfy the
-    /// frame-index alignment (`align_frames = 512` → 2 MiB alignment).
     fn scan_run(s: &mut State, count: usize, align_frames: usize) -> Option<usize> {
         let mut run = 0usize;
         for idx in 0..FRAME_COUNT {
@@ -114,8 +94,6 @@ pub mod phys {
 
     pub fn alloc_zero_frame() -> Option<u64> {
         let pa = alloc_frame()?;
-        // Identity map (bare mode): writing through the physical address
-        // writes the backing pool memory directly.
         unsafe {
             core::ptr::write_bytes(pa as *mut u8, 0, FRAME_SIZE);
         }
@@ -126,8 +104,7 @@ pub mod phys {
         alloc_frames_aligned(count, 1)
     }
 
-    /// Allocate `count` contiguous frames, first frame aligned to
-    /// `align_frames * 4096` bytes.
+
     pub fn alloc_frames_aligned(count: usize, align_frames: usize) -> Option<u64> {
         if count == 0 || count > FRAME_COUNT {
             return None;
@@ -161,7 +138,7 @@ pub mod phys {
         let mut s = STATE.lock();
         for idx in first..first + count {
             if !bit_get(&s.bitmap, idx) {
-                return false; // double free / foreign frame
+                return false; 
             }
         }
         for idx in first..first + count {
@@ -171,7 +148,7 @@ pub mod phys {
         true
     }
 
-    /// Pool + heap bytes (loose equivalent of `mm_total_ram`).
+
     pub fn total_bytes() -> u64 {
         FRAME_POOL_BYTES as u64 + super::api::pool_bytes()
     }
@@ -182,7 +159,7 @@ pub mod phys {
         frames_free + super::api::heap_free_bytes()
     }
 
-    /// Low-half identity map in bare mode: phys == virt.
+
     pub const DIRECT_MAP_BASE: u64 = 0;
 
     pub fn phys_to_virt(phys: u64) -> *mut u8 {
@@ -190,14 +167,12 @@ pub mod phys {
     }
 }
 
-// ==== PART3: api — size-headered free-list heap =============================
 
 pub mod api {
     use core::ffi::c_void;
     use spin::Mutex;
 
     const HEAP_BYTES: usize = 2 * 1024 * 1024;
-    /// Block header: [data_size: u64][block_base: u64][block_size: u64][pad].
     const HDR: usize = 32;
     const MIN_ALIGN: usize = 16;
 
@@ -207,7 +182,6 @@ pub mod api {
     static POOL: HeapPool = HeapPool([0; HEAP_BYTES]);
 
     struct HeapState {
-        /// Address of the first free block (0 = none).
         head: usize,
     }
 
@@ -217,12 +191,11 @@ pub mod api {
         &POOL as *const HeapPool as usize
     }
 
-    /// Called once from `init()` — the whole pool becomes one free block.
+
     pub fn init() {
         let base = pool_base();
         let mut s = STATE.lock();
         unsafe {
-            // [size = whole pool][base = self][block_size][pad]
             *(base as *mut u64) = HEAP_BYTES as u64;
             *((base + 8) as *mut u64) = base as u64;
             *((base + 16) as *mut u64) = HEAP_BYTES as u64;
@@ -242,7 +215,7 @@ pub mod api {
             unsafe {
                 let bsize = *(cur as *const u64) as usize;
                 total += bsize as u64;
-                cur = *((cur + HDR) as *const usize); // next pointer in data area
+                cur = *((cur + HDR) as *const usize); 
             }
         }
         total
@@ -255,9 +228,6 @@ pub mod api {
         s.head = block;
     }
 
-    /// Allocate `size` bytes, 16-byte aligned (first fit). Blocks are carved
-    /// from the front of free blocks; remainders stay on the freelist. No
-    /// coalescing yet — bounded by pool size, fine for the scaffold heap.
     fn raw_alloc(size: usize, align: usize) -> *mut u8 {
         let mut s = STATE.lock();
         if s.head == 0 {
@@ -271,7 +241,7 @@ pub mod api {
             let want = if align <= MIN_ALIGN {
                 size + HDR
             } else {
-                size + align + HDR // slack for over-aligned placement
+                size + align + HDR 
             };
             if bsize >= want {
                 let (hdr, take, next) = if align <= MIN_ALIGN {
@@ -285,10 +255,9 @@ pub mod api {
                 } else {
                     let data = ((cur + HDR + align - 1) & !(align - 1))
                         .max(cur + HDR);
-                    (data - HDR, bsize, 0) // hdr placed at aligned position
+                    (data - HDR, bsize, 0) 
                 };
 
-                // Unlink cur; possibly re-link front and back remainders.
                 if prev == 0 {
                     s.head = unsafe { *((cur + HDR) as *const usize) };
                 } else {
@@ -338,9 +307,9 @@ pub mod api {
                 }
 
                 unsafe {
-                    *(hdr as *mut u64) = size as u64; // data size
-                    *((hdr + 8) as *mut u64) = cur as u64; // block base
-                    *((hdr + 16) as *mut u64) = take as u64; // block size
+                    *(hdr as *mut u64) = size as u64; 
+                    *((hdr + 8) as *mut u64) = cur as u64; 
+                    *((hdr + 16) as *mut u64) = take as u64; 
                 }
                 return (hdr + HDR) as *mut u8;
             }
@@ -350,7 +319,6 @@ pub mod api {
         core::ptr::null_mut()
     }
 
-    /// Data size of a live allocation (0 for null/foreign pointers).
     unsafe fn data_size(ptr: *mut u8) -> usize {
         if ptr.is_null() {
             return 0;
@@ -362,7 +330,7 @@ pub mod api {
         *(hdr as *const u64) as usize
     }
 
-    /// Allocate `size` bytes; returns `None` on failure (matches x86 `mm::api`).
+
     pub fn kmalloc(size: usize) -> Option<*mut u8> {
         if size == 0 {
             return None;
@@ -396,7 +364,7 @@ pub mod api {
         unsafe {
             let hdr = ptr as usize - HDR;
             if hdr < pool_base() || hdr >= pool_base() + HEAP_BYTES {
-                return; // foreign pointer — ignore
+                return; 
             }
             let base = *((hdr + 8) as *const usize) as usize;
             if base < pool_base() || base >= pool_base() + HEAP_BYTES {
@@ -432,7 +400,6 @@ pub mod api {
         kfree(ptr)
     }
 
-    /// Identity map in bare mode: VA == PA for the heap pool.
     pub fn kvirt_to_phys(ptr: *mut u8) -> u64 {
         let p = ptr as usize;
         if p >= pool_base() && p < pool_base() + HEAP_BYTES {
@@ -443,20 +410,11 @@ pub mod api {
     }
 }
 
-// ==== PART4: virt — VA range allocator ======================================
-
 pub mod virt {
     use alloc::vec::Vec;
     use core::ops::BitOr;
     use spin::Mutex;
 
-    /*
-     * Same flag numeration as the x86_64 `virt.rs` (VMM_FLAG_* from
-     * mm/alloc/virtual/vmm.h). Ranges are only RESERVED here — the MMU runs
-     * in bare mode, so a reserved VA window is not backed by page tables yet.
-     * The window sits below QEMU-virt RAM (0x8000_0000) and above the
-     * peripheral block, in otherwise unused address space.
-     */
     #[repr(transparent)]
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct VmmFlags(u32);
@@ -489,7 +447,7 @@ pub mod virt {
     pub const ZERO: VmmFlags = VmmFlags::ZERO;
 
     const WINDOW_BASE: u64 = 0x4000_0000;
-    const WINDOW_LEN: u64 = 0x4000_0000; // 1 GiB
+    const WINDOW_LEN: u64 = 0x4000_0000; 
 
     struct DeviceMap {
         va: u64,
@@ -499,7 +457,7 @@ pub mod virt {
 
     struct State {
         cursor: u64,
-        taken: Vec<(u64, u64)>, // (va, len) reserved ranges
+        taken: Vec<(u64, u64)>, 
         devices: Vec<DeviceMap>,
     }
 
@@ -523,7 +481,6 @@ pub mod virt {
     }
 
     fn take_range(s: &mut State, len: u64) -> Option<u64> {
-        // scan from cursor to window end
         let mut va = s.cursor;
         while va + len <= WINDOW_BASE + WINDOW_LEN {
             if !overlaps(s, va, len) {
@@ -533,7 +490,6 @@ pub mod virt {
             }
             va += 0x1000;
         }
-        // wrap-around scan
         va = WINDOW_BASE;
         while va < s.cursor {
             if !overlaps(s, va, len) {
@@ -545,7 +501,6 @@ pub mod virt {
         None
     }
 
-    /// Reserve a `bytes`-sized (page-rounded) VA range.
     pub fn alloc(bytes: usize, _flags: VmmFlags) -> Option<u64> {
         if bytes == 0 {
             return None;
@@ -555,7 +510,6 @@ pub mod virt {
         take_range(&mut s, len)
     }
 
-    /// Release a previously reserved range.
     pub fn free(va: u64, bytes: usize) -> bool {
         let len = ((bytes + 0xFFF) & !0xFFF) as u64;
         let mut s = STATE.lock();
@@ -568,9 +522,6 @@ pub mod virt {
         }
     }
 
-    /// Reserve a window for a device at `phys` (MMIO). The VA→PA pairing is
-    /// recorded so `unmap_device` can validate the call; actual mapping
-    /// happens when Sv39 paging is enabled (identity access works today).
     pub fn map_device(phys: u64, len: usize) -> Option<u64> {
         let plen = ((len + 0xFFF) & !0xFFF) as u64;
         let va = {
@@ -597,7 +548,6 @@ pub mod virt {
     }
 }
 
-// ==== PART5: space — Sv39 page tables (software-managed) ====================
 
 pub mod space {
     use alloc::vec::Vec;
@@ -605,7 +555,6 @@ pub mod space {
     use core::ops::BitOr;
     use spin::Mutex;
 
-    // Sv39 PTE bits
     const PTE_V: u64 = 1 << 0;
     const PTE_R: u64 = 1 << 1;
     const PTE_W: u64 = 1 << 2;
@@ -616,8 +565,6 @@ pub mod space {
 
     const PAGE: usize = 4096;
 
-    /// Same bit numeration as the x86_64 `space.rs` (PROT_* / MAP_* from
-    /// paging.h) so call sites stay source-compatible across backends.
     #[repr(transparent)]
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct ProtFlags(u32);
@@ -710,12 +657,10 @@ pub mod space {
         next_va: u64,
         brk: u64,
         ranges: Vec<Range>,
-        /// PA of every page table owned by this space (root first) — freed on Drop.
         tables: Vec<u64>,
     }
 
     pub struct AddressSpace {
-        /// Root table address (VA == PA in bare mode).
         root: usize,
         inner: Mutex<Inner>,
     }
@@ -731,7 +676,7 @@ pub mod space {
             Some(Self {
                 root,
                 inner: Mutex::new(Inner {
-                    next_va: 0x0040_0000, // per-space VA cursor (above low hole)
+                    next_va: 0x0040_0000, 
                     brk: 0,
                     ranges: Vec::new(),
                     tables: alloc::vec![root as u64],
@@ -739,13 +684,10 @@ pub mod space {
             })
         }
 
-        /// Paging handle = root table pointer (FFI-shape compatibility).
         pub fn handle(&self) -> *mut c_void {
             self.root as *mut c_void
         }
 
-        /// Sv39 `satp` value this space would install (MODE=8 | PPN of root).
-        /// NOT loaded yet — enabling the MMU is the next milestone.
         pub fn cr3(&self) -> u64 {
             (8u64 << 60) | ((self.root as u64) >> 12)
         }
@@ -759,8 +701,6 @@ pub mod space {
             Some(t)
         }
 
-        /// Map one 4 KiB page through the 3-level Sv39 walk, allocating
-        /// intermediate tables as needed.
         fn map_page(
             root: usize,
             tables: &mut Vec<u64>,
@@ -789,7 +729,6 @@ pub mod space {
             Some(())
         }
 
-        /// Software walk: PA behind `va`, if mapped.
         pub fn translate(&self, va: u64) -> Option<u64> {
             unsafe {
                 let root = self.root;
@@ -816,7 +755,6 @@ pub mod space {
     }
 
     impl AddressSpace {
-        /// Map physical memory into the space (per 4 KiB page).
         pub fn map_phys(&self, virt: u64, phys: u64, len: usize, prot: ProtFlags) -> bool {
             let pages = (len + PAGE - 1) / PAGE;
             let flags = pte_for_prot(prot);
@@ -832,8 +770,6 @@ pub mod space {
             true
         }
 
-        /// Allocate anonymous zeroed pages; `hint` (page-aligned) is honored,
-        /// otherwise the per-space cursor hands out fresh VAs.
         pub fn map_anon(&self, hint: u64, len: usize, prot: ProtFlags) -> Option<u64> {
             if len == 0 {
                 return None;
@@ -868,8 +804,6 @@ pub mod space {
             Some(va)
         }
 
-        /// POSIX-flavoured wrapper: `MAP_FIXED` with a non-zero `addr` maps at
-        /// that address, otherwise the cursor picks one.
         pub fn mmap(
             &self,
             addr: u64,
@@ -884,7 +818,6 @@ pub mod space {
             }
         }
 
-        /// Unmap a previously created range (frees the anonymous frames).
         pub fn munmap(&self, addr: u64, len: usize) -> bool {
             let mut inner = self.inner.lock();
             let idx = match inner
@@ -904,7 +837,6 @@ pub mod space {
             true
         }
 
-        /// Change protection of every page in [addr, addr+len).
         pub fn protect(&self, addr: u64, len: usize, prot: ProtFlags) -> bool {
             let pages = (len + PAGE - 1) / PAGE;
             let flags = pte_for_prot(prot);
@@ -943,7 +875,6 @@ pub mod space {
             true
         }
 
-        /// Program break: grows monotonically (mapping is up to the caller).
         pub fn brk(&self, new_brk: u64) -> u64 {
             let mut inner = self.inner.lock();
             if new_brk > inner.brk {
@@ -952,9 +883,6 @@ pub mod space {
             inner.brk
         }
 
-        /// Address-space switch. The MMU runs in bare mode under OpenSBI for
-        /// now, so this only invalidates TLB state; installing `satp` comes
-        /// with the paging-enable milestone.
         pub fn switch(&self) {
             sfence_all();
         }
@@ -1000,7 +928,6 @@ pub mod space {
     }
 }
 
-/// Initialize the whole RISC-V MM backend (call once, after the arch heap).
 pub fn init() -> bool {
     phys::init();
     api::init();

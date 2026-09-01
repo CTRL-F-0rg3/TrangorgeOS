@@ -116,7 +116,6 @@ pub fn read_for(pid: u32, fd: i32, out: &mut [u8]) -> i32 {
 
     match f.kind {
         FdKind::Stdio => {
-            /* fd 0 = klawiatura (nieblokująco, 1 znak) */
             if fd == 0 {
                 match crate::drivers::usb::class::hid::keyboard::take_char() {
                     Some(c) => {
@@ -180,7 +179,6 @@ pub fn write_for(pid: u32, fd: i32, data: &[u8]) -> i32 {
             }
         }
 
-        /* VFS jest read-only w v1 */
         FdKind::File => -1,
         FdKind::None => -1,
     }
@@ -193,7 +191,7 @@ pub fn close_for(pid: u32, fd: i32) -> i32 {
     };
 
     if fd < 3 || fd as usize >= FD_MAX {
-        return -1;   /* stdio niezamykalne */
+        return -1;   
     }
 
     let f = p.fds[fd as usize];

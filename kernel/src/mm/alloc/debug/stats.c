@@ -10,13 +10,6 @@ static size_t
 	stat_total_allocs = 0,
 	stat_total_frees = 0;
 
-/*
- * Sekcja 5 planu ulepszeń: liczniki nie miały żadnej synchronizacji —
- * pod SMP dwa rdzenie wołające jednocześnie note_alloc()/note_free()
- * mogły się prześcignąć w `stat_live_count++` (odczyt-modyfikacja-zapis
- * bez atomowości), gubiąc inkrementacje/dekrementacje i psując
- * statystyki w sposób trudny do odróżnienia od prawdziwego wycieku.
- */
 static smp_ticket_lock_t stats_smp_lock = SMP_TICKET_LOCK_INIT;
 
 void alloc_stats_note_alloc(size_t size) {

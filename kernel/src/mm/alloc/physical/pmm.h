@@ -39,13 +39,7 @@ size_t pmm_stat_allocated_frames(void);
 uint64_t pmm_stat_total_bytes(void);
 uint64_t pmm_stat_free_bytes(void);
 
-/*
- * P1 (sekcja 4.1 planu ulepszeń): statystyki per strefa fizyczna.
- * DMA32 = ramki z adresem fizycznym < 4 GiB; NORMAL = reszta. Zobacz
- * komentarz przy frame_zone_* w alloc/physical/frame.h po pełne
- * uzasadnienie (w tym dlaczego nie ma osobnej strefy HIGHMEM w tym
- * jądrze).
- */
+
 size_t pmm_stat_dma32_total_frames(void);
 size_t pmm_stat_dma32_free_frames(void);
 size_t pmm_stat_normal_total_frames(void);
@@ -57,4 +51,4 @@ void pmm_dump(void);
 bool pmm_self_test(void);
 #endif
 
-#endif /* MM_ALLOC_PHYSICAL_PMM_H */
+#endif 

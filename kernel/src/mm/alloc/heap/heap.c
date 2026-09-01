@@ -151,11 +151,7 @@ void *heap_alloc(size_t size)
 	return buddy_alloc(size);
 }
 
-/*
- * P1.1: `align` musi być potęgą dwójki — kontrakt jest teraz sprawdzany
- * na samym wejściu do warstwy heap, zanim trafi do gałęzi slab/buddy
- * (patrz uzasadnienie w buddy_alloc_aligned()).
- */
+
 void *heap_alloc_aligned(size_t size, size_t align)
 {
 	if (!heap_initialized || size == 0) {

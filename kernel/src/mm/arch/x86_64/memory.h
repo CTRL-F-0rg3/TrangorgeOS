@@ -101,10 +101,7 @@ static inline bool arch_is_page_aligned(uint64_t v)
     return (v & ARCH_PAGE_MASK) == 0;
 }
 
-/*
- * Note: these functions only make sense once the direct map has been set up
- * in paging.c.
- */
+
 static inline void *arch_phys_to_virt(uint64_t phys)
 {
     return (void *)(uintptr_t)(phys + ARCH_DIRECT_MAP_BASE);
@@ -115,4 +112,4 @@ static inline uint64_t arch_virt_to_phys(const void *virt)
     return (uint64_t)((uintptr_t)virt - ARCH_DIRECT_MAP_BASE);
 }
 
-#endif /* ARCH_X86_64_MEMORY_H */
+#endif 

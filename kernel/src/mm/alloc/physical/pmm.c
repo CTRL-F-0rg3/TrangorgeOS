@@ -17,12 +17,7 @@ static void pmm_panic(const char *msg)
 
 static bool pmm_initialized = false;
 
-/*
- * P0.1: rzeczywista blokada SMP zamiast `pushfq; cli` + lokalnego licznika.
- * Przy wielordzeniowej konfiguracji (`-smp 4`) dwa CPU mogły jednocześnie
- * modyfikować bitmapę ramek; ticket lock daje prawdziwe wykluczanie
- * międzyrdzeniowe, zachowując wariant irqsave i bezpieczną rekurencję.
- */
+
 static smp_ticket_lock_t pmm_smp_lock = SMP_TICKET_LOCK_INIT;
 
 static void pmm_lock(void)
@@ -488,9 +483,7 @@ bool pmm_self_test(void)
 	    return false;
 	}
 
-	/*
-	 * Test 1: single frames.
-	 */
+
 	uint64_t frames[8];
 
 	for (size_t i = 0; i < 8; i++) {
@@ -522,9 +515,7 @@ bool pmm_self_test(void)
 	    }
 	}
 
-	/*
-	 * Test 2: contiguous range of 16 frames.
-	 */
+
 	uint64_t contiguous = PMM_INVALID_FRAME;
 
 	if (!pmm_alloc_frames(16, &contiguous)) {
@@ -542,9 +533,7 @@ bool pmm_self_test(void)
 	    return false;
 	}
 
-	/*
-	 * Test 3: alignment to 2 MiB.
-	 */
+
 	uint64_t aligned2m = PMM_INVALID_FRAME;
 
 	if (!pmm_alloc_frames_aligned(512, 512, &aligned2m)) {
@@ -564,9 +553,7 @@ bool pmm_self_test(void)
 	    return false;
 	}
 
-	/*
-	 * Test 4: byte allocation.
-	 */
+
 	uint64_t bytes_alloc = PMM_INVALID_FRAME;
 
 	if (!pmm_alloc_zero_bytes(10000, &bytes_alloc)) {
@@ -598,4 +585,4 @@ bool pmm_self_test(void)
 	return true;
 }
 
-#endif /* PMM_DEBUG */
+#endif 

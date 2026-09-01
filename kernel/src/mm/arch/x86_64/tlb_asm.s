@@ -30,7 +30,7 @@ tlb_asm_write_cr4:
     mov %rdi, %cr4
     ret
 
-/* invpcid: rdi = type, rsi = pointer do 16B desc */
+
 .global tlb_asm_invpcid
 .type tlb_asm_invpcid, @function
 tlb_asm_invpcid:
@@ -44,7 +44,7 @@ tlb_asm_wbinvd:
     ret
 
 .global tlb_asm_clflush
-.type tlb_asm_clflush, @function
+.type tlb_asm_clflush, 
 tlb_asm_clflush:
     clflush (%rdi)
     ret

@@ -4,11 +4,7 @@
 #include "../../arch/x86_64/memory.h"
 #include "../../core/sizeutil.h"
 
-/*
- * P1.4: taki sam problem overflow jak w contiguous.c — patrz komentarz
- * tam. Dodatkowo `frames * ARCH_PAGE_SIZE` (dlugosc mapowania) rowniez
- * jest teraz liczone przez bezpieczny helper zamiast surowego mnozenia.
- */
+
 static bool dma_bytes_to_frames(size_t bytes, size_t *out_frames)
 {
 	return size_bytes_to_pages_checked(bytes, ARCH_PAGE_SIZE, out_frames);

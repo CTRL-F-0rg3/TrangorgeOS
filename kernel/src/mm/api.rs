@@ -24,9 +24,6 @@ pub fn kfree(ptr: *mut u8) {
     unsafe { ffi::kfree(ptr as *mut c_void) }
 }
 
-/// Page-aligned allocation (stosy jądra, DMA buffers). Uzupełnia surface
-/// `mm::api` tak, by była zgodna z backendem RISC-V (`riscv::api`),
-/// który już wystawia te same funkcje — bez duplikowania logiki allokatora.
 pub fn kalloc_pages(pages: usize) -> Option<*mut u8> {
     let p = unsafe { ffi::kalloc_pages(pages) };
 
@@ -73,7 +70,6 @@ unsafe impl GlobalAlloc for KernelAlloc {
 }
 
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // kmalloc of various sizes + write/read
     let sizes: [usize; 6] = [8, 64, 256, 1024, 4096, 16384];
     let mut keep: [*mut u8; 6] = [core::ptr::null_mut(); 6];
 
@@ -96,7 +92,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
         kfree(*p);
     }
 
-    // kzalloc musi zerować
     let z = kzalloc(512).ok_or("api: kzalloc failed")?;
 
     for k in 0..512 {
@@ -108,7 +103,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     kfree(z);
 
-    // kcalloc (FFI) — mnożenie + zerowanie
     let c = unsafe { ffi::kcalloc(4, 256) } as *mut u8;
 
     if c.is_null() {
@@ -124,7 +118,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     unsafe { ffi::kfree(c as *mut c_void) };
 
-    // kmalloc_aligned (FFI) — wyrównanie
     let a = unsafe { ffi::kmalloc_aligned(1024, 256) } as *mut u8;
 
     if a.is_null() {
@@ -138,7 +131,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     unsafe { ffi::kfree(a as *mut c_void) };
 
-    // krealloc: rośnięcie + zachowanie danych, potem zmniejszenie
     let p = kmalloc(64).ok_or("api: kmalloc(p) failed")?;
     unsafe { core::ptr::write_bytes(p, 0x33, 64); }
 
@@ -162,7 +154,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 
     kfree(r);
 
-    // virt_to_phys dla wskaźnika z kmalloc
     let v = kmalloc(128).ok_or("api: kmalloc(v) failed")?;
     let phys = virt_to_phys(v);
 

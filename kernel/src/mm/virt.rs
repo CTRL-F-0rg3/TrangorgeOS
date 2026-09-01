@@ -1,12 +1,6 @@
 use super::ffi;
 use core::ops::BitOr;
 
-/*
- * P1 (sekcja 4.5): `VmmFlags` to odrębny typ od `space::ProtFlags` — patrz
- * uzasadnienie w space.rs. Numeracja bitów jest identyczna jak wcześniej
- * (zgodna z `VMM_FLAG_*` w kernel/src/mm/alloc/virtual/vmm.h), więc
- * `.bits()` na granicy FFI daje dokładnie te same wartości co przedtem.
- */
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct VmmFlags(u32);
@@ -67,7 +61,6 @@ pub fn unmap_device(virt: u64, len: usize) -> bool {
 }
 
 pub fn self_test() -> Result<&'static str, &'static str> {
-    // ordinary virtual region
     let v = alloc(4096, WRITE).ok_or("vmm: alloc failed")?;
 
     if v == 0 {
@@ -89,7 +82,6 @@ pub fn self_test() -> Result<&'static str, &'static str> {
         return Err("vmm: free(8192) failed");
     }
 
-    // mapowanie urządzenia (MMIO, np. APIC)
     let d = map_device(0xFEE00000, 4096).ok_or("vmm: map_device failed")?;
 
     if d == 0 {

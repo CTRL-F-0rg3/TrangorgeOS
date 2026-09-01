@@ -11,12 +11,7 @@ static bool frame_initialized = false;
 static size_t total_frames = 0;
 static size_t allocated_frames = 0;
 
-/*
- * P1 (sekcja 4.1): granica strefy DMA32 w PFN-ach (< 4 GiB). Jeśli cała
- * dostępna pamięć mieści się poniżej 4 GiB, `dma32_pfn_boundary ==
- * total_frames` i cała pamięć jest strefą DMA32 (nie ma NORMAL) — to
- * poprawny, bezpieczny przypadek brzegowy, obsłużony wprost poniżej.
- */
+
 #define ZONE_DMA32_LIMIT_BYTES (4ULL * 1024 * 1024 * 1024)
 
 static size_t dma32_pfn_boundary = 0;
@@ -136,10 +131,7 @@ bool frame_init_from_memory(void)
 	    return false;
 	}
 
-	/*
-	 * The bitmap indexes PFNs up to the end of the highest usable region
-	 * (including holes in the physical address space).
-	 */
+
 	uint64_t max_pfn = info->max_usable_address / ARCH_PAGE_SIZE;
 	size_t bit_count = (size_t)(max_pfn + 1);
 
@@ -157,12 +149,7 @@ bool frame_init_from_memory(void)
 	    return false;
 	}
 
-	/*
-	 * We only free USABLE regions.
-	 *
-	 * Note: the bitmap was reserved via arch_memory_boot_alloc(), so it
-	 * should not be freed.
-	 */
+
 	const arch_mem_region_t *regions = NULL;
 	size_t region_count = arch_memory_regions(&regions);
 
@@ -210,16 +197,7 @@ bool frame_alloc(frame_t *out)
 	    return false;
 	}
 
-	/*
-	 * P1 (sekcja 4.1 — polityka preferencji): jeśli istnieje strefa
-	 * NORMAL (są ramki z PFN >= dma32_pfn_boundary), szukaj NAJPIERW
-	 * tam — zwykłe alokacje nie powinny z czasem zjadać niskiej pamięci
-	 * potrzebnej urządzeniom DMA32. `bitmap_alloc_from()` sama zawija do
-	 * 0 (czyli w razie potrzeby także do DMA32), jeśli w NORMAL nic
-	 * wolnego nie zostało — więc to wciąż JEDNO wywołanie, bez utraty
-	 * gwarancji sukcesu, gdy pamięć jest wyczerpana tylko w jednej
-	 * strefie.
-	 */
+
 	size_t pfn;
 
 	if (dma32_pfn_boundary < total_frames) {
@@ -298,9 +276,7 @@ bool frame_free(frame_t frame)
 
 	size_t pfn = frame_to_pfn(frame);
 
-	/*
-	 * If the bit is 0, the frame is already free.
-	 */
+
 	if (!bitmap_test(&frame_bitmap, pfn)) {
 	    return false;
 	}
@@ -336,9 +312,7 @@ bool frame_free_contiguous(frame_t start, size_t count)
 	    return false;
 	}
 
-	/*
-	 * If the whole range is already free, treat it as a double free.
-	 */
+
 	if (bitmap_test_range_free(&frame_bitmap, pfn_start, count)) {
 	    return false;
 	}
@@ -492,8 +466,6 @@ size_t frame_zone_normal_free(void)
 	size_t normal_total = total_frames - dma32_pfn_boundary;
 
 	if (allocated_frames < dma32_allocated_frames) {
-	    /* Nie powinno wystąpić przy poprawnym księgowaniu — obrona
-	     * w głąb zamiast underflow (size_t jest bez znaku). */
 	    return normal_total;
 	}
 

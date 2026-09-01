@@ -33,15 +33,6 @@ static uint64_t prot_to_pte(uint32_t prot)
 	return pte;
 }
 
-/*
- * Waliduje, ze `addr`/`len` sa scisle wyrownane do strony i ze `addr+len`
- * nie przepelnia u64. Uzywana defensywnie na tej (najnizszej) warstwie
- * przez paging_aspace_map/unmap/protect — obecni wywolujacy (przez
- * address_space.c) juz waliduja zakres wczesniej (P0.3), ale ta funkcja
- * jest tez czescia publicznego API `paging.h`, wiec przyszli wywolujacy
- * (np. paging_kernel_map/unmap, obecnie bez zadnego wywolujacego w
- * drzewie) dostaja te sama gwarancje bez polegania na warstwie wyzej.
- */
 static bool page_range_ok(uint64_t addr, size_t len)
 {
 	uint64_t start, end;
@@ -241,18 +232,6 @@ bool paging_aspace_protect(address_space_t *as,
 
 	size_t pages = (size_t)(len / ARCH_PAGE_SIZE);
 
-	/*
-	 * P1 (paging/mapowania — ten sam problem co w mapping_protect_range()
-	 * z alloc/virtual/mapping.c, tu naprawiony w PRAWDZIWEJ ścieżce
-	 * używanej przez aspace_protect(): brak walidacji przed mutacją
-	 * oznaczał, że natrafienie na niezmapowaną stronę w połowie zakresu
-	 * przerywało pętlę PO ZMIANIE flag prefiksu i zwracało false —
-	 * wywołujący (aspace_protect) poprawnie nie aktualizował v->prot,
-	 * ale tablice stron już miały nowe uprawnienia na części zakresu.
-	 * Rozdzielenie na dwa przebiegi (walidacja, potem zapis) czyni
-	 * operację atomową w normalnym, jednowątkowym względem tej
-	 * przestrzeni adresowej przypadku.
-	 */
 	for (size_t i = 0; i < pages; i++) {
 	    uint64_t v = virt + (uint64_t)i * ARCH_PAGE_SIZE;
 
@@ -268,8 +247,6 @@ bool paging_aspace_protect(address_space_t *as,
 	    uint64_t v = virt + (uint64_t)i * ARCH_PAGE_SIZE;
 
 	    if (!paging_set_flags_in(pml4, v, pte)) {
-	        /* Nie powinno wystapic po walidacji powyzej — patrz analogiczny
-	         * komentarz w mapping_protect_range(). */
 	        tlb_batch_commit(&batch);
 	        return false;
 	    }

@@ -181,7 +181,6 @@ void kprintf(const char *fmt, ...)
 	va_end(ap);
 }
 
-/* For the Rust side — simple string write to the serial port. */
 void serial_write_str(const char *s)
 {
 	serial_init();
