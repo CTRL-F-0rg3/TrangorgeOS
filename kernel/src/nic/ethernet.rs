@@ -48,7 +48,6 @@ impl<'a> EthernetFrame<'a> {
     }
 }
 
-/// Zapisuje nagłówek Ethernet i zwraca obszar przeznaczony na payload.
 pub fn build(
     out: &mut [u8],
     destination: MacAddress,
@@ -64,8 +63,6 @@ pub fn build(
     Ok(&mut out[HEADER_LEN..])
 }
 
-/// Dopisuje padding Ethernet bez rozszerzania bufora.
-/// Zwraca długość, którą należy przekazać do NIC.
 pub fn pad_to_minimum(frame: &mut [u8], logical_len: usize) -> Result<usize, PacketError> {
     if logical_len < HEADER_LEN || logical_len > frame.len() {
         return Err(PacketError::Truncated);
@@ -78,7 +75,6 @@ pub fn pad_to_minimum(frame: &mut [u8], logical_len: usize) -> Result<usize, Pac
     Ok(wire_len)
 }
 
-/// Kompatybilność z istniejącą tablicą self-testów kernela.
 pub fn self_test() -> Result<&'static str, &'static str> {
     let source = MacAddress([0x02, 0, 0, 0, 0, 1]);
     let mut bytes = [0u8; MIN_FRAME_NO_FCS];

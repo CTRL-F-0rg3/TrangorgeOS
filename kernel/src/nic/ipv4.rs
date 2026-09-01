@@ -60,7 +60,6 @@ impl<'a> Ipv4Packet<'a> {
     }
 }
 
-/// Parametry nagłówka IPv4 dla pakietu bez opcji i bez fragmentacji.
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv4Header {
     pub protocol: u8,
@@ -71,7 +70,6 @@ pub struct Ipv4Header {
 }
 
 impl Ipv4Header {
-    /// Zapisuje 20-bajtowy nagłówek i zwraca payload w buforze.
     pub fn write<'a>(
         &self,
         out: &'a mut [u8],

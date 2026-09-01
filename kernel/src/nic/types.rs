@@ -1,6 +1,5 @@
 use core::fmt;
 
-/// Sześciobajtowy adres Ethernet. Typ nie wykonuje żadnej alokacji.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 6]);
@@ -45,7 +44,6 @@ impl fmt::Debug for MacAddress {
     }
 }
 
-/// Adres IPv4 zapisany w kolejności sieciowej.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
@@ -74,7 +72,6 @@ impl Ipv4Address {
         self.0[0] == 255 && self.0[1] == 255 && self.0[2] == 255 && self.0[3] == 255
     }
 
-    /// Zwraca prawdę, gdy `other` jest osiągalny bezpośrednio na Ethernet.
     #[inline]
     pub const fn is_in_subnet(self, other: Self, netmask: Self) -> bool {
         (self.as_u32_be() & netmask.as_u32_be()) == (other.as_u32_be() & netmask.as_u32_be())

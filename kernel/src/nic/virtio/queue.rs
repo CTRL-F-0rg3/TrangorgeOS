@@ -21,16 +21,10 @@ impl Descriptor {
     };
 }
 
-/// Jednoznaczny identyfikator deskryptora w puli.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct DescriptorId(pub u16);
 
-/// Pula deskryptorów o stałej pojemności.
-///
-/// Nie jest to pełna virtqueue: transport udostępnia pamięć urządzeniu, a ta
-/// struktura zapewnia wyłącznie brak podwójnego przydziału i poprawny odzysk
-/// łańcuchów przez kod sterownika.
 pub struct DescriptorPool<const N: usize> {
     descriptors: [Descriptor; N],
     free_head: Option<u16>,
@@ -110,9 +104,6 @@ impl<const N: usize> DescriptorPool<N> {
             .ok_or(NetworkError::BadDescriptor)
     }
 
-    /// Zwalnia pełny łańcuch zwrócony przez urządzenie.
-    ///
-    /// Limit iteracji zapobiega pętli przy uszkodzonym deskryptorze.
     pub fn release_chain(&mut self, head: DescriptorId) -> Result<(), NetworkError> {
         let mut current = head.0;
         let mut released = 0usize;
@@ -146,10 +137,6 @@ impl<const N: usize> Default for DescriptorPool<N> {
     }
 }
 
-/// Adresy i długości obszarów pamięci split virtqueue przydzielonych przez jądro.
-///
-/// Ten typ nie tworzy pamięci DMA; dzięki temu nie zakłada modelu alokatora ani
-/// mapowania fizycznego. Właściciel platformy przekazuje te dane do adaptera MMIO.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QueueMemory {
     pub descriptor_phys: u64,
@@ -158,7 +145,6 @@ pub struct QueueMemory {
     pub size: u16,
 }
 
-/// Kompatybilność z `nic::virtio::queue::self_test` używanym przez kernel.
 pub fn self_test() -> Result<&'static str, &'static str> {
     let mut pool = DescriptorPool::<4>::new();
     let first = pool

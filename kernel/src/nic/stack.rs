@@ -7,7 +7,6 @@ use crate::nic::{
     types::{Ipv4Address, MacAddress},
 };
 
-/// Stała konfiguracja minimalnego hosta IPv4.
 #[derive(Debug, Clone, Copy)]
 pub struct NetworkConfig {
     pub ipv4: Ipv4Address,
@@ -18,7 +17,6 @@ pub struct NetworkConfig {
 }
 
 impl NetworkConfig {
-    /// Wybiera host docelowy albo bramę jako następny skok na Ethernet.
     #[inline]
     pub const fn next_hop(&self, destination: Ipv4Address) -> Ipv4Address {
         if self.ipv4.is_in_subnet(destination, self.netmask) {
@@ -52,10 +50,6 @@ pub enum StackEvent {
     },
 }
 
-/// Parametry pojedynczego ICMP Echo Request.
-///
-/// Zgrupowanie parametrów upraszcza API i pozwala później dodać na przykład
-/// znacznik czasu lub politykę timeoutu bez zmiany sygnatury `build_ping`.
 #[derive(Debug, Clone, Copy)]
 pub struct PingRequest<'a> {
     pub next_hop_mac: MacAddress,
@@ -65,10 +59,6 @@ pub struct PingRequest<'a> {
     pub payload: &'a [u8],
 }
 
-/// Minimalny stos sterowany przez wywołania funkcji.
-///
-/// `ARP_ENTRIES` dobierz do skali systemu; dla pojedynczego klienta 4–8
-/// wpisów jest zwykle wystarczające, nie wymaga hash mapy i ma stały koszt.
 pub struct NetworkStack<const ARP_ENTRIES: usize> {
     config: NetworkConfig,
     arp: ArpCache<ARP_ENTRIES>,
@@ -94,7 +84,6 @@ impl<const ARP_ENTRIES: usize> NetworkStack<ARP_ENTRIES> {
         self.arp.lookup(self.config.next_hop(destination), now_ms)
     }
 
-    /// Buduje broadcastowy ARP Request dla następnego skoku do `destination`.
     pub fn build_arp_request(
         &self,
         out: &mut [u8],
@@ -111,7 +100,6 @@ impl<const ARP_ENTRIES: usize> NetworkStack<ARP_ENTRIES> {
         ethernet::pad_to_minimum(out, ethernet::HEADER_LEN + arp_len)
     }
 
-    /// Buduje kompletną ramkę IPv4 + ICMP Echo Request, gdy MAC następnego skoku jest znany.
     pub fn build_ping(
         &mut self,
         out: &mut [u8],
@@ -141,7 +129,6 @@ impl<const ARP_ENTRIES: usize> NetworkStack<ARP_ENTRIES> {
         ethernet::pad_to_minimum(out, logical_len)
     }
 
-    /// Przetwarza jedną ramkę RX. Nie wykonuje alokacji i nie wysyła pakietu samodzielnie.
     pub fn process_rx(
         &mut self,
         local_mac: MacAddress,

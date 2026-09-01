@@ -1,6 +1,3 @@
-/// Jedynkowa suma 16-bitowych słów w kolejności sieciowej.
-///
-/// Funkcja obsługuje nieparzystą długość przez logiczne dopisanie zera.
 #[inline]
 pub fn ones_complement_sum(bytes: &[u8]) -> u32 {
     let mut sum = 0u32;
@@ -17,7 +14,6 @@ pub fn ones_complement_sum(bytes: &[u8]) -> u32 {
     sum
 }
 
-/// Końcowe składanie przeniesień sumy jedynkowej.
 #[inline]
 pub fn fold(sum: u32) -> u16 {
     let mut sum = sum;

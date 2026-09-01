@@ -1,15 +1,9 @@
-//! Kompatybilny punkt wejścia dla testów pakietów kernela.
-//!
-//! Nowe budowanie pakietów znajduje się w `stack`, `ipv4` i `icmp`, aby nie
-//! łączyć Ethernetu, routingu oraz protokołów transportowych w jednym pliku.
-
 use crate::nic::{
     stack::{NetworkConfig, NetworkStack, PingRequest},
     types::{Ipv4Address, MacAddress},
 };
 
-/// Parametry ramki ICMP Echo. Zgrupowanie ich w jeden typ upraszcza późniejsze
-/// rozszerzenie o timestamp, policy timeoutu albo dodatkowe opcje diagnostyki.
+
 #[derive(Debug, Clone, Copy)]
 pub struct IcmpEchoRequest<'a> {
     pub local_mac: MacAddress,
@@ -21,9 +15,7 @@ pub struct IcmpEchoRequest<'a> {
     pub payload: &'a [u8],
 }
 
-/// Buduje minimalną ramkę IPv4 + ICMP Echo.
-///
-/// `next_hop_mac` musi pochodzić z ARP cache; funkcja nie wykonuje alokacji.
+
 pub fn build_icmp_echo(
     out: &mut [u8],
     request: IcmpEchoRequest<'_>,
@@ -48,7 +40,6 @@ pub fn build_icmp_echo(
     )
 }
 
-/// Kompatybilność z `nic::packet::self_test` używanym przez `main.rs`.
 pub fn self_test() -> Result<&'static str, &'static str> {
     let mut frame = [0u8; 128];
     let len = build_icmp_echo(

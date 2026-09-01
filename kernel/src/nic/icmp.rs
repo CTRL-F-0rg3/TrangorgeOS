@@ -63,7 +63,6 @@ pub fn write_echo_request(
     Ok(total_len)
 }
 
-/// Tworzy Echo Reply na podstawie poprawnie sparsowanego Echo Request.
 pub fn write_echo_reply(out: &mut [u8], request: IcmpPacket<'_>) -> Result<usize, PacketError> {
     if request.icmp_type != TYPE_ECHO_REQUEST {
         return Err(PacketError::InvalidIcmp);

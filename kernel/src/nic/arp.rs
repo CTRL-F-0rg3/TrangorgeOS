@@ -109,7 +109,6 @@ struct CacheEntry {
     expires_at_ms: u64,
 }
 
-/// Mały cache ARP o stałej pojemności. Nie używa hash mapy ani alokatora.
 pub struct ArpCache<const N: usize> {
     entries: [Option<CacheEntry>; N],
 }
