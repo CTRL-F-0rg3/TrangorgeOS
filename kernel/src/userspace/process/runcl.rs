@@ -1,6 +1,3 @@
-/* Kompiluje i uruchamia skrypt core-lang na żądanie userspace.
-   Ring 3 -> bridge dostaje tylko bezpieczny podzbiór externów. */
-
 extern "C" {
     fn k_fs_read(path: *const u8, buf: *mut u8, cap: u32) -> i32;
 

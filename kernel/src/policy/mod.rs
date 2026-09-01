@@ -1,26 +1,5 @@
-//! Złączony silnik polityki TrangorgeOS (`policy/`).
-//!
-//! Przenośny, natywny (Rust) port dwóch komponentów:
-//!   1. `policy/ada/policy.adb` — SPARK-owa funkcja `Policy.Evaluate`
-//!      (ring × klasa × operacja → Allow/Deny),
-//!   2. `policy/nim/policynim.nim` — dziennik decyzji (`nim_policy_log`,
-//!      bufor 256 wpisów + licznik odmów).
-//!
-//! Złączenie z warstwą capabilities (`caps/`):
-//!   * [`ring_of`]        — world → ring (KERNEL/DRIVER/USER) na podstawie caps,
-//!   * [`required_caps`]  — klasa usługi (SVC_*) → wymagane capabilities (any-of),
-//!   * [`install`]        — rejestruje hook w `caps::policy`, więc
-//!     `caps::policy::enforce` konsultuje reguły polityki,
-//!   * [`decide`]         — JEDEN punkt decyzji: polityka AND capability,
-//!     z auditem po obu stronach (caps audit + policy log).
-//!
-//! Historyczny most FFI do Ada/Nim (`bridge.rs`) jest dostępny za feature
-//! `policy-foreign` (x86_64) i wymaga dolinkowania obiektów Ada/Nim.
-
 use crate::caps::{audit, check, store, Capability};
 use spin::Mutex;
-
-// ---- stałe: decyzje / ringi / klasy (zgodne z policy.ads i initabi) ----
 
 pub const ALLOW: u8 = 0;
 pub const DENY: u8 = 1;
@@ -29,20 +8,17 @@ pub const RING_KERNEL: u8 = 0;
 pub const RING_DRIVER: u8 = 1;
 pub const RING_USER: u8 = 2;
 
-/// Klasy wywołań = `SVC_*` z driverspaceinit/init/initabi.rs.
 pub const CLS_SYS: u8 = 0;
 pub const CLS_VIDEO: u8 = 1;
 pub const CLS_AUDIO: u8 = 2;
 pub const CLS_INPUT: u8 = 3;
 pub const CLS_BLOCK: u8 = 4;
 pub const CLS_NET: u8 = 5;
-/// Spoza SPARK-owego zestawu (initabi::SVC_BT); traktowana jak NET.
+
 pub const CLS_BT: u8 = 6;
 
-/// `BLK_WRITE` (zgodne z policy.ads oraz initabi::BLK_WRITE).
 pub const BLK_WRITE: u8 = 3;
 
-/// Kod wywołania: klasa w starszym bajcie, operacja w młodszym.
 pub const fn cmd(class: u8, op: u8) -> u32 {
     ((class as u32) << 8) | (op as u32)
 }
@@ -55,15 +31,6 @@ pub const fn op_of(cmd: u32) -> u8 {
     (cmd & 0xFF) as u8
 }
 
-// ---- port Policy.Evaluate (SPARK) ------------------------------------------
-
-/// Port `Policy.Evaluate` z policy/ada/policy.adb (semantyka 1:1):
-///   * Ring_Kernel                       -> Allow,
-///   * Ring_User + Cls_Block + BLK_WRITE -> Deny,
-///   * Ring_User + Cls_Net               -> Deny,
-///   * Ring_Driver                       -> Allow,
-///   * pozostałe: Sys/Video/Input/Audio/Block -> Allow, Net -> Deny,
-///   * nieznane klasy (np. BT) -> Deny (fail-closed).
 pub fn evaluate(ring: u8, class: u8, op: u8, _arg: u64) -> u8 {
     if ring == RING_KERNEL {
         return ALLOW;
@@ -87,8 +54,6 @@ pub fn evaluate(ring: u8, class: u8, op: u8, _arg: u64) -> u8 {
         _ => DENY,
     }
 }
-
-// ---- port dziennika decyzji (Nim logbuf) ------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PolicyEntry {
@@ -114,7 +79,6 @@ static LOG: Mutex<LogInner> = Mutex::new(LogInner {
     denies: 0,
 });
 
-/// Port `nim_policy_log`: zapisz decyzję w pierścieniu 256 wpisów.
 pub fn policy_log(ring: u8, cls: u8, op: u8, dec: u8) {
     let mut l = LOG.lock();
     let entry = PolicyEntry { ring, cls, op, dec };
@@ -127,17 +91,14 @@ pub fn policy_log(ring: u8, cls: u8, op: u8, dec: u8) {
     }
 }
 
-/// Port `nim_policy_denies`: liczba odmów.
 pub fn denies() -> u64 {
     LOG.lock().denies
 }
 
-/// Liczba wszystkich decyzji.
 pub fn total() -> u64 {
     LOG.lock().total
 }
 
-/// Port `nim_policy_get`: odczyt wpisu o danym indeksie (0..256).
 #[allow(dead_code)]
 pub fn entry(idx: usize) -> Option<PolicyEntry> {
     let l = LOG.lock();
@@ -148,11 +109,6 @@ pub fn entry(idx: usize) -> Option<PolicyEntry> {
     }
 }
 
-// ---- złączenie caps <-> policy ----------------------------------------------
-
-/// Ring danego worlda wyprowadzony z jego capabilities:
-/// kernel world -> RING_KERNEL, posiadacz Ring0/Driver -> RING_DRIVER,
-/// w przeciwnym razie RING_USER.
 pub fn ring_of(world: u32) -> u8 {
     if world == check::kernel_world_id() {
         return RING_KERNEL;
@@ -166,8 +122,6 @@ pub fn ring_of(world: u32) -> u8 {
     }
 }
 
-/// Klasa usługi -> capabilities, z których WYSTARCZY JEDNA (any-of).
-/// Hierarchia robi resztę: np. Root/Driver implikują DevMmio.
 pub fn required_caps(class: u8) -> &'static [Capability] {
     match class {
         CLS_SYS => &[Capability::SyscallRestricted, Capability::SyscallAll],
@@ -179,7 +133,6 @@ pub fn required_caps(class: u8) -> &'static [Capability] {
     }
 }
 
-/// Hook dla `caps::policy::set_hook`: capability -> klasa -> reguła polityki.
 pub fn hook(world: u32, cap: Capability) -> bool {
     let class = match cap {
         Capability::SyscallAll | Capability::SyscallRestricted => CLS_SYS,
@@ -193,19 +146,10 @@ pub fn hook(world: u32, cap: Capability) -> bool {
     evaluate(ring_of(world), class, cap.id(), 0) == ALLOW
 }
 
-/// Zainstaluj złączenie: odtąd `caps::policy::enforce` konsultuje politykę.
-/// Wywoływane raz z main.rs (`init_permissions`).
 pub fn install() {
     crate::caps::policy::set_hook(hook);
 }
 
-// ---- jeden punkt decyzji -----------------------------------------------------
-
-/// Złączona decyzja uprawnieniowa dla wywołania `cmd` (klasa<<8|op):
-/// 1. reguły polityki (Evaluate) — odmowa kończy,
-/// 2. ring kernela przepuszcza (jak w SPARK),
-/// 3. warstwa capabilities: world musi mieć jedną z wymaganych capabilities.
-/// Wszystkie decyzje trafiają do dziennika polityki i auditu caps.
 pub fn decide(world: u32, cmd: u32, arg: u64) -> Result<(), &'static str> {
     let cls = class_of(cmd);
     let op = op_of(cmd);
@@ -238,12 +182,9 @@ pub fn decide(world: u32, cmd: u32, arg: u64) -> Result<(), &'static str> {
     Err("policy: world nie ma wymaganej capability")
 }
 
-/// Wariant dla bieżącego worlda.
 pub fn decide_current(cmd: u32, arg: u64) -> Result<(), &'static str> {
     decide(check::current_world_id_pub(), cmd, arg)
 }
-
-// ---- opcjonalny most FFI do Ada/Nim (feature = "policy-foreign") ------------
 
 #[cfg(all(target_arch = "x86_64", feature = "policy-foreign"))]
 pub mod bridge;

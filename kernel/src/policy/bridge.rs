@@ -17,16 +17,3 @@ pub fn check(ring: u8, cmd: u32, arg: u64) -> bool {
     d == ALLOW
 }
 
-// HYPER_YIELD => { /* zawsze dozwolone — scheduler */ }
-
-// _ => {
-//     let cmd = c.rax_or_x0_or_a0;   // zależnie od arch
-//     let arg = c.arg_reg;
-
-//     if !crate::policy::bridge::check(world_ring, cmd, arg) {
-//         c.ret_reg = u64::MAX;      // DENIED
-//         return;
-//     }
-
-//     /* dopiero teraz dispatch do service */
-// }
