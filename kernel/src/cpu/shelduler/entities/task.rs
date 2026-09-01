@@ -1,16 +1,19 @@
+use crate::mm::api::{kalloc_pages, kfree_pages};
 use core::ptr;
 
 pub type TaskId = u64;
 pub const KERNEL_STACK_SIZE: usize = 16 * 1024;
+/// Liczba ramek (stron) dla stosu jadra - `kalloc_pages` z `mm`.
+pub const KERNEL_STACK_PAGES: usize = KERNEL_STACK_SIZE / 4096;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskState {
-    Runnable = 0,
+    Runnable =  0,
     Blocked = 1,
-    Stopped = 2,
-    Zombie = 3,
-    Dead = 4,
+    Stopped =  2,
+    Zombie =  3,
+    Dead =  4,
 }
 
 #[repr(C)]
@@ -55,11 +58,6 @@ pub struct TaskStruct {
     pub sched: SchedEntity,
 }
 
-extern "C" {
-    fn alloc_stack(size: usize) -> *mut u8;
-    fn free_stack(ptr: *mut u8, size: usize);
-}
-
 impl TaskStruct {
     pub unsafe fn init(&mut self, id: TaskId, priority: u8, entry_point: usize, arg: usize) {
         self.id = id;
@@ -67,11 +65,13 @@ impl TaskStruct {
         self.state = TaskState::Runnable;
         
         self.stack_size = KERNEL_STACK_SIZE;
-        self.stack_base = alloc_stack(self.stack_size);
-        if self.stack_base.is_null() {
-            self.state = TaskState::Dead;
-            return;
-        }
+        self.stack_base = match kalloc_pages(KERNEL_STACK_PAGES) {
+            Some(base) => base,
+            None => {
+                self.state = TaskState::Dead;
+                return;
+            }
+        };
         
         let mut stack_top = self.stack_base.add(self.stack_size) as usize;
         stack_top &= !0xF; // 16-byte alignment (x86_64 ABI)
@@ -82,31 +82,31 @@ impl TaskStruct {
         // This is necessary because when the task starts executing, it will expect its argument to be on the stack
         // Decrement stack pointer to make space for the argument
         // Store the argument at the new stack pointer location
-        stack_top -= 8;
+        stack_top -=  8;
         *(stack_top as *mut usize) = arg;
-
+        
         self.context = CpuContext {
             rsp: stack_top as u64,
-            rbx: 0,
-            rbp: 0,
-            r12: 0,
-            r13: 0,
-            r14: 0,
-            r15: 0,
+            rbx:  0,
+            rbp:  0,
+            r12:  0,
+            r13:  0,
+            r14:  0,
+            r15:  0,
             rip: entry_point as u64,
         };
         
         self.sched = SchedEntity {
             rq_next: ptr::null_mut(),
             rq_prev: ptr::null_mut(),
-            vruntime: 0,
-            weight: 1024,
+            vruntime:  0,
+            weight:  1024,
         };
     }
     
     pub unsafe fn destroy(&mut self) {
         if !self.stack_base.is_null() {
-            free_stack(self.stack_base, self.stack_size);
+            kfree_pages(self.stack_base, KERNEL_STACK_PAGES);
             self.stack_base = ptr::null_mut();
         }
         self.state = TaskState::Dead;

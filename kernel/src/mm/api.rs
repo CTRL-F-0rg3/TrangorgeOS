@@ -24,6 +24,19 @@ pub fn kfree(ptr: *mut u8) {
     unsafe { ffi::kfree(ptr as *mut c_void) }
 }
 
+/// Page-aligned allocation (stosy jądra, DMA buffers). Uzupełnia surface
+/// `mm::api` tak, by była zgodna z backendem RISC-V (`riscv::api`),
+/// który już wystawia te same funkcje — bez duplikowania logiki allokatora.
+pub fn kalloc_pages(pages: usize) -> Option<*mut u8> {
+    let p = unsafe { ffi::kalloc_pages(pages) };
+
+    if p.is_null() { None } else { Some(p as *mut u8) }
+}
+
+pub fn kfree_pages(ptr: *mut u8, _pages: usize) {
+    unsafe { ffi::kfree_pages(ptr as *mut c_void, _pages) }
+}
+
 pub fn virt_to_phys(ptr: *mut u8) -> u64 {
     unsafe { ffi::kvirt_to_phys(ptr as *mut c_void) }
 }
