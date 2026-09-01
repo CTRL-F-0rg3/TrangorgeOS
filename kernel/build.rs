@@ -8,7 +8,7 @@ fn collect_c_files(dir: &Path, out: &mut Vec<PathBuf>) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                let name = path.file_name().and_then(|n| n.to_str());.
+                let name = path.file_name().and_then(|n| n.to_str());
                 if matches!(name, Some("linuxcom") | Some("wincom") | Some("aarch64") | Some("arm64") | Some("arm") | Some("risc-v") | Some("riscv")) {
                     continue;
                 }
