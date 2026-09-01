@@ -7,9 +7,7 @@ use core::ptr;
 use core::str;
 use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, AtomicU32, Ordering};
 
-// ============================================================================
 // Stałe i typy podstawowe
-// ============================================================================
 
 pub type TaskId = u64;
 pub type Pid = TaskId;
@@ -35,9 +33,7 @@ const CPUMASK_WORDS: usize = MAX_CPUS / 64;
 pub const RLIM_NLIMITS: usize = 10;
 pub const RLIM_INFINITY: u64 = u64::MAX;
 
-// ============================================================================
 // Flagi zadania
-// ============================================================================
 
 bitflags::bitflags! {
     #[repr(transparent)]
@@ -66,9 +62,7 @@ bitflags::bitflags! {
     }
 }
 
-// ============================================================================
 // Stan zadania
-// ============================================================================
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,9 +128,7 @@ impl Default for TaskState {
     }
 }
 
-// ============================================================================
 // Polityka i klasa szeregowania
-// ============================================================================
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -182,9 +174,7 @@ impl From<SchedPolicy> for SchedClass {
     }
 }
 
-// ============================================================================
 // Maska CPU
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -278,9 +268,7 @@ impl Iterator for CpuMaskIter {
     }
 }
 
-// ============================================================================
 // Tablice wag nice <-> weight (jak w CFS)
-// ============================================================================
 
 const NICE_TO_WEIGHT_TABLE: [u64; NICE_WIDTH] = [
     88761, 71755, 56483, 46273, 36291,
@@ -327,9 +315,7 @@ pub fn weight_to_nice(weight: u64) -> i8 {
     NICE_MIN + best_idx as i8
 }
 
-// ============================================================================
 // Kontekst wykonania (x86_64 System V ABI)
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -357,9 +343,7 @@ pub struct CpuContext {
     pub gs_base: u64,
 }
 
-// ============================================================================
 // Encje szeregujące (CFS/EEVDF, RT, Deadline)
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -459,9 +443,7 @@ impl Default for DlSchedEntity {
     }
 }
 
-// ============================================================================
 // Statystyki
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -481,9 +463,7 @@ pub struct TaskStats {
     pub last_enqueue_time: u64,
 }
 
-// ============================================================================
 // Uprawnienia i limity zasobów
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -575,9 +555,7 @@ pub const fn default_rlimits() -> [RLimit; RLIM_NLIMITS] {
     limits
 }
 
-// ============================================================================
 // Sygnały (minimalny stan)
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -604,9 +582,7 @@ impl SignalState {
     }
 }
 
-// ============================================================================
 // Lista wewnętrzna (intruzywna, cykliczna, jak list_head)
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug)]
@@ -630,8 +606,6 @@ impl ListHead {
         core::ptr::eq(self.next, self as *const ListHead as *mut ListHead)
     }
 
-    /// # Safety
-    /// `self` i `node` muszą być zainicjalizowane (`init`) i nieprzenoszone w pamięci.
     pub unsafe fn insert_after(&mut self, node: *mut ListHead) {
         let self_ptr = self as *mut ListHead;
         let next = self.next;
@@ -641,8 +615,6 @@ impl ListHead {
         self.next = node;
     }
 
-    /// # Safety
-    /// Jak `insert_after`.
     pub unsafe fn insert_before(&mut self, node: *mut ListHead) {
         let self_ptr = self as *mut ListHead;
         let prev = self.prev;
@@ -652,8 +624,6 @@ impl ListHead {
         self.prev = node;
     }
 
-    /// # Safety
-    /// `self.prev`/`self.next` muszą być ważnymi wskaźnikami.
     pub unsafe fn remove(&mut self) {
         let prev = self.prev;
         let next = self.next;
@@ -669,9 +639,7 @@ impl Default for ListHead {
     }
 }
 
-// ============================================================================
 // Spinlock (placeholder do czasu modułu sync)
-// ============================================================================
 
 #[repr(C)]
 #[derive(Debug, Default)]
@@ -705,9 +673,7 @@ impl SpinLock {
     }
 }
 
-// ============================================================================
 // Błędy
-// ============================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskError {
@@ -736,10 +702,7 @@ impl fmt::Display for TaskError {
     }
 }
 
-// ============================================================================
 // TaskStruct
-// ============================================================================
-
 #[repr(C)]
 pub struct TaskStruct {
     pub pid: TaskId,
@@ -791,8 +754,6 @@ pub struct TaskStruct {
 }
 
 impl TaskStruct {
-    /// # Safety
-    /// `stack_base` musi wskazywać na `stack_size` bajtów świeżo zaalokowanej pamięci.
     unsafe fn build_initial_stack(stack_base: *mut u8, stack_size: usize, _arg: usize) -> usize {
         ptr::write_bytes(stack_base, 0, stack_size);
 
@@ -805,8 +766,6 @@ impl TaskStruct {
         stack_top
     }
 
-    /// # Safety
-    /// `self` musi wskazywać na poprawnie zaalokowaną pamięć na `TaskStruct`.
     pub unsafe fn init(
         &mut self,
         pid: TaskId,
@@ -902,8 +861,6 @@ impl TaskStruct {
         Ok(())
     }
 
-    /// # Safety
-    /// `child` musi wskazywać na świeżą lub uprzednio zniszczoną pamięć na `TaskStruct`.
     pub unsafe fn fork(
         &self,
         child: &mut TaskStruct,
@@ -932,8 +889,6 @@ impl TaskStruct {
         Ok(())
     }
 
-    /// # Safety
-    /// Zadanie nie może być aktualnie wykonywane na żadnym CPU.
     pub unsafe fn exec(&mut self, entry_point: usize, arg: usize) -> Result<(), TaskError> {
         if self.state().is_terminal() {
             return Err(TaskError::TaskTerminal);
@@ -963,8 +918,6 @@ impl TaskStruct {
         Ok(())
     }
 
-    /// # Safety
-    /// Zadanie nie może być aktualnie wykonywane ani wpięte w żadną runqueue/listę.
     pub unsafe fn destroy(&mut self) {
         self.task_lock.lock();
 
@@ -1185,9 +1138,7 @@ impl fmt::Display for TaskStruct {
 unsafe impl Send for TaskStruct {}
 unsafe impl Sync for TaskStruct {}
 
-// ============================================================================
 // Funkcje pomocnicze
-// ============================================================================
 
 pub const fn default_time_slice(policy: SchedPolicy) -> u32 {
     match policy {
@@ -1208,9 +1159,7 @@ pub fn deadline_has_priority(a: &TaskStruct, b: &TaskStruct) -> bool {
     a.dl.deadline < b.dl.deadline
 }
 
-// ============================================================================
 // Testy
-// ============================================================================
 
 #[cfg(test)]
 mod tests {
