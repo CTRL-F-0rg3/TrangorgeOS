@@ -1,3 +1,5 @@
+
+
 #![allow(dead_code)]
 
 use crate::mm::api::{kalloc_pages, kfree_pages};
@@ -5,7 +7,10 @@ use core::cmp;
 use core::fmt;
 use core::ptr;
 use core::str;
-use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, AtomicU32, Ordering};
+use core::sync::atomic::{
+    AtomicBool, AtomicI32, AtomicPtr, AtomicU32, AtomicU8, Ordering,
+};
+
 
 pub type TaskId = u64;
 pub type Pid = TaskId;
@@ -31,7 +36,9 @@ const CPUMASK_WORDS: usize = MAX_CPUS / 64;
 pub const RLIM_NLIMITS: usize = 10;
 pub const RLIM_INFINITY: u64 = u64::MAX;
 
-// Flagi zadania
+pub const CPU_NONE: u32 = u32::MAX;
+
+// ======================================================================
 
 bitflags::bitflags! {
     #[repr(transparent)]
@@ -57,47 +64,65 @@ bitflags::bitflags! {
         const PF_NEED_RESCHED   = 1 << 17;
         const PF_MIGRATING      = 1 << 18;
         const PF_NO_SLEEP       = 1 << 19;
+        const PF_NO_MIGRATE     = 1 << 20;
+        const PF_WAKING         = 1 << 21;
+        const PF_DL_THROTTLED   = 1 << 22;
     }
 }
 
 #[repr(transparent)]
-pub struct AtomicTaskFlags {
-    value: AtomicU32,
-}
+#[derive(Debug, Default)]
+pub struct AtomicTaskFlags(AtomicU32);
 
 impl AtomicTaskFlags {
     pub const fn new(flags: TaskFlags) -> Self {
-        Self { value: AtomicU32::new(flags.bits()) }
+        Self(AtomicU32::new(flags.bits()))
+    }
+
+    pub const fn empty() -> Self {
+        Self::new(TaskFlags::empty())
     }
 
     #[inline]
     pub fn load(&self, order: Ordering) -> TaskFlags {
-        TaskFlags::from_bits_truncate(self.value.load(order))
+        TaskFlags::from_bits_truncate(self.0.load(order))
     }
 
     #[inline]
     pub fn store(&self, flags: TaskFlags, order: Ordering) {
-        self.value.store(flags.bits(), order);
+        self.0.store(flags.bits(), order);
     }
 
     #[inline]
-    pub fn insert(&self, flags: TaskFlags, order: Ordering) -> TaskFlags {
-        let old = self.value.fetch_or(flags.bits(), order);
-        TaskFlags::from_bits_truncate(old)
+    pub fn fetch_insert(&self, flags: TaskFlags) -> TaskFlags {
+        let prev = self.0.fetch_or(flags.bits(), Ordering::AcqRel);
+        TaskFlags::from_bits_truncate(prev)
+    }
+
+    /// Czyści bity `flags`, zwraca poprzednią wartość.
+    #[inline]
+    pub fn fetch_remove(&self, flags: TaskFlags) -> TaskFlags {
+        let prev = self.0.fetch_and(!flags.bits(), Ordering::AcqRel);
+        TaskFlags::from_bits_truncate(prev)
     }
 
     #[inline]
-    pub fn remove(&self, flags: TaskFlags, order: Ordering) -> TaskFlags {
-        let old = self.value.fetch_and(!flags.bits(), order);
-        TaskFlags::from_bits_truncate(old)
+    pub fn contains(&self, flags: TaskFlags) -> bool {
+        self.load(Ordering::Acquire).contains(flags)
     }
 
     #[inline]
-    pub fn contains(&self, flags: TaskFlags, order: Ordering) -> bool {
-        self.value.load(order) & flags.bits() != 0
+    pub fn test_and_set(&self, flags: TaskFlags) -> bool {
+        let prev = self.fetch_insert(flags);
+        !prev.contains(flags)
     }
 }
 
+impl Clone for AtomicTaskFlags {
+    fn clone(&self) -> Self {
+        Self::new(self.load(Ordering::Acquire))
+    }
+}
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -124,7 +149,10 @@ impl TaskState {
     pub const fn is_waiting(self) -> bool {
         matches!(
             self,
-            TaskState::Interruptible | TaskState::Uninterruptible | TaskState::Stopped | TaskState::Traced
+            TaskState::Interruptible
+                | TaskState::Uninterruptible
+                | TaskState::Stopped
+                | TaskState::Traced
         )
     }
 
@@ -155,6 +183,19 @@ impl TaskState {
             _ => false,
         }
     }
+
+    const fn from_u8(v: u8) -> TaskState {
+        match v {
+            0 => TaskState::Runnable,
+            1 => TaskState::Interruptible,
+            2 => TaskState::Uninterruptible,
+            3 => TaskState::Stopped,
+            4 => TaskState::Traced,
+            5 => TaskState::Zombie,
+            6 => TaskState::Dead,
+            _ => TaskState::Idle,
+        }
+    }
 }
 
 impl Default for TaskState {
@@ -163,7 +204,6 @@ impl Default for TaskState {
     }
 }
 
-// Polityka i klasa szeregowania
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -209,7 +249,6 @@ impl From<SchedPolicy> for SchedClass {
     }
 }
 
-// Maska CPU
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -229,6 +268,15 @@ impl CpuMask {
     pub fn single(cpu: u32) -> Self {
         let mut m = Self::empty();
         m.set(cpu);
+        m
+    }
+
+    pub fn first_n(n: u32) -> Self {
+        let mut m = Self::empty();
+        let n = cmp::min(n as usize, MAX_CPUS);
+        for cpu in 0..n {
+            m.set(cpu as u32);
+        }
         m
     }
 
@@ -263,10 +311,41 @@ impl CpuMask {
         self.bits.iter().zip(other.bits.iter()).any(|(a, b)| a & b != 0)
     }
 
+    pub fn and(&self, other: &CpuMask) -> CpuMask {
+        let mut out = CpuMask::empty();
+        for i in 0..CPUMASK_WORDS {
+            out.bits[i] = self.bits[i] & other.bits[i];
+        }
+        out
+    }
+
+    pub fn or(&self, other: &CpuMask) -> CpuMask {
+        let mut out = CpuMask::empty();
+        for i in 0..CPUMASK_WORDS {
+            out.bits[i] = self.bits[i] | other.bits[i];
+        }
+        out
+    }
+
     pub fn first(&self) -> Option<u32> {
         for (word_idx, word) in self.bits.iter().enumerate() {
             if *word != 0 {
                 return Some((word_idx * 64 + word.trailing_zeros() as usize) as u32);
+            }
+        }
+        None
+    }
+
+    pub fn next_after(&self, after: u32) -> Option<u32> {
+        let start = after.wrapping_add(1);
+        for cpu in start..MAX_CPUS as u32 {
+            if self.is_set(cpu) {
+                return Some(cpu);
+            }
+        }
+        for cpu in 0..=after.min(MAX_CPUS as u32 - 1) {
+            if self.is_set(cpu) {
+                return Some(cpu);
             }
         }
         None
@@ -303,7 +382,6 @@ impl Iterator for CpuMaskIter {
     }
 }
 
-// Tablice wag nice <-> weight (jak w CFS)
 
 const NICE_TO_WEIGHT_TABLE: [u64; NICE_WIDTH] = [
     88761, 71755, 56483, 46273, 36291,
@@ -350,6 +428,16 @@ pub fn weight_to_nice(weight: u64) -> i8 {
     NICE_MIN + best_idx as i8
 }
 
+pub const WMULT_SHIFT: u32 = 32;
+
+pub fn calc_delta_fair(delta_exec: u64, weight: u64, inv_weight: u32) -> u64 {
+    if weight == NICE_0_LOAD {
+        return delta_exec;
+    }
+    let product = (delta_exec as u128) * (inv_weight as u128);
+    (product >> WMULT_SHIFT) as u64
+}
+
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -361,8 +449,32 @@ pub struct InterruptFrame {
     pub ss: u64,
 }
 
+#[repr(C, align(16))]
+#[derive(Clone, Copy)]
+pub struct FxSaveArea {
+    pub bytes: [u8; 512],
+}
+
+impl FxSaveArea {
+    pub const fn zeroed() -> Self {
+        Self { bytes: [0u8; 512] }
+    }
+}
+
+impl Default for FxSaveArea {
+    fn default() -> Self {
+        Self::zeroed()
+    }
+}
+
+impl fmt::Debug for FxSaveArea {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "FxSaveArea(512 B @ {:p})", self.bytes.as_ptr())
+    }
+}
+
 #[repr(C)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct CpuContext {
     pub rsp: u64,
     pub rdi: u64,
@@ -375,9 +487,98 @@ pub struct CpuContext {
     pub rip: u64,
     pub fs_base: u64,
     pub gs_base: u64,
-    pub fpu_state: *mut u8, //12 bajtów
+    pub fpu: FxSaveArea,
+    pub fpu_valid: bool,
 }
 
+impl Default for CpuContext {
+    fn default() -> Self {
+        Self {
+            rsp: 0,
+            rdi: 0,
+            rbx: 0,
+            rbp: 0,
+            r12: 0,
+            r13: 0,
+            r14: 0,
+            r15: 0,
+            rip: 0,
+            fs_base: 0,
+            gs_base: 0,
+            fpu: FxSaveArea::zeroed(),
+            fpu_valid: false,
+        }
+    }
+}
+
+impl CpuContext {
+    #[cfg(all(target_arch = "x86_64", not(test)))]
+    #[inline]
+    pub unsafe fn save_fpu(&mut self) {
+        core::arch::asm!(
+            "fxsave [{0}]",
+            in(reg) self.fpu.bytes.as_mut_ptr(),
+            options(nostack)
+        );
+        self.fpu_valid = true;
+    }
+
+    #[cfg(any(not(target_arch = "x86_64"), test))]
+    #[inline]
+    pub unsafe fn save_fpu(&mut self) {
+        self.fpu_valid = true;
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(test)))]
+    #[inline]
+    pub unsafe fn restore_fpu(&self) {
+        if !self.fpu_valid {
+            return;
+        }
+        core::arch::asm!(
+            "fxrstor [{0}]",
+            in(reg) self.fpu.bytes.as_ptr(),
+            options(nostack, readonly)
+        );
+    }
+
+    #[cfg(any(not(target_arch = "x86_64"), test))]
+    #[inline]
+    pub unsafe fn restore_fpu(&self) {}
+}
+
+pub fn xsave_area_size() -> usize {
+    core::mem::size_of::<FxSaveArea>()
+}
+
+
+pub const RB_RED: usize = 0;
+pub const RB_BLACK: usize = 1;
+
+#[inline]
+pub fn rb_parent(pc: usize) -> *mut TaskStruct {
+    (pc & !1) as *mut TaskStruct
+}
+
+#[inline]
+pub fn rb_color(pc: usize) -> usize {
+    pc & 1
+}
+
+#[inline]
+pub fn rb_is_red(pc: usize) -> bool {
+    rb_color(pc) == RB_RED
+}
+
+#[inline]
+pub fn rb_is_black(pc: usize) -> bool {
+    rb_color(pc) == RB_BLACK
+}
+
+#[inline]
+pub fn rb_make_parent_color(parent: *mut TaskStruct, color: usize) -> usize {
+    (parent as usize & !1) | (color & 1)
+}
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -390,12 +591,45 @@ pub struct LoadAvg {
     pub period_contrib: u32,
 }
 
+const PELT_DECAY_SHIFT: u32 = 10;
+
+impl LoadAvg {
+    pub fn accumulate(&mut self, now: u64, delta_ns: u64, weight: u64, running: bool) {
+        if delta_ns == 0 {
+            self.last_update_time = now;
+            return;
+        }
+        // Wygaszenie starego wkładu: avg -= avg >> PELT_DECAY_SHIFT
+        let load_decay = self.load_avg >> PELT_DECAY_SHIFT.min(31);
+        self.load_avg = self.load_avg.saturating_sub(load_decay);
+        let util_decay = self.util_avg >> PELT_DECAY_SHIFT.min(31);
+        self.util_avg = self.util_avg.saturating_sub(util_decay);
+
+        // Nowy wkład, przeskalowany przez czas trwania i wagę encji.
+        let scaled_time = cmp::min(delta_ns, 1_000_000_000) as u128;
+        let contrib = ((scaled_time * weight as u128) / 1_000_000_000u128) as u32;
+        self.load_avg = self.load_avg.saturating_add(contrib);
+        self.load_sum = self.load_sum.saturating_add(delta_ns);
+
+        if running {
+            let util_contrib = (scaled_time / 1_000_000) as u32; // ~ms wykonania
+            self.util_avg = self.util_avg.saturating_add(util_contrib);
+            self.util_sum = self.util_sum.saturating_add(delta_ns);
+        }
+
+        self.period_contrib = self.period_contrib.wrapping_add(1);
+        self.last_update_time = now;
+    }
+}
+
 #[repr(C)]
 pub struct SchedEntity {
     pub rb_left: *mut TaskStruct,
     pub rb_right: *mut TaskStruct,
-    pub rb_parent_color: usize, 
+    pub rb_parent_color: usize,
+
     pub run_list: *mut TaskStruct,
+
     pub vruntime: u64,
     pub vlag: i64,
     pub slice: u64,
@@ -414,6 +648,9 @@ pub struct SchedEntity {
 impl Default for SchedEntity {
     fn default() -> Self {
         Self {
+            rb_left: ptr::null_mut(),
+            rb_right: ptr::null_mut(),
+            rb_parent_color: RB_RED, // parent = null, kolor = czerwony (węzeł nowy, poza drzewem)
             run_list: ptr::null_mut(),
             vruntime: 0,
             vlag: 0,
@@ -424,8 +661,8 @@ impl Default for SchedEntity {
             inv_weight: nice_to_wmult(0),
             load: LoadAvg::default(),
             on_rq: false,
-            last_cpu: u32::MAX,
-            wake_cpu: u32::MAX,
+            last_cpu: CPU_NONE,
+            wake_cpu: CPU_NONE,
             cpus_allowed: CpuMask::all(),
             nr_migrations: 0,
         }
@@ -434,21 +671,25 @@ impl Default for SchedEntity {
 
 #[repr(C)]
 pub struct RtSchedEntity {
-    pub run_list: *mut TaskStruct,
+    pub rt_list: ListHead,
     pub rt_priority: u8,
     pub time_slice: u32,
     pub watchdog_stamp: u64,
     pub nr_cpus_allowed: u32,
+    pub queued_prio: u32,
+    pub owner: *mut TaskStruct,
 }
 
 impl Default for RtSchedEntity {
     fn default() -> Self {
         Self {
-            run_list: ptr::null_mut(),
+            rt_list: ListHead::new(),
             rt_priority: 0,
             time_slice: default_time_slice(SchedPolicy::RoundRobin),
             watchdog_stamp: 0,
             nr_cpus_allowed: MAX_CPUS as u32,
+            queued_prio: MAX_RT_PRIO as u32,
+            owner: ptr::null_mut(),
         }
     }
 }
@@ -463,6 +704,7 @@ pub struct DlSchedEntity {
     pub throttled: bool,
     pub yielded: bool,
     pub dl_bw: u64,
+    pub replenish_at: u64,
 }
 
 impl Default for DlSchedEntity {
@@ -476,6 +718,7 @@ impl Default for DlSchedEntity {
             throttled: false,
             yielded: false,
             dl_bw: 0,
+            replenish_at: 0,
         }
     }
 }
@@ -637,6 +880,7 @@ impl ListHead {
 
     pub fn is_empty(&self) -> bool {
         core::ptr::eq(self.next, self as *const ListHead as *mut ListHead)
+            || self.next.is_null()
     }
 
     pub unsafe fn insert_after(&mut self, node: *mut ListHead) {
@@ -660,9 +904,17 @@ impl ListHead {
     pub unsafe fn remove(&mut self) {
         let prev = self.prev;
         let next = self.next;
-        (*prev).next = next;
-        (*next).prev = prev;
+        if !prev.is_null() {
+            (*prev).next = next;
+        }
+        if !next.is_null() {
+            (*next).prev = prev;
+        }
         self.init();
+    }
+
+    pub fn is_linked(&self) -> bool {
+        !self.next.is_null() && !self.prev.is_null()
     }
 }
 
@@ -672,17 +924,56 @@ impl Default for ListHead {
     }
 }
 
+#[cfg(all(target_arch = "x86_64", not(test)))]
+#[inline(always)]
+unsafe fn arch_local_irq_save() -> u64 {
+    let flags: u64;
+    core::arch::asm!(
+        "pushfq",
+        "cli",
+        "pop {0}",
+        out(reg) flags,
+        options(nomem, preserves_flags)
+    );
+    flags
+}
 
+#[cfg(all(target_arch = "x86_64", not(test)))]
+#[inline(always)]
+unsafe fn arch_local_irq_restore(flags: u64) {
+    core::arch::asm!(
+        "push {0}",
+        "popfq",
+        in(reg) flags,
+        options(nomem)
+    );
+}
+
+#[cfg(any(not(target_arch = "x86_64"), test))]
+#[inline(always)]
+unsafe fn arch_local_irq_save() -> u64 {
+    0
+}
+
+#[cfg(any(not(target_arch = "x86_64"), test))]
+#[inline(always)]
+unsafe fn arch_local_irq_restore(_flags: u64) {}
 
 #[repr(C)]
 #[derive(Debug, Default)]
 pub struct SpinLock {
     locked: AtomicBool,
+    #[cfg(debug_assertions)]
+    holder_cpu: AtomicU32,
 }
 
 impl SpinLock {
     pub const fn new() -> Self {
-        Self { locked: AtomicBool::new(false) }
+        Self {
+            locked: AtomicBool::new(false),
+            #[cfg(debug_assertions)]
+            holder_cpu: AtomicU32::new(CPU_NONE),
+        }
     }
 
     pub fn lock(&self) {
@@ -701,27 +992,52 @@ impl SpinLock {
         self.locked.store(false, Ordering::Release);
     }
 
+    pub fn try_lock(&self) -> bool {
+        self.locked
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_ok()
+    }
+
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::Relaxed)
     }
 
-    #[inline]
-    pub fn lock_irqsave(&self) -> u64 {
-        let flags = unsafe{x86_64::instructions::interrupts::save_flags()};
-
-        unsafe { x86_64::instructions::interrupts::disable() };
+    pub fn lock_irqsave(&self) -> usize {
+        let flags = unsafe { arch_local_irq_save() };
         self.lock();
-        flags
+        flags as usize
+    }
+    pub fn unlock_irqrestore(&self, flags: usize) {
+        self.unlock();
+        unsafe { arch_local_irq_restore(flags as u64) };
     }
 
-    #[inline]
-    pub fn unlock_irqrestore(&self, flags: u64) {
-        self.unlock();
-        unsafe { x86_64::instructions::interrupts::restore_flags(flags) 
-        };
+    pub fn lock_guard(&self) -> SpinLockGuard<'_> {
+        self.lock();
+        SpinLockGuard { lock: self, saved_flags: None }
+    }
+
+    pub fn lock_irqsave_guard(&self) -> SpinLockGuard<'_> {
+        let flags = self.lock_irqsave();
+        SpinLockGuard { lock: self, saved_flags: Some(flags) }
+    }
 }
 
-// Błędy
+#[must_use = "SpinLockGuard zwalnia blokadę przy Drop — porzucenie natychmiast ją odblokuje"]
+pub struct SpinLockGuard<'a> {
+    lock: &'a SpinLock,
+    saved_flags: Option<usize>,
+}
+
+impl<'a> Drop for SpinLockGuard<'a> {
+    fn drop(&mut self) {
+        match self.saved_flags {
+            Some(flags) => self.lock.unlock_irqrestore(flags),
+            None => self.lock.unlock(),
+        }
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskError {
@@ -732,6 +1048,8 @@ pub enum TaskError {
     AffinityDenied,
     AffinityEmpty,
     TaskTerminal,
+    ConcurrentStateChange,
+    ResourceExhausted,
 }
 
 impl fmt::Display for TaskError {
@@ -746,22 +1064,26 @@ impl fmt::Display for TaskError {
             TaskError::AffinityDenied => write!(f, "PF_NO_SETAFFINITY blokuje zmianę affinity"),
             TaskError::AffinityEmpty => write!(f, "pusta maska affinity"),
             TaskError::TaskTerminal => write!(f, "operacja niedozwolona na zadaniu terminalnym"),
+            TaskError::ConcurrentStateChange => {
+                write!(f, "stan zadania zmienił się współbieżnie w trakcie operacji")
+            }
+            TaskError::ResourceExhausted => write!(f, "wyczerpano zasoby potrzebne do utworzenia zadania"),
         }
     }
 }
 
+const STACK_TRAP_RETADDR: u64 = 0xDEAD_0BAD_DEAD_0BAD;
+
 
 #[repr(C)]
 pub struct TaskStruct {
-    pub rq: *mut core::ffi::c_void, 
     pub pid: TaskId,
     pub tgid: TaskId,
     pub ppid: TaskId,
     pub comm: [u8; TASK_COMM_LEN],
     pub flags: AtomicTaskFlags,
     state: AtomicU8,
-    pub need_resched: AtomicBool,
-    pub in_iowait: AtomicBool,
+
     pub policy: SchedPolicy,
     pub sched_class: SchedClass,
     pub static_prio: i32,
@@ -783,7 +1105,7 @@ pub struct TaskStruct {
     pub stack_size: usize,
     pub preempt_count: AtomicI32,
     pub irq_count: AtomicI32,
-    pub on_cpu: bool,
+    pub on_cpu: AtomicBool,
     pub cpu: AtomicU32,
 
     pub context: CpuContext,
@@ -801,6 +1123,8 @@ pub struct TaskStruct {
 
     pub wait_queue: *mut core::ffi::c_void,
     pub task_lock: SpinLock,
+
+    pub rq: AtomicPtr<core::ffi::c_void>,
 }
 
 impl TaskStruct {
@@ -809,14 +1133,13 @@ impl TaskStruct {
 
         let mut stack_top = stack_base.add(stack_size) as usize;
         stack_top &= !0xF;
-
         stack_top -= 8;
-        *(stack_top as *mut u64) = 0;
+        *(stack_top as *mut u64) = STACK_TRAP_RETADDR;
 
         stack_top
     }
 
-    pub unsafe fn init(
+    unsafe fn init(
         &mut self,
         pid: TaskId,
         tgid: TaskId,
@@ -830,7 +1153,7 @@ impl TaskStruct {
         self.pid = pid;
         self.tgid = tgid;
         self.ppid = ppid;
-        self.flags = AtomicTaskFlags::new(TaskFlags::empty());
+        self.flags = AtomicTaskFlags::empty();
         self.state = AtomicU8::new(TaskState::Dead as u8);
 
         self.set_comm(name);
@@ -845,6 +1168,8 @@ impl TaskStruct {
         self.se.weight = nice_to_weight(nice);
         self.se.inv_weight = nice_to_wmult(nice);
         self.rt = RtSchedEntity::default();
+        self.rt.rt_list.init();
+        self.rt.owner = self as *mut TaskStruct;
         self.dl = DlSchedEntity::default();
 
         self.tasks.init();
@@ -856,8 +1181,8 @@ impl TaskStruct {
 
         self.preempt_count = AtomicI32::new(0);
         self.irq_count = AtomicI32::new(0);
-        self.on_cpu = false;
-        self.cpu = AtomicU32::new(u32::MAX);
+        self.on_cpu = AtomicBool::new(false);
+        self.cpu = AtomicU32::new(CPU_NONE);
 
         self.mm = ptr::null_mut();
         self.fs = ptr::null_mut();
@@ -872,6 +1197,7 @@ impl TaskStruct {
 
         self.wait_queue = ptr::null_mut();
         self.task_lock = SpinLock::new();
+        self.rq = AtomicPtr::new(ptr::null_mut());
 
         let stack_mem = match kalloc_pages(KERNEL_STACK_PAGES) {
             Some(base) => base,
@@ -898,6 +1224,8 @@ impl TaskStruct {
             rip: entry_point as u64,
             fs_base: 0,
             gs_base: 0,
+            fpu: FxSaveArea::zeroed(),
+            fpu_valid: false,
         };
 
         if matches!(policy, SchedPolicy::Fifo | SchedPolicy::RoundRobin) {
@@ -906,8 +1234,30 @@ impl TaskStruct {
             self.prio = 0;
         }
 
-        self.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
+        self.flags.fetch_insert(TaskFlags::PF_FORKNOEXEC);
         self.set_state_unchecked(TaskState::Runnable);
+        Ok(())
+    }
+
+    pub unsafe fn kthread_create(
+        &mut self,
+        pid: TaskId,
+        entry_point: usize,
+        arg: usize,
+        name: &str,
+    ) -> Result<(), TaskError> {
+        self.init(
+            pid,
+            pid,
+            0,
+            SchedPolicy::Normal,
+            0,
+            entry_point,
+            arg,
+            name,
+        )?;
+        self.flags.fetch_insert(TaskFlags::PF_KTHREAD);
+        self.mm = ptr::null_mut();
         Ok(())
     }
 
@@ -934,7 +1284,13 @@ impl TaskStruct {
         child.rlimits = self.rlimits;
         child.se.cpus_allowed = self.se.cpus_allowed;
         child.rt.nr_cpus_allowed = self.rt.nr_cpus_allowed;
-        child.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
+        child.flags.fetch_insert(TaskFlags::PF_FORKNOEXEC);
+
+        child.mm = self.mm;
+        child.fs = self.fs;
+        child.files = self.files;
+        child.nsproxy = self.nsproxy;
+
         child.parent = self as *const TaskStruct as *mut TaskStruct;
         Ok(())
     }
@@ -960,19 +1316,20 @@ impl TaskStruct {
             rip: entry_point as u64,
             fs_base: 0,
             gs_base: 0,
+            fpu: FxSaveArea::zeroed(),
+            fpu_valid: false,
         };
 
-        self.flags.remove(TaskFlags::PF_FORKNOEXEC);
+        self.flags.fetch_remove(TaskFlags::PF_FORKNOEXEC);
         self.se.sum_exec_runtime = 0;
         self.se.prev_sum_exec_runtime = 0;
         Ok(())
     }
 
     pub unsafe fn destroy(&mut self) {
-        self.task_lock.lock();
+        let _guard = self.task_lock.lock_irqsave_guard();
 
         if self.state() == TaskState::Dead {
-            self.task_lock.unlock();
             return;
         }
 
@@ -982,11 +1339,14 @@ impl TaskStruct {
             self.stack_size = 0;
         }
 
-        if !self.tasks.is_empty() {
+        if self.tasks.is_linked() && !self.tasks.is_empty() {
             self.tasks.remove();
         }
-        if !self.thread_group.is_empty() {
+        if self.thread_group.is_linked() && !self.thread_group.is_empty() {
             self.thread_group.remove();
+        }
+        if self.rt.rt_list.is_linked() && !self.rt.rt_list.is_empty() {
+            self.rt.rt_list.remove();
         }
 
         self.children = ptr::null_mut();
@@ -998,58 +1358,60 @@ impl TaskStruct {
         self.files = ptr::null_mut();
         self.nsproxy = ptr::null_mut();
         self.wait_queue = ptr::null_mut();
+        self.rq.store(ptr::null_mut(), Ordering::Release);
 
         self.set_state_unchecked(TaskState::Dead);
-        self.task_lock.unlock();
     }
 
     pub fn state(&self) -> TaskState {
-        match self.state.load(Ordering::Acquire) {
-            0 => TaskState::Runnable,
-            1 => TaskState::Interruptible,
-            2 => TaskState::Uninterruptible,
-            3 => TaskState::Stopped,
-            4 => TaskState::Traced,
-            5 => TaskState::Zombie,
-            6 => TaskState::Dead,
-            _ => TaskState::Idle,
-        }
+        TaskState::from_u8(self.state.load(Ordering::Acquire))
     }
 
     fn set_state_unchecked(&self, new_state: TaskState) {
         self.state.store(new_state as u8, Ordering::Release);
     }
-
-    pub fn set_state(&mut self, new_state: TaskState) -> Result<(), TaskError> {
-        let current = self.state();
-        if !current.can_transition_to(new_state) {
-            return Err(TaskError::InvalidStateTransition { from: current, to: new_state });
+    pub fn set_state(&self, new_state: TaskState) -> Result<(), TaskError> {
+        loop {
+            let current = self.state();
+            if !current.can_transition_to(new_state) {
+                return Err(TaskError::InvalidStateTransition { from: current, to: new_state });
+            }
+            match self.state.compare_exchange_weak(
+                current as u8,
+                new_state as u8,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => return Ok(()),
+                Err(_) => continue,
+            }
         }
-        self.set_state_unchecked(new_state);
-        Ok(())
     }
 
-    pub fn wake_up(&mut self) -> Result<(), TaskError> {
+    #[allow(dead_code)]
+    fn set_state_owned(&mut self, new_state: TaskState) -> Result<(), TaskError> {
+        self.set_state(new_state)
+    }
+
+    pub fn wake_up(&self) -> Result<(), TaskError> {
         match self.state() {
-            TaskState::Interruptible | TaskState::Uninterruptible => {
-                self.set_state(TaskState::Runnable)
-            }
+            TaskState::Interruptible | TaskState::Uninterruptible => self.set_state(TaskState::Runnable),
             TaskState::Runnable => Ok(()),
             other => Err(TaskError::InvalidStateTransition { from: other, to: TaskState::Runnable }),
         }
     }
 
-    pub fn sleep(&mut self, interruptible: bool) -> Result<(), TaskError> {
+    pub fn sleep(&self, interruptible: bool) -> Result<(), TaskError> {
         let target = if interruptible { TaskState::Interruptible } else { TaskState::Uninterruptible };
         self.set_state(target)
     }
 
     pub fn is_kernel_thread(&self) -> bool {
-        self.flags.contains(TaskFlags::PF_KTHREAD, Ordering::Acquire)
+        self.flags.contains(TaskFlags::PF_KTHREAD)
     }
 
     pub fn is_idle_task(&self) -> bool {
-        self.flags.contains(TaskFlags::PF_IDLE, Ordering::Acquire) || self.state() == TaskState::Idle
+        self.flags.contains(TaskFlags::PF_IDLE) || self.state() == TaskState::Idle
     }
 
     pub fn is_zombie(&self) -> bool {
@@ -1062,6 +1424,14 @@ impl TaskStruct {
 
     pub fn needs_resched(&self) -> bool {
         self.flags.contains(TaskFlags::PF_NEED_RESCHED)
+    }
+
+    pub fn set_need_resched(&self) {
+        self.flags.fetch_insert(TaskFlags::PF_NEED_RESCHED);
+    }
+
+    pub fn clear_need_resched(&self) {
+        self.flags.fetch_remove(TaskFlags::PF_NEED_RESCHED);
     }
 
     pub fn set_nice(&mut self, nice: i8) -> Result<(), TaskError> {
@@ -1111,6 +1481,15 @@ impl TaskStruct {
         self.se.cpus_allowed.is_set(cpu)
     }
 
+    /// nigdzie.
+    pub fn rq_ptr(&self) -> *mut core::ffi::c_void {
+        self.rq.load(Ordering::Acquire)
+    }
+
+    pub fn set_rq_ptr(&self, rq: *mut core::ffi::c_void) {
+        self.rq.store(rq, Ordering::Release);
+    }
+
     pub fn charge_cputime(&mut self, delta_ns: u64) {
         self.se.prev_sum_exec_runtime = self.se.sum_exec_runtime;
         self.se.sum_exec_runtime = self.se.sum_exec_runtime.saturating_add(delta_ns);
@@ -1125,6 +1504,7 @@ impl TaskStruct {
             self.dl.runtime -= delta_ns as i64;
             if self.dl.runtime <= 0 {
                 self.dl.throttled = true;
+                self.flags.fetch_insert(TaskFlags::PF_DL_THROTTLED);
             }
         }
     }
@@ -1155,28 +1535,6 @@ impl TaskStruct {
         let end = self.comm.iter().position(|&b| b == 0).unwrap_or(TASK_COMM_LEN);
         str::from_utf8(&self.comm[..end]).unwrap_or("")
     }
-
-    pub unsafe fn fork (&self, child: &mut TaskStruct, child_pid: TaskId, entry_point: usize, arg: usize) -> Result<(), TaskError> {
-        let name = self.comm_str();
-        child.init(
-            child_pid,
-            child_pid,
-            self.pid,
-            self.policy,
-            weight_to_nice(self.se.weight),
-            entry_point,
-            arg,
-            name,
-        )?;
-
-        child.cred = self.cred;
-        child.rlimits = self.rlimits;
-        child.se.cpus_allowed = self.se.cpus_allowed;
-        child.rt.nr_cpus_allowed = self.rt.nr_cpus_allowed;
-        child.flags.insert(TaskFlags::PF_FORKNOEXEC, Ordering::SeqCst);
-        child.parent = self as *const TaskStruct as *mut TaskStruct;
-        Ok(())
-    } 
 }
 
 impl fmt::Debug for TaskStruct {
@@ -1209,7 +1567,28 @@ impl fmt::Display for TaskStruct {
 
 unsafe impl Send for TaskStruct {}
 unsafe impl Sync for TaskStruct {}
+#[repr(C)]
+pub struct ThreadInfoView<'a> {
+    pub stack_base: *mut u8,
+    pub stack_size: usize,
+    pub context: &'a mut CpuContext,
+    pub cpu: &'a AtomicU32,
+    pub on_cpu: &'a AtomicBool,
+    pub preempt_count: &'a AtomicI32,
+}
 
+impl TaskStruct {
+    pub fn thread_info(&mut self) -> ThreadInfoView<'_> {
+        ThreadInfoView {
+            stack_base: self.stack_base,
+            stack_size: self.stack_size,
+            context: &mut self.context,
+            cpu: &self.cpu,
+            on_cpu: &self.on_cpu,
+            preempt_count: &self.preempt_count,
+        }
+    }
+}
 
 pub const fn default_time_slice(policy: SchedPolicy) -> u32 {
     match policy {
@@ -1228,6 +1607,110 @@ pub fn fair_has_priority(a: &TaskStruct, b: &TaskStruct) -> bool {
 
 pub fn deadline_has_priority(a: &TaskStruct, b: &TaskStruct) -> bool {
     a.dl.deadline < b.dl.deadline
+}
+
+
+#[cfg(test)]
+impl TaskStruct {
+    pub fn blank() -> TaskStruct {
+        TaskStruct {
+            pid: 0,
+            tgid: 0,
+            ppid: 0,
+            comm: [0; TASK_COMM_LEN],
+            flags: AtomicTaskFlags::empty(),
+            state: AtomicU8::new(TaskState::Dead as u8),
+            policy: SchedPolicy::Normal,
+            sched_class: SchedClass::Fair,
+            static_prio: DEFAULT_PRIO,
+            normal_prio: DEFAULT_PRIO,
+            prio: DEFAULT_PRIO,
+            se: SchedEntity::default(),
+            rt: RtSchedEntity::default(),
+            dl: DlSchedEntity::default(),
+            tasks: ListHead::new(),
+            thread_group: ListHead::new(),
+            children: ptr::null_mut(),
+            sibling: ptr::null_mut(),
+            parent: ptr::null_mut(),
+            group_leader: ptr::null_mut(),
+            stack_base: ptr::null_mut(),
+            stack_size: 0,
+            preempt_count: AtomicI32::new(0),
+            irq_count: AtomicI32::new(0),
+            on_cpu: AtomicBool::new(false),
+            cpu: AtomicU32::new(CPU_NONE),
+            context: CpuContext::default(),
+            mm: ptr::null_mut(),
+            fs: ptr::null_mut(),
+            files: ptr::null_mut(),
+            nsproxy: ptr::null_mut(),
+            cred: Credentials::default(),
+            rlimits: default_rlimits(),
+            sig: SignalState::default(),
+            stats: TaskStats::default(),
+            wait_queue: ptr::null_mut(),
+            task_lock: SpinLock::new(),
+            rq: AtomicPtr::new(ptr::null_mut()),
+        }
+    }
+
+    pub fn init_test_stub(&mut self, pid: TaskId, policy: SchedPolicy, nice: i8) {
+        self.pid = pid;
+        self.tgid = pid;
+        self.state = AtomicU8::new(TaskState::Runnable as u8);
+        self.policy = policy;
+        self.sched_class = SchedClass::from(policy);
+
+        self.se = SchedEntity::default();
+        self.se.weight = nice_to_weight(nice);
+        self.se.inv_weight = nice_to_wmult(nice);
+
+        self.rt = RtSchedEntity::default();
+        self.rt.rt_list.init();
+        self.rt.owner = self as *mut TaskStruct;
+
+        self.dl = DlSchedEntity::default();
+
+        match policy {
+            SchedPolicy::Fifo | SchedPolicy::RoundRobin => {
+                let rt_prio = (MAX_RT_PRIO - 1 - nice as i32).clamp(0, MAX_RT_PRIO - 1) as u8;
+                self.rt.rt_priority = rt_prio;
+                self.static_prio = rt_prio as i32;
+                self.normal_prio = rt_prio as i32;
+                self.prio = rt_prio as i32;
+                self.rt.time_slice = default_time_slice(policy);
+            }
+            SchedPolicy::Deadline => {
+                self.static_prio = 0;
+                self.normal_prio = 0;
+                self.prio = 0;
+            }
+            SchedPolicy::Stop => {
+                self.static_prio = -1;
+                self.normal_prio = -1;
+                self.prio = -1;
+            }
+            SchedPolicy::Idle => {
+                self.static_prio = MAX_PRIO;
+                self.normal_prio = MAX_PRIO;
+                self.prio = MAX_PRIO;
+                self.flags.fetch_insert(TaskFlags::PF_IDLE);
+                self.set_state_unchecked(TaskState::Idle);
+            }
+            SchedPolicy::Normal | SchedPolicy::Batch => {
+                self.static_prio = DEFAULT_PRIO + nice as i32;
+                self.normal_prio = self.static_prio;
+                self.prio = self.normal_prio;
+            }
+        }
+
+        self.tasks.init();
+        self.thread_group.init();
+        self.rq = AtomicPtr::new(ptr::null_mut());
+        self.cpu = AtomicU32::new(CPU_NONE);
+        self.on_cpu = AtomicBool::new(false);
+    }
 }
 
 
@@ -1265,6 +1748,19 @@ mod tests {
     }
 
     #[test]
+    fn calc_delta_fair_is_identity_at_nice_zero() {
+        let d = calc_delta_fair(1_000_000, NICE_0_LOAD, nice_to_wmult(0));
+        assert_eq!(d, 1_000_000);
+    }
+
+    #[test]
+    fn calc_delta_fair_grows_for_lower_weight() {
+        let heavy = calc_delta_fair(1_000_000, nice_to_weight(-5), nice_to_wmult(-5));
+        let light = calc_delta_fair(1_000_000, nice_to_weight(5), nice_to_wmult(5));
+        assert!(light > heavy);
+    }
+
+    #[test]
     fn cpumask_basic_set_clear() {
         let mut mask = CpuMask::empty();
         assert!(mask.is_empty());
@@ -1296,6 +1792,36 @@ mod tests {
         assert!(!a.intersects(&b));
         b.set(5);
         assert!(a.intersects(&b));
+    }
+
+    #[test]
+    fn cpumask_and_or() {
+        let mut a = CpuMask::empty();
+        let mut b = CpuMask::empty();
+        a.set(1);
+        a.set(2);
+        b.set(2);
+        b.set(3);
+        assert_eq!(a.and(&b).count(), 1);
+        assert!(a.and(&b).is_set(2));
+        assert_eq!(a.or(&b).count(), 3);
+    }
+
+    #[test]
+    fn cpumask_next_after_wraps() {
+        let mut m = CpuMask::empty();
+        m.set(2);
+        m.set(5);
+        assert_eq!(m.next_after(2), Some(5));
+        assert_eq!(m.next_after(5), Some(2)); // zawija
+    }
+
+    #[test]
+    fn cpumask_first_n() {
+        let m = CpuMask::first_n(4);
+        assert_eq!(m.count(), 4);
+        assert!(m.is_set(3));
+        assert!(!m.is_set(4));
     }
 
     #[test]
@@ -1375,6 +1901,30 @@ mod tests {
     }
 
     #[test]
+    fn list_head_remove_never_creates_a_cycle_with_three_nodes() {
+        let mut head = ListHead::new();
+        head.init();
+        let mut nodes: [ListHead; 3] = [ListHead::new(), ListHead::new(), ListHead::new()];
+        for n in nodes.iter_mut() {
+            n.init();
+        }
+        unsafe {
+            for n in nodes.iter_mut() {
+                head.insert_before(n as *mut ListHead);
+            }
+        }
+        let mut count = 0;
+        let mut cur = head.next;
+        unsafe {
+            while !core::ptr::eq(cur, &mut head as *mut ListHead) && count < 10 {
+                count += 1;
+                cur = (*cur).next;
+            }
+        }
+        assert_eq!(count, 3);
+    }
+
+    #[test]
     fn spinlock_lock_unlock_cycle() {
         let lock = SpinLock::new();
         assert!(!lock.is_locked());
@@ -1382,6 +1932,81 @@ mod tests {
         assert!(lock.is_locked());
         lock.unlock();
         assert!(!lock.is_locked());
+    }
+
+    #[test]
+    fn spinlock_try_lock_fails_when_held() {
+        let lock = SpinLock::new();
+        assert!(lock.try_lock());
+        assert!(!lock.try_lock());
+        lock.unlock();
+        assert!(lock.try_lock());
+        lock.unlock();
+    }
+
+    #[test]
+    fn spinlock_irqsave_guard_unlocks_on_drop() {
+        let lock = SpinLock::new();
+        {
+            let _guard = lock.lock_irqsave_guard();
+            assert!(lock.is_locked());
+        }
+        assert!(!lock.is_locked());
+    }
+
+    #[test]
+    fn spinlock_plain_guard_unlocks_on_drop() {
+        let lock = SpinLock::new();
+        {
+            let _guard = lock.lock_guard();
+            assert!(lock.is_locked());
+        }
+        assert!(!lock.is_locked());
+    }
+
+    #[test]
+    fn atomic_task_flags_insert_remove_are_bitwise() {
+        let flags = AtomicTaskFlags::empty();
+        flags.fetch_insert(TaskFlags::PF_NEED_RESCHED);
+        assert!(flags.contains(TaskFlags::PF_NEED_RESCHED));
+        flags.fetch_insert(TaskFlags::PF_KTHREAD);
+        assert!(flags.contains(TaskFlags::PF_NEED_RESCHED));
+        assert!(flags.contains(TaskFlags::PF_KTHREAD));
+        flags.fetch_remove(TaskFlags::PF_NEED_RESCHED);
+        assert!(!flags.contains(TaskFlags::PF_NEED_RESCHED));
+        assert!(flags.contains(TaskFlags::PF_KTHREAD));
+    }
+
+    #[test]
+    fn atomic_task_flags_test_and_set_is_edge_triggered() {
+        let flags = AtomicTaskFlags::empty();
+        assert!(flags.test_and_set(TaskFlags::PF_WAKING));
+        assert!(!flags.test_and_set(TaskFlags::PF_WAKING));
+    }
+
+    #[test]
+    fn rb_parent_color_encoding_roundtrips() {
+        let fake_parent = 0x1000usize as *mut TaskStruct;
+        let pc_red = rb_make_parent_color(fake_parent, RB_RED);
+        let pc_black = rb_make_parent_color(fake_parent, RB_BLACK);
+        assert_eq!(rb_parent(pc_red), fake_parent);
+        assert_eq!(rb_parent(pc_black), fake_parent);
+        assert!(rb_is_red(pc_red));
+        assert!(rb_is_black(pc_black));
+    }
+
+    #[test]
+    fn fx_save_area_default_is_zeroed() {
+        let area = FxSaveArea::default();
+        assert!(area.bytes.iter().all(|&b| b == 0));
+        assert_eq!(core::mem::size_of::<FxSaveArea>(), 512);
+        assert_eq!(core::mem::align_of::<FxSaveArea>(), 16);
+    }
+
+    #[test]
+    fn cpu_context_default_has_no_valid_fpu_state() {
+        let ctx = CpuContext::default();
+        assert!(!ctx.fpu_valid);
     }
 
     #[test]
@@ -1408,5 +2033,114 @@ mod tests {
         assert_eq!(default_time_slice(SchedPolicy::Fifo), 0);
         assert!(default_time_slice(SchedPolicy::RoundRobin) > 0);
         assert_eq!(default_time_slice(SchedPolicy::Normal), 0);
+    }
+
+    #[test]
+    fn load_avg_accumulate_grows_then_decays() {
+        let mut la = LoadAvg::default();
+        la.accumulate(1_000_000_000, 1_000_000_000, NICE_0_LOAD, true);
+        let after_first = la.load_avg;
+        assert!(after_first > 0);
+        la.accumulate(2_000_000_000, 1_000_000_000, 0, false);
+        assert!(la.load_avg <= after_first);
+    }
+
+    fn bare_task_for_state_tests() -> TaskStruct {
+        TaskStruct {
+            pid: 1,
+            tgid: 1,
+            ppid: 0,
+            comm: [0; TASK_COMM_LEN],
+            flags: AtomicTaskFlags::empty(),
+            state: AtomicU8::new(TaskState::Runnable as u8),
+            policy: SchedPolicy::Normal,
+            sched_class: SchedClass::Fair,
+            static_prio: DEFAULT_PRIO,
+            normal_prio: DEFAULT_PRIO,
+            prio: DEFAULT_PRIO,
+            se: SchedEntity::default(),
+            rt: RtSchedEntity::default(),
+            dl: DlSchedEntity::default(),
+            tasks: ListHead::new(),
+            thread_group: ListHead::new(),
+            children: ptr::null_mut(),
+            sibling: ptr::null_mut(),
+            parent: ptr::null_mut(),
+            group_leader: ptr::null_mut(),
+            stack_base: ptr::null_mut(),
+            stack_size: 0,
+            preempt_count: AtomicI32::new(0),
+            irq_count: AtomicI32::new(0),
+            on_cpu: AtomicBool::new(false),
+            cpu: AtomicU32::new(CPU_NONE),
+            context: CpuContext::default(),
+            mm: ptr::null_mut(),
+            fs: ptr::null_mut(),
+            files: ptr::null_mut(),
+            nsproxy: ptr::null_mut(),
+            cred: Credentials::default(),
+            rlimits: default_rlimits(),
+            sig: SignalState::default(),
+            stats: TaskStats::default(),
+            wait_queue: ptr::null_mut(),
+            task_lock: SpinLock::new(),
+            rq: AtomicPtr::new(ptr::null_mut()),
+        }
+    }
+
+    #[test]
+    fn set_state_via_shared_reference_does_not_need_mut() {
+        let task = bare_task_for_state_tests();
+        let task_ref: &TaskStruct = &task;
+        assert!(task_ref.set_state(TaskState::Interruptible).is_ok());
+        assert_eq!(task_ref.state(), TaskState::Interruptible);
+        assert!(task_ref.wake_up().is_ok());
+        assert_eq!(task_ref.state(), TaskState::Runnable);
+    }
+
+    #[test]
+    fn set_state_rejects_illegal_transition_via_shared_reference() {
+        let task = bare_task_for_state_tests();
+        assert!(task.set_state(TaskState::Zombie).is_ok());
+        assert!(task.set_state(TaskState::Runnable).is_err());
+        assert_eq!(task.state(), TaskState::Zombie);
+    }
+
+    #[test]
+    fn wake_up_process_pattern_from_remote_cpu_context() {
+        let task = bare_task_for_state_tests();
+        task.set_state(TaskState::Uninterruptible).unwrap();
+
+        fn remote_wake(t: &TaskStruct) -> Result<(), TaskError> {
+            t.wake_up()
+        }
+
+        assert!(remote_wake(&task).is_ok());
+        assert_eq!(task.state(), TaskState::Runnable);
+    }
+
+    #[test]
+    fn rq_backpointer_roundtrips() {
+        let task = bare_task_for_state_tests();
+        assert!(task.rq_ptr().is_null());
+        let fake: usize = 0xdead_beef;
+        task.set_rq_ptr(fake as *mut core::ffi::c_void);
+        assert_eq!(task.rq_ptr() as usize, fake);
+    }
+
+    #[test]
+    fn need_resched_flag_is_settable_from_shared_reference() {
+        let task = bare_task_for_state_tests();
+        assert!(!task.needs_resched());
+        task.set_need_resched();
+        assert!(task.needs_resched());
+        task.clear_need_resched();
+        assert!(!task.needs_resched());
+    }
+
+    #[test]
+    fn rt_sched_entity_starts_with_initialized_list_and_no_queued_prio() {
+        let rt = RtSchedEntity::default();
+        assert_eq!(rt.queued_prio, MAX_RT_PRIO as u32);
     }
 }
