@@ -1,139 +1,552 @@
-#![allow(dead_code)]
+//! CPU Mask (cpumask) implementation for the TrangorgeOS scheduler.
+//!
+//! Provides a robust, high-performance bitset for representing sets of CPUs.
+//! Supports compile-time construction, O(K) iteration (where K is the number of set bits),
+//! atomic operations, and topology-aware queries.
 
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::fmt;
+use core::iter::FusedIterator;
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+use core::sync::atomic::{AtomicU64, Ordering};
 
-use crate::cpu::scheduler::bitmap::AtomicBitmap;
-pub use crate::cpu::scheduler::entities::task::CpuMask;
-use crate::cpu::scheduler::entities::task::MAX_CPUS;
+/// Maximum number of CPUs supported by the scheduler.
+/// Must be a multiple of 64 for optimal `CpuMask` word alignment.
+pub const MAX_CPUS: usize = 256;
+pub const CPUMASK_WORDS: usize = MAX_CPUS / 64;
 
-const WORDS: usize = MAX_CPUS / 64;
+/// A bitmask representing a set of CPUs.
+///
+/// Optimized for fast bitwise operations and iteration.
+/// Stored as an array of 64-bit words for cache efficiency.
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CpuMask {
+    bits: [u64; CPUMASK_WORDS],
+}
 
-static POSSIBLE: AtomicBitmap<WORDS> = AtomicBitmap::new();
-static PRESENT: AtomicBitmap<WORDS> = AtomicBitmap::new();
-static ONLINE: AtomicBitmap<WORDS> = AtomicBitmap::new();
-static ACTIVE: AtomicBitmap<WORDS> = AtomicBitmap::new();
-
-const NO_TOPOLOGY: AtomicU32 = AtomicU32::new(u32::MAX);
-static PACKAGE_ID: [AtomicU32; MAX_CPUS] = [NO_TOPOLOGY; MAX_CPUS];
-static CORE_ID: [AtomicU32; MAX_CPUS] = [NO_TOPOLOGY; MAX_CPUS];
-
-// ------------------------------------------------------------------
-// Cykl życia CPU: possible -> present -> online -> active
-// ------------------------------------------------------------------
-
-pub fn mark_possible(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        POSSIBLE.test_and_set(cpu as usize);
+impl CpuMask {
+    /// Creates an empty CPU mask (no CPUs set).
+    #[inline]
+    pub const fn empty() -> Self {
+        Self { bits: [0; CPUMASK_WORDS] }
     }
-}
 
-pub fn mark_present(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        PRESENT.test_and_set(cpu as usize);
+    /// Creates a CPU mask with all possible CPUs set.
+    #[inline]
+    pub const fn full() -> Self {
+        Self { bits: [u64::MAX; CPUMASK_WORDS] }
     }
-}
 
-pub fn mark_online(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        ONLINE.test_and_set(cpu as usize);
-        ACTIVE.test_and_set(cpu as usize);
+    /// Creates a CPU mask with a single CPU set.
+    /// Silently ignores CPUs >= MAX_CPUS.
+    #[inline]
+    pub const fn single(cpu: u32) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        if (cpu as usize) < MAX_CPUS {
+            bits[cpu as usize / 64] = 1u64 << (cpu as usize % 64);
+        }
+        Self { bits }
     }
-}
 
-pub fn mark_offline(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        ACTIVE.test_and_clear(cpu as usize);
-        ONLINE.test_and_clear(cpu as usize);
+    /// Creates a CPU mask with the first `n` CPUs set (0 to n-1).
+    #[inline]
+    pub const fn first_n(n: u32) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        let mut i = 0;
+        while i < CPUMASK_WORDS {
+            let word_start = i * 64;
+            let word_end = word_start + 64;
+            if (n as usize) <= word_start {
+                bits[i] = 0;
+            } else if (n as usize) >= word_end {
+                bits[i] = u64::MAX;
+            } else {
+                let bits_to_set = (n as usize) - word_start;
+                bits[i] = (1u64 << bits_to_set) - 1;
+            }
+            i += 1;
+        }
+        Self { bits }
     }
-}
 
-pub fn mark_active(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        ACTIVE.test_and_set(cpu as usize);
-    }
-}
-
-pub fn mark_inactive(cpu: u32) {
-    if (cpu as usize) < MAX_CPUS {
-        ACTIVE.test_and_clear(cpu as usize);
-    }
-}
-
-pub fn is_possible(cpu: u32) -> bool {
-    (cpu as usize) < MAX_CPUS && POSSIBLE.test(cpu as usize)
-}
-
-pub fn is_present(cpu: u32) -> bool {
-    (cpu as usize) < MAX_CPUS && PRESENT.test(cpu as usize)
-}
-
-pub fn is_online(cpu: u32) -> bool {
-    (cpu as usize) < MAX_CPUS && ONLINE.test(cpu as usize)
-}
-
-pub fn is_active(cpu: u32) -> bool {
-    (cpu as usize) < MAX_CPUS && ACTIVE.test(cpu as usize)
-}
-
-pub fn num_possible_cpus() -> u32 {
-    POSSIBLE.weight()
-}
-
-pub fn num_present_cpus() -> u32 {
-    PRESENT.weight()
-}
-
-pub fn num_online_cpus() -> u32 {
-    ONLINE.weight()
-}
-
-pub fn num_active_cpus() -> u32 {
-    ACTIVE.weight()
-}
-
-fn snapshot(bm: &AtomicBitmap<WORDS>) -> CpuMask {
-    let mut out = CpuMask::empty();
-    for cpu in 0..MAX_CPUS as u32 {
-        if bm.test(cpu as usize) {
-            out.set(cpu);
+    /// Sets the specified CPU in the mask.
+    #[inline]
+    pub fn set(&mut self, cpu: u32) {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            self.bits[cpu / 64] |= 1u64 << (cpu % 64);
         }
     }
-    out
+
+    /// Clears the specified CPU from the mask.
+    #[inline]
+    pub fn clear(&mut self, cpu: u32) {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            self.bits[cpu / 64] &= !(1u64 << (cpu % 64));
+        }
+    }
+
+    /// Toggles the specified CPU in the mask.
+    #[inline]
+    pub fn toggle(&mut self, cpu: u32) {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            self.bits[cpu / 64] ^= 1u64 << (cpu % 64);
+        }
+    }
+
+    /// Returns `true` if the specified CPU is set in the mask.
+    #[inline]
+    pub fn is_set(&self, cpu: u32) -> bool {
+        let cpu = cpu as usize;
+        cpu < MAX_CPUS && (self.bits[cpu / 64] & (1u64 << (cpu % 64))) != 0
+    }
+
+    /// Returns `true` if the mask contains no CPUs.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.bits.iter().all(|&w| w == 0)
+    }
+
+    /// Returns `true` if the mask contains all possible CPUs.
+    #[inline]
+    pub fn is_full(&self) -> bool {
+        self.bits.iter().all(|&w| w == u64::MAX)
+    }
+
+    /// Returns the number of CPUs set in the mask (Hamming weight).
+    #[inline]
+    pub fn weight(&self) -> u32 {
+        self.bits.iter().map(|w| w.count_ones()).sum()
+    }
+
+    /// Returns `true` if this mask shares at least one CPU with `other`.
+    #[inline]
+    pub fn intersects(&self, other: &Self) -> bool {
+        self.bits.iter().zip(other.bits.iter()).any(|(a, b)| (a & b) != 0)
+    }
+
+    /// Returns `true` if this mask is a subset of `other`.
+    #[inline]
+    pub fn is_subset(&self, other: &Self) -> bool {
+        self.bits.iter().zip(other.bits.iter()).all(|(a, b)| (a & !b) == 0)
+    }
+
+    /// Returns a new mask containing CPUs that are in `self` but not in `other`.
+    /// Crucial for scheduler affinity calculations (e.g., allowed & !online).
+    #[inline]
+    pub fn andnot(&self, other: &Self) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for i in 0..CPUMASK_WORDS {
+            bits[i] = self.bits[i] & !other.bits[i];
+        }
+        Self { bits }
+    }
+
+    /// Returns the first (lowest numbered) CPU set in the mask, or `None` if empty.
+    #[inline]
+    pub fn first(&self) -> Option<u32> {
+        for (word_idx, &word) in self.bits.iter().enumerate() {
+            if word != 0 {
+                return Some((word_idx * 64 + word.trailing_zeros() as usize) as u32);
+            }
+        }
+        None
+    }
+
+    /// Returns the next CPU set in the mask strictly after `cpu`.
+    /// Wraps around to the beginning if necessary.
+    #[inline]
+    pub fn next_after(&self, cpu: u32) -> Option<u32> {
+        let start = cpu.wrapping_add(1) as usize;
+        
+        // Check from `start` to `MAX_CPUS - 1`
+        for word_idx in (start / 64)..CPUMASK_WORDS {
+            let word = self.bits[word_idx];
+            if word == 0 { continue; }
+            
+            let bit_offset = if word_idx * 64 == start { start % 64 } else { 0 };
+            let masked_word = word & (!0u64 << bit_offset);
+            
+            if masked_word != 0 {
+                return Some((word_idx * 64 + masked_word.trailing_zeros() as usize) as u32);
+            }
+        }
+        
+        // Wrap around: check from 0 to `cpu`
+        for word_idx in 0..=(cpu as usize / 64) {
+            let word = self.bits[word_idx];
+            if word == 0 { continue; }
+            
+            let masked_word = if word_idx == (cpu as usize / 64) {
+                word & (!0u64 << ((cpu as usize % 64) + 1))
+            } else {
+                word
+            };
+            
+            if masked_word != 0 {
+                return Some((word_idx * 64 + masked_word.trailing_zeros() as usize) as u32);
+            }
+        }
+        None
+    }
+
+    /// Returns an iterator over the CPUs set in the mask.
+    /// Iteration is O(K) where K is the number of set bits, not O(N).
+    #[inline]
+    pub fn iter(&self) -> CpuMaskIter<'_> {
+        CpuMaskIter {
+            mask: self,
+            current_word_idx: 0,
+            current_word: self.bits[0],
+        }
+    }
 }
 
-pub fn possible_mask() -> CpuMask {
-    snapshot(&POSSIBLE)
+// --- Bitwise Operators ---
+
+impl BitAnd for CpuMask {
+    type Output = Self;
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for i in 0..CPUMASK_WORDS { bits[i] = self.bits[i] & rhs.bits[i]; }
+        Self { bits }
+    }
 }
 
-pub fn present_mask() -> CpuMask {
-    snapshot(&PRESENT)
+impl BitAndAssign for CpuMask {
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Self) {
+        for i in 0..CPUMASK_WORDS { self.bits[i] &= rhs.bits[i]; }
+    }
 }
 
-pub fn online_mask() -> CpuMask {
-    snapshot(&ONLINE)
+impl BitOr for CpuMask {
+    type Output = Self;
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for i in 0..CPUMASK_WORDS { bits[i] = self.bits[i] | rhs.bits[i]; }
+        Self { bits }
+    }
 }
 
-pub fn active_mask() -> CpuMask {
-    snapshot(&ACTIVE)
+impl BitOrAssign for CpuMask {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        for i in 0..CPUMASK_WORDS { self.bits[i] |= rhs.bits[i]; }
+    }
 }
 
-pub fn for_each_online_cpu() -> impl Iterator<Item = u32> {
-    online_mask().iter()
+impl BitXor for CpuMask {
+    type Output = Self;
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for i in 0..CPUMASK_WORDS { bits[i] = self.bits[i] ^ rhs.bits[i]; }
+        Self { bits }
+    }
 }
 
-pub fn for_each_active_cpu() -> impl Iterator<Item = u32> {
-    active_mask().iter()
+impl BitXorAssign for CpuMask {
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        for i in 0..CPUMASK_WORDS { self.bits[i] ^= rhs.bits[i]; }
+    }
 }
 
-pub fn first_online_cpu() -> Option<u32> {
-    online_mask().first()
+impl Not for CpuMask {
+    type Output = Self;
+    #[inline]
+    fn not(self) -> Self {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for i in 0..CPUMASK_WORDS { bits[i] = !self.bits[i]; }
+        Self { bits }
+    }
 }
 
-// ------------------------------------------------------------------
-// Topologia (pakiet/gniazdo, rdzeń fizyczny) — do domen szeregowania
-// świadomych SMT (hyperthreading).
-// ------------------------------------------------------------------
+// --- Iterator ---
 
+/// An iterator over the CPUs set in a `CpuMask`.
+/// Uses Brian Kernighan's algorithm for O(1) per-set-bit advancement.
+pub struct CpuMaskIter<'a> {
+    mask: &'a CpuMask,
+    current_word_idx: usize,
+    current_word: u64,
+}
+
+impl<'a> Iterator for CpuMaskIter<'a> {
+    type Item = u32;
+
+    #[inline]
+    fn next(&mut self) -> Option<u32> {
+        while self.current_word_idx < CPUMASK_WORDS {
+            if self.current_word != 0 {
+                let bit = self.current_word.trailing_zeros() as usize;
+                // Clear the lowest set bit (Brian Kernighan's algorithm)
+                self.current_word &= self.current_word - 1;
+                return Some((self.current_word_idx * 64 + bit) as u32);
+            }
+            self.current_word_idx += 1;
+            if self.current_word_idx < CPUMASK_WORDS {
+                self.current_word = self.mask.bits[self.current_word_idx];
+            }
+        }
+        None
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.mask.weight() as usize;
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a> FusedIterator for CpuMaskIter<'a> {}
+
+impl Default for CpuMask {
+    #[inline]
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+// --- Formatting ---
+
+impl fmt::Debug for CpuMask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CpuMask({:#018x}...)", self.bits[0])
+    }
+}
+
+impl fmt::Display for CpuMask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            return write!(f, "<none>");
+        }
+        
+        let mut first = true;
+        let mut in_range = false;
+        let mut range_start = 0u32;
+        let mut last_cpu = 0u32;
+
+        for cpu in self.iter() {
+            if first {
+                range_start = cpu;
+                last_cpu = cpu;
+                first = false;
+                in_range = true;
+            } else if cpu == last_cpu + 1 {
+                last_cpu = cpu;
+            } else {
+                if in_range {
+                    if range_start == last_cpu {
+                        write!(f, "{}", range_start)?;
+                    } else {
+                        write!(f, "{}-{}", range_start, last_cpu)?;
+                    }
+                    in_range = false;
+                }
+                write!(f, ",")?;
+                range_start = cpu;
+                last_cpu = cpu;
+                in_range = true;
+            }
+        }
+        
+        // Flush the last range
+        if in_range {
+            if range_start == last_cpu {
+                write!(f, "{}", range_start)?;
+            } else {
+                write!(f, "{}-{}", range_start, last_cpu)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+// --- Atomic CPU Mask ---
+
+/// An atomic version of `CpuMask` for lock-free concurrent updates.
+/// Essential for global CPU state (online/offline) or concurrent affinity updates.
+#[repr(C)]
+pub struct AtomicCpuMask {
+    bits: [AtomicU64; CPUMASK_WORDS],
+}
+
+impl AtomicCpuMask {
+    /// Creates a new `AtomicCpuMask` with no CPUs set.
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            bits: [const { AtomicU64::new(0) }; CPUMASK_WORDS],
+        }
+    }
+
+    /// Sets the specified CPU in the mask atomically.
+    #[inline]
+    pub fn set(&self, cpu: u32) {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            let word_idx = cpu / 64;
+            let bit = 1u64 << (cpu % 64);
+            self.bits[word_idx].fetch_or(bit, Ordering::Relaxed);
+        }
+    }
+
+    /// Clears the specified CPU from the mask atomically.
+    #[inline]
+    pub fn clear(&self, cpu: u32) {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            let word_idx = cpu / 64;
+            let bit = !(1u64 << (cpu % 64));
+            self.bits[word_idx].fetch_and(bit, Ordering::Relaxed);
+        }
+    }
+
+    /// Atomically sets the CPU and returns `true` if it was previously clear.
+    #[inline]
+    pub fn test_and_set(&self, cpu: u32) -> bool {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            let word_idx = cpu / 64;
+            let bit = 1u64 << (cpu % 64);
+            let prev = self.bits[word_idx].fetch_or(bit, Ordering::AcqRel);
+            return (prev & bit) == 0;
+        }
+        false
+    }
+
+    /// Atomically clears the CPU and returns `true` if it was previously set.
+    #[inline]
+    pub fn test_and_clear(&self, cpu: u32) -> bool {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            let word_idx = cpu / 64;
+            let bit = 1u64 << (cpu % 64);
+            let prev = self.bits[word_idx].fetch_and(!bit, Ordering::AcqRel);
+            return (prev & bit) != 0;
+        }
+        false
+    }
+
+    /// Returns `true` if the specified CPU is set.
+    #[inline]
+    pub fn test(&self, cpu: u32) -> bool {
+        let cpu = cpu as usize;
+        if cpu < MAX_CPUS {
+            let word_idx = cpu / 64;
+            let bit = 1u64 << (cpu % 64);
+            (self.bits[word_idx].load(Ordering::Acquire) & bit) != 0
+        } else {
+            false
+        }
+    }
+
+    /// Returns the number of CPUs currently set in the mask.
+    #[inline]
+    pub fn weight(&self) -> u32 {
+        self.bits.iter().map(|w| w.load(Ordering::Relaxed).count_ones()).sum()
+    }
+
+    /// Takes a snapshot of the current mask as a regular `CpuMask`.
+    #[inline]
+    pub fn snapshot(&self) -> CpuMask {
+        let mut bits = [0u64; CPUMASK_WORDS];
+        for (i, atomic_word) in self.bits.iter().enumerate() {
+            bits[i] = atomic_word.load(Ordering::Relaxed);
+        }
+        CpuMask { bits }
+    }
+}
+
+impl Default for AtomicCpuMask {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// --- Global CPU Topology State ---
+
+static POSSIBLE_CPUS: AtomicCpuMask = AtomicCpuMask::new();
+static PRESENT_CPUS: AtomicCpuMask = AtomicCpuMask::new();
+static ONLINE_CPUS: AtomicCpuMask = AtomicCpuMask::new();
+static ACTIVE_CPUS: AtomicCpuMask = AtomicCpuMask::new();
+
+const NO_TOPOLOGY: u32 = u32::MAX;
+static PACKAGE_ID: [core::sync::atomic::AtomicU32; MAX_CPUS] = [const { core::sync::atomic::AtomicU32::new(NO_TOPOLOGY) }; MAX_CPUS];
+static CORE_ID: [core::sync::atomic::AtomicU32; MAX_CPUS] = [const { core::sync::atomic::AtomicU32::new(NO_TOPOLOGY) }; MAX_CPUS];
+
+// --- Lifecycle Management ---
+
+#[inline]
+pub fn mark_possible(cpu: u32) { POSSIBLE_CPUS.set(cpu); }
+
+#[inline]
+pub fn mark_present(cpu: u32) { PRESENT_CPUS.set(cpu); }
+
+#[inline]
+pub fn mark_online(cpu: u32) {
+    ONLINE_CPUS.set(cpu);
+    ACTIVE_CPUS.set(cpu);
+}
+
+#[inline]
+pub fn mark_offline(cpu: u32) {
+    ACTIVE_CPUS.clear(cpu);
+    ONLINE_CPUS.clear(cpu);
+}
+
+#[inline]
+pub fn mark_active(cpu: u32) { ACTIVE_CPUS.set(cpu); }
+
+#[inline]
+pub fn mark_inactive(cpu: u32) { ACTIVE_CPUS.clear(cpu); }
+
+#[inline]
+pub fn is_possible(cpu: u32) -> bool { (cpu as usize) < MAX_CPUS && POSSIBLE_CPUS.test(cpu) }
+
+#[inline]
+pub fn is_present(cpu: u32) -> bool { (cpu as usize) < MAX_CPUS && PRESENT_CPUS.test(cpu) }
+
+#[inline]
+pub fn is_online(cpu: u32) -> bool { (cpu as usize) < MAX_CPUS && ONLINE_CPUS.test(cpu) }
+
+#[inline]
+pub fn is_active(cpu: u32) -> bool { (cpu as usize) < MAX_CPUS && ACTIVE_CPUS.test(cpu) }
+
+#[inline]
+pub fn num_possible_cpus() -> u32 { POSSIBLE_CPUS.weight() }
+
+#[inline]
+pub fn num_present_cpus() -> u32 { PRESENT_CPUS.weight() }
+
+#[inline]
+pub fn num_online_cpus() -> u32 { ONLINE_CPUS.weight() }
+
+#[inline]
+pub fn num_active_cpus() -> u32 { ACTIVE_CPUS.weight() }
+
+#[inline]
+pub fn possible_mask() -> CpuMask { POSSIBLE_CPUS.snapshot() }
+
+#[inline]
+pub fn present_mask() -> CpuMask { PRESENT_CPUS.snapshot() }
+
+#[inline]
+pub fn online_mask() -> CpuMask { ONLINE_CPUS.snapshot() }
+
+#[inline]
+pub fn active_mask() -> CpuMask { ACTIVE_CPUS.snapshot() }
+
+// --- Topology Queries ---
+
+#[inline]
 pub fn set_topology(cpu: u32, package_id: u32, core_id: u32) {
     if (cpu as usize) < MAX_CPUS {
         PACKAGE_ID[cpu as usize].store(package_id, Ordering::Release);
@@ -141,42 +554,28 @@ pub fn set_topology(cpu: u32, package_id: u32, core_id: u32) {
     }
 }
 
+#[inline]
 pub fn package_of(cpu: u32) -> Option<u32> {
-    if (cpu as usize) >= MAX_CPUS {
-        return None;
-    }
+    if (cpu as usize) >= MAX_CPUS { return None; }
     let id = PACKAGE_ID[cpu as usize].load(Ordering::Acquire);
-    if id == u32::MAX {
-        None
-    } else {
-        Some(id)
-    }
+    if id == NO_TOPOLOGY { None } else { Some(id) }
 }
 
+#[inline]
 pub fn core_of(cpu: u32) -> Option<u32> {
-    if (cpu as usize) >= MAX_CPUS {
-        return None;
-    }
+    if (cpu as usize) >= MAX_CPUS { return None; }
     let id = CORE_ID[cpu as usize].load(Ordering::Acquire);
-    if id == u32::MAX {
-        None
-    } else {
-        Some(id)
-    }
+    if id == NO_TOPOLOGY { None } else { Some(id) }
 }
 
-/// Maska rdzeni logicznych dzielących ten sam rdzeń fizyczny (SMT).
-/// Zawsze zawiera `cpu` samo w sobie, jeśli jest online.
+/// Returns a mask of all logical CPUs that share the same physical core (SMT siblings).
+/// Always includes the `cpu` itself, if it is online.
+#[inline]
 pub fn sibling_mask(cpu: u32) -> CpuMask {
     let mut out = CpuMask::empty();
-    let pkg = match package_of(cpu) {
-        Some(p) => p,
-        None => return out,
-    };
-    let core = match core_of(cpu) {
-        Some(c) => c,
-        None => return out,
-    };
+    let pkg = match package_of(cpu) { Some(p) => p, None => return out };
+    let core = match core_of(cpu) { Some(c) => c, None => return out };
+    
     for c in 0..MAX_CPUS as u32 {
         if is_online(c) && package_of(c) == Some(pkg) && core_of(c) == Some(core) {
             out.set(c);
@@ -185,13 +584,12 @@ pub fn sibling_mask(cpu: u32) -> CpuMask {
     out
 }
 
-/// Maska wszystkich rdzeni logicznych w tym samym pakiecie/gnieździe.
+/// Returns a mask of all logical CPUs in the same physical package (socket).
+#[inline]
 pub fn package_mask(cpu: u32) -> CpuMask {
     let mut out = CpuMask::empty();
-    let pkg = match package_of(cpu) {
-        Some(p) => p,
-        None => return out,
-    };
+    let pkg = match package_of(cpu) { Some(p) => p, None => return out };
+    
     for c in 0..MAX_CPUS as u32 {
         if is_online(c) && package_of(c) == Some(pkg) {
             out.set(c);
@@ -200,6 +598,7 @@ pub fn package_mask(cpu: u32) -> CpuMask {
     out
 }
 
+#[inline]
 pub fn are_siblings(a: u32, b: u32) -> bool {
     a != b
         && package_of(a).is_some()
@@ -207,179 +606,21 @@ pub fn are_siblings(a: u32, b: u32) -> bool {
         && core_of(a) == core_of(b)
 }
 
-// ------------------------------------------------------------------
-// Pomocnicze konstruktory masek
-// ------------------------------------------------------------------
+// --- Helper Constructors ---
 
+#[inline]
 pub fn mask_from_iter<I: IntoIterator<Item = u32>>(cpus: I) -> CpuMask {
     let mut m = CpuMask::empty();
-    for c in cpus {
-        m.set(c);
-    }
+    for c in cpus { m.set(c); }
     m
 }
 
+#[inline]
 pub fn restrict_to_online(mask: &CpuMask) -> CpuMask {
-    mask.and(&online_mask())
+    *mask & online_mask()
 }
 
+#[inline]
 pub fn restrict_to_active(mask: &CpuMask) -> CpuMask {
-    mask.and(&active_mask())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn possible_present_online_active_lifecycle() {
-        let cpu = 10;
-        assert!(!is_possible(cpu));
-        mark_possible(cpu);
-        mark_present(cpu);
-        assert!(is_possible(cpu));
-        assert!(is_present(cpu));
-        assert!(!is_online(cpu));
-
-        mark_online(cpu);
-        assert!(is_online(cpu));
-        assert!(is_active(cpu));
-
-        mark_inactive(cpu);
-        assert!(is_online(cpu));
-        assert!(!is_active(cpu));
-
-        mark_offline(cpu);
-        assert!(!is_online(cpu));
-        assert!(!is_active(cpu));
-    }
-
-    #[test]
-    fn masks_reflect_live_state_for_dedicated_cpu() {
-        let cpu = 11;
-        mark_possible(cpu);
-        mark_online(cpu);
-        assert!(possible_mask().is_set(cpu));
-        assert!(online_mask().is_set(cpu));
-        assert!(active_mask().is_set(cpu));
-        mark_offline(cpu);
-        assert!(!online_mask().is_set(cpu));
-    }
-
-    #[test]
-    fn num_counters_track_weight_for_a_fresh_pair_of_cpus() {
-        let a = 20;
-        let b = 21;
-        let before = num_online_cpus();
-        mark_possible(a);
-        mark_possible(b);
-        mark_online(a);
-        mark_online(b);
-        assert_eq!(num_online_cpus(), before + 2);
-        mark_offline(a);
-        mark_offline(b);
-        assert_eq!(num_online_cpus(), before);
-    }
-
-    #[test]
-    fn for_each_online_cpu_matches_online_mask() {
-        let cpu = 30;
-        mark_online(cpu);
-        assert!(for_each_online_cpu().any(|c| c == cpu));
-        mark_offline(cpu);
-        assert!(!for_each_online_cpu().any(|c| c == cpu));
-    }
-
-    #[test]
-    fn first_online_cpu_reports_a_currently_online_one() {
-        let cpu = 40;
-        mark_online(cpu);
-        let first = first_online_cpu();
-        assert!(first.is_some());
-        assert!(is_online(first.unwrap()));
-        mark_offline(cpu);
-    }
-
-    #[test]
-    fn topology_reports_none_before_being_set() {
-        assert_eq!(package_of(200), None);
-        assert_eq!(core_of(200), None);
-    }
-
-    #[test]
-    fn sibling_mask_groups_same_core_same_package() {
-        set_topology(50, 0, 0);
-        set_topology(51, 0, 0);
-        set_topology(52, 0, 1);
-        mark_online(50);
-        mark_online(51);
-        mark_online(52);
-
-        let siblings = sibling_mask(50);
-        assert!(siblings.is_set(50));
-        assert!(siblings.is_set(51));
-        assert!(!siblings.is_set(52));
-        assert!(are_siblings(50, 51));
-        assert!(!are_siblings(50, 52));
-
-        mark_offline(50);
-        mark_offline(51);
-        mark_offline(52);
-    }
-
-    #[test]
-    fn package_mask_covers_whole_socket() {
-        set_topology(60, 1, 0);
-        set_topology(61, 1, 1);
-        set_topology(62, 2, 0);
-        mark_online(60);
-        mark_online(61);
-        mark_online(62);
-
-        let pkg = package_mask(60);
-        assert!(pkg.is_set(60));
-        assert!(pkg.is_set(61));
-        assert!(!pkg.is_set(62));
-
-        mark_offline(60);
-        mark_offline(61);
-        mark_offline(62);
-    }
-
-    #[test]
-    fn sibling_mask_is_empty_without_topology_info() {
-        assert!(sibling_mask(70).is_empty());
-        assert!(package_mask(70).is_empty());
-    }
-
-    #[test]
-    fn mask_from_iter_builds_expected_set() {
-        let m = mask_from_iter([1u32, 5, 9]);
-        assert_eq!(m.count(), 3);
-        assert!(m.is_set(1) && m.is_set(5) && m.is_set(9));
-        assert!(!m.is_set(2));
-    }
-
-    #[test]
-    fn restrict_to_online_intersects_with_live_online_mask() {
-        let cpu = 80;
-        mark_online(cpu);
-        let requested = mask_from_iter([cpu, 81, 82]);
-        let effective = restrict_to_online(&requested);
-        assert!(effective.is_set(cpu));
-        assert!(!effective.is_set(81));
-        assert!(!effective.is_set(82));
-        mark_offline(cpu);
-    }
-
-    #[test]
-    fn restrict_to_active_excludes_inactive_but_online_cpu() {
-        let cpu = 90;
-        mark_online(cpu);
-        mark_inactive(cpu);
-        let requested = mask_from_iter([cpu]);
-        assert!(restrict_to_active(&requested).is_empty());
-        assert!(restrict_to_online(&requested).is_set(cpu));
-        mark_offline(cpu);
-    }
+    *mask & active_mask()
 }

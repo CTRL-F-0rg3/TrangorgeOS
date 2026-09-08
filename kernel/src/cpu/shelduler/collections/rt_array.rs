@@ -92,3 +92,4 @@ impl RtArray {
         ) + core::mem::offset_of!(TaskStruct, rt)) as *mut TaskStruct
     }
 }
+// dalej trzeba dużo kodu dopisać 

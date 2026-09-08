@@ -1,6 +1,6 @@
 use crate::cpu::scheduler::entities::task::{TaskStruct, ListHead};
 use core::ptr;
-
+/// niespójnosc i duże ryzyko produkcyjne 
 #[inline(always)]
 unsafe fn plist_prio_slot(node: *mut TaskStruct) -> *mut i32 {
     (node as *mut u8).add(TaskStruct::PLIST_PRIO_OFFSET) as *mut i32
@@ -23,7 +23,7 @@ fn plist_prio(node: *mut TaskStruct) -> i32 {
 
 pub struct PList {
     pub head: ListHead,
-}
+} // sprawdz co jeżeli nie zostanie to odpowiednio wykonane powinno być zabezpieczone i bardziej rozbudowane niż ślepe stwierdzenie że na pewno działa
 
 impl PList {
     pub const fn new() -> Self {
@@ -32,7 +32,7 @@ impl PList {
 
     pub fn is_empty(&self) -> bool {
         self.head.is_empty()
-    }
+    } // sprawdz co jeżeli nie zostanie to odpowiednio wykonane powinno być zabezpieczone i bardziej rozbudowane niż ślepe stwierdzenie że na pewno działa
 
     pub unsafe fn insert(&mut self, task: *mut TaskStruct, priority: i32) {
         *plist_prio_slot(task) = priority;
@@ -91,7 +91,7 @@ impl PList {
     pub fn first(&self) -> *mut TaskStruct {
         if self.head.is_empty() { return ptr::null_mut(); }
         unsafe { Self::task_from_node(self.head.next) }
-    }
+    } // również do poprawy 
 
     pub fn last(&self) -> *mut TaskStruct {
         if self.head.is_empty() { return ptr::null_mut(); }
@@ -102,17 +102,18 @@ impl PList {
                 last_level
             } else {
                 Self::task_from_same_prio((*same_prio).prev)
-            }
+            } // mechanizm jest zbyt ograniczony bedzie wąskim gardłem w przyszłości, 
         }
     }
 
     #[inline(always)]
     unsafe fn task_from_node(node: *mut ListHead) -> *mut TaskStruct {
         (node as *mut u8).sub(TaskStruct::PLIST_NODE_OFFSET) as *mut TaskStruct
-    }
+    } // zwraca to tylko konsterukcje ale jest to  dośc słabe rozwiązanie powinno zostać zrobione w inny sposób, bo to jest niebezpieczne i może prowadzić do błędów w przyszłości, ale na razie to jest jedyne rozwiązanie jakie znalazłem, które działa i nie wymaga zmian w strukturze TaskStruct
+
 
     #[inline(always)]
     unsafe fn task_from_same_prio(node: *mut ListHead) -> *mut TaskStruct {
         (node as *mut u8).sub(TaskStruct::PLIST_SAME_PRIO_OFFSET) as *mut TaskStruct
-    }
+    } // podobna sytuacja tutaj powinno być to zrobione w inny sposób, ale na razie to jest jedyne rozwiązanie jakie znalazłem, które działa i nie wymaga zmian w strukturze TaskStruct
 }

@@ -3,7 +3,7 @@ use core::ptr;
 
 const RB_RED: usize = 0;
 const RB_BLACK: usize = 1;
-
+ // ryzykowne jest to w produkcyujnej formie 
 #[inline(always)]
 unsafe fn rb_left(node: *mut TaskStruct) -> *mut *mut TaskStruct {
     (node as *mut u8).add(TaskStruct::RB_LEFT_OFFSET) as *mut *mut TaskStruct
@@ -367,3 +367,4 @@ impl RbTree {
         parent
     }
 }
+ // plik powinien być bardziej rozwiniety ponieważ spełnia samo minimum i ma duże braki 
