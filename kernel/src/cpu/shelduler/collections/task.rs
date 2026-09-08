@@ -87,6 +87,7 @@ impl PidAllocator {
     }
 }
 
+<<<<<<< HEAD
 pub const MAX_TASKS: usize = 65536;
 const TGID_SLOTS: usize = MAX_TASKS / 4;
 
@@ -94,6 +95,12 @@ pub struct TaskTable {
     pid_slots: [AtomicPtr<TaskStruct>; MAX_TASKS],
     tgid_slots: [AtomicPtr<TaskStruct>; TGID_SLOTS],
     count: AtomicU32,
+=======
+#[repr(C)]
+pub struct RtFields {
+    pub rt_priority: u32,
+    pub run_list: ListHead,
+>>>>>>> da9f7b9 (wip: opis zmian)
 }
 
 impl TaskTable {
@@ -210,9 +217,62 @@ unsafe fn task_from_list_node(node: *mut ListHead) -> *mut TaskStruct {
     (node as *mut u8).sub(offset) as *mut TaskStruct
 }
 
+<<<<<<< HEAD
 pub struct TaskIterator<'a> {
     table: &'a TaskTable,
     index: usize,
+=======
+impl TaskStruct {
+    pub const RB_LEFT_OFFSET: usize = core::mem::offset_of!(TaskStruct, rb_left);
+    pub const RB_RIGHT_OFFSET: usize = core::mem::offset_of!(TaskStruct, rb_right);
+    pub const RB_PARENT_COLOR_OFFSET: usize = core::mem::offset_of!(TaskStruct, rb_parent_color);
+
+    pub const PLIST_PRIO_OFFSET: usize = core::mem::offset_of!(TaskStruct, plist_prio);
+    pub const PLIST_SAME_PRIO_OFFSET: usize = core::mem::offset_of!(TaskStruct, plist_same_prio);
+    pub const PLIST_NODE_OFFSET: usize = core::mem::offset_of!(TaskStruct, plist_node);
+
+    pub const RT_OFFSET: usize = core::mem::offset_of!(TaskStruct, rt);
+    pub const RT_RUN_LIST_OFFSET: usize = Self::RT_OFFSET + core::mem::offset_of!(RtFields, run_list);
+
+    /// Odtwarza `*mut TaskStruct` z surowego wskaźnika na pole
+    /// znajdujące się pod `field_offset` od początku struktury.
+    ///
+    /// To jedyne miejsce w całym module, gdzie wykonywana jest
+    /// arytmetyka `container_of`. Wszystkie pliki (`rbtree.rs`,
+    /// `plist.rs`, `rt_array.rs`) muszą przechodzić przez tę funkcję
+    /// zamiast liczyć `.sub(OFFSET)` samodzielnie — dzięki temu:
+    /// 1. jest jedno miejsce do naprawy, gdy zmieni się layout,
+    /// 2. w trybie debug każdy round-trip jest weryfikowany
+    ///    (`debug_assert`), więc błędny offset wywala się głośno
+    ///    w testach, zamiast cicho psuć pamięć na produkcji.
+    ///
+    /// # Bezpieczeństwo
+    /// `field_ptr` musi realnie wskazywać na pole znajdujące się pod
+    /// `field_offset` bajtów od adresu żywego `TaskStruct`. Wywołujący
+    /// odpowiada za tę gwarancję (patrz dokumentacja funkcji w
+    /// `rbtree.rs`/`plist.rs`/`rt_array.rs`, które to wywołują).
+    #[inline(always)]
+    pub unsafe fn container_of<F>(field_ptr: *mut F, field_offset: usize) -> *mut TaskStruct {
+        debug_assert!(!field_ptr.is_null(), "container_of z null polem — błąd wywołującego");
+        let task_ptr = (field_ptr as *mut u8).sub(field_offset) as *mut TaskStruct;
+
+        #[cfg(debug_assertions)]
+        {
+            // Weryfikacja rundtripu: policz offset od odtworzonego
+            // TaskStruct z powrotem do pola i porównaj z tym, co
+            // podał wywołujący. Niezgodność oznacza błędny offset
+            // (np. literówkę przy dodawaniu nowego pola do TaskStruct
+            // bez aktualizacji stałych *_OFFSET powyżej).
+            let recomputed = (task_ptr as *mut u8).add(field_offset);
+            debug_assert_eq!(
+                recomputed, field_ptr as *mut u8,
+                "container_of: niespójny offset — sprawdź stałe *_OFFSET względem TaskStruct"
+            );
+        }
+
+        task_ptr
+    }
+>>>>>>> da9f7b9 (wip: opis zmian)
 }
 
 impl<'a> TaskIterator<'a> {

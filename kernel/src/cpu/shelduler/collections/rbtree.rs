@@ -3,7 +3,7 @@ use core::ptr;
 
 const RB_RED: usize = 0;
 const RB_BLACK: usize = 1;
- // ryzykowne jest to w produkcyujnej formie 
+
 #[inline(always)]
 unsafe fn rb_left(node: *mut TaskStruct) -> *mut *mut TaskStruct {
     (node as *mut u8).add(TaskStruct::RB_LEFT_OFFSET) as *mut *mut TaskStruct
@@ -74,6 +74,10 @@ impl RbTree {
         F: FnMut(*mut TaskStruct, *mut TaskStruct) -> bool,
     {
         if node.is_null() { return; }
+        debug_assert!(
+            !self.contains(node),
+            "insert: node jest już częścią tego drzewa (podwójny insert bez remove)"
+        );
 
         let mut parent: *mut TaskStruct = ptr::null_mut();
         let mut current = self.root;
@@ -219,6 +223,10 @@ impl RbTree {
 
     pub unsafe fn remove(&mut self, node: *mut TaskStruct) {
         if node.is_null() || self.root.is_null() { return; }
+        debug_assert!(
+            self.contains(node),
+            "remove: node nie należy do tego drzewa (usuwanie z cudzego runqueue?)"
+        );
 
         if self.leftmost == node {
             self.leftmost = if !(*rb_right(node)).is_null() {
@@ -366,5 +374,74 @@ impl RbTree {
         }
         parent
     }
+
+    /// Sprawdza, czy `node` jest aktualnie członkiem TEGO drzewa,
+    /// przechodząc od `node` do korzenia i porównując z `self.root`.
+    ///
+    /// O(log n) — nie ma tańszego sposobu bez dodatkowego pola
+    /// "właściciel drzewa" w węźle. Używane głównie w
+    /// `debug_assert!` przy `remove`, żeby wyłapać próbę usunięcia
+    /// węzła z cudzego drzewa (klasyczny błąd przy wielu
+    /// runqueue na różnych CPU, gdzie task został przeniesiony,
+    /// a stary wskaźnik do drzewa nie został zaktualizowany).
+    pub unsafe fn contains(&self, node: *mut TaskStruct) -> bool {
+        if node.is_null() || self.root.is_null() { return false; }
+        let mut cur = node;
+        while !rb_parent(cur).is_null() {
+            cur = rb_parent(cur);
+        }
+        cur == self.root
+    }
+
+    /// Waliduje inwarianty czerwono-czarnego drzewa:
+    /// 1. korzeń jest czarny,
+    /// 2. czerwony węzeł nie ma czerwonego dziecka,
+    /// 3. każda ścieżka od węzła do liścia ma tę samą liczbę
+    ///    czarnych węzłów (czarna wysokość),
+    /// 4. `leftmost` faktycznie wskazuje najmniejszy węzeł.
+    ///
+    /// To NIE jest funkcja do wywoływania na hot-pathcie (koszt
+    /// O(n)) — służy do `debug_assert!` w testach i po większych
+    /// zmianach w `insert_fixup`/`remove_fixup`, gdzie łatwo o
+    /// subtelny błąd psujący balans drzewa bez widocznego panicu.
+    /// Kolega słusznie zauważył, że plik "spełniał samo minimum" —
+    /// bez tej funkcji nie ma jak automatycznie zweryfikować, że
+    /// fixupy faktycznie utrzymują własności RB po serii insert/remove.
+    pub unsafe fn is_valid(&self) -> bool {
+        if self.root.is_null() {
+            return self.leftmost.is_null();
+        }
+        if rb_color(self.root) != RB_BLACK {
+            return false;
+        }
+        if Self::black_height(self.root).is_none() {
+            return false;
+        }
+        let computed_leftmost = Self::minimum(self.root);
+        computed_leftmost == self.leftmost
+    }
+
+    /// Zwraca czarną wysokość poddrzewa zakorzenionego w `node`,
+    /// albo `None`, jeśli inwarianty RB są złamane w tym poddrzewie
+    /// (czerwony węzeł z czerwonym dzieckiem, albo niezgodna czarna
+    /// wysokość między lewym a prawym poddrzewem).
+    unsafe fn black_height(node: *mut TaskStruct) -> Option<usize> {
+        if node.is_null() {
+            return Some(0);
+        }
+        if rb_is_red(node) {
+            let left = *rb_left(node);
+            let right = *rb_right(node);
+            if rb_is_red(left) || rb_is_red(right) {
+                return None;
+            }
+        }
+        let left_height = Self::black_height(*rb_left(node))?;
+        let right_height = Self::black_height(*rb_right(node))?;
+        if left_height != right_height {
+            return None;
+        }
+        let own = if rb_color(node) == RB_BLACK { 1 } else { 0 };
+        Some(left_height + own)
+    }
 }
- // plik powinien być bardziej rozwiniety ponieważ spełnia samo minimum i ma duże braki 
