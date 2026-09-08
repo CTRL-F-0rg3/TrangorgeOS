@@ -1,3 +1,6 @@
+  pub mod em;
+  pub mod placement;
+
 use core::sync::atomic::{AtomicU32, AtomicU64, AtomicBool, Ordering};
 use crate::cpu::scheduler::entities::task::{CpuMask, MAX_CPUS, SpinLock};
 use crate::cpu::scheduler::power::em::{GLOBAL_ENERGY_MODEL, PerformanceDomain};
