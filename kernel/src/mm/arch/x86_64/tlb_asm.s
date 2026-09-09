@@ -44,7 +44,7 @@ tlb_asm_wbinvd:
     ret
 
 .global tlb_asm_clflush
-.type tlb_asm_clflush, 
+.type tlb_asm_clflush, @function
 tlb_asm_clflush:
     clflush (%rdi)
     ret
