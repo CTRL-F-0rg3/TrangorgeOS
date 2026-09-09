@@ -132,7 +132,7 @@ pub unsafe fn calculate_imbalance(env: &mut LoadCalculation, busiest: *mut Sched
     env.dst_capacity = local_cap as u64;
 }
 
-pub unsafe fn classify_group(sg: *mut SchedGroup, local_rq: &RunQueue) -> GroupType {
+pub unsafe fn classify_group(sg: *mut SchedGroup) -> GroupType {
     if sg.is_null() { return GroupType::FullyIdle; }
     
     if (*sg).group_util == 0 {
@@ -154,22 +154,27 @@ pub unsafe fn classify_group(sg: *mut SchedGroup, local_rq: &RunQueue) -> GroupT
     GroupType::GroupAsym
 }
 
+/// Zwraca (najbardziej obciążoną, lokalną) grupę w domenie `sd`, widzianą
+/// z `local_cpu`. Wcześniej ta funkcja odpytywała `get_rq(local_cpu)` w
+/// KAŻDEJ iteracji pętli tylko po to, żeby ewentualnie przerwać całą
+/// funkcję (`local_rq` i tak nigdy nie było dalej używane) — sprawdzamy
+/// to raz, przed pętlą, i faktycznie z tego korzystamy.
 pub unsafe fn find_busiest_group(sd: *mut SchedDomain, local_cpu: u32, calc: &mut LoadCalculation) -> (*mut SchedGroup, *mut SchedGroup) {
+    let rq_ptr = crate::cpu::scheduler::runqueue::get_rq(local_cpu);
+    if rq_ptr.is_null() {
+        return (ptr::null_mut(), ptr::null_mut());
+    }
+
     let mut busiest: *mut SchedGroup = ptr::null_mut();
     let mut local: *mut SchedGroup = ptr::null_mut();
     let mut max_load = 0u64;
-    let mut local_load = u64::MAX;
-    
+
     let mut sg = (*sd).groups;
     while !sg.is_null() {
         update_group_capacity(sd, sg, local_cpu);
-        
-        let rq_ptr = crate::cpu::scheduler::runqueue::get_rq(local_cpu);
-        let local_rq = if !rq_ptr.is_null() { &*rq_ptr } else { return (ptr::null_mut(), ptr::null_mut()) };
-        
+
         if (*sg).group_mask.is_set(local_cpu) {
             local = sg;
-            local_load = (*sg).group_util as u64;
         } else {
             let load = (*sg).group_util as u64;
             if load > max_load {
@@ -177,17 +182,28 @@ pub unsafe fn find_busiest_group(sd: *mut SchedDomain, local_cpu: u32, calc: &mu
                 busiest = sg;
             }
         }
-        
+
         sg = (*sg).next;
     }
-    
+
     if !busiest.is_null() && !local.is_null() {
         calculate_imbalance(calc, busiest, local);
     }
-    
+
     (busiest, local)
 }
 
+/// Czy `local_cpu` jest tym, który powinien PRZEPROWADZIĆ balansowanie dla
+/// domeny `sd` w tej chwili. Bezczynny CPU zawsze balansuje (to jest
+/// `idle_balance`, tanie i pożądane). Zajęty CPU balansuje tylko jeśli:
+///   (a) minął minimalny odstęp od ostatniego balansowania tej domeny, i
+///   (b) jest NAJNIŻSZYM numerem CPU spośród online w zasięgu domeny —
+///       dokładnie jeden CPU na domenę powinien ponosić ten koszt, żeby
+///       wiele CPU jednocześnie nie próbowało balansować tej samej domeny.
+/// Wcześniej warunek (b) był zastąpiony arbitralnym `local_cpu % 4 == 0`,
+/// co nie miało związku z faktycznym zasięgiem domeny (np. domena SMT
+/// obejmująca CPU 5 i 6 nigdy nie zbalansowałaby się, bo żaden z nich nie
+/// dzieli się przez 4).
 pub unsafe fn should_we_balance(sd: *mut SchedDomain, local_cpu: u32) -> bool {
     let idle = crate::cpu::scheduler::runqueue::get_rq(local_cpu).map(|rq| unsafe { (*rq).is_idle() }).unwrap_or(true);
     
@@ -207,11 +223,11 @@ pub unsafe fn should_we_balance(sd: *mut SchedDomain, local_cpu: u32) -> bool {
     if now.saturating_sub(last_balance) < interval {
         return false;
     }
-    
-    let id = local_cpu % 4; 
-    if id != 0 { return false; }
-    
-    true
+
+    match (*sd).span.iter().find(|&c| crate::cpu::scheduler::cpumask::is_online(c)) {
+        Some(designated) => designated == local_cpu,
+        None => false,
+    }
 }
 
 #[cfg(test)]
@@ -230,7 +246,68 @@ mod tests {
         let mut sg = SchedGroup::empty();
         sg.group_util = 0;
         unsafe {
-            assert_eq!(classify_group(&mut sg, &RunQueue::new(0, ptr::null_mut())), GroupType::FullyIdle);
+            assert_eq!(classify_group(&mut sg), GroupType::FullyIdle);
         }
+    }
+
+    #[test]
+    fn group_classification_has_idle_beats_overloaded() {
+        let mut sg = SchedGroup::empty();
+        sg.group_util = 500;
+        sg.idle_cpus.set(3);
+        sg.group_overloaded = true;
+        unsafe {
+            assert_eq!(classify_group(&mut sg), GroupType::HasIdle);
+        }
+    }
+
+    #[test]
+    fn group_classification_overloaded_when_busy_and_full() {
+        let mut sg = SchedGroup::empty();
+        sg.group_util = 900;
+        sg.group_overloaded = true;
+        unsafe {
+            assert_eq!(classify_group(&mut sg), GroupType::GroupOverloaded);
+        }
+    }
+
+    #[test]
+    fn calculate_imbalance_moves_load_toward_equilibrium() {
+        let mut busiest = SchedGroup::empty();
+        busiest.group_capacity = 1024;
+        busiest.group_util = 900;
+
+        let mut local = SchedGroup::empty();
+        local.group_capacity = 1024;
+        local.group_util = 100;
+
+        let mut calc = LoadCalculation::empty();
+        unsafe {
+            calculate_imbalance(&mut calc, &mut busiest, &mut local);
+        }
+
+        // Równe pojemności, więc docelowo obie strony powinny dążyć do
+        // ~500 każda; nierównowaga to mniejsza z (nadwyżka busiest,
+        // deficyt local) = 400.
+        assert_eq!(calc.imbalance, 400);
+        assert_eq!(calc.src_util, 900);
+        assert_eq!(calc.dst_util, 100);
+    }
+
+    #[test]
+    fn calculate_imbalance_is_zero_for_balanced_groups() {
+        let mut busiest = SchedGroup::empty();
+        busiest.group_capacity = 1024;
+        busiest.group_util = 500;
+
+        let mut local = SchedGroup::empty();
+        local.group_capacity = 1024;
+        local.group_util = 500;
+
+        let mut calc = LoadCalculation::empty();
+        unsafe {
+            calculate_imbalance(&mut calc, &mut busiest, &mut local);
+        }
+        assert_eq!(calc.imbalance, 0);
     }
 }

@@ -3,6 +3,7 @@ use core::sync::atomic::{AtomicU32, AtomicBool, AtomicPtr, Ordering};
 use core::ptr;
 use crate::cpu::scheduler::entities::task::{TaskStruct, TaskState, SpinLock, TaskFlags, MAX_CPUS, CPU_NONE, SchedPolicy};
 use crate::cpu::scheduler::runqueue::RunQueue;
+use crate::cpu::scheduler::cpumask;
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,7 +53,7 @@ impl StopperWork {
     }
 }
 
-pub type StopperFn = unsafe fn(*mut core::ffi::c_void) -> u32;
+pub type StopperFn = unsafe extern "C" fn(*mut core::ffi::c_void) -> u32;
 
 #[repr(C)]
 pub struct CpuStopper {
@@ -294,5 +295,36 @@ mod tests {
         let reg = StopperRegistry::empty();
         assert!(reg.get(0).is_some());
         assert!(reg.get(MAX_CPUS as u32).is_none());
+    }
+
+    #[test]
+    fn queue_execute_and_wait_roundtrip_returns_value_from_function() {
+        let mut stopper = CpuStopper::empty();
+        stopper.init(7);
+        assert!(stopper.queue_work(dummy_stopper_fn, ptr::null_mut()));
+        assert_eq!(stopper.work.get_state(), StopperState::Preparing);
+
+        stopper.execute_work();
+        assert_eq!(stopper.work.get_state(), StopperState::Done);
+
+        let ret = stopper.wait_for_completion();
+        assert_eq!(ret, 0);
+        assert_eq!(stopper.work.get_state(), StopperState::Idle);
+    }
+
+    #[test]
+    fn queue_work_rejects_a_second_job_while_busy() {
+        let mut stopper = CpuStopper::empty();
+        stopper.init(7);
+        assert!(stopper.queue_work(dummy_stopper_fn, ptr::null_mut()));
+        assert!(!stopper.queue_work(dummy_stopper_fn, ptr::null_mut()));
+    }
+
+    #[test]
+    fn execute_work_without_queued_job_is_a_noop() {
+        let mut stopper = CpuStopper::empty();
+        stopper.init(7);
+        stopper.execute_work();
+        assert_eq!(stopper.work.get_state(), StopperState::Idle);
     }
 }

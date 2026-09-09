@@ -13,8 +13,9 @@ pub enum IpiType {
     NmiBacktrace = 4,
 }
 
-pub static IPI_RESCHED_COUNT: [AtomicU64; MAX_CPUS] = [const { AtomicU64::new(0) }; MAX_CPUS];
-pub static IPI_CALL_COUNT: [AtomicU64; MAX_CPUS] = [const { AtomicU64::new(0) }; MAX_CPUS];
+pub const IPI_COUNTER_INIT: AtomicU64 = AtomicU64::new(0);
+pub static IPI_RESCHED_COUNT: [AtomicU64; MAX_CPUS] = [IPI_COUNTER_INIT; MAX_CPUS];
+pub static IPI_CALL_COUNT: [AtomicU64; MAX_CPUS] = [IPI_COUNTER_INIT; MAX_CPUS];
 
 pub unsafe fn send_resched_ipi(cpu: u32) {
     if cpu as usize >= MAX_CPUS { return; }
@@ -45,11 +46,12 @@ unsafe fn arch_send_ipi(cpu: u32, ipi_type: IpiType) {
 pub unsafe fn handle_ipi_entry(cpu: u32, ipi_type: IpiType) {
     match ipi_type {
         IpiType::Resched => {
-            let rq_ptr = crate::cpu::scheduler::runqueue::get_rq(cpu);
-            if !rq_ptr.is_null() {
-                let rq = &mut *rq_ptr;
-                rq.check_preempt_curr(rq.current());
-            }
+            // Flaga PF_NEED_RESCHED została już ustawiona przez wysyłającego
+            // (patrz `send_resched_ipi`) - to IPI tylko przerywa `hlt`/pętlę
+            // idle na docelowym CPU, żeby ścieżka powrotu z przerwania
+            // zauważyła `needs_resched()` i wywołała `schedule()`. Wcześniej
+            // był tu błędny `rq.check_preempt_curr(rq.current())`, czyli
+            // porównanie bieżącego zadania z samym sobą - usunięte.
         }
         IpiType::MigrationStop => {
             stopper::cpu_stopper_irq_handler(cpu);
@@ -62,6 +64,37 @@ pub unsafe fn handle_ipi_entry(cpu: u32, ipi_type: IpiType) {
         }
         IpiType::NmiBacktrace => {
             // nmi_cpu_backtrace()
+        }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migration_stop_ipi_increments_dedicated_counter() {
+        let cpu = 60usize;
+        let before = IPI_CALL_COUNT[cpu].load(Ordering::Relaxed);
+        unsafe {
+            send_migration_stop_ipi(cpu as u32);
+        }
+        assert_eq!(IPI_CALL_COUNT[cpu].load(Ordering::Relaxed), before + 1);
+    }
+
+    #[test]
+    fn out_of_range_cpu_is_a_safe_noop() {
+        unsafe {
+            send_migration_stop_ipi(MAX_CPUS as u32 + 5);
+        }
+    }
+
+    #[test]
+    fn handle_ipi_entry_ignores_unimplemented_types_without_panicking() {
+        unsafe {
+            handle_ipi_entry(0, IpiType::Resched);
+            handle_ipi_entry(0, IpiType::CallFunction);
+            handle_ipi_entry(0, IpiType::TlbShootdown);
+            handle_ipi_entry(0, IpiType::NmiBacktrace);
         }
     }
 }
