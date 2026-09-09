@@ -1,3 +1,4 @@
+#![allow(unused_unsafe)]
 #![no_std]
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
@@ -112,8 +113,8 @@ static TESTS: &[Test] = &[
         func: caps::self_test,
     },
     Test {
-        module: "shelduler",
-        func: cpu::shelduler::self_test,
+        module: "schelduler",
+        func: cpu::schelduler::self_test,
     },
 ];
 
@@ -124,8 +125,8 @@ static TESTS: &[Test] = &[
         func: mm::self_test,
     },
     Test {
-        module: "shelduler",
-        func: cpu::shelduler::self_test,
+        module: "schelduler",
+        func: cpu::schelduler::self_test,
     },
         Test {
         module: "caps",
