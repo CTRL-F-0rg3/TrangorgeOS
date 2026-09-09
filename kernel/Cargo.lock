@@ -39,6 +39,7 @@ checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
 name = "kernel"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "bootloader",
  "lazy_static",
  "pic8259",

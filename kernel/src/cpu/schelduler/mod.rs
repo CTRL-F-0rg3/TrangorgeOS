@@ -5,7 +5,9 @@ pub mod cpumask;
 pub mod smp;
 pub mod power;
 pub mod tests;
-
+extern crate alloc;
+use alloc::format;
+// ... reszta twoich importów
 use core::sync::atomic::{AtomicU32, Ordering};
 use crate::cpu::scheduler::runqueue::RunQueue;
 use crate::cpu::scheduler::entities::task::{TaskStruct, MAX_CPUS};
