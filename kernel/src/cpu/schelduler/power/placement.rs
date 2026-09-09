@@ -279,15 +279,59 @@ pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_snap: &mut DomainSnapshot, c
 }
 
 pub unsafe fn evaluate_domain(ctx: &mut EnergyCtx, dom_idx: usize) {
-    let dom_snap = &mut ctx.env[dom_idx];
-    if dom_snap.is_overutilized {
+    let is_overutilized = ctx.env[dom_idx].is_overutilized;
+    let nr_cpus = ctx.env[dom_idx].nr_cpus;
+    
+    if is_overutilized {
         return;
     }
-    for i in 0..dom_snap.nr_cpus as usize {
-        evaluate_cpu(ctx, dom_snap, i);
+    
+    for i in 0..nr_cpus as usize {
+        evaluate_cpu(ctx, dom_idx, i);
     }
 }
 
+pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_idx: usize, cpu_idx: usize) {
+    let cpu_snap = &ctx.env[dom_idx].cpus[cpu_idx];
+    let cpu = cpu_snap.cpu;
+    let task_util = ctx.task_util_est;
+    
+    if !task_fits_capacity(task_util, cpu_snap.eff_capacity) {
+        return;
+    }
+    
+    if cpu_overutilized(cpu_snap.util, cpu_snap.eff_capacity) {
+        return;
+    }
+    
+    let thermal_penalty = if cpu_snap.thermal_pressure > 500 {
+        cpu_snap.thermal_pressure / 10
+    } else {
+        0
+    };
+    
+    let mut energy = compute_energy_delta(ctx, dom_idx, cpu, task_util);
+    energy = energy.saturating_add(thermal_penalty);
+    
+    if cpu == ctx.prev_cpu {
+        if energy > EAS_CACHE_AFFINITY_BONUS {
+            energy -= EAS_CACHE_AFFINITY_BONUS;
+        } else {
+            energy = 0;
+        }
+    }
+    
+    if energy < ctx.env[dom_idx].min_energy {
+        ctx.env[dom_idx].min_energy = energy;
+        ctx.env[dom_idx].best_cpu = cpu;
+    }
+}
+
+pub unsafe fn compute_energy_delta(ctx: &EnergyCtx, dom_idx: usize, target_cpu: u32, task_util: u32) -> u32 {
+    let em = &GLOBAL_ENERGY_MODEL;
+    let pd = &em.domains[dom_idx];
+    let dom_snap = &ctx.env[dom_idx];
+    
 pub unsafe fn find_best_domain(ctx: &EnergyCtx) -> (u32, u32) {
     let mut best_pd = u32::MAX;
     let mut min_energy = u32::MAX;

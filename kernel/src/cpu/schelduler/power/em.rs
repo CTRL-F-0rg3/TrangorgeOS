@@ -229,7 +229,7 @@ impl PerformanceDomain {
         } else {
             1024
         };
-        let static_power = (self.leakage_coefficient as u64 * temp_factor) / 1024;
+        let static_power = (self.leakage_coefficient as u64 * temp_factor as u64) / 1024;
         let total = (dyn_power + static_power) * self.power_multiplier as u64 / 1024;
         total.min(EM_MAX_POWER as u64) as u32
     }
@@ -242,9 +242,9 @@ impl PerformanceDomain {
         let dt = delta_time_ms as u64;
         let power = power_mw as u64;
         let temp_diff = current_temp as i64 - ambient as i64;
-        let heat_flow = (temp_diff * 1000) / thermal_r.max(1);
-        let net_heat = (power as i64 * dt) - heat_flow;
-        let temp_delta = (net_heat * 1000) / thermal_c.max(1);
+        let heat_flow = (temp_diff * 1000) / (thermal_r.max(1) as i64);
+        let net_heat = ((power as i64) * (dt as i64)) - heat_flow;
+        let temp_delta = (net_heat * 1000) / (thermal_c.max(1) as i64);
         let new_temp = (current_temp as i64 + temp_delta).max(ambient as i64).min(self.max_temp_millideg as i64);
         self.current_temp_millideg.store(new_temp as u32, Ordering::Relaxed);
     }
