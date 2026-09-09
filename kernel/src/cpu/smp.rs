@@ -1,6 +1,6 @@
 use super::acpi;
 use super::lapic;
-use super::shelduler;
+use super::schelduler;
 use super::trampoline;
 use crate::println;
 use crate::testing::TestResult;
@@ -144,7 +144,7 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let aps: Vec<u32> = enabled.into_iter().filter(|&id| id != bsp_id).collect();
 
     TOTAL_CPUS.store(aps.len() as u32 + 1, Ordering::SeqCst);
-    shelduler::init(TOTAL_CPUS.load(Ordering::Acquire) as usize);
+    crate::cpu::scheduler::init(TOTAL_CPUS.load(Ordering::Acquire) as usize);
 
     if aps.is_empty() {
         println!("[cpu] single CPU (BSP only), APIC id {}", bsp_id);

@@ -9,7 +9,7 @@ mod smp;
 #[cfg(target_arch = "x86_64")]
 pub mod trampoline;
 
-pub mod schelduler;
+pub mod scheduler;
 
 #[cfg(target_arch = "x86_64")]
 pub use smp::{init, poweroff, reboot, self_test};

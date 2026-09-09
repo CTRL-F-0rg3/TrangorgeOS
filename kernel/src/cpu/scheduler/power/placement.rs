@@ -26,18 +26,7 @@ pub struct CpuSnapshot {
 
 impl CpuSnapshot {
     pub const fn empty() -> Self {
-        Self {
-            cpu: CPU_NONE,
-            pd_idx: u32::MAX,
-            eff_capacity: 0,
-            max_capacity: 0,
-            util: 0,
-            nr_running: 0,
-            is_big: false,
-            is_little: false,
-            shares_cache_with_prev: false,
-            thermal_pressure: 0,
-        }
+        Self { cpu: CPU_NONE, pd_idx: u32::MAX, eff_capacity: 0, max_capacity: 0, util: 0, nr_running: 0, is_big: false, is_little: false, shares_cache_with_prev: false, thermal_pressure: 0 }
     }
 }
 
@@ -57,16 +46,7 @@ pub struct DomainSnapshot {
 impl DomainSnapshot {
     pub const fn empty() -> Self {
         const EMPTY_CPU: CpuSnapshot = CpuSnapshot::empty();
-        Self {
-            pd_idx: u32::MAX,
-            cpus: [EMPTY_CPU; MAX_CPUS],
-            nr_cpus: 0,
-            total_util: 0,
-            max_eff_capacity: 0,
-            min_energy: u32::MAX,
-            best_cpu: CPU_NONE,
-            is_overutilized: false,
-        }
+        Self { pd_idx: u32::MAX, cpus: [EMPTY_CPU; MAX_CPUS], nr_cpus: 0, total_util: 0, max_eff_capacity: 0, min_energy: u32::MAX, best_cpu: CPU_NONE, is_overutilized: false }
     }
 }
 
@@ -88,19 +68,7 @@ pub struct EnergyCtx {
 impl EnergyCtx {
     pub const fn empty() -> Self {
         const EMPTY_DOM: DomainSnapshot = DomainSnapshot::empty();
-        Self {
-            task: core::ptr::null_mut(),
-            task_util: 0,
-            task_util_est: 0,
-            target_cpu: CPU_NONE,
-            prev_cpu: CPU_NONE,
-            env: [EMPTY_DOM; 8],
-            nr_domains: 0,
-            skip_greedy: false,
-            sync_wake: false,
-            uclamp_min: 0,
-            uclamp_max: 1024,
-        }
+        Self { task: core::ptr::null_mut(), task_util: 0, task_util_est: 0, target_cpu: CPU_NONE, prev_cpu: CPU_NONE, env: [EMPTY_DOM; 8], nr_domains: 0, skip_greedy: false, sync_wake: false, uclamp_min: 0, uclamp_max: 1024 }
     }
 }
 
@@ -116,13 +84,7 @@ pub struct PlacementResult {
 
 impl PlacementResult {
     pub const fn empty() -> Self {
-        Self {
-            best_cpu: CPU_NONE,
-            best_energy: u32::MAX,
-            best_pd_idx: u32::MAX,
-            fallback_cpu: CPU_NONE,
-            reason: 0,
-        }
+        Self { best_cpu: CPU_NONE, best_energy: u32::MAX, best_pd_idx: u32::MAX, fallback_cpu: CPU_NONE, reason: 0 }
     }
 }
 
@@ -137,8 +99,8 @@ pub unsafe fn init_energy_ctx(task: *mut TaskStruct, prev_cpu: u32) -> EnergyCtx
     ctx.task = task;
     ctx.prev_cpu = prev_cpu;
     if !task.is_null() {
-        ctx.task_util = (*task).se.util_avg as u32;
-        ctx.task_util_est = core::cmp::max((*task).se.util_avg as u32, (*task).se.load_avg as u32);
+        ctx.task_util = (*task).se.load.util_avg as u32;
+        ctx.task_util_est = core::cmp::max((*task).se.load.util_avg as u32, (*task).se.load.load_avg as u32);
         ctx.uclamp_min = 0;
         ctx.uclamp_max = 1024;
         ctx.target_cpu = prev_cpu;
@@ -161,9 +123,7 @@ pub unsafe fn build_domain_snapshots(ctx: &mut EnergyCtx, rq_registry: &[*mut Ru
         dom_snap.best_cpu = CPU_NONE;
 
         for cpu in pd.cpus.iter() {
-            if cpu as usize >= MAX_CPUS {
-                continue;
-            }
+            if cpu as usize >= MAX_CPUS { continue; }
             let rq_ptr = match rq_registry.get(cpu as usize) {
                 Some(&p) if !p.is_null() => p,
                 _ => continue,
@@ -199,26 +159,17 @@ pub unsafe fn cpu_overutilized(cpu_util: u32, cpu_cap: u32) -> bool {
     cpu_util > (cpu_cap * EAS_PACKING_THRESHOLD / 100)
 }
 
-pub unsafe fn cpu_underutilized(cpu_util: u32, cpu_cap: u32) -> bool {
-    cpu_util < (cpu_cap * EAS_MAX_IDLE_CPU_PERCENT / 100)
-}
-
-pub unsafe fn compute_energy_delta(ctx: &EnergyCtx, dom_snap: &DomainSnapshot, target_cpu: u32, task_util: u32) -> u32 {
+pub unsafe fn compute_energy_delta(ctx: &EnergyCtx, dom_idx: usize, target_cpu: u32, task_util: u32) -> u32 {
     let em = &GLOBAL_ENERGY_MODEL;
-    let pd = &em.domains[dom_snap.pd_idx as usize];
+    let pd = &em.domains[dom_idx];
+    let dom_snap = &ctx.env[dom_idx];
     
     let mut base_util = 0u32;
-    let mut base_cap = pd.get_effective_capacity();
-    let mut new_util = 0u32;
+    let base_cap = pd.get_effective_capacity();
     
     for i in 0..dom_snap.nr_cpus as usize {
         let cpu_snap = &dom_snap.cpus[i];
         base_util = base_util.saturating_add(cpu_snap.util);
-        if cpu_snap.cpu == target_cpu {
-            new_util = cpu_snap.util.saturating_add(task_util);
-        } else {
-            new_util = cpu_snap.util;
-        }
     }
     
     let base_state = match pd.find_state_for_capacity((base_util as u64 * base_cap as u64 / 1024) as u32) {
@@ -235,60 +186,7 @@ pub unsafe fn compute_energy_delta(ctx: &EnergyCtx, dom_snap: &DomainSnapshot, t
     let base_energy = (base_state.power as u64 * base_util as u64) / 1024;
     let new_energy = (new_state.power as u64 * total_util_with_task as u64) / 1024;
     
-    if new_energy < base_energy {
-        0
-    } else {
-        (new_energy - base_energy).min(u32::MAX as u64) as u32
-    }
-}
-
-pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_snap: &mut DomainSnapshot, cpu_idx: usize) {
-    let cpu_snap = &dom_snap.cpus[cpu_idx];
-    let cpu = cpu_snap.cpu;
-    let task_util = ctx.task_util_est;
-    
-    if !task_fits_capacity(task_util, cpu_snap.eff_capacity) {
-        return;
-    }
-    
-    if cpu_overutilized(cpu_snap.util, cpu_snap.eff_capacity) {
-        return;
-    }
-    
-    let thermal_penalty = if cpu_snap.thermal_pressure > 500 {
-        cpu_snap.thermal_pressure / 10
-    } else {
-        0
-    };
-    
-    let mut energy = compute_energy_delta(ctx, dom_snap, cpu, task_util);
-    energy = energy.saturating_add(thermal_penalty);
-    
-    if cpu == ctx.prev_cpu {
-        if energy > EAS_CACHE_AFFINITY_BONUS {
-            energy -= EAS_CACHE_AFFINITY_BONUS;
-        } else {
-            energy = 0;
-        }
-    }
-    
-    if energy < dom_snap.min_energy {
-        dom_snap.min_energy = energy;
-        dom_snap.best_cpu = cpu;
-    }
-}
-
-pub unsafe fn evaluate_domain(ctx: &mut EnergyCtx, dom_idx: usize) {
-    let is_overutilized = ctx.env[dom_idx].is_overutilized;
-    let nr_cpus = ctx.env[dom_idx].nr_cpus;
-    
-    if is_overutilized {
-        return;
-    }
-    
-    for i in 0..nr_cpus as usize {
-        evaluate_cpu(ctx, dom_idx, i);
-    }
+    if new_energy < base_energy { 0 } else { (new_energy - base_energy).min(u32::MAX as u64) as u32 }
 }
 
 pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_idx: usize, cpu_idx: usize) {
@@ -296,29 +194,15 @@ pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_idx: usize, cpu_idx: usize) 
     let cpu = cpu_snap.cpu;
     let task_util = ctx.task_util_est;
     
-    if !task_fits_capacity(task_util, cpu_snap.eff_capacity) {
-        return;
-    }
+    if !task_fits_capacity(task_util, cpu_snap.eff_capacity) { return; }
+    if cpu_overutilized(cpu_snap.util, cpu_snap.eff_capacity) { return; }
     
-    if cpu_overutilized(cpu_snap.util, cpu_snap.eff_capacity) {
-        return;
-    }
-    
-    let thermal_penalty = if cpu_snap.thermal_pressure > 500 {
-        cpu_snap.thermal_pressure / 10
-    } else {
-        0
-    };
-    
+    let thermal_penalty = if cpu_snap.thermal_pressure > 500 { cpu_snap.thermal_pressure / 10 } else { 0 };
     let mut energy = compute_energy_delta(ctx, dom_idx, cpu, task_util);
     energy = energy.saturating_add(thermal_penalty);
     
     if cpu == ctx.prev_cpu {
-        if energy > EAS_CACHE_AFFINITY_BONUS {
-            energy -= EAS_CACHE_AFFINITY_BONUS;
-        } else {
-            energy = 0;
-        }
+        if energy > EAS_CACHE_AFFINITY_BONUS { energy -= EAS_CACHE_AFFINITY_BONUS; } else { energy = 0; }
     }
     
     if energy < ctx.env[dom_idx].min_energy {
@@ -327,11 +211,15 @@ pub unsafe fn evaluate_cpu(ctx: &mut EnergyCtx, dom_idx: usize, cpu_idx: usize) 
     }
 }
 
-pub unsafe fn compute_energy_delta(ctx: &EnergyCtx, dom_idx: usize, target_cpu: u32, task_util: u32) -> u32 {
-    let em = &GLOBAL_ENERGY_MODEL;
-    let pd = &em.domains[dom_idx];
-    let dom_snap = &ctx.env[dom_idx];
-    
+pub unsafe fn evaluate_domain(ctx: &mut EnergyCtx, dom_idx: usize) {
+    let is_overutilized = ctx.env[dom_idx].is_overutilized;
+    let nr_cpus = ctx.env[dom_idx].nr_cpus;
+    if is_overutilized { return; }
+    for i in 0..nr_cpus as usize {
+        evaluate_cpu(ctx, dom_idx, i);
+    }
+}
+
 pub unsafe fn find_best_domain(ctx: &EnergyCtx) -> (u32, u32) {
     let mut best_pd = u32::MAX;
     let mut min_energy = u32::MAX;
@@ -362,31 +250,23 @@ pub unsafe fn find_fallback_cpu(ctx: &EnergyCtx, rq_registry: &[*mut RunQueue]) 
             }
         }
     }
-    
     if best_cpu == CPU_NONE {
         let em = &GLOBAL_ENERGY_MODEL;
         best_cpu = em.global_max_capacity;
     }
-    
     best_cpu
 }
 
 pub unsafe fn find_energy_efficient_cpu(task: *mut TaskStruct, prev_cpu: u32, rq_registry: &[*mut RunQueue]) -> PlacementResult {
     let mut result = PlacementResult::empty();
-    if task.is_null() {
-        result.reason = REASON_FALLBACK;
-        return result;
-    }
+    if task.is_null() { result.reason = REASON_FALLBACK; return result; }
     
     let mut ctx = init_energy_ctx(task, prev_cpu);
     build_domain_snapshots(&mut ctx, rq_registry);
     
-    for i in 0..ctx.nr_domains as usize {
-        evaluate_domain(&mut ctx, i);
-    }
+    for i in 0..ctx.nr_domains as usize { evaluate_domain(&mut ctx, i); }
     
     let (best_pd, min_energy) = find_best_domain(&ctx);
-    
     if best_pd != u32::MAX {
         result.best_pd_idx = best_pd;
         result.best_energy = min_energy;
@@ -396,28 +276,21 @@ pub unsafe fn find_energy_efficient_cpu(task: *mut TaskStruct, prev_cpu: u32, rq
         result.best_cpu = find_fallback_cpu(&ctx, rq_registry);
         result.reason = REASON_CAPACITY;
     }
-    
     result.fallback_cpu = find_fallback_cpu(&ctx, rq_registry);
     result
 }
 
 pub unsafe fn select_target_cpu(task: *mut TaskStruct, prev_cpu: u32, rq_registry: &[*mut RunQueue]) -> u32 {
     let res = find_energy_efficient_cpu(task, prev_cpu, rq_registry);
-    if res.best_cpu != CPU_NONE {
-        res.best_cpu
-    } else if res.fallback_cpu != CPU_NONE {
-        res.fallback_cpu
-    } else {
-        prev_cpu
-    }
+    if res.best_cpu != CPU_NONE { res.best_cpu } 
+    else if res.fallback_cpu != CPU_NONE { res.fallback_cpu } 
+    else { prev_cpu }
 }
 
 pub unsafe fn check_preempt_eas(curr: *mut TaskStruct, cand: *mut TaskStruct, rq: &RunQueue) -> bool {
-    if curr.is_null() || cand.is_null() {
-        return false;
-    }
-    let curr_util = (*curr).se.util_avg as u32;
-    let cand_util = (*cand).se.util_avg as u32;
+    if curr.is_null() || cand.is_null() { return false; }
+    let curr_util = (*curr).se.load.util_avg as u32;
+    let cand_util = (*cand).se.load.util_avg as u32;
     let cpu = rq.cpu;
     
     let em = &GLOBAL_ENERGY_MODEL;
@@ -429,31 +302,17 @@ pub unsafe fn check_preempt_eas(curr: *mut TaskStruct, cand: *mut TaskStruct, rq
     let curr_energy = em.compute_task_energy_on_cpu(curr_util, cpu);
     let cand_energy = em.compute_task_energy_on_cpu(cand_util, cpu);
     
-    if cand_energy < curr_energy {
-        return true;
-    }
-    
-    if (*cand).se.vruntime < (*curr).se.vruntime {
-        return true;
-    }
-    
+    if cand_energy < curr_energy { return true; }
+    if (*cand).se.vruntime < (*curr).se.vruntime { return true; }
     false
 }
 
 pub unsafe fn update_cpu_util_for_eas(rq: &mut RunQueue, task: *mut TaskStruct, enqueue: bool) {
-    if task.is_null() {
-        return;
-    }
-    let util = (*task).se.util_avg as u32;
+    if task.is_null() { return; }
+    let util = (*task).se.load.util_avg as u32;
     if enqueue {
         rq.nr_running.fetch_add(util, Ordering::Relaxed);
     } else {
         rq.nr_running.fetch_sub(util, Ordering::Relaxed);
     }
-}
-
-pub unsafe fn dump_placement_result(res: &PlacementResult) {
-    let _ = res.best_cpu;
-    let _ = res.best_energy;
-    let _ = res.reason;
 }

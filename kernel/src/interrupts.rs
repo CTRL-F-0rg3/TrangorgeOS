@@ -9,16 +9,16 @@ use x86_64::VirtAddr;
 use x86_64::registers::control::Cr2;
 use x86_64::instructions::port::Port;
 use crate::cpu::lapic;
-use crate::cpu::shelduler;
+use crate::cpu::schelduler;
 
-
+// Interrupts module
 pub static BREAKPOINT_HITS: AtomicU64 = AtomicU64::new(0);
 pub static TIMER_TICKS: AtomicU64 = AtomicU64::new(0);
 pub static KEYBOARD_HITS: AtomicU64 = AtomicU64::new(0);
 pub static IPI_HITS: AtomicU64 = AtomicU64::new(0);
 
 pub const IPI_VECTOR: u8 = 0x30;
-
+// This is a test to ensure that the IDT is loaded correctly and that the timer IRQ is working.
 crate::test_module!({
     let hits_before = BREAKPOINT_HITS.load(Ordering::SeqCst);
     x86_64::instructions::interrupts::int3();
@@ -39,7 +39,7 @@ crate::test_module!({
 
     Ok("breakpoint counted + timer IRQ confirmed live")
 });
-
+// Initialize the Programmable Interrupt Controller (PIC)
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 
@@ -60,10 +60,10 @@ impl InterruptIndex {
 }
 extern "x86-interrupt" 
 fn breakpoint_handler(stack_frame: InterruptStackFrame) {
-    BREAKPOINT_HITS.fetch_add(1, Ordering::SeqCst);
+    BREAKPOINT_HITS.fetch_add(1, Ordering::SeqCst); // dlatego systemy operaCYcyjne są takie trudne do napisania, bo trzeba pamiętać o wszystkim, a nie tylko o tym co się robi w danej chwili 
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
-
+// Initialize the Interrupt Descriptor Table (IDT)
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
@@ -84,13 +84,17 @@ lazy_static! {
 pub fn init_idt() {
     IDT.load();
 }
-
+// Interrupt handlers
 extern "x86-interrupt" fn page_fault_handler(
     stack_frame: InterruptStackFrame,
     error_code: PageFaultErrorCode,
 ) {
     use x86_64::registers::control::Cr2;
 
+    // Route through panic! (and therefore the panic screen) instead of
+    // println!() + hlt_loop() directly — previously a page fault only ever
+    // wrote into the invisible VGA text buffer, then halted, so it looked
+    // exactly like a silent freeze on whatever was already on screen.
     panic!(
         "EXCEPTION: PAGE FAULT\naccessed address: {:#x}\nerror code: {:?}\n{:#?}",
         Cr2::read_raw(),
@@ -107,11 +111,15 @@ extern "x86-interrupt" fn double_fault_handler(
 }
 
 
-
+// Interrupt handlers
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);
-
-    let _ = crate::cpu::shelduler::tick(0, 1_000_000);
+    unsafe {
+        let _ = crate::cpu::schelduler::tick(0, 1_000_000);
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+    }
+        
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

@@ -305,21 +305,23 @@ impl EnergyModel {
     }
 
     pub fn register_domain(&mut self, pd: PerformanceDomain) -> bool {
-        if self.nr_domains as usize >= MAX_PD_COUNT {
-            return false;
-        }
+        if self.nr_domains as usize >= MAX_PD_COUNT { return false; }
         let idx = self.nr_domains as usize;
-        self.domains[idx] = pd;
-        self.domains[idx].id = idx as u32;
-        for cpu in pd.cpus.iter() {
-            self.cpu_to_pd[cpu as usize] = idx as u32;
-        }
+        
         if pd.max_capacity > self.global_max_capacity {
             self.global_max_capacity = pd.max_capacity;
         }
         if pd.min_capacity < self.global_min_capacity {
             self.global_min_capacity = pd.min_capacity;
         }
+        
+        self.domains[idx] = pd; // Przeniesienie następuje tutaj, po odczytaniu wartości
+        self.domains[idx].id = idx as u32;
+        
+        for cpu in self.domains[idx].cpus.iter() {
+            self.cpu_to_pd[cpu as usize] = idx as u32;
+        }
+        
         self.nr_domains += 1;
         true
     }

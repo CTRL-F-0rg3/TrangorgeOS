@@ -18,12 +18,13 @@ pub enum StopperState {
 #[repr(C)]
 pub struct StopperWork {
     pub state: AtomicU32,
-    pub fn_ptr: AtomicPtr<()>,
-    pub arg: AtomicPtr<()>,
+    pub fn_ptr: AtomicPtr<core::ffi::c_void>, // ZMIENIONE
+    pub arg: AtomicPtr<core::ffi::c_void>,    // ZMIENIONE
     pub ret: AtomicU32,
     pub started: AtomicBool,
     pub completed: AtomicBool,
-}
+} pub completed: AtomicBool,
+
 
 impl StopperWork {
     pub const fn empty() -> Self {

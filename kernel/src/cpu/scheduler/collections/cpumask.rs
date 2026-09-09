@@ -320,7 +320,7 @@ pub mod task {
                 (Self::Stopped, Self::Runnable) |
                 (Self::Zombie, Self::Dead) |
                 (Self::Idle, Self::Idle) |
-                (s, n) if s == n
+                (s, n) if (s as u8) == (n as u8)
             )
         }
 

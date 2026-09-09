@@ -2144,3 +2144,16 @@ mod tests {
         assert_eq!(rt.queued_prio, MAX_RT_PRIO as u32);
     }
 }
+
+impl TaskStruct {
+    pub const PLIST_PRIO_OFFSET: usize = core::mem::offset_of!(TaskStruct, prio);
+    pub const PLIST_SAME_PRIO_OFFSET: usize = core::mem::offset_of!(TaskStruct, thread_group);
+    pub const PLIST_NODE_OFFSET: usize = core::mem::offset_of!(TaskStruct, tasks);
+    pub const RB_LEFT_OFFSET: usize = core::mem::offset_of!(TaskStruct, se.rb_left);
+    pub const RB_RIGHT_OFFSET: usize = core::mem::offset_of!(TaskStruct, se.rb_right);
+    pub const RB_PARENT_COLOR_OFFSET: usize = core::mem::offset_of!(TaskStruct, se.rb_parent_color);
+
+    pub unsafe fn container_of(ptr: *mut u8, offset: usize) -> *mut TaskStruct {
+        (ptr as usize - offset) as *mut TaskStruct
+    }
+}
