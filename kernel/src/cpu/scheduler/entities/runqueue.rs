@@ -798,7 +798,7 @@ impl RqRt {
                 if front.is_null() || core::ptr::eq(front, head) {
                     ptr::null_mut()
                 } else {
-                    let rt_entity = front as *mut crate::cpu::scheduler::entities::task::RtSchedEntity;
+                    let rt_entity = front as *mut super::task::RtSchedEntity;
                     (*rt_entity).owner
                 }
             },
