@@ -1,5 +1,3 @@
-
-
 #![allow(dead_code)]
 
 use crate::mm::api::{kalloc_pages, kfree_pages};
@@ -694,6 +692,41 @@ impl Default for RtSchedEntity {
     }
 }
 
+/// Węzeł intrusive listy priorytetowej (`plist.rs`).
+///
+/// Dwupoziomowa struktura: `same_prio` łączy zadania o identycznym
+/// priorytecie w FIFO, `node` łączy węzły reprezentujące unikalne
+/// poziomy priorytetu między sobą. `owner` domyka round-trip do
+/// `TaskStruct` bez żadnej arytmetyki wskaźników/offsetów — tak samo
+/// jak `RtSchedEntity::owner` już robi to dla `rt_list`.
+#[repr(C)]
+pub struct PlistNode {
+    pub node: ListHead,
+    pub same_prio: ListHead,
+    pub priority: i32,
+    pub owner: *mut TaskStruct,
+}
+
+impl PlistNode {
+    pub fn init(&mut self, owner: *mut TaskStruct) {
+        self.node.init();
+        self.same_prio.init();
+        self.priority = 0;
+        self.owner = owner;
+    }
+}
+
+impl Default for PlistNode {
+    fn default() -> Self {
+        Self {
+            node: ListHead::new(),
+            same_prio: ListHead::new(),
+            priority: 0,
+            owner: ptr::null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 pub struct DlSchedEntity {
     pub dl_runtime: u64,
@@ -1093,6 +1126,7 @@ pub struct TaskStruct {
     pub se: SchedEntity,
     pub rt: RtSchedEntity,
     pub dl: DlSchedEntity,
+    pub plist: PlistNode,
 
     pub tasks: ListHead,
     pub thread_group: ListHead,
@@ -1171,6 +1205,8 @@ impl TaskStruct {
         self.rt.rt_list.init();
         self.rt.owner = self as *mut TaskStruct;
         self.dl = DlSchedEntity::default();
+        self.plist = PlistNode::default();
+        self.plist.init(self as *mut TaskStruct);
 
         self.tasks.init();
         self.thread_group.init();
@@ -1628,6 +1664,7 @@ impl TaskStruct {
             se: SchedEntity::default(),
             rt: RtSchedEntity::default(),
             dl: DlSchedEntity::default(),
+            plist: PlistNode::default(),
             tasks: ListHead::new(),
             thread_group: ListHead::new(),
             children: ptr::null_mut(),
@@ -2061,6 +2098,7 @@ mod tests {
             se: SchedEntity::default(),
             rt: RtSchedEntity::default(),
             dl: DlSchedEntity::default(),
+            plist: PlistNode::default(),
             tasks: ListHead::new(),
             thread_group: ListHead::new(),
             children: ptr::null_mut(),
