@@ -10,3 +10,5 @@ kernel/data.img
 *.iml
 .vscode/
 *.kate-swp
+target/
+tmp/
