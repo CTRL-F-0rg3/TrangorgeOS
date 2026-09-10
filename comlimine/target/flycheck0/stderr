@@ -1,0 +1,51 @@
+warning: comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) ignoring invalid dependency `kernel` which is missing a lib target
+   0.031413154s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint: stale: changed "/home/ctrl/TrangorgeOS/comlimine/src/main.rs"
+   0.031425092s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint:           (vs) "/home/ctrl/TrangorgeOS/comlimine/target/debug/.fingerprint/comlimine-c888f1db1b6da45b/dep-test-bin-comlimine"
+   0.031429957s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 1789054401, nanos: 799138019 } < FileTime { seconds: 1789054517, nanos: 53053255 }
+   0.031465871s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint: fingerprint dirty for comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine)/Check { test: true }/TargetInner { name: "comlimine", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/comlimine/src/main.rs", Edition2021) }
+   0.031481324s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "/home/ctrl/TrangorgeOS/comlimine/target/debug/.fingerprint/comlimine-c888f1db1b6da45b/dep-test-bin-comlimine", reference_mtime: FileTime { seconds: 1789054401, nanos: 799138019 }, stale: "/home/ctrl/TrangorgeOS/comlimine/src/main.rs", stale_mtime: FileTime { seconds: 1789054517, nanos: 53053255 } }))
+   0.031963964s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint: fingerprint error for comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine)/Check { test: false }/TargetInner { name: "comlimine", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/comlimine/src/main.rs", Edition2021) }
+   0.031974608s  INFO prepare_target{force=false package_id=comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) target="comlimine"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/comlimine/target/debug/.fingerprint/comlimine-812c994c1154a749/bin-comlimine`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: cargo_util::paths::read_bytes
+   1: cargo_util::paths::read
+   2: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_ws
+   7: cargo::ops::cargo_compile::compile_with_exec
+   8: cargo::ops::cargo_compile::compile
+   9: cargo::commands::check::exec
+  10: <cargo::cli::Exec>::exec
+  11: cargo::main
+  12: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13: std::rt::lang_start::<()>::{closure#0}
+  14: core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &F>::call_once
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/core/src/ops/function.rs:287:21
+  15: std::panicking::catch_unwind::do_call
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panicking.rs:581:40
+  16: std::panicking::catch_unwind
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panicking.rs:544:19
+  17: std::panic::catch_unwind
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panic.rs:359:14
+  18: std::rt::lang_start_internal::{{closure}}
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/rt.rs:175:24
+  19: std::panicking::catch_unwind::do_call
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panicking.rs:581:40
+  20: std::panicking::catch_unwind
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panicking.rs:544:19
+  21: std::panic::catch_unwind
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/panic.rs:359:14
+  22: std::rt::lang_start_internal
+             at /rustc/254b59607d4417e9dffbc307138ae5c86280fe4c/library/std/src/rt.rs:171:5
+  23: main
+  24: <unknown>
+  25: __libc_start_main
+  26: <unknown>
+    Checking comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s

@@ -1,0 +1,8 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/ctrl/TrangorgeOS/userspace-legasy/init/Cargo.toml
+workspace: /home/ctrl/TrangorgeOS/userspace-legasy/Cargo.toml
+error: no matching package found
+searched package name: `trangorgelibc`
+perhaps you meant:      trangorgelib
+location searched: /home/ctrl/TrangorgeOS/trangorgelibc
+required by package `tr-init v0.1.0 (/home/ctrl/TrangorgeOS/userspace-legasy/init)`
