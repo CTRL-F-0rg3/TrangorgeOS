@@ -8,10 +8,6 @@ pub struct tracepoints {
     // za chwile
 }
 
-pub enum Tracepoint {
-
-}
-
 pub struct TraceEvent{
 
 }

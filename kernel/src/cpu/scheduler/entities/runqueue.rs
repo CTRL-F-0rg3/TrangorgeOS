@@ -1255,6 +1255,10 @@ impl core::fmt::Debug for RunQueue {
     }
 }
 
+/// Returns the run queue registered for `cpu` (the scheduler-level registry).
+pub unsafe fn get_rq(cpu: u32) -> *mut RunQueue {
+    crate::cpu::scheduler::get_rq(cpu)
+}
 
 pub mod smp {
     use super::*;

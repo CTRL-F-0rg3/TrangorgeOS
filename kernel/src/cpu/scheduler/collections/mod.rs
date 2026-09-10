@@ -1,4 +1,4 @@
 mod bitmap;
-mod cpumask;
+pub mod cpumask;
 mod plist;
 mod rbtree;

@@ -113,8 +113,8 @@ static TESTS: &[Test] = &[
         func: caps::self_test,
     },
     Test {
-        module: "schelduler",
-        func: cpu::schelduler::self_test,
+        module: "scheduler",
+        func: cpu::scheduler::self_test,
     },
 ];
 
@@ -125,8 +125,8 @@ static TESTS: &[Test] = &[
         func: mm::self_test,
     },
     Test {
-        module: "schelduler",
-        func: cpu::schelduler::self_test,
+        module: "scheduler",
+        func: cpu::scheduler::self_test,
     },
         Test {
         module: "caps",

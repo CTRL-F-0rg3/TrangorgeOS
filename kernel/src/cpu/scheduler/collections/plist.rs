@@ -32,13 +32,13 @@ fn plist_prio(node: *mut TaskStruct) -> i32 {
 /// pamięci na produkcji.
 #[inline(always)]
 unsafe fn task_from_node(node: *mut ListHead) -> *mut TaskStruct {
-    TaskStruct::container_of(node, TaskStruct::PLIST_NODE_OFFSET)
+    TaskStruct::container_of(node as *mut u8, TaskStruct::PLIST_NODE_OFFSET)
 }
 
 /// Jak `task_from_node`, ale dla węzła `plist_same_prio`.
 #[inline(always)]
 unsafe fn task_from_same_prio(node: *mut ListHead) -> *mut TaskStruct {
-    TaskStruct::container_of(node, TaskStruct::PLIST_SAME_PRIO_OFFSET)
+    TaskStruct::container_of(node as *mut u8, TaskStruct::PLIST_SAME_PRIO_OFFSET)
 }
 
 pub struct PList {
@@ -134,17 +134,17 @@ impl PList {
                 // poziomów, jak i jako nowy head `same_prio`.
                 let list_next = (*node).next;
                 let list_prev = (*node).prev;
-                ListHead::remove(node);
+                (*node).remove();
                 (*plist_node(next_task)).next = list_next;
                 (*plist_node(next_task)).prev = list_prev;
                 if !list_next.is_null() { (*list_next).prev = plist_node(next_task); }
                 if !list_prev.is_null() { (*list_prev).next = plist_node(next_task); }
             }
-            ListHead::remove(same_prio);
+            (*same_prio).remove();
             return;
         }
 
-        ListHead::remove(node);
+        (*node).remove();
     }
 
     /// Zadanie o najwyższym priorytecie (head listy poziomów),

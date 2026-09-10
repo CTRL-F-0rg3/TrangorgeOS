@@ -1,7 +1,7 @@
 extern crate alloc;
 use alloc::vec::Vec;
 
-use crate::cpu::scheduler::task::TaskStruct;
+use super::task::TaskStruct;
 use core::fmt;
 use core::sync::atomic::{AtomicU64, Ordering};
 

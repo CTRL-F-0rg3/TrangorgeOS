@@ -1206,7 +1206,8 @@ impl TaskStruct {
         self.rt.owner = self as *mut TaskStruct;
         self.dl = DlSchedEntity::default();
         self.plist = PlistNode::default();
-        self.plist.init(self as *mut TaskStruct);
+        let this = self as *mut TaskStruct;
+        self.plist.init(this);
 
         self.tasks.init();
         self.thread_group.init();

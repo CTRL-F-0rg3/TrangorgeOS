@@ -1,5 +1,5 @@
-   0.015192019s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: true }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
-   0.015212705s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-a8501fabe790110c/test-bin-driverspace`
+   0.022537487s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: true }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
+   0.022562433s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-a8501fabe790110c/test-bin-driverspace`
 
 Caused by:
     No such file or directory (os error 2)
@@ -41,8 +41,8 @@ Stack backtrace:
   24: <unknown>
   25: __libc_start_main
   26: <unknown>
-   0.024020869s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
-   0.024039844s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-10e09e2d5a5cd54c/lib-driverspacelib`
+   0.031118766s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
+   0.031138260s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-10e09e2d5a5cd54c/lib-driverspacelib`
 
 Caused by:
     No such file or directory (os error 2)
@@ -85,8 +85,8 @@ Stack backtrace:
   25: <unknown>
   26: __libc_start_main
   27: <unknown>
-   0.024386743s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: false }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
-   0.024398488s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-63192f8e639decee/bin-driverspace`
+   0.031712653s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: false }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
+   0.031725415s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-63192f8e639decee/bin-driverspace`
 
 Caused by:
     No such file or directory (os error 2)
@@ -128,8 +128,8 @@ Stack backtrace:
   24: <unknown>
   25: __libc_start_main
   26: <unknown>
-   0.024596252s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
-   0.024607268s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-91a9914ff08c27e6/lib-driverspacelib`
+   0.031934940s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
+   0.031947089s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-91a9914ff08c27e6/lib-driverspacelib`
 
 Caused by:
     No such file or directory (os error 2)
@@ -173,6 +173,6 @@ Stack backtrace:
   26: __libc_start_main
   27: <unknown>
     Checking driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)
-error: could not compile `driverspacelib` (lib) due to 5 previous errors; 2 warnings emitted
+error: could not compile `driverspacelib` (lib) due to 29 previous errors; 1 warning emitted
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `driverspacelib` (lib) due to 5 previous errors; 2 warnings emitted
+error: could not compile `driverspacelib` (lib) due to 29 previous errors; 1 warning emitted
