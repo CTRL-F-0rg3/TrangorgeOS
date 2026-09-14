@@ -70,6 +70,53 @@ fn load_cpu_gdt(ist_stack_top: VirtAddr) {
 }
 
 extern "C" fn ap_entry(cpu_index: u64) -> ! {
+
+#[cfg_attr(not(test), allow(unused))]
+#[cold]
+fn debug_halt(msg: &str) -> ! {
+    unsafe {
+        // Try a direct VGA text-buffer poke as a last-resort marker.
+        let vga: *mut u8 = 0xb8000 as _;
+        for (i, byte) in msg.bytes().enumerate().take(200) {
+            core::ptr::write_volatile(vga.add(i * 2), byte);
+            core::ptr::write_volatile(vga.add(i * 2 + 1), 0x0f);
+        }
+    }
+    crate::halt_loop();
+}
+
+
+/// Flush the serial port's transmit FIFO so bytes actually hit the log file
+/// before QEMU is killed/timeout-terminated.
+pub fn flush_serial_no_panic() {
+    use crate::cpu::smp::SERIAL_PORT;
+    if SERIAL_PORT.is_null() {
+        return;
+    }
+    unsafe {
+        let fifo = (SERIAL_PORT as *mut u8).add(5);
+        let timeout = 1024u16;
+        while {
+            let lsr = (SERIAL_PORT as *mut u8).add(5);
+            let status: u8 = core::ptr::read_volatile(lsr);
+            (status & 0x20) != 0
+        } {
+            core::ptr::write_volatile(fifo, 0x00);
+        }
+        let ier: *mut u8 = (SERIAL_PORT as *mut u8).add(1);
+        core::ptr::write_volatile(ier, 0x00);
+    }
+}
+
+    asm!("nop");
+
+    asm!("nop");
+
+    asm!("nop");
+
+
+
+
     let i = cpu_index as usize;
 
     AP_STARTED[i].store(true, Ordering::SeqCst);
@@ -107,6 +154,18 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let phys_offset = boot_info.physical_memory_offset;
     PHYS_OFFSET.store(phys_offset, Ordering::Relaxed);
 
+    // Prefer Rust side early print to avoid depending on C kprintf flushing.
+    use crate::serial::SerialWriter as _;
+    use core::fmt::Write;
+    let mut w = SerialWriter;
+    let _ = writeln!(
+        w,
+        "[smp] SMP bring-up started, phys_offset={:#x}",
+        phys_offset
+    );
+
+    println!("[smp] SMP bring-up started, phys_offset={:#x}", phys_offset);
+
     let Some(rsdp) = acpi::find_rsdp(phys_offset) else {
         println!("[cpu] no ACPI RSDP found — single CPU (BSP only)");
         return;
@@ -131,10 +190,22 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         madt.lapic_base
     );
 
+    use crate::cpu::smp::expose_phys_offset;
+    use crate::serial::SerialWriter as _;
+    use core::fmt::Write;
+    let mut w = SerialWriter;
+    let _ = writeln!(
+        w,
+        "[smp] paging cr3={:#x} boot_phys_offset={:#x}",
+        unsafe { crate::mm::ffi::paging_read_cr3() },
+        expose_phys_offset()
+    );
+
     if !lapic::init(madt.lapic_base) {
         println!("[cpu] LAPIC init failed");
         return;
     }
+
     println!("[cpu] lapic init ok (x2apic={})", lapic::is_x2apic());
     lapic::enable_bsp();
     println!("[cpu] lapic enabled, id={}", lapic::id());
@@ -157,6 +228,21 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         ap_entry as usize as u64,
     );
     println!("[cpu] trampoline installed, {} AP(s) to start", aps.len());
+
+    use crate::cpu::smp::expose_phys_offset;
+    use crate::serial::SerialWriter as _;
+    use core::fmt::Write;
+    let mut w = SerialWriter;
+    let _ = writeln!(
+        w,
+        "[smp] after trampoline install cr3={:#x} boot_phys_offset={:#x}",
+        unsafe { crate::mm::ffi::paging_read_cr3() },
+        expose_phys_offset()
+    );
+
+    println!("[cpu] trampoline install complete, cr3={:#x}", unsafe {
+        crate::mm::ffi::paging_read_cr3()
+    });
 
     println!("[cpu] init ipi (broadcast)");
     lapic::send_init_ipi();
@@ -183,6 +269,20 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     }
 
     println!("[cpu] SMP: BSP + {} AP(s)", aps.len());
+
+    use crate::serial::SerialWriter as _;
+    use core::fmt::Write;
+    let mut w = SerialWriter;
+    let _ = writeln!(
+        w,
+        "[smp] SMP bringup complete, total_cpus={}",
+        crate::cpu::total_cpus()
+    );
+    let _ = writeln!(
+        w,
+        "[smp] SMP bringup complete, total_cpus={}",
+        crate::cpu::total_cpus()
+    );
 }
 
 pub fn total_cpus() -> u32 {
