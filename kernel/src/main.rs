@@ -116,6 +116,10 @@ static TESTS: &[Test] = &[
         module: "scheduler",
         func: cpu::scheduler::self_test,
     },
+    Test {
+        module: "terminal",
+        func: terminal::self_test,
+    },
 ];
 
 #[cfg(not(target_arch = "x86_64"))]
@@ -166,8 +170,10 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 
     init_permissions();
 
+    println!("[boot-dbg] step: gfx::init()...");
     if gfx::init() {
         println!("[gfx] framebuffer initialized OK");
+        println!("[boot-dbg] step: hdmi::init()...");
         if hdmi::init::init() {
             println!("[hdmi] framebuffer bridge initialized OK");
         } else {
@@ -177,20 +183,30 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
         println!("[gfx] framebuffer initialization FAILED");
     }
 
+    println!("[boot-dbg] step: pci::init()...");
+    println!(
+        "[dbg] post-gfx: cr3={:#x} vmm0={}",
+        unsafe { crate::mm::ffi::paging_read_cr3() },
+        unsafe { crate::mm::ffi::paging_is_mapped(0xFFFFA000_00000000) }
+    );
     pci::init();
+    println!("[boot-dbg] step: nic::runtime::init()...");
 
     match nic::runtime::init() {
         Ok(()) => println!("[nic] virtio-net initialized OK"),
         Err(error) => println!("[nic] virtio-net initialization FAILED: {:?}", error),
     }
 
+    println!("[boot-dbg] step: bluetooth::init()...");
     if bluetooth::init::init() {
         println!("[bluetooth] initialized OK");
     } else {
         println!("[bluetooth] initialization FAILED");
     }
 
+    println!("[boot-dbg] step: fs::init()...");
     fs::init();
+    println!("[boot-dbg] step: cpu::init()...");
     cpu::init(boot_info);
     testing::run_all(TESTS);
     println!("Welcome in my Galaxy!");
