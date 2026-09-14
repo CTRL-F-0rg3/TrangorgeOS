@@ -82,40 +82,28 @@ fn debug_halt(msg: &str) -> ! {
             core::ptr::write_volatile(vga.add(i * 2 + 1), 0x0f);
         }
     }
-    crate::halt_loop();
+    crate::hlt_loop();
 }
 
 
-/// Flush the serial port's transmit FIFO so bytes actually hit the log file
-/// before QEMU is killed/timeout-terminated.
+/// Flush the serial port's transmit FIFO (COM1) so all pending bytes actually
+/// hit the log file before QEMU is killed/timeout-terminated.
 pub fn flush_serial_no_panic() {
-    use crate::cpu::smp::SERIAL_PORT;
-    if SERIAL_PORT.is_null() {
-        return;
-    }
-    unsafe {
-        let fifo = (SERIAL_PORT as *mut u8).add(5);
-        let timeout = 1024u16;
-        while {
-            let lsr = (SERIAL_PORT as *mut u8).add(5);
-            let status: u8 = core::ptr::read_volatile(lsr);
-            (status & 0x20) != 0
-        } {
-            core::ptr::write_volatile(fifo, 0x00);
+    use x86_64::instructions::port::Port;
+    let mut lsr = Port::<u8>::new(0x3F8 + 5);
+    for _ in 0..0x1_0000 {
+        unsafe {
+            if lsr.read() & 0x40 != 0 {
+                break;
+            }
         }
-        let ier: *mut u8 = (SERIAL_PORT as *mut u8).add(1);
-        core::ptr::write_volatile(ier, 0x00);
+        core::hint::spin_loop();
+    }
+    let mut ier = Port::<u8>::new(0x3F8 + 1);
+    unsafe {
+        ier.write(0x00);
     }
 }
-
-    asm!("nop");
-
-    asm!("nop");
-
-    asm!("nop");
-
-
-
 
     let i = cpu_index as usize;
 
@@ -154,16 +142,7 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let phys_offset = boot_info.physical_memory_offset;
     PHYS_OFFSET.store(phys_offset, Ordering::Relaxed);
 
-    // Prefer Rust side early print to avoid depending on C kprintf flushing.
-    use crate::serial::SerialWriter as _;
-    use core::fmt::Write;
-    let mut w = SerialWriter;
-    let _ = writeln!(
-        w,
-        "[smp] SMP bring-up started, phys_offset={:#x}",
-        phys_offset
-    );
-
+    // Rust-side early print (routed to both VGA and serial via print_args).
     println!("[smp] SMP bring-up started, phys_offset={:#x}", phys_offset);
 
     let Some(rsdp) = acpi::find_rsdp(phys_offset) else {
@@ -190,16 +169,11 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         madt.lapic_base
     );
 
-    use crate::cpu::smp::expose_phys_offset;
-    use crate::serial::SerialWriter as _;
-    use core::fmt::Write;
-    let mut w = SerialWriter;
-    let _ = writeln!(
-        w,
-        "[smp] paging cr3={:#x} boot_phys_offset={:#x}",
+    crate::serial::print_args(format_args!(
+        "[smp] paging cr3={:#x} boot_phys_offset={:#x}\n",
         unsafe { crate::mm::ffi::paging_read_cr3() },
-        expose_phys_offset()
-    );
+        PHYS_OFFSET.load(Ordering::Relaxed)
+    ));
 
     if !lapic::init(madt.lapic_base) {
         println!("[cpu] LAPIC init failed");
@@ -229,16 +203,11 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     );
     println!("[cpu] trampoline installed, {} AP(s) to start", aps.len());
 
-    use crate::cpu::smp::expose_phys_offset;
-    use crate::serial::SerialWriter as _;
-    use core::fmt::Write;
-    let mut w = SerialWriter;
-    let _ = writeln!(
-        w,
-        "[smp] after trampoline install cr3={:#x} boot_phys_offset={:#x}",
+    crate::serial::print_args(format_args!(
+        "[smp] after trampoline install cr3={:#x} boot_phys_offset={:#x}\n",
         unsafe { crate::mm::ffi::paging_read_cr3() },
-        expose_phys_offset()
-    );
+        PHYS_OFFSET.load(Ordering::Relaxed)
+    ));
 
     println!("[cpu] trampoline install complete, cr3={:#x}", unsafe {
         crate::mm::ffi::paging_read_cr3()
@@ -270,19 +239,10 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
 
     println!("[cpu] SMP: BSP + {} AP(s)", aps.len());
 
-    use crate::serial::SerialWriter as _;
-    use core::fmt::Write;
-    let mut w = SerialWriter;
-    let _ = writeln!(
-        w,
-        "[smp] SMP bringup complete, total_cpus={}",
+    crate::serial::print_args(format_args!(
+        "[smp] SMP bringup complete, total_cpus={}\n",
         crate::cpu::total_cpus()
-    );
-    let _ = writeln!(
-        w,
-        "[smp] SMP bringup complete, total_cpus={}",
-        crate::cpu::total_cpus()
-    );
+    ));
 }
 
 pub fn total_cpus() -> u32 {

@@ -77,7 +77,7 @@ pub fn write_str(s: &str) {
     }
 }
 
-struct SerialWriter;
+pub struct SerialWriter;
 
 impl fmt::Write for SerialWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {

@@ -35,6 +35,7 @@ extern "C" {
     pub fn paging_init(boot_phys_offset: u64);
     pub fn paging_enable_nx();
     pub fn paging_read_cr3() -> u64;
+    pub fn paging_is_mapped(virt: u64) -> bool;
     pub fn paging_aspace_switch(aspace: *mut c_void);
     pub fn paging_map_page(virt: u64, phys: u64, flags: u64) -> bool;
 

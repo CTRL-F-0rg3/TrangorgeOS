@@ -101,7 +101,43 @@ static uint64_t ensure_table_entry(uint64_t *table,
 
     if (entry & PTE_PRESENT) {
         if (entry & PTE_PAGE_SIZE) {
-            paging_panic("expected page table, found large page");
+            /*
+             * Large page (2MB or 1GB) found where we need a page table.
+             * Split it into smaller 4KB page entries.
+             */
+            uint64_t large_phys = entry & PAGING_ADDR_MASK;
+            uint64_t large_flags = entry & (PAGING_ADDR_MASK - 1);
+
+            /* Allocate a new page table */
+            uint64_t table_phys = alloc_zeroed_table_page();
+            uint64_t *new_table = (uint64_t *)phys_to_ptr(table_phys);
+
+            /*
+             * Fill the new table with entries pointing to the 4KB pages
+             * within the large page.
+             */
+            size_t pages = (size_t)(PAGING_2M_PAGE_SIZE / PAGING_PAGE_SIZE);
+            for (size_t i = 0; i < 512; i++) {
+                if (i < pages) {
+                    uint64_t page_phys = large_phys + (uint64_t)i * PAGING_PAGE_SIZE;
+                    new_table[i] = (page_phys & PAGING_ADDR_MASK) |
+                                   (large_flags & ~(PTE_PAGE_SIZE));
+                } else {
+                    new_table[i] = 0;
+                }
+            }
+
+            /*
+             * Replace the large page entry with the new page table entry.
+             * Preserve the access flags from the large page.
+             */
+            uint64_t table_flags = PTE_PRESENT | PTE_WRITABLE;
+            if (large_flags & PTE_USER) {
+                table_flags |= PTE_USER;
+            }
+            table[index] = (table_phys & PAGING_ADDR_MASK) | table_flags;
+
+            return table_phys;
         }
 
         return entry & PAGING_ADDR_MASK;

@@ -42,6 +42,12 @@ pub fn run_all(tests: &[Test]) {
     println!("Running {} module test(s)...", tests.len());
     let mut passed = 0;
     for test in tests {
+        crate::println!(
+            "[dbg] pre-{}: cr3={:#x} vmm0={}",
+            test.module,
+            unsafe { crate::mm::ffi::paging_read_cr3() },
+            unsafe { crate::mm::ffi::paging_is_mapped(0xFFFFA000_00000000) }
+        );
         if run_test(test) {
             passed += 1;
         }
