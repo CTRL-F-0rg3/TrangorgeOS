@@ -9,7 +9,6 @@ use x86_64::VirtAddr;
 use x86_64::registers::control::Cr2;
 use x86_64::instructions::port::Port;
 use crate::cpu::lapic;
-use crate::cpu::schelduler;
 
 // Interrupts module
 pub static BREAKPOINT_HITS: AtomicU64 = AtomicU64::new(0);
@@ -115,7 +114,7 @@ extern "x86-interrupt" fn double_fault_handler(
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);
     unsafe {
-        let _ = crate::cpu::schelduler::tick(0, 1_000_000);
+        let _ = crate::cpu::scheduler::tick(0, 1_000_000);
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
     }

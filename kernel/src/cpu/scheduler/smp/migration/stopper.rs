@@ -23,7 +23,7 @@ pub struct StopperWork {
     pub ret: AtomicU32,
     pub started: AtomicBool,
     pub completed: AtomicBool,
-} pub completed: AtomicBool,
+}
 
 
 impl StopperWork {
@@ -92,7 +92,7 @@ impl CpuStopper {
             return false;
         }
 
-        self.work.fn_ptr.store(func as *mut (), Ordering::Relaxed);
+        self.work.fn_ptr.store(func as *mut core::ffi::c_void, Ordering::Relaxed);
         self.work.arg.store(arg, Ordering::Relaxed);
         self.work.ret.store(0, Ordering::Relaxed);
         self.work.started.store(false, Ordering::Relaxed);
@@ -237,11 +237,11 @@ pub unsafe fn stop_two_cpus(cpu1: u32, cpu2: u32, func: StopperFn, arg: *mut cor
         return 2;
     }
 
-    stopper1.work.fn_ptr.store(func as *mut (), Ordering::Relaxed);
+    stopper1.work.fn_ptr.store(func as *mut core::ffi::c_void, Ordering::Relaxed);
     stopper1.work.arg.store(arg, Ordering::Relaxed);
     stopper1.work.set_state(StopperState::Preparing);
     
-    stopper2.work.fn_ptr.store(func as *mut (), Ordering::Relaxed);
+    stopper2.work.fn_ptr.store(func as *mut core::ffi::c_void, Ordering::Relaxed);
     stopper2.work.arg.store(arg, Ordering::Relaxed);
     stopper2.work.set_state(StopperState::Preparing);
 

@@ -5,7 +5,11 @@ pub mod smp;
 pub mod policies;
 pub mod debug;
 pub mod time;
+#[cfg(test)]
 pub mod tests;
+
+pub use collections::cpumask as cpumask;
+pub use entities::runqueue as runqueue;
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use crate::cpu::scheduler::entities::runqueue::RunQueue;
@@ -50,8 +54,8 @@ pub unsafe fn tick(cpu: u32, delta_ns: u64) -> Result<(), &'static str> {
     Ok(())
 }
 
-pub fn self_test() -> Result<(), &'static str> {
-    Ok(())
+pub fn self_test() -> Result<&'static str, &'static str> {
+    Ok("scheduler: stub (no runqueues online)")
 }
 
 pub unsafe fn get_rq(cpu: u32) -> *mut RunQueue {

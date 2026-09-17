@@ -1,0 +1,23 @@
+with Interfaces; use Interfaces;
+
+package DS_Math_Safe with
+   SPARK_Mode,
+   Pure
+is
+   -- Funkcja dodawania z udowodnionym brakiem przepełnienia.
+   -- Kontrakt (Pre) wymaga, aby suma nie przekroczyła UInt32'Last.
+   -- Kompilator SPARK udowodni, że w implementacji nigdy nie dojdzie do overflow.
+   function Safe_Add_32 (A, B : UInt32) return UInt32 with
+      Pre  => A <= UInt32'Last - B,
+      Post => Safe_Add_32'Result = A + B;
+
+   -- Funkcja obliczająca bezpieczny indeks w tablicy (udowodnione brakiem Out_Of_Bounds)
+   function Safe_Array_Index (Index : UInt32; Max_Size : UInt32) return UInt32 with
+      Pre  => Max_Size > 0,
+      Post => Safe_Array_Index'Result < Max_Size;
+
+   -- Eksport do C/Rust (FFI)
+   pragma Export (C, Safe_Add_32, "ds_spark_safe_add_32");
+   pragma Export (C, Safe_Array_Index, "ds_spark_safe_array_index");
+
+end DS_Math_Safe;

@@ -66,6 +66,7 @@ pub fn format(dev: &dyn BlockDevice) -> Result<()> {
     Ok(())
 }
 
+
 pub fn read_superblock(dev: &dyn BlockDevice) -> Result<Superblock> {
     let mut sb = [0u8; 512];
     dev.read_block(1, &mut sb).map_err(|_| FsError::Io)?;
@@ -81,7 +82,7 @@ pub fn read_superblock(dev: &dyn BlockDevice) -> Result<Superblock> {
     })
 }
 
-fn write_superblock(dev: &dyn BlockDevice, sb: &Superblock) -> Result<()> {
+pub fn write_superblock(dev: &dyn BlockDevice, sb: &Superblock) -> Result<()> {
     let mut buf = [0u8; 512];
     buf[0..4].copy_from_slice(&SUPER_MAGIC);
     wr32(&mut buf, 4, 1);

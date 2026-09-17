@@ -580,3 +580,54 @@ pub fn run() -> ! {
     }
 }
 
+pub fn self_test() -> crate::testing::TestResult {
+    let mut ok = true;
+
+    let mut chk = |step: u32, cond: bool| -> bool {
+        if !cond {
+            crate::println!("[terminal] self_test step {} FAILED", step);
+        }
+        cond
+    };
+
+    // Test scancode_to_char: lowercase
+    ok &= chk(101, scancode_to_char(0x10) == Some('q'));
+    ok &= chk(102, scancode_to_char(0x1E) == Some('a'));
+    ok &= chk(103, scancode_to_char(0x2C) == Some('z'));
+    ok &= chk(104, scancode_to_char(0x1C) == Some('\n'));
+    ok &= chk(105, scancode_to_char(0x0E) == Some('\x08'));
+    ok &= chk(106, scancode_to_char(0x39) == Some(' '));
+
+    // Test scancode_to_char: digits
+    ok &= chk(110, scancode_to_char(0x02) == Some('1'));
+    ok &= chk(111, scancode_to_char(0x0B) == Some('0'));
+
+    // Test scancode_to_char: unknown scancode
+    ok &= chk(112, scancode_to_char(0xFF) == None);
+
+    // Test split_once_space
+    let (cmd, rest) = split_once_space("help");
+    ok &= chk(201, cmd == "help" && rest.is_empty());
+
+    let (cmd, rest) = split_once_space("write file.txt hello world");
+    ok &= chk(202, cmd == "write" && rest == "file.txt hello world");
+
+    let (cmd, rest) = split_once_space("");
+    ok &= chk(203, cmd == "" && rest.is_empty());
+
+    // Test parse_resolution
+    ok &= chk(301, parse_resolution("1920x1080") == Some((1920, 1080)));
+    ok &= chk(302, parse_resolution("1920:1080") == Some((1920, 1080)));
+    ok &= chk(303, parse_resolution("1920X1080") == Some((1920, 1080)));
+    ok &= chk(304, parse_resolution("0x1080") == None);
+    ok &= chk(305, parse_resolution("1920x0") == None);
+    ok &= chk(306, parse_resolution("5000x1080") == None);
+    ok &= chk(307, parse_resolution("invalid") == None);
+
+    if ok {
+        Ok("scancode+split+parse_resolution")
+    } else {
+        Err("terminal self-check failed")
+    }
+}
+

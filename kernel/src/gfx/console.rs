@@ -198,6 +198,7 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     let height = height as usize;
     let stride = stride as usize; 
 
+    crate::println!("[console] mm_ready OK, fb_addr=0x{:x}", fb_addr);
 
     let size = ((stride * height) + 0xFFF) & !0xFFF;
 
@@ -207,8 +208,10 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
     }
 
     let ptr = if fb_addr >= 0xFFFF800000000000 {
+        crate::println!("[console] fb already in higher-half");
         fb_addr as *mut u8
     } else {
+        crate::println!("[console] mapping fb phys=0x{:x} size={}", fb_addr, size);
         unsafe {
             if FB_DEV_VIRT != 0 {
                 ffi::vmm_unmap_device(FB_DEV_VIRT, FB_DEV_SIZE);
@@ -219,9 +222,12 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
 
         let mut virt = 0u64;
 
+        crate::println!("[console] calling vmm_map_device...");
         if !unsafe { ffi::vmm_map_device(fb_addr, size, &mut virt) } {
+            crate::println!("[console] vmm_map_device FAILED");
             return false;
         }
+        crate::println!("[console] vmm_map_device OK, virt=0x{:x}", virt);
 
         unsafe {
             FB_DEV_VIRT = virt;
@@ -262,9 +268,8 @@ pub fn init(fb_addr: u64, width: u32, height: u32, stride: u32, format: PixelFor
         CACHE_VALID = false;
     }
 
-
     let total_px = width * height;
-    let steps: u32 = if total_px > 1_000_000 {
+    let steps = if total_px > 800_000 {
         1
     } else if total_px > 400_000 {
         4

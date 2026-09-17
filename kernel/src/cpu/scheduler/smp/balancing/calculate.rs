@@ -91,7 +91,7 @@ pub unsafe fn check_misfit_task(sg: *mut SchedGroup, rq: &RunQueue) -> bool {
     let curr = rq.current();
     if curr.is_null() { return false; }
     
-    let task_util = (*curr).se.util_avg as u32;
+    let task_util = (*curr).se.load.util_avg as u32;
     let cpu_cap = (*sg).group_capacity / (*sg).group_weight.max(1);
     
     if task_util > (cpu_cap * MISFIT_TASK_THRESHOLD / 100) {
@@ -205,14 +205,20 @@ pub unsafe fn find_busiest_group(sd: *mut SchedDomain, local_cpu: u32, calc: &mu
 /// obejmująca CPU 5 i 6 nigdy nie zbalansowałaby się, bo żaden z nich nie
 /// dzieli się przez 4).
 pub unsafe fn should_we_balance(sd: *mut SchedDomain, local_cpu: u32) -> bool {
-    let idle = crate::cpu::scheduler::runqueue::get_rq(local_cpu).map(|rq| unsafe { (*rq).is_idle() }).unwrap_or(true);
+    let idle = {
+        let rq = crate::cpu::scheduler::runqueue::get_rq(local_cpu);
+        if rq.is_null() { true } else { unsafe { (*rq).is_idle() } }
+    };
     
     if idle {
         return true;
     }
     
     let last_balance = (*sd).last_balance.load(Ordering::Acquire);
-    let now = crate::cpu::scheduler::runqueue::get_rq(local_cpu).map(|rq| unsafe { (*rq).clock.load(Ordering::Relaxed) }).unwrap_or(0);
+    let now = {
+        let rq = crate::cpu::scheduler::runqueue::get_rq(local_cpu);
+        if rq.is_null() { 0 } else { unsafe { (*rq).clock.load(Ordering::Relaxed) } }
+    };
     
     let interval = if (*sd).has_flag(SD_SHARE_CPUCAPACITY) {
         MIN_BALANCE_INTERVAL_NS / 2

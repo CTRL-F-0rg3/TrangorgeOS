@@ -1,5 +1,4 @@
 #![no_std]
-#![feature(naked_functions)]
 pub mod audio;
 pub mod abi;
 pub mod ring;

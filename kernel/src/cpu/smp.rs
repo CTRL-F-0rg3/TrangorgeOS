@@ -1,6 +1,5 @@
 use super::acpi;
 use super::lapic;
-use super::schelduler;
 use super::trampoline;
 use crate::println;
 use crate::testing::TestResult;
@@ -71,6 +70,41 @@ fn load_cpu_gdt(ist_stack_top: VirtAddr) {
 }
 
 extern "C" fn ap_entry(cpu_index: u64) -> ! {
+
+#[cfg_attr(not(test), allow(unused))]
+#[cold]
+fn debug_halt(msg: &str) -> ! {
+    unsafe {
+        // Try a direct VGA text-buffer poke as a last-resort marker.
+        let vga: *mut u8 = 0xb8000 as _;
+        for (i, byte) in msg.bytes().enumerate().take(200) {
+            core::ptr::write_volatile(vga.add(i * 2), byte);
+            core::ptr::write_volatile(vga.add(i * 2 + 1), 0x0f);
+        }
+    }
+    crate::hlt_loop();
+}
+
+
+/// Flush the serial port's transmit FIFO (COM1) so all pending bytes actually
+/// hit the log file before QEMU is killed/timeout-terminated.
+pub fn flush_serial_no_panic() {
+    use x86_64::instructions::port::Port;
+    let mut lsr = Port::<u8>::new(0x3F8 + 5);
+    for _ in 0..0x1_0000 {
+        unsafe {
+            if lsr.read() & 0x40 != 0 {
+                break;
+            }
+        }
+        core::hint::spin_loop();
+    }
+    let mut ier = Port::<u8>::new(0x3F8 + 1);
+    unsafe {
+        ier.write(0x00);
+    }
+}
+
     let i = cpu_index as usize;
 
     AP_STARTED[i].store(true, Ordering::SeqCst);
@@ -108,6 +142,9 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let phys_offset = boot_info.physical_memory_offset;
     PHYS_OFFSET.store(phys_offset, Ordering::Relaxed);
 
+    // Rust-side early print (routed to both VGA and serial via print_args).
+    println!("[smp] SMP bring-up started, phys_offset={:#x}", phys_offset);
+
     let Some(rsdp) = acpi::find_rsdp(phys_offset) else {
         println!("[cpu] no ACPI RSDP found — single CPU (BSP only)");
         return;
@@ -132,10 +169,17 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         madt.lapic_base
     );
 
+    crate::serial::print_args(format_args!(
+        "[smp] paging cr3={:#x} boot_phys_offset={:#x}\n",
+        unsafe { crate::mm::ffi::paging_read_cr3() },
+        PHYS_OFFSET.load(Ordering::Relaxed)
+    ));
+
     if !lapic::init(madt.lapic_base) {
         println!("[cpu] LAPIC init failed");
         return;
     }
+
     println!("[cpu] lapic init ok (x2apic={})", lapic::is_x2apic());
     lapic::enable_bsp();
     println!("[cpu] lapic enabled, id={}", lapic::id());
@@ -144,7 +188,9 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     let aps: Vec<u32> = enabled.into_iter().filter(|&id| id != bsp_id).collect();
 
     TOTAL_CPUS.store(aps.len() as u32 + 1, Ordering::SeqCst);
-    crate::cpu::scheduler::init(TOTAL_CPUS.load(Ordering::Acquire) as usize);
+    unsafe {
+        crate::cpu::scheduler::init(TOTAL_CPUS.load(Ordering::Acquire) as usize);
+    }
 
     if aps.is_empty() {
         println!("[cpu] single CPU (BSP only), APIC id {}", bsp_id);
@@ -156,6 +202,16 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
         ap_entry as usize as u64,
     );
     println!("[cpu] trampoline installed, {} AP(s) to start", aps.len());
+
+    crate::serial::print_args(format_args!(
+        "[smp] after trampoline install cr3={:#x} boot_phys_offset={:#x}\n",
+        unsafe { crate::mm::ffi::paging_read_cr3() },
+        PHYS_OFFSET.load(Ordering::Relaxed)
+    ));
+
+    println!("[cpu] trampoline install complete, cr3={:#x}", unsafe {
+        crate::mm::ffi::paging_read_cr3()
+    });
 
     println!("[cpu] init ipi (broadcast)");
     lapic::send_init_ipi();
@@ -182,6 +238,11 @@ pub fn init(boot_info: &'static bootloader::BootInfo) {
     }
 
     println!("[cpu] SMP: BSP + {} AP(s)", aps.len());
+
+    crate::serial::print_args(format_args!(
+        "[smp] SMP bringup complete, total_cpus={}\n",
+        crate::cpu::total_cpus()
+    ));
 }
 
 pub fn total_cpus() -> u32 {

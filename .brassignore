@@ -1,0 +1,18 @@
+# Artefakty kompilacji Rust i C
+/target/
+*.o
+*.a
+*.so
+*.elf
+*.bin
+
+# Obrazy dysków i bootloadery
+*.img
+*.iso
+
+# Pliki tymczasowe edytorów i IDE
+.vscode/
+.idea/
+*.swp
+*~
+.git/

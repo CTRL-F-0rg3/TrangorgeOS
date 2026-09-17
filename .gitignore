@@ -4,9 +4,11 @@
 *.a
 *.bin
 kernel/data.img
-
+.brass_control/
 # IDE garbage
 .idea/
 *.iml
 .vscode/
 *.kate-swp
+target/
+tmp/
