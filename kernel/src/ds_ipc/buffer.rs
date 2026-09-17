@@ -617,3 +617,5 @@ mod tests {
         assert_eq!(desc.base_vaddr.as_u64() % IPC_BUFFER_ALIGNMENT as u64, 0);
     }
 }
+
+// buffer
