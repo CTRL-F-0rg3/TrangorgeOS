@@ -1,7 +1,6 @@
 warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
 package:   /home/ctrl/TrangorgeOS/userspace-legasy/init/Cargo.toml
 workspace: /home/ctrl/TrangorgeOS/userspace-legasy/Cargo.toml
-    Blocking waiting for file lock on package cache
 error: no matching package found
 searched package name: `trangorgelibc`
 perhaps you meant:      trangorgelib

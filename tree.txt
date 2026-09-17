@@ -1,0 +1,1219 @@
+.
+├── Cargo.lock
+├── _cnt.txt
+├── comgrub
+│   ├── build.rs
+│   ├── Cargo.toml
+│   ├── linker.ld
+│   └── src
+│       ├── boot.asm
+│       └── main.rs
+├── comlimine
+│   ├── build.rs
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── linker.ld
+│   ├── src
+│   │   ├── limine.h
+│   │   ├── main.c
+│   │   └── main.rs
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       │   ├── build
+│       │   │   ├── comlimine-1c762930c079f9b8
+│       │   │   │   ├── invoked.timestamp
+│       │   │   │   ├── out
+│       │   │   │   │   ├── ea708c7824d36062-main.o
+│       │   │   │   │   └── liblimine_entry.a
+│       │   │   │   ├── output
+│       │   │   │   ├── root-output
+│       │   │   │   └── stderr
+│       │   │   └── comlimine-52d4a02f60cfc723
+│       │   │       ├── build-script-build
+│       │   │       ├── build_script_build-52d4a02f60cfc723
+│       │   │       └── build_script_build-52d4a02f60cfc723.d
+│       │   ├── deps
+│       │   │   ├── cc-8443e68dde35068d.d
+│       │   │   ├── comlimine-812c994c1154a749.d
+│       │   │   ├── comlimine-c888f1db1b6da45b.d
+│       │   │   ├── find_msvc_tools-367fe9c6bb00d5f4.d
+│       │   │   ├── libcc-8443e68dde35068d.rlib
+│       │   │   ├── libcc-8443e68dde35068d.rmeta
+│       │   │   ├── libcomlimine-812c994c1154a749.rmeta
+│       │   │   ├── libcomlimine-c888f1db1b6da45b.rmeta
+│       │   │   ├── libfind_msvc_tools-367fe9c6bb00d5f4.rlib
+│       │   │   ├── libfind_msvc_tools-367fe9c6bb00d5f4.rmeta
+│       │   │   ├── libshlex-50fddde71e8c4f05.rlib
+│       │   │   ├── libshlex-50fddde71e8c4f05.rmeta
+│       │   │   └── shlex-50fddde71e8c4f05.d
+│       │   ├── examples
+│       │   └── incremental
+│       │       ├── build_script_build-0ynwnl0dhnis9
+│       │       │   ├── s-hm608txzh8-0456yj7-7ya3292829hsyovw0a5j524i8
+│       │       │   │   ├── 1dr2yig76xnkwcdim0wckvy8e.o
+│       │       │   │   ├── 28dp5brw53i0hfnicxiitap1a.o
+│       │       │   │   ├── 2mk0n6xst7ho9thzfb8e21q4z.o
+│       │       │   │   ├── 727qwxhgs4qn9qhcia7lwop19.o
+│       │       │   │   ├── 7wruawtvwjlrechw5jhdawwix.o
+│       │       │   │   ├── 9msbaz328fy2x46vork2vk7va.o
+│       │       │   │   ├── apfgzspzagtq9ysrls9wv6hln.o
+│       │       │   │   ├── bo6rn2q9hsq6s81jrrwnfrb6o.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── e133h3zo9zt07eveve4mqcsne.o
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   ├── s-hm608txzh8-0456yj7.lock
+│       │       │   ├── s-hm623gr6b8-07hbft3-7ya3292829hsyovw0a5j524i8
+│       │       │   │   ├── 1dr2yig76xnkwcdim0wckvy8e.o
+│       │       │   │   ├── 28dp5brw53i0hfnicxiitap1a.o
+│       │       │   │   ├── 2mk0n6xst7ho9thzfb8e21q4z.o
+│       │       │   │   ├── 727qwxhgs4qn9qhcia7lwop19.o
+│       │       │   │   ├── 7wruawtvwjlrechw5jhdawwix.o
+│       │       │   │   ├── 9msbaz328fy2x46vork2vk7va.o
+│       │       │   │   ├── apfgzspzagtq9ysrls9wv6hln.o
+│       │       │   │   ├── bo6rn2q9hsq6s81jrrwnfrb6o.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── e133h3zo9zt07eveve4mqcsne.o
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hm623gr6b8-07hbft3.lock
+│       │       ├── comlimine-0084qfqwj1lrj
+│       │       │   ├── s-hm60arjkfj-06h2qwu-ap34xw7ojdc81skmunlqer6wz
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   ├── s-hm60arjkfj-06h2qwu.lock
+│       │       │   ├── s-hm623gxun4-07pjkib-ap34xw7ojdc81skmunlqer6wz
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hm623gxun4-07pjkib.lock
+│       │       └── comlimine-27yxr3ghdmo9r
+│       │           ├── s-hm60arjiyx-0wxdiee-7a7170s9knfxyey5r5gsz54vg
+│       │           │   ├── dep-graph.bin
+│       │           │   ├── query-cache.bin
+│       │           │   └── work-products.bin
+│       │           ├── s-hm60arjiyx-0wxdiee.lock
+│       │           ├── s-hm623gy4bc-1fk1oxa-7a7170s9knfxyey5r5gsz54vg
+│       │           │   ├── dep-graph.bin
+│       │           │   ├── query-cache.bin
+│       │           │   └── work-products.bin
+│       │           └── s-hm623gy4bc-1fk1oxa.lock
+│       └── flycheck0
+│           ├── stderr
+│           └── stdout
+├── crates
+├── c.rs
+├── docker-build.sh
+├── Dockerfile
+├── docker-run.sh
+├── docker-shell.sh
+├── drivers
+│   ├── amdgpu_driver
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       └── main.rs
+│   ├── audiodriver
+│   │   ├── build.rs
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       ├── jacklib.rs
+│   │       ├── lib.rs
+│   │       ├── main.rs
+│   │       ├── odin
+│   │       │   ├── driver.odin
+│   │       │   ├── jack.odin
+│   │       │   ├── microphone.odin
+│   │       │   └── speaker.odin
+│   │       └── tone.rs
+│   ├── intelgpu_driver
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       └── main.rs
+│   ├── netcam_driver
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       └── main.rs
+│   ├── vgpu
+│   │   ├── compile_flags.txt
+│   │   ├── vgpu_driver.c
+│   │   └── vgpu.h
+│   └── wacomgraphic_driver
+│       ├── Cargo.toml
+│       └── src
+│           └── main.rs
+├── driverspace
+│   ├── build.sh
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── link.ld
+│   ├── rust-toolchain.toml
+│   ├── src
+│   │   ├── api.rs
+│   │   ├── drivers
+│   │   │   ├── mod.rs
+│   │   │   └── storage.rs
+│   │   ├── driversapi
+│   │   │   ├── gpuapi.rs
+│   │   │   └── mod.rs
+│   │   └── main.rs
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       │   ├── build
+│       │   ├── deps
+│       │   ├── examples
+│       │   └── incremental
+│       ├── flycheck1
+│       │   ├── stderr
+│       │   └── stdout
+│       └── x86_64-unknown-none
+│           ├── CACHEDIR.TAG
+│           └── debug
+│               ├── build
+│               │   ├── driverspace
+│               │   │   └── e3385bec6744f65a
+│               │   │       ├── fingerprint
+│               │   │       │   ├── bin-driverspace
+│               │   │       │   ├── bin-driverspace.json
+│               │   │       │   ├── dep-bin-driverspace
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   └── output-bin-driverspace
+│               │   │       └── out
+│               │   │           ├── driverspace
+│               │   │           └── driverspace.d
+│               │   └── driverspacelib
+│               │       └── c9bb5689c86d5b22
+│               │           ├── fingerprint
+│               │           │   ├── dep-lib-driverspacelib
+│               │           │   ├── invoked.timestamp
+│               │           │   ├── lib-driverspacelib
+│               │           │   └── lib-driverspacelib.json
+│               │           └── out
+│               │               ├── driverspacelib-c9bb5689c86d5b22.d
+│               │               ├── libdriverspacelib-c9bb5689c86d5b22.rlib
+│               │               └── libdriverspacelib-c9bb5689c86d5b22.rmeta
+│               ├── deps
+│               │   ├── driverspace-63192f8e639decee.d
+│               │   ├── driverspace-a8501fabe790110c.d
+│               │   ├── driverspacelib-10e09e2d5a5cd54c.d
+│               │   ├── driverspacelib-91a9914ff08c27e6.d
+│               │   ├── libdriverspace-63192f8e639decee.rmeta
+│               │   ├── libdriverspacelib-10e09e2d5a5cd54c.rmeta
+│               │   └── libdriverspacelib-91a9914ff08c27e6.rmeta
+│               ├── driverspace
+│               ├── driverspace.d
+│               ├── examples
+│               └── incremental
+│                   ├── driverspace-1zjaekutp504x
+│                   │   ├── s-hma10hwczm-0f5xghr-078c33jyrxdm001sjny0i4fne
+│                   │   │   ├── dep-graph.bin
+│                   │   │   ├── query-cache.bin
+│                   │   │   └── work-products.bin
+│                   │   └── s-hma10hwczm-0f5xghr.lock
+│                   ├── driverspace-3cdylkzpz2xko
+│                   │   ├── s-hm6481tc1r-1sofi1i-1ehh9vuozsjx53ojdi5h1kiq6
+│                   │   │   ├── 2w2cdlr2w6ezno3cvqq2kdef4.o
+│                   │   │   ├── 44i149eq2sdjjfxf79v3gnkle.o
+│                   │   │   ├── 6qzkdfqom56lte6r574g6qk20.o
+│                   │   │   ├── dep-graph.bin
+│                   │   │   ├── eldqeyk0kfvpxttpvm0i4nvi4.o
+│                   │   │   ├── query-cache.bin
+│                   │   │   └── work-products.bin
+│                   │   └── s-hm6481tc1r-1sofi1i.lock
+│                   ├── driverspace-3mv783n5cr6tb
+│                   │   ├── s-hmdq5lazd3-0undbw0.lock
+│                   │   └── s-hmdq5lazd3-0undbw0-working
+│                   │       └── dep-graph.part.bin
+│                   ├── driverspacelib-1qzh0k9em9oko
+│                   │   ├── s-hma10hm5gk-1anhn2a-823fvfc74kx7q4t6u0j2jkllu
+│                   │   │   ├── dep-graph.bin
+│                   │   │   ├── metadata.rmeta
+│                   │   │   ├── query-cache.bin
+│                   │   │   └── work-products.bin
+│                   │   └── s-hma10hm5gk-1anhn2a.lock
+│                   ├── driverspacelib-1v8bspvjhcuhp
+│                   │   ├── s-hma10hmllm-1ppiwll-3ftxqr536v11h3lrz2ovb5o2r
+│                   │   │   ├── dep-graph.bin
+│                   │   │   ├── metadata.rmeta
+│                   │   │   ├── query-cache.bin
+│                   │   │   └── work-products.bin
+│                   │   └── s-hma10hmllm-1ppiwll.lock
+│                   └── driverspacelib-3osy48mx5orfh
+│                       ├── s-hm6454abhz-13flxnf-7dw6y6nmyixiunvn7ipq9kfih
+│                       │   ├── 0wuzevpvxaoq69df7yn3ynz6x.o
+│                       │   ├── 2ddulvfysbphs3kbce63s39ce.o
+│                       │   ├── 3akceu1sy0buirhde9rlp388c.o
+│                       │   ├── 3rl4ttrsxcsf0an6f29rr7d6u.o
+│                       │   ├── 6rwll3njng2tr3nxtbznox1go.o
+│                       │   ├── 82cj2o2k6bbgvaijft1nhznlk.o
+│                       │   ├── d1btuf19kbs7ege0q9oq5aji0.o
+│                       │   ├── d5ywybvatamexr9cfo8xknxi8.o
+│                       │   ├── dep-graph.bin
+│                       │   ├── metadata.rmeta
+│                       │   ├── query-cache.bin
+│                       │   └── work-products.bin
+│                       └── s-hm6454abhz-13flxnf.lock
+├── driverspacelib
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── rust-toolchain.toml
+│   ├── src
+│   │   ├── abi.rs
+│   │   ├── audio.rs
+│   │   ├── block.rs
+│   │   ├── driver.rs
+│   │   ├── input.rs
+│   │   ├── jack.rs
+│   │   ├── lib.rs
+│   │   ├── log.rs
+│   │   ├── mem.rs
+│   │   ├── ring.rs
+│   │   ├── runtime.rs
+│   │   ├── svc.rs
+│   │   └── video.rs
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       │   ├── build
+│       │   ├── deps
+│       │   ├── examples
+│       │   └── incremental
+│       ├── flycheck2
+│       │   ├── stderr
+│       │   └── stdout
+│       └── x86_64-unknown-none
+│           ├── CACHEDIR.TAG
+│           └── debug
+│               ├── build
+│               │   └── driverspacelib
+│               │       └── dcd722aaf3837be5
+│               │           ├── fingerprint
+│               │           │   ├── dep-lib-driverspacelib
+│               │           │   ├── invoked.timestamp
+│               │           │   ├── lib-driverspacelib
+│               │           │   └── lib-driverspacelib.json
+│               │           └── out
+│               │               ├── driverspacelib-dcd722aaf3837be5.037suzpc36waico61dmn3aj3e.0kb21js.rcgu.o
+│               │               ├── driverspacelib-dcd722aaf3837be5.6axnx1i4v165xsrusi97lkkfd.0kb21js.rcgu.o
+│               │               ├── driverspacelib-dcd722aaf3837be5.ajp1rbw1w84hh05r2jtdv3z5v.0kb21js.rcgu.o
+│               │               ├── driverspacelib-dcd722aaf3837be5.bbaqf5djnudvufdubjqgf998k.0kb21js.rcgu.o
+│               │               ├── driverspacelib-dcd722aaf3837be5.d
+│               │               ├── driverspacelib-dcd722aaf3837be5.e6lrx3ho042e5mgjw4fwf89b3.0kb21js.rcgu.o
+│               │               ├── libdriverspacelib-dcd722aaf3837be5.rlib
+│               │               └── libdriverspacelib-dcd722aaf3837be5.rmeta
+│               ├── deps
+│               │   ├── driverspacelib-ee9f246eb8b7dac2.d
+│               │   ├── driverspacelib-fdbdc74368228831.d
+│               │   └── libdriverspacelib-fdbdc74368228831.rmeta
+│               ├── examples
+│               ├── incremental
+│               │   ├── driverspacelib-0lv8k8nk06vmj
+│               │   │   ├── s-hmdq5lbqt5-128bw1z.lock
+│               │   │   └── s-hmdq5lbqt5-128bw1z-working
+│               │   │       └── dep-graph.part.bin
+│               │   ├── driverspacelib-0xc33dt0pa8js
+│               │   │   ├── s-hma10hnqyb-1762tir-16osxqftdxsnrxkpv4213stxn
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hma10hnqyb-1762tir.lock
+│               │   └── driverspacelib-1ockg0t8em64g
+│               │       ├── s-hm644cfaqr-0q146ys-38nwzvlntig4igu9gqvyff9cz
+│               │       │   ├── 037suzpc36waico61dmn3aj3e.o
+│               │       │   ├── 69c95ayi0esuijohg2rnc5zzm.o
+│               │       │   ├── 6axnx1i4v165xsrusi97lkkfd.o
+│               │       │   ├── 72vv1zkyjsoohdw23ehsmz5dl.o
+│               │       │   ├── 91lhaa96zgo8ambzunwz0qj7y.o
+│               │       │   ├── ajp1rbw1w84hh05r2jtdv3z5v.o
+│               │       │   ├── bbaqf5djnudvufdubjqgf998k.o
+│               │       │   ├── dep-graph.bin
+│               │       │   ├── e6lrx3ho042e5mgjw4fwf89b3.o
+│               │       │   ├── metadata.rmeta
+│               │       │   ├── query-cache.bin
+│               │       │   └── work-products.bin
+│               │       └── s-hm644cfaqr-0q146ys.lock
+│               ├── libdriverspacelib.d
+│               └── libdriverspacelib.rlib
+├── driverspace_workspace
+│   ├── Cargo.toml
+│   └── crates
+├── iso-builder
+│   ├── Boot
+│   ├── Directory.Mod
+│   ├── Image
+│   ├── Image.mod
+│   ├── ISO.Mod
+│   ├── Main
+│   ├── Main.Mod
+│   ├── Volume.Mod
+│   └── Writer.Mod
+├── kernel
+│   ├── build.rs
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── ctrlfile
+│   ├── ctrlfilemaker
+│   ├── ctrlfile.toml
+│   ├── data.img
+│   ├── linuxcombase
+│   ├── README.md
+│   ├── riscv64-kernel.json
+│   ├── riscv64-link.ld
+│   ├── rust-toolchain.toml
+│   ├── src
+│   │   ├── abi
+│   │   │   ├── allocabi.rs
+│   │   │   ├── fsabi.rs
+│   │   │   ├── mabi.rs
+│   │   │   └── publicabi.rs
+│   │   ├── arch
+│   │   │   ├── mod.rs
+│   │   │   ├── riscv64.rs
+│   │   │   └── x86_64.rs
+│   │   ├── audio
+│   │   │   └── jack.rs
+│   │   ├── battery
+│   │   │   ├── aut.rs
+│   │   │   ├── battery.h
+│   │   │   ├── bridge.rs
+│   │   │   ├── init.c
+│   │   │   ├── init.h
+│   │   │   ├── init.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── operation.c
+│   │   │   └── operation.h
+│   │   ├── bluetooth
+│   │   │   ├── aut.rs
+│   │   │   ├── bridge.rs
+│   │   │   ├── bt.h
+│   │   │   ├── hci.h
+│   │   │   ├── init.c
+│   │   │   ├── init.h
+│   │   │   ├── init.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── operation.c
+│   │   │   └── operation.h
+│   │   ├── camera
+│   │   │   ├── aut.rs
+│   │   │   ├── bridge.rs
+│   │   │   ├── camera.h
+│   │   │   ├── init.c
+│   │   │   ├── init.h
+│   │   │   ├── init.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── operation.c
+│   │   │   └── operation.h
+│   │   ├── caps
+│   │   │   ├── audit.rs
+│   │   │   ├── caps.h
+│   │   │   ├── check.rs
+│   │   │   ├── defaults.rs
+│   │   │   ├── export.rs
+│   │   │   ├── grant.rs
+│   │   │   ├── hierarchy.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── policy.rs
+│   │   │   ├── revoke.rs
+│   │   │   ├── sets.rs
+│   │   │   ├── store.rs
+│   │   │   ├── syscalls.rs
+│   │   │   ├── tests.rs
+│   │   │   └── types.rs
+│   │   ├── core-lang
+│   │   │   ├── ast.c
+│   │   │   ├── ast.h
+│   │   │   ├── bc.h
+│   │   │   ├── bridge.c
+│   │   │   ├── bridge.h
+│   │   │   ├── codegen.c
+│   │   │   ├── lexer.c
+│   │   │   ├── lexer.h
+│   │   │   ├── loader.c
+│   │   │   ├── loader.h
+│   │   │   ├── native.h
+│   │   │   ├── native_x86.c
+│   │   │   ├── parser.c
+│   │   │   ├── parser.h
+│   │   │   ├── run.c
+│   │   │   ├── sema.c
+│   │   │   ├── sema.h
+│   │   │   ├── tokens.h
+│   │   │   ├── vm.c
+│   │   │   └── vm.h
+│   │   ├── cpu
+│   │   │   ├── acpi.rs
+│   │   │   ├── lapic.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── riscv.rs
+│   │   │   ├── scheduler
+│   │   │   │   ├── arch
+│   │   │   │   │   ├── risc_v
+│   │   │   │   │   │   └── context_swich.rs
+│   │   │   │   │   └── x86_64
+│   │   │   │   │       └── context_swich.rs
+│   │   │   │   ├── arch_hooks.rs
+│   │   │   │   ├── class.rs
+│   │   │   │   ├── collections
+│   │   │   │   │   ├── bitmap.rs
+│   │   │   │   │   ├── cpumask.rs
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   ├── plist.rs
+│   │   │   │   │   ├── rbtree.rs
+│   │   │   │   │   ├── rt_array.rs
+│   │   │   │   │   └── task.rs
+│   │   │   │   ├── core.rs
+│   │   │   │   ├── debug
+│   │   │   │   │   ├── deadlock.rs
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   ├── sysrq.rs
+│   │   │   │   │   └── tracepoints.rs
+│   │   │   │   ├── entities
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   ├── runqueue.rs
+│   │   │   │   │   ├── stats.rs
+│   │   │   │   │   └── task.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   ├── policies
+│   │   │   │   │   ├── deadline
+│   │   │   │   │   │   ├── admission.rs
+│   │   │   │   │   │   ├── core.rs
+│   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   └── replenish.rs
+│   │   │   │   │   ├── fair
+│   │   │   │   │   │   ├── core.rs
+│   │   │   │   │   │   ├── groups
+│   │   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   │   ├── shares.rs
+│   │   │   │   │   │   │   └── throttle.rs
+│   │   │   │   │   │   ├── load
+│   │   │   │   │   │   │   ├── decay.rs
+│   │   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   │   └── util.rs
+│   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   ├── placement
+│   │   │   │   │   │   │   ├── cache.rs
+│   │   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   │   └── numa.rs
+│   │   │   │   │   │   └── tree
+│   │   │   │   │   │       ├── mod.rs
+│   │   │   │   │   │       └── walk.rs
+│   │   │   │   │   ├── idle.rs
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   ├── rt
+│   │   │   │   │   │   ├── bandwidth.rs
+│   │   │   │   │   │   ├── core.rs
+│   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   └── prio_array.rs
+│   │   │   │   │   └── stop.rs
+│   │   │   │   ├── power
+│   │   │   │   │   ├── em.rs
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   └── placement.rs
+│   │   │   │   ├── smp
+│   │   │   │   │   ├── balancing
+│   │   │   │   │   │   ├── active.rs
+│   │   │   │   │   │   ├── calculate.rs
+│   │   │   │   │   │   ├── env.rs
+│   │   │   │   │   │   └── mod.rs
+│   │   │   │   │   ├── ipi.rs
+│   │   │   │   │   ├── migration
+│   │   │   │   │   │   ├── mod.rs
+│   │   │   │   │   │   └── stopper.rs
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   └── topology.rs
+│   │   │   │   ├── state.rs
+│   │   │   │   ├── tests
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   ├── test_balance_math.rs
+│   │   │   │   │   ├── test_pelt.rs
+│   │   │   │   │   └── test_rbtree.rs
+│   │   │   │   └── time
+│   │   │   │       ├── hrtimer.rs
+│   │   │   │       ├── mod.rs
+│   │   │   │       ├── plist.rs
+│   │   │   │       ├── rbtree.rs
+│   │   │   │       ├── rt_array.rs
+│   │   │   │       ├── task.rs
+│   │   │   │       └── tick.rs
+│   │   │   ├── smp.rs
+│   │   │   ├── trampoline.rs
+│   │   │   └── trampoline.s
+│   │   ├── ctrlinstall
+│   │   │   ├── common.rs
+│   │   │   ├── init
+│   │   │   │   ├── bootstrap.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── state.rs
+│   │   │   ├── install
+│   │   │   │   ├── executor.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   ├── resolver.rs
+│   │   │   │   └── transaction.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── repo
+│   │   │   │   ├── fetch.rs
+│   │   │   │   ├── index.rs
+│   │   │   │   ├── manifest.rs
+│   │   │   │   └── mod.rs
+│   │   │   └── update
+│   │   │       ├── diff.rs
+│   │   │       ├── mod.rs
+│   │   │       └── upgrade.rs
+│   │   ├── displayport
+│   │   │   ├── aut.rs
+│   │   │   ├── aux.c
+│   │   │   ├── aux.h
+│   │   │   ├── bridge.rs
+│   │   │   ├── dp.h
+│   │   │   ├── edid.c
+│   │   │   ├── edid.h
+│   │   │   ├── init.c
+│   │   │   ├── init.h
+│   │   │   ├── init.rs
+│   │   │   ├── link.c
+│   │   │   ├── link.h
+│   │   │   ├── mod.rs
+│   │   │   ├── operation.c
+│   │   │   └── operation.h
+│   │   ├── drivers
+│   │   │   ├── mod.rs
+│   │   │   ├── pci
+│   │   │   │   └── mod.rs
+│   │   │   └── usb
+│   │   │       ├── class
+│   │   │       │   ├── cdc
+│   │   │       │   │   └── mod.rs
+│   │   │       │   ├── hid
+│   │   │       │   │   ├── keyboard.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── mouse.rs
+│   │   │       │   │   └── report.rs
+│   │   │       │   ├── mass
+│   │   │       │   │   ├── blockdev.rs
+│   │   │       │   │   ├── cbw.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── scsi.rs
+│   │   │       │   └── mod.rs
+│   │   │       ├── core
+│   │   │       │   ├── config.rs
+│   │   │       │   ├── control.rs
+│   │   │       │   ├── descriptor.rs
+│   │   │       │   ├── device.rs
+│   │   │       │   ├── endpoint.rs
+│   │   │       │   ├── enumerate.rs
+│   │   │       │   ├── hub.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── request.rs
+│   │   │       │   └── speed.rs
+│   │   │       ├── debug.rs
+│   │   │       ├── dma.rs
+│   │   │       ├── host
+│   │   │       │   ├── companion.rs
+│   │   │       │   ├── ehci
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── qh.rs
+│   │   │       │   │   └── td.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── xhci
+│   │   │       │       ├── context.rs
+│   │   │       │       ├── control.rs
+│   │   │       │       ├── event.rs
+│   │   │       │       ├── init.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── port.rs
+│   │   │       │       ├── regs.rs
+│   │   │       │       ├── ring.rs
+│   │   │       │       └── trb.rs
+│   │   │       ├── mod.rs
+│   │   │       └── pci_glue.rs
+│   │   ├── driverspaceinit
+│   │   │   ├── abi
+│   │   │   │   ├── abi.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── src.rs
+│   │   │   ├── init
+│   │   │   │   ├── communicate.asm
+│   │   │   │   ├── drivercall.asm
+│   │   │   │   ├── enter.rs
+│   │   │   │   ├── initabi.rs
+│   │   │   │   ├── initcommand.rs
+│   │   │   │   ├── init.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── service.rs
+│   │   │   └── mod.rs
+│   │   ├── editor
+│   │   │   ├── editor.c
+│   │   │   ├── editor.h
+│   │   │   ├── mouse.c
+│   │   │   └── mouse.h
+│   │   ├── fs
+│   │   │   ├── disc.rs
+│   │   │   ├── driver
+│   │   │   │   ├── ata_pio.rs
+│   │   │   │   ├── block.rs
+│   │   │   │   ├── driver.rs
+│   │   │   │   ├── init.rs
+│   │   │   │   ├── lock.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   ├── port.rs
+│   │   │   │   └── registry.rs
+│   │   │   ├── ext4
+│   │   │   │   └── mod.rs
+│   │   │   ├── fat32
+│   │   │   │   └── mod.rs
+│   │   │   ├── format.rs
+│   │   │   ├── init.rs
+│   │   │   ├── mbr.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── share.rs
+│   │   │   ├── tangfs
+│   │   │   │   ├── btree.rs
+│   │   │   │   ├── dir.rs
+│   │   │   │   ├── extern.rs
+│   │   │   │   ├── file.rs
+│   │   │   │   ├── format.rs
+│   │   │   │   ├── inode.rs
+│   │   │   │   ├── journal.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── superblock.rs
+│   │   │   ├── tfs.rs
+│   │   │   └── vfs.rs
+│   │   ├── gdt.rs
+│   │   ├── gfx
+│   │   │   ├── console.rs
+│   │   │   ├── font.rs
+│   │   │   ├── framebuffer.rs
+│   │   │   ├── galaxy.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── panic_screen.rs
+│   │   │   └── vga.rs
+│   │   ├── hdmi
+│   │   │   ├── aut.rs
+│   │   │   ├── bridge.rs
+│   │   │   ├── hdmi.h
+│   │   │   ├── init.c
+│   │   │   ├── init.h
+│   │   │   ├── init.rs
+│   │   │   ├── interface.c
+│   │   │   ├── interface.h
+│   │   │   ├── mode.c
+│   │   │   ├── mode.h
+│   │   │   ├── mod.rs
+│   │   │   ├── operation.c
+│   │   │   └── operation.h
+│   │   ├── interfejs
+│   │   │   ├── policy.c
+│   │   │   ├── policy.h
+│   │   │   ├── safe.c
+│   │   │   ├── safe.h
+│   │   │   ├── trangorge_api.txt
+│   │   │   ├── trangorge.c
+│   │   │   └── trangorge.h
+│   │   ├── interrupts.rs
+│   │   ├── kernel_glue.rs
+│   │   ├── kstd_glue.rs
+│   │   ├── linuxcom
+│   │   │   └── compat.h
+│   │   ├── main.rs
+│   │   ├── mm
+│   │   │   ├── alloc
+│   │   │   │   ├── api
+│   │   │   │   │   ├── alloc.c
+│   │   │   │   │   └── alloc.h
+│   │   │   │   ├── debug
+│   │   │   │   │   ├── alloc_debug.c
+│   │   │   │   │   ├── alloc_debug.h
+│   │   │   │   │   ├── leak.c
+│   │   │   │   │   ├── leak.h
+│   │   │   │   │   ├── stats.c
+│   │   │   │   │   └── stats.h
+│   │   │   │   ├── heap
+│   │   │   │   │   ├── buddy.c
+│   │   │   │   │   ├── buddy.h
+│   │   │   │   │   ├── heap.c
+│   │   │   │   │   ├── heap.h
+│   │   │   │   │   ├── slab.c
+│   │   │   │   │   └── slab.h
+│   │   │   │   ├── physical
+│   │   │   │   │   ├── bitmap.c
+│   │   │   │   │   ├── bitmap.h
+│   │   │   │   │   ├── frame.c
+│   │   │   │   │   ├── frame.h
+│   │   │   │   │   ├── pmm.c
+│   │   │   │   │   └── pmm.h
+│   │   │   │   ├── special
+│   │   │   │   │   ├── contiguous.c
+│   │   │   │   │   ├── contiguous.h
+│   │   │   │   │   ├── dma.c
+│   │   │   │   │   └── dma.h
+│   │   │   │   └── virtual
+│   │   │   │       ├── mapping.c
+│   │   │   │       ├── mapping.h
+│   │   │   │       ├── page.c
+│   │   │   │       ├── page.h
+│   │   │   │       ├── vmm.c
+│   │   │   │       └── vmm.h
+│   │   │   ├── api.rs
+│   │   │   ├── arch
+│   │   │   │   ├── aarch64
+│   │   │   │   │   ├── memory.h
+│   │   │   │   │   ├── paging.c
+│   │   │   │   │   ├── paging.h
+│   │   │   │   │   ├── tlb.c
+│   │   │   │   │   └── tlb.h
+│   │   │   │   └── x86_64
+│   │   │   │       ├── memory.c
+│   │   │   │       ├── memory.h
+│   │   │   │       ├── paging.c
+│   │   │   │       ├── paging.h
+│   │   │   │       ├── tlb_asm.h
+│   │   │   │       ├── tlb_asm.s
+│   │   │   │       ├── tlb.c
+│   │   │   │       └── tlb.h
+│   │   │   ├── cache
+│   │   │   │   ├── cache.c
+│   │   │   │   ├── cache.h
+│   │   │   │   ├── object_cache.c
+│   │   │   │   ├── object_cashe.h
+│   │   │   │   ├── per_cpu.c
+│   │   │   │   └── per_cpu.h
+│   │   │   ├── core
+│   │   │   │   ├── address.c
+│   │   │   │   ├── address.h
+│   │   │   │   ├── mm.c
+│   │   │   │   ├── mm.h
+│   │   │   │   ├── range.c
+│   │   │   │   ├── range.h
+│   │   │   │   ├── region.c
+│   │   │   │   ├── region.h
+│   │   │   │   ├── sizeutil.c
+│   │   │   │   ├── sizeutil.h
+│   │   │   │   ├── smp_lock.c
+│   │   │   │   └── smp_lock.h
+│   │   │   ├── ffi.rs
+│   │   │   ├── init.rs
+│   │   │   ├── kprintf.c
+│   │   │   ├── mm_bridge.rs
+│   │   │   ├── MM_PLAN_ULEPSZENIA.md
+│   │   │   ├── mod.rs
+│   │   │   ├── paging
+│   │   │   │   ├── paging.c
+│   │   │   │   ├── paging.h
+│   │   │   │   ├── pml.c
+│   │   │   │   ├── pml.h
+│   │   │   │   ├── tlb.c
+│   │   │   │   └── tlb.h
+│   │   │   ├── phys.rs
+│   │   │   ├── process
+│   │   │   │   ├── address_space.c
+│   │   │   │   ├── address_space.h
+│   │   │   │   ├── mmap.c
+│   │   │   │   └── mmap.h
+│   │   │   ├── protection
+│   │   │   │   ├── guard.c
+│   │   │   │   ├── guard.h
+│   │   │   │   ├── isolation.c
+│   │   │   │   ├── isolation.h
+│   │   │   │   ├── permissions.c
+│   │   │   │   └── permissions.h
+│   │   │   ├── riscv.rs
+│   │   │   ├── space.rs
+│   │   │   └── virt.rs
+│   │   ├── nic
+│   │   │   ├── arp.rs
+│   │   │   ├── checksum.rs
+│   │   │   ├── command.rs
+│   │   │   ├── device.rs
+│   │   │   ├── driver.rs
+│   │   │   ├── error.rs
+│   │   │   ├── ethernet.rs
+│   │   │   ├── icmp.rs
+│   │   │   ├── ipv4.rs
+│   │   │   ├── lib.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── packet.rs
+│   │   │   ├── ping.rs
+│   │   │   ├── protocols.rs
+│   │   │   ├── runtime.rs
+│   │   │   ├── stack.rs
+│   │   │   ├── types.rs
+│   │   │   └── virtio
+│   │   │       ├── descriptor.rs
+│   │   │       ├── device.rs
+│   │   │       ├── mod.rs
+│   │   │       ├── net.rs
+│   │   │       ├── pci_legacy.rs
+│   │   │       ├── queue.rs
+│   │   │       └── transport.rs
+│   │   ├── nimcore
+│   │   │   ├── banner.nim
+│   │   │   ├── format.nim
+│   │   │   ├── nimcore.nim
+│   │   │   ├── parse.nim
+│   │   │   ├── ringbuf.nim
+│   │   │   └── shell.nim
+│   │   ├── nimcore.rs
+│   │   ├── pci.rs
+│   │   ├── policy
+│   │   │   ├── ada
+│   │   │   │   ├── policy.adb
+│   │   │   │   ├── policy.ads
+│   │   │   │   ├── policy_c.adb
+│   │   │   │   ├── policy_c.ads
+│   │   │   │   └── policy.gpr
+│   │   │   ├── bridge.rs
+│   │   │   ├── mod.rs
+│   │   │   └── nim
+│   │   │       └── policynim.nim
+│   │   ├── process
+│   │   │   ├── fd.rs
+│   │   │   └── proc.rs
+│   │   ├── serial.rs
+│   │   ├── terminal
+│   │   │   └── mod.rs
+│   │   ├── testing.rs
+│   │   ├── trampoline_rings
+│   │   │   └── arch
+│   │   │       ├── aarch64
+│   │   │       │   ├── trampoline_rings.rs
+│   │   │       │   └── trampoline_rings.s
+│   │   │       ├── risc-v
+│   │   │       │   ├── trampoline_rings.rs
+│   │   │       │   └── trampoline_rings.s
+│   │   │       └── x86_64
+│   │   │           ├── trampoline_rings.rs
+│   │   │           └── trampoline_rings.s
+│   │   ├── types.h
+│   │   ├── userspace
+│   │   │   ├── mod.rs
+│   │   │   └── process
+│   │   │       ├── mod.rs
+│   │   │       ├── proc.rs
+│   │   │       ├── runcl.rs
+│   │   │       ├── spawn.rs
+│   │   │       └── syscall.rs
+│   │   └── vga_buffer.rs
+│   ├── TODO.md
+│   └── x86_64-kernel.json
+├── kernelin1920x1080.png
+├── kernel_loader_base_res.png
+├── kernelloading.png
+├── kstd
+│   ├── include
+│   │   ├── kstd_audio.h
+│   │   ├── kstd_bt.h
+│   │   ├── kstd_fs.h
+│   │   ├── kstd.h
+│   │   ├── kstd_input.h
+│   │   ├── kstd_mem.h
+│   │   ├── kstd_types.h
+│   │   └── kstd_video.h
+│   ├── libkstd_kernel.a
+│   ├── libkstd_user.a
+│   ├── makefile
+│   └── src
+│       ├── common
+│       ├── kernel
+│       │   ├── audio.c
+│       │   ├── bt.c
+│       │   ├── fs.c
+│       │   ├── input.c
+│       │   ├── log.c
+│       │   ├── mem.c
+│       │   └── video.c
+│       └── user
+│           ├── audio.c
+│           ├── bt.c
+│           ├── fs.c
+│           ├── input.c
+│           ├── log.c
+│           ├── mem.c
+│           └── video.c
+├── libs
+│   ├── dsabi.h
+│   ├── dsasync.h
+│   ├── dsaudio.h
+│   ├── dsblock.h
+│   ├── dsclient.c
+│   ├── dsclient.h
+│   ├── dsinput.h
+│   ├── dslock.h
+│   ├── dslog.h
+│   ├── dsmem.h
+│   ├── dsvgpu.h
+│   └── dsvideo.h
+├── LICENSE
+├── panic.md
+├── README.md
+├── server_workspace
+│   ├── Cargo.toml
+│   └── crates
+├── targets
+│   └── x86_64-unknown-none
+├── tatus --porcelain
+├── tmp
+├── trangorgelibc
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── src
+│   │   ├── abi
+│   │   │   ├── errno.rs
+│   │   │   ├── ktable.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── syscall.rs
+│   │   │   └── types.rs
+│   │   ├── driver
+│   │   ├── io
+│   │   ├── lib.rs
+│   │   ├── mem
+│   │   └── sync
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       │   ├── build
+│       │   ├── deps
+│       │   │   ├── trangorgelib-125402c4454c4547.d
+│       │   │   └── trangorgelib-9345c2f5406e2217.d
+│       │   ├── examples
+│       │   └── incremental
+│       │       ├── trangorgelib-1ph1guf7lpgsw
+│       │       │   ├── s-hmdq5lapp8-0tl3ncf.lock
+│       │       │   └── s-hmdq5lapp8-0tl3ncf-working
+│       │       │       └── dep-graph.part.bin
+│       │       └── trangorgelib-3osbpsz2lyz0v
+│       │           ├── s-hmdq5lasnr-1qxzr9m.lock
+│       │           └── s-hmdq5lasnr-1qxzr9m-working
+│       │               └── dep-graph.part.bin
+│       └── flycheck5
+│           ├── stderr
+│           └── stdout
+├── TrangorgeOS — Architecture Documentation.markdown
+├── TrangorgeOS — dokumentacja architektury.markdown
+├── TrangorgeOS — TODO.md
+├── tree.txt
+├── triang-lang
+│   ├── calltest
+│   │   ├── lib
+│   │   ├── src
+│   │   │   └── main.xl
+│   │   └── triang.project
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── examples
+│   │   └── sample.tlx
+│   ├── out
+│   │   └── x86_64
+│   │       ├── prog.asm
+│   │       ├── prog.asm.bin
+│   │       ├── prog.asm.elf
+│   │       ├── prog.c
+│   │       ├── prog.c.bin
+│   │       ├── prog.c.elf
+│   │       └── prog.o
+│   ├── src
+│   │   ├── ast.rs
+│   │   ├── codegen
+│   │   │   ├── asm.rs
+│   │   │   ├── c.rs
+│   │   │   ├── mod.rs
+│   │   │   └── target.rs
+│   │   ├── ir.rs
+│   │   ├── iso.rs
+│   │   ├── lexer.rs
+│   │   ├── main.rs
+│   │   ├── parser.rs
+│   │   ├── project.rs
+│   │   ├── sema.rs
+│   │   └── token.rs
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       │   ├── build
+│       │   ├── deps
+│       │   │   ├── libtriang-795b0c52f915077a.rmeta
+│       │   │   ├── libtriang-837c90d24fb7b049.rmeta
+│       │   │   ├── triang-795b0c52f915077a.d
+│       │   │   └── triang-837c90d24fb7b049.d
+│       │   ├── examples
+│       │   └── incremental
+│       │       ├── triang-1snb421aucjiq
+│       │       │   ├── s-hm608uww9z-1ig6xvh-d8rvb16c829ai58ig43pu23b4
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hm608uww9z-1ig6xvh.lock
+│       │       └── triang-30b9rrp9vsg96
+│       │           ├── s-hm608ux31p-1kbb9zn-9gz813q2nssq6bmsd8dn03xzr
+│       │           │   ├── dep-graph.bin
+│       │           │   ├── query-cache.bin
+│       │           │   └── work-products.bin
+│       │           └── s-hm608ux31p-1kbb9zn.lock
+│       └── flycheck6
+│           ├── stderr
+│           └── stdout
+├── userspace-ctrl
+│   ├── app
+│   └── src
+│       ├── abi
+│       │   ├── capabilities.odin
+│       │   ├── limits.odin
+│       │   ├── message.odin
+│       │   ├── opcodes.odin
+│       │   ├── payloads
+│       │   │   ├── dev.odin
+│       │   │   ├── fs.odin
+│       │   │   ├── ipc.odin
+│       │   │   ├── mem.odin
+│       │   │   ├── net.odin
+│       │   │   ├── proc.odin
+│       │   │   ├── sys.odin
+│       │   │   └── time.odin
+│       │   ├── status.odin
+│       │   ├── version.odin
+│       │   └── wire
+│       │       ├── decode.odin
+│       │       ├── encode.odin
+│       │       └── endian.odin
+│       ├── build.odin
+│       ├── ipc
+│       │   ├── channel.odin
+│       │   ├── dispatch.odin
+│       │   ├── handle.odin
+│       │   ├── handle_table.odin
+│       │   ├── port.odin
+│       │   ├── queue.odin
+│       │   ├── router.odin
+│       │   ├── shared_mem.odin
+│       │   └── transfer.odin
+│       ├── kernel_if
+│       │   ├── debug.odin
+│       │   ├── interrupt.odin
+│       │   ├── io.odin
+│       │   ├── memory.odin
+│       │   ├── raw.odin
+│       │   ├── syscalls.odin
+│       │   ├── thread.odin
+│       │   └── time.odin
+│       ├── loader
+│       │   ├── compat.odin
+│       │   ├── elf
+│       │   │   ├── dynamic.odin
+│       │   │   ├── header.odin
+│       │   │   ├── relocation.odin
+│       │   │   ├── sections.odin
+│       │   │   ├── segments.odin
+│       │   │   └── symbols.odin
+│       │   ├── format.odin
+│       │   ├── image.odin
+│       │   ├── interp.odin
+│       │   └── linker.odin
+│       ├── log
+│       │   ├── buffer.odin
+│       │   ├── console.odin
+│       │   ├── filter.odin
+│       │   ├── levels.odin
+│       │   └── logger.odin
+│       ├── main.odin
+│       ├── mem
+│       │   ├── cow.odin
+│       │   ├── fault.odin
+│       │   ├── heap.odin
+│       │   ├── mmap.odin
+│       │   ├── pool.odin
+│       │   ├── protect.odin
+│       │   ├── region.odin
+│       │   └── vmm.odin
+│       ├── proc
+│       │   ├── context.odin
+│       │   ├── exec.odin
+│       │   ├── hierarchy.odin
+│       │   ├── lifecycle.odin
+│       │   ├── namespace.odin
+│       │   ├── pcb.odin
+│       │   ├── resource.odin
+│       │   └── table.odin
+│       ├── sched
+│       │   ├── affinity.odin
+│       │   ├── idle.odin
+│       │   ├── policy.odin
+│       │   ├── runqueue.odin
+│       │   ├── timeslice.odin
+│       │   └── wakeup.odin
+│       ├── security
+│       │   ├── acl.odin
+│       │   ├── audit.odin
+│       │   ├── capability.odin
+│       │   ├── sandbox.odin
+│       │   ├── token.odin
+│       │   └── verify.odin
+│       ├── util
+│       │   ├── assert.odin
+│       │   ├── bits.odin
+│       │   ├── buddy.odin
+│       │   ├── error.odin
+│       │   ├── hash.odin
+│       │   ├── list.odin
+│       │   ├── map.odin
+│       │   ├── math.odin
+│       │   ├── queue.odin
+│       │   ├── ring.odin
+│       │   ├── slab.odin
+│       │   ├── sort.odin
+│       │   ├── string.odin
+│       │   └── types.odin
+│       └── vfs
+│           ├── devfs.odin
+│           ├── dir.odin
+│           ├── file.odin
+│           ├── mount.odin
+│           ├── path.odin
+│           ├── pipe.odin
+│           └── vnode.odin
+├── userspace-legasy
+│   ├── build.sh
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── demo
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       └── main.rs
+│   ├── init
+│   │   ├── Cargo.toml
+│   │   ├── link.ld
+│   │   └── src
+│   │       └── main.rs
+│   ├── shell
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       └── main.rs
+│   ├── target
+│   │   ├── CACHEDIR.TAG
+│   │   ├── flycheck7
+│   │   │   ├── stderr
+│   │   │   └── stdout
+│   │   └── release
+│   │       ├── build
+│   │       ├── deps
+│   │       │   ├── demo-6ff5e923d8e20def.d
+│   │       │   ├── demo-6ff5e923d8e20def.demo.6bb52d76962a42d0-cgu.0.rcgu.o
+│   │       │   ├── libtrangorgelibc-f0537ead30e300eb.rlib
+│   │       │   ├── libtrangorgelibc-f0537ead30e300eb.rmeta
+│   │       │   ├── shell-f52eca906d4429bf.d
+│   │       │   ├── shell-f52eca906d4429bf.shell.47d7265e5366bdd4-cgu.0.rcgu.o
+│   │       │   ├── trangorgelibc-f0537ead30e300eb.d
+│   │       │   ├── tr_init-90119d068266140f.d
+│   │       │   └── tr_init-90119d068266140f.tr_init.6b056fb7212ba612-cgu.0.rcgu.o
+│   │       ├── examples
+│   │       └── incremental
+│   └── terminal
+│       ├── Cargo.toml
+│       └── src
+│           └── main.rs
+└── userspace_worspace
+    ├── Cargo.toml
+    └── crates
+
+283 directories, 934 files
