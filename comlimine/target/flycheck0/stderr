@@ -1,2 +1,2 @@
 warning: comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) ignoring invalid dependency `kernel` which is missing a lib target
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
