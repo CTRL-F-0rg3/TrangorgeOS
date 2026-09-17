@@ -37,6 +37,10 @@ pub enum Opcode {
     IpcCreateChannel    = 0x0300,
     /// 请求连接到某个 Port
     IpcConnectPort      = 0x0301,
+
+    // === 日志 (0x0004) ===
+    /// 驱动通过 Manager 转发日志消息
+    SysLog              = 0x0004,
 }
 
 impl Opcode {
@@ -56,6 +60,7 @@ impl Opcode {
             0x0211 => Some(Self::IrqUnbind),
             0x0300 => Some(Self::IpcCreateChannel),
             0x0301 => Some(Self::IpcConnectPort),
+            0x0004 => Some(Self::SysLog),
             _ => None,
         }
     }

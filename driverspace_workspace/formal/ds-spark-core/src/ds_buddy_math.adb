@@ -5,7 +5,7 @@ is
 
    function Power_Of_Two (Exponent : Block_Size) return Phys_Addr is
    begin
-      return Shift_Left (1, Integer (Exponent));
+      return Phys_Addr (Shift_Left (1, Integer (Exponent)));
    end Power_Of_Two;
 
    function Is_Aligned (Addr : Phys_Addr; Size_Exp : Block_Size) return Boolean is

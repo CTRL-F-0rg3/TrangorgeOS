@@ -6,8 +6,8 @@ package DS_Buddy_Math with
    Pure
 is
    -- Typy bazowe dla fizycznej pamięci (bare-metal)
-   type Phys_Addr is new UInt64;
-   type Block_Size is new UInt64;
+   type Phys_Addr is new Unsigned_64;
+   type Block_Size is new Unsigned_64;
 
    -- Minimalny i maksymalny rozmiar bloku (np. 4KB do 1GB)
    MIN_BLOCK_SIZE : constant Block_Size := 12; -- 2^12 = 4096 bytes (4KB)
@@ -16,7 +16,8 @@ is
    -- Funkcja pomocnicza: Obliczanie 2^N (Shift left)
    function Power_Of_Two (Exponent : Block_Size) return Phys_Addr with
       Pre  => Exponent <= 63,
-      Post => Power_Of_Two'Result = 2 ** Exponent;
+      -- Use a bit-shift to produce a value of type Unsigned_64 / Phys_Addr
+      Post => Power_Of_Two'Result = Shift_Left (Phys_Addr (1), Integer (Exponent));
 
    -- Sprawdzenie, czy adres jest poprawnie wyrównany do rozmiaru bloku
    function Is_Aligned (Addr : Phys_Addr; Size_Exp : Block_Size) return Boolean with
@@ -35,8 +36,8 @@ is
       Pre  => Size_Exp >= MIN_BLOCK_SIZE and then Size_Exp <= MAX_BLOCK_SIZE,
       Post => Is_Aligned (Get_Buddy_Address'Result, Size_Exp),
       Post => Get_Buddy_Address'Result /= Addr, -- Buddy NIGDY nie jest tym samym adresem
-      Post => (Get_Buddy_Address'Result / Power_Of_Two (Size_Exp)) = 
-              (Addr / Power_Of_Two (Size_Exp)) xor 1; -- Udowodniona różnica dokładnie 1 bloku
+               Post => Shift_Right (Get_Buddy_Address'Result, Integer (Size_Exp)) = 
+                  (Shift_Right (Addr, Integer (Size_Exp)) xor Phys_Addr (1)); -- Udowodniona różnica dokładnie 1 bloku
 
    -- =========================================================================
    -- ALGORYTM 2: DZIELENIE BLOKU (SPLITTING)

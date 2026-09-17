@@ -1,3 +1,5 @@
+use core::result::Result;
+
 use driverspacelib as ds;
 use ds::abi::DsError;
 use ds::driver::{DeviceInfo, Driver};

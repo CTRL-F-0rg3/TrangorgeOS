@@ -1,7 +1,10 @@
 #![no_std]
 #![no_main]
+// W tej malej, jednowatkowej aplikacji odwołania do `static mut` są bezpieczne;
+// w edycji 2024 lint `static_mut_refs` jest domyślnie błędem.
+#![allow(static_mut_refs)]
 
-use trangorgelibc as tr;
+use trangorgelib as tr;
 
 const BG: u32 = 0xFF0A0A12;
 const FG: u32 = 0xFFD0D0D0;
@@ -26,7 +29,7 @@ fn push_hist(line: &[u8]) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
     let (w, h, stride) = match tr::ui_open() {
         Some(v) => v,

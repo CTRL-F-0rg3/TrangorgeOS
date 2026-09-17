@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use trangorgelibc as tr;
+use trangorgelib as tr;
 
 fn load_autostart() -> bool {
     let fd = tr::open("/sys/autostart.cfg");

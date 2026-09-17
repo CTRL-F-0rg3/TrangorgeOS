@@ -1,0 +1,29 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ds-manager",
+    "crates/ds-registry",
+    "drivers/amdgpu-driver",
+    "drivers/audiodriver",
+    "drivers/intelgpu-driver",
+    "drivers/netcam_driver",
+    "drivers/vgpu",
+    "drivers/wacomgraphic_driver",
+    "lib/ds-formal-ffi",
+    "lib/ds-fw-audio",
+    "lib/ds-fw-block",
+    "lib/ds-fw-gpu",
+    "lib/ds-fw-input",
+    "lib/ds-ipc",
+    "lib/ds-log",
+    "lib/ds-mem",
+    "lib/kapi-abi",
+    "lib/kapi-syscall",
+]
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+
+[profile.dev]
+panic = "abort"

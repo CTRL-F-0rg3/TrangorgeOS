@@ -1,38 +1,17 @@
-use crate as ad;
-use driverspacelib as ds;
+use audiodriver as ad;
 
-pub struct JackMgr {
-    present: bool,
-    amp_on: bool,
-}
+/// Punkt wejścia binarki pomocniczej.
+///
+/// Właściwy sterownik działa w driver space przez `ds_entry` (patrz
+/// `driverspace/src/main.rs`); ta binarka jest cienkim wrapperem CLI, który
+/// pozwala sprawdzić stan gniazda jack z poziomu hosta.
+fn main() {
+    let mut mgr = ad::jacklib::JackMgr::new();
+    mgr.tick();
 
-impl JackMgr {
-    pub const fn new() -> Self {
-        Self { present: false, amp_on: false }
-    }
-
-    pub fn tick(&mut self) {
-        let now = ad::jack_present();
-
-        if now != self.present {
-            self.present = now;
-
-            if now {
-                ds::log::ds_log("jack: present");
-                self.set_amp(true);
-            } else {
-                ds::log::ds_log("jack: gone");
-                self.set_amp(false);
-            }
-        }
-    }
-
-    pub fn set_amp(&mut self, on: bool) {
-        self.amp_on = on;
-        ad::set_amp(on);
-    }
-
-    pub fn present(&self) -> bool {
-        self.present
-    }
+    println!(
+        "audiodriver: jack present = {}, amp on = {}",
+        mgr.present(),
+        mgr.amp_enabled()
+    );
 }

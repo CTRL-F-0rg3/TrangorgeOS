@@ -1,2 +1,4 @@
 pub mod dev;
-// 后续会添加 mem.rs, ipc.rs, irq.rs 等
+pub mod irq;
+pub mod mem;
+pub mod sys;

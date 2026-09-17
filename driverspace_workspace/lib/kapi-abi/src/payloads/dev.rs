@@ -1,7 +1,7 @@
 //! 设备管理相关的 IPC 消息载荷。
 //! 所有结构体必须严格 #[repr(C)]，因为内核（可能是C/Rust）和驱动（Rust/C/Odin）共享这些内存。
 
-use crate::primitives::{CapId, PhysAddr};
+use crate::primitives::PhysAddr;
 use bitflags::bitflags;
 
 /// 设备总线类型
@@ -17,6 +17,7 @@ pub enum BusType {
 
 bitflags! {
     /// 设备能力/属性标志
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(C)]
     pub struct DeviceFlags: u32 {
         /// 设备支持 DMA (Direct Memory Access)
