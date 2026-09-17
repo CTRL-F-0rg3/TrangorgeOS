@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// 导出所有核心模块
+pub mod primitives;
+pub mod errors;
+pub mod opcodes;
+pub mod payloads;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+// 为了方便使用，将最常用的类型 re-export 到根命名空间
+pub use primitives::{Handle, CapId, PhysAddr, VirtAddr};
+pub use errors::DsError;
+pub use opcodes::Opcode;

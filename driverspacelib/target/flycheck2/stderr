@@ -1,7 +1,5 @@
-    Blocking waiting for file lock on package cache
-    Blocking waiting for file lock on package cache
-   0.087804209s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
-   0.087967563s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspacelib/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-ee9f246eb8b7dac2/test-lib-driverspacelib`
+   0.014663502s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint: fingerprint error for driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("driverspacelib", ["rlib"], "/home/ctrl/TrangorgeOS/driverspacelib/src/lib.rs", Edition2021) }
+   0.014689695s  INFO prepare_target{force=false package_id=driverspacelib v0.1.0 (/home/ctrl/TrangorgeOS/driverspacelib) target="driverspacelib"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspacelib/target/x86_64-unknown-none/debug/.fingerprint/driverspacelib-ee9f246eb8b7dac2/test-lib-driverspacelib`
 
 Caused by:
     No such file or directory (os error 2)

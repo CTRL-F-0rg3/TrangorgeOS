@@ -1,6 +1,8 @@
 [package]
 name = "kapi-abi"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+# 用于定义标志位（如设备能力、内存权限）
+bitflags = "2.4" 

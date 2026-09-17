@@ -1,5 +1,5 @@
-   0.014538257s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: true }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
-   0.014558196s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-a8501fabe790110c/test-bin-driverspace`
+   0.016047727s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint: fingerprint error for driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace)/Check { test: true }/TargetInner { name: "driverspace", doc: true, ..: with_path("/home/ctrl/TrangorgeOS/driverspace/src/main.rs", Edition2021) }
+   0.016068037s  INFO prepare_target{force=false package_id=driverspace v0.1.0 (/home/ctrl/TrangorgeOS/driverspace) target="driverspace"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/ctrl/TrangorgeOS/driverspace/target/x86_64-unknown-none/debug/.fingerprint/driverspace-a8501fabe790110c/test-bin-driverspace`
 
 Caused by:
     No such file or directory (os error 2)

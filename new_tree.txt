@@ -223,8 +223,8 @@
 │                   │   │   └── work-products.bin
 │                   │   └── s-hm6481tc1r-1sofi1i.lock
 │                   ├── driverspace-3mv783n5cr6tb
-│                   │   ├── s-hmdq5lazd3-0undbw0.lock
-│                   │   └── s-hmdq5lazd3-0undbw0-working
+│                   │   ├── s-hmdsqvrlfb-00mvitd.lock
+│                   │   └── s-hmdsqvrlfb-00mvitd-working
 │                   │       └── dep-graph.part.bin
 │                   ├── driverspacelib-1qzh0k9em9oko
 │                   │   ├── s-hma10hm5gk-1anhn2a-823fvfc74kx7q4t6u0j2jkllu
@@ -310,8 +310,8 @@
 │               ├── examples
 │               ├── incremental
 │               │   ├── driverspacelib-0lv8k8nk06vmj
-│               │   │   ├── s-hmdq5lbqt5-128bw1z.lock
-│               │   │   └── s-hmdq5lbqt5-128bw1z-working
+│               │   │   ├── s-hmdsqvxtbt-0401njs.lock
+│               │   │   └── s-hmdsqvxtbt-0401njs-working
 │               │   │       └── dep-graph.part.bin
 │               │   ├── driverspacelib-0xc33dt0pa8js
 │               │   │   ├── s-hma10hnqyb-1762tir-16osxqftdxsnrxkpv4213stxn
@@ -339,7 +339,170 @@
 │               └── libdriverspacelib.rlib
 ├── driverspace_workspace
 │   ├── Cargo.toml
-│   └── crates
+│   ├── crates
+│   │   ├── ds-manager
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── config.rs
+│   │   │       ├── ipc_handler.rs
+│   │   │       ├── lifecycle
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── monitor.rs
+│   │   │       │   ├── shit.rs
+│   │   │       │   ├── shutdown.rs
+│   │   │       │   └── spawn.rs
+│   │   │       ├── main.rs
+│   │   │       └── resources
+│   │   │           ├── dma.rs
+│   │   │           ├── irq.rs
+│   │   │           ├── mmio.rs
+│   │   │           └── mod.rs
+│   │   └── ds-registry
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── database.rs
+│   │           ├── lib.rs
+│   │           ├── matching.rs
+│   │           └── state.rs
+│   ├── drivers
+│   │   ├── amdgpu-driver
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── main.rs
+│   │   ├── audiodriver
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── main.rs
+│   │   ├── intelgpu-driver
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── main.rs
+│   │   ├── netcam_driver
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── main.rs
+│   │   ├── vgpu
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── main.rs
+│   │   └── wacomgraphic_driver
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           └── main.rs
+│   ├── formal
+│   │   ├── ds-spark-core
+│   │   │   ├── ds-spark-core.gpr
+│   │   │   ├── proof
+│   │   │   ├── runtime
+│   │   │   │   └── system.ads
+│   │   │   └── src
+│   │   │       ├── ds_buddy_math.adb
+│   │   │       ├── ds_buddy_math.ads
+│   │   │       ├── ds_crc32.adb
+│   │   │       ├── ds_crc32.ads 
+│   │   │       ├── ds_math_safe.adb 
+│   │   │       └── ds_math_safe.ads 
+│   │   └── README.md
+│   ├── lib
+│   │   ├── ds-formal-ffi
+│   │   │   ├── build.rs
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── lib.rs
+│   │   ├── ds-fw-audio
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── formats.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── ringbuffer.rs
+│   │   │       ├── stream.rs
+│   │   │       └── traits.rs
+│   │   ├── ds-fw-block
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── lib.rs
+│   │   │       ├── partition.rs
+│   │   │       ├── queue.rs
+│   │   │       ├── request.rs
+│   │   │       └── traits.rs
+│   │   ├── ds-fw-gpu
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── cmd.buffer.rs
+│   │   │       ├── edid.rs
+│   │   │       ├── framebuffer.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── modeset.rs
+│   │   │       └── traits.rs
+│   │   ├── ds-fw-input
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── events.rs
+│   │   │       ├── hid_parser.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── scancodes.rs
+│   │   │       └── traits.rs
+│   │   ├── ds-ipc
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       └── lib.rs
+│   │   ├── ds-log
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── formatter.rs
+│   │   │       ├── levels.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── macros.rs
+│   │   │       └── transport.rs
+│   │   ├── ds-mem
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── alloc
+│   │   │       │   ├── buddy.rs
+│   │   │       │   ├── heap.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── slab.rs
+│   │   │       ├── dma
+│   │   │       │   ├── buffer.rs
+│   │   │       │   ├── mapping.rs
+│   │   │       │   └── mod.rs
+│   │   │       ├── lib.rs
+│   │   │       └── vmm.rs
+│   │   ├── kapi-abi
+│   │   │   ├── build.rs
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── capabilities.rs
+│   │   │       ├── errors.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── opcodes.rs
+│   │   │       ├── payloads
+│   │   │       │   ├── dev.rs
+│   │   │       │   ├── ipc.rs
+│   │   │       │   ├── irq.rs
+│   │   │       │   ├── mem.rs
+│   │   │       │   └── mod.rs
+│   │   │       ├── primitives.rs
+│   │   │       └── wire
+│   │   │           ├── decode.rs
+│   │   │           ├── encode.rs
+│   │   │           ├── endian.rs
+│   │   │           └── mod.rs
+│   │   └── kapi-syscall
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── channel.rs
+│   │           ├── lib.rs
+│   │           ├── port.rs
+│   │           ├── router.rs
+│   │           ├── shared_mem.rs
+│   │           └── sync
+│   │               ├── mod.rs
+│   │               ├── semaphone.rs
+│   │               └── spinlock.rs
+│   ├── Todo.md
+│   ├── Tree_readme.md
+│   └── Workspace.md
 ├── iso-builder
 │   ├── Boot
 │   ├── Directory.Mod
@@ -896,6 +1059,10 @@
 │   │   │       ├── spawn.rs
 │   │   │       └── syscall.rs
 │   │   └── vga_buffer.rs
+│   ├── target
+│   │   └── flycheck3
+│   │       ├── stderr
+│   │       └── stdout
 │   ├── TODO.md
 │   └── x86_64-kernel.json
 ├── kernelin1920x1080.png
@@ -946,6 +1113,7 @@
 │   ├── dsvgpu.h
 │   └── dsvideo.h
 ├── LICENSE
+├── new_tree.txt
 ├── panic.md
 ├── README.md
 ├── server_workspace
@@ -980,12 +1148,12 @@
 │       │   ├── examples
 │       │   └── incremental
 │       │       ├── trangorgelib-1ph1guf7lpgsw
-│       │       │   ├── s-hmdq5lapp8-0tl3ncf.lock
-│       │       │   └── s-hmdq5lapp8-0tl3ncf-working
+│       │       │   ├── s-hmdsqvxupw-1ca63c4.lock
+│       │       │   └── s-hmdsqvxupw-1ca63c4-working
 │       │       │       └── dep-graph.part.bin
 │       │       └── trangorgelib-3osbpsz2lyz0v
-│       │           ├── s-hmdq5lasnr-1qxzr9m.lock
-│       │           └── s-hmdq5lasnr-1qxzr9m-working
+│       │           ├── s-hmdsqvxyoy-0p7xp09.lock
+│       │           └── s-hmdsqvxyoy-0p7xp09-working
 │       │               └── dep-graph.part.bin
 │       └── flycheck5
 │           ├── stderr
@@ -1216,4 +1384,4 @@
     ├── Cargo.toml
     └── crates
 
-283 directories, 934 files
+335 directories, 1050 files

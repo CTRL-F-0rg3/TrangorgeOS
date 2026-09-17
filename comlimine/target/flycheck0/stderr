@@ -1,3 +1,2 @@
 warning: comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) ignoring invalid dependency `kernel` which is missing a lib target
-    Blocking waiting for file lock on package cache
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
