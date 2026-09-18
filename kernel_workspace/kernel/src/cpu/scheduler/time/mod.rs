@@ -1,2 +1,0 @@
-mod hrtimer;
-mod tick;
