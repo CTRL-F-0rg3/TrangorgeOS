@@ -1,0 +1,7 @@
+.
+├── Cargo.toml
+├── src
+│   └── lib.rs
+└── tree.txt
+
+2 directories, 3 files
