@@ -437,6 +437,7 @@
 ├── Dockerfile
 ├── docker-run.sh
 ├── docker-shell.sh
+├── doc.md
 ├── doc.py
 ├── drivers
 │   ├── amdgpu_driver
@@ -2765,9 +2766,501 @@
 │   ├── Cargo.toml
 │   ├── C_base
 │   │   ├── kc-abi
+│   │   │   ├── build.rs
+│   │   │   ├── Cargo.lock
 │   │   │   ├── Cargo.toml
+│   │   │   ├── docs
+│   │   │   │   ├── abi_spec.md
+│   │   │   │   ├── architecture.md
+│   │   │   │   └── memory_model.md
+│   │   │   ├── kc-abi
+│   │   │   │   ├── build.rs
+│   │   │   │   ├── Cargo.lock
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   ├── docs
+│   │   │   │   │   ├── abi_spec.md
+│   │   │   │   │   ├── architecture.md
+│   │   │   │   │   └── memory_model.md
+│   │   │   │   ├── Makefile
+│   │   │   │   ├── rust-toolchain.toml
+│   │   │   │   └── src
+│   │   │   │       ├── abi
+│   │   │   │       │   ├── handles
+│   │   │   │       │   │   ├── errors.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── table.rs
+│   │   │   │       │   │   ├── tests.rs
+│   │   │   │       │   │   ├── traits.rs
+│   │   │   │       │   │   └── types.rs
+│   │   │   │       │   ├── ipc
+│   │   │   │       │   │   ├── capabilities.rs
+│   │   │   │       │   │   ├── channels.rs
+│   │   │   │       │   │   ├── messages.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── shared_mem.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   └── syscall
+│   │   │   │       │       ├── dispatch.rs
+│   │   │   │       │       ├── errors.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       ├── numbers.rs
+│   │   │   │       │       ├── tests.rs
+│   │   │   │       │       └── types.rs
+│   │   │   │       ├── arch
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   └── x86_64
+│   │   │   │       │       ├── cpu
+│   │   │   │       │       │   ├── context.rs
+│   │   │   │       │       │   ├── gdt.rs
+│   │   │   │       │       │   ├── idt.rs
+│   │   │   │       │       │   ├── mod.rs
+│   │   │   │       │       │   ├── msr.rs
+│   │   │   │       │       │   ├── tests.rs
+│   │   │   │       │       │   └── tss.rs
+│   │   │   │       │       ├── devices
+│   │   │   │       │       │   ├── apic.rs
+│   │   │   │       │       │   ├── apic_timer.rs
+│   │   │   │       │       │   ├── hpet.rs
+│   │   │   │       │       │   ├── ioapic.rs
+│   │   │   │       │       │   ├── mod.rs
+│   │   │   │       │       │   ├── pit.rs
+│   │   │   │       │       │   └── tests.rs
+│   │   │   │       │       ├── memory
+│   │   │   │       │       │   ├── cache.rs
+│   │   │   │       │       │   ├── mod.rs
+│   │   │   │       │       │   ├── paging.rs
+│   │   │   │       │       │   ├── segments.rs
+│   │   │   │       │       │   ├── tests.rs
+│   │   │   │       │       │   └── tlb.rs
+│   │   │   │       │       └── mod.rs
+│   │   │   │       ├── fs
+│   │   │   │       │   ├── block
+│   │   │   │       │   │   ├── bio.rs
+│   │   │   │       │   │   ├── device.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── partition.rs
+│   │   │   │       │   │   ├── queue.rs
+│   │   │   │       │   │   ├── ramdisk.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── drivers
+│   │   │   │       │   │   ├── ext4
+│   │   │   │       │   │   │   ├── dir.rs
+│   │   │   │       │   │   │   ├── extents.rs
+│   │   │   │       │   │   │   ├── inode.rs
+│   │   │   │       │   │   │   ├── journal.rs
+│   │   │   │       │   │   │   ├── mod.rs
+│   │   │   │       │   │   │   ├── superblock.rs
+│   │   │   │       │   │   │   └── tests.rs
+│   │   │   │       │   │   └── mod.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   └── vfs
+│   │   │   │       │       ├── dentry.rs
+│   │   │   │       │       ├── file.rs
+│   │   │   │       │       ├── inode.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       ├── mount.rs
+│   │   │   │       │       ├── superblock.rs
+│   │   │   │       │       └── tests.rs
+│   │   │   │       ├── hal
+│   │   │   │       │   ├── buses
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   └── pci
+│   │   │   │       │   │       ├── bar.rs
+│   │   │   │       │   │       ├── capabilities.rs
+│   │   │   │       │   │       ├── config.rs
+│   │   │   │       │   │       ├── enum.rs
+│   │   │   │       │   │       ├── mod.rs
+│   │   │   │       │   │       ├── msi.rs
+│   │   │   │       │   │       └── tests.rs
+│   │   │   │       │   ├── interrupts
+│   │   │   │       │   │   ├── affinity.rs
+│   │   │   │       │   │   ├── controller.rs
+│   │   │   │       │   │   ├── handlers.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── tests.rs
+│   │   │   │       │   │   └── vectors.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   └── timers
+│   │   │   │       │       ├── clockevents.rs
+│   │   │   │       │       ├── clocksource.rs
+│   │   │   │       │       ├── hrtimer.rs
+│   │   │   │       │       ├── jiffies.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       └── tests.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── mm
+│   │   │   │       │   ├── alloc
+│   │   │   │       │   │   ├── heap.rs
+│   │   │   │       │   │   ├── kmalloc.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── percpu.rs
+│   │   │   │       │   │   ├── slab.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   ├── pmm
+│   │   │   │       │   │   ├── bitmap.rs
+│   │   │   │       │   │   ├── buddy.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── numa.rs
+│   │   │   │       │   │   ├── page.rs
+│   │   │   │       │   │   ├── tests.rs
+│   │   │   │       │   │   └── zones.rs
+│   │   │   │       │   └── vmm
+│   │   │   │       │       ├── aslr.rs
+│   │   │   │       │       ├── cow.rs
+│   │   │   │       │       ├── fault.rs
+│   │   │   │       │       ├── mapper.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       ├── tests.rs
+│   │   │   │       │       └── vma.rs
+│   │   │   │       ├── net
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   ├── sockets
+│   │   │   │       │   │   ├── api.rs
+│   │   │   │       │   │   ├── buffer.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── poll.rs
+│   │   │   │       │   │   ├── protocols.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   └── stack
+│   │   │   │       │       ├── ip
+│   │   │   │       │       │   ├── arp.rs
+│   │   │   │       │       │   ├── fragmentation.rs
+│   │   │   │       │       │   ├── icmp.rs
+│   │   │   │       │       │   ├── mod.rs
+│   │   │   │       │       │   ├── routing.rs
+│   │   │   │       │       │   └── tests.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       └── tcp
+│   │   │   │       │           ├── congestion.rs
+│   │   │   │       │           ├── mod.rs
+│   │   │   │       │           ├── options.rs
+│   │   │   │       │           ├── retransmission.rs
+│   │   │   │       │           ├── state.rs
+│   │   │   │       │           └── tests.rs
+│   │   │   │       ├── sched
+│   │   │   │       │   ├── core
+│   │   │   │       │   │   ├── cfs.rs
+│   │   │   │       │   │   ├── idle.rs
+│   │   │   │       │   │   ├── load.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── rt.rs
+│   │   │   │       │   │   ├── runqueue.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   ├── process
+│   │   │   │       │   │   ├── cgroups.rs
+│   │   │   │       │   │   ├── exit.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── namespace.rs
+│   │   │   │       │   │   ├── task.rs
+│   │   │   │       │   │   ├── tests.rs
+│   │   │   │       │   │   └── tree.rs
+│   │   │   │       │   └── thread
+│   │   │   │       │       ├── futex.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       ├── stack.rs
+│   │   │   │       │       ├── tcb.rs
+│   │   │   │       │       ├── tests.rs
+│   │   │   │       │       └── tls.rs
+│   │   │   │       ├── security
+│   │   │   │       │   ├── auth
+│   │   │   │       │   │   ├── audit.rs
+│   │   │   │       │   │   ├── capabilities.rs
+│   │   │   │       │   │   ├── credentials.rs
+│   │   │   │       │   │   ├── mac.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── crypto
+│   │   │   │       │   │   ├── ciphers.rs
+│   │   │   │       │   │   ├── hashes.rs
+│   │   │   │       │   │   ├── kdf.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── rng.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   └── mod.rs
+│   │   │   │       ├── sync
+│   │   │   │       │   ├── lockfree
+│   │   │   │       │   │   ├── atomic.rs
+│   │   │   │       │   │   ├── hazard.rs
+│   │   │   │       │   │   ├── mod.rs
+│   │   │   │       │   │   ├── queue.rs
+│   │   │   │       │   │   ├── rcu.rs
+│   │   │   │       │   │   └── tests.rs
+│   │   │   │       │   ├── mod.rs
+│   │   │   │       │   └── primitives
+│   │   │   │       │       ├── condvar.rs
+│   │   │   │       │       ├── mod.rs
+│   │   │   │       │       ├── mutex.rs
+│   │   │   │       │       ├── rwlock.rs
+│   │   │   │       │       ├── semaphore.rs
+│   │   │   │       │       ├── spinlock.rs
+│   │   │   │       │       └── tests.rs
+│   │   │   │       └── utils
+│   │   │   │           ├── collections
+│   │   │   │           │   ├── btree.rs
+│   │   │   │           │   ├── hashmap.rs
+│   │   │   │           │   ├── linked_list.rs
+│   │   │   │           │   ├── mod.rs
+│   │   │   │           │   ├── ring_buffer.rs
+│   │   │   │           │   ├── tests.rs
+│   │   │   │           │   └── vec.rs
+│   │   │   │           ├── macros
+│   │   │   │           │   ├── bitflags.rs
+│   │   │   │           │   ├── mod.rs
+│   │   │   │           │   ├── offsets.rs
+│   │   │   │           │   ├── printk.rs
+│   │   │   │           │   ├── syscall.rs
+│   │   │   │           │   └── tests.rs
+│   │   │   │           ├── mod.rs
+│   │   │   │           └── panic
+│   │   │   │               ├── backtrace.rs
+│   │   │   │               ├── dump.rs
+│   │   │   │               ├── handler.rs
+│   │   │   │               ├── mod.rs
+│   │   │   │               ├── reboot.rs
+│   │   │   │               └── tests.rs
+│   │   │   ├── Makefile
+│   │   │   ├── rust-toolchain.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── abi
+│   │   │       │   ├── handles
+│   │   │       │   │   ├── errors.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── table.rs
+│   │   │       │   │   ├── tests.rs
+│   │   │       │   │   ├── traits.rs
+│   │   │       │   │   └── types.rs
+│   │   │       │   ├── ipc
+│   │   │       │   │   ├── capabilities.rs
+│   │   │       │   │   ├── channels.rs
+│   │   │       │   │   ├── messages.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── shared_mem.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── syscall
+│   │   │       │       ├── dispatch.rs
+│   │   │       │       ├── errors.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── numbers.rs
+│   │   │       │       ├── tests.rs
+│   │   │       │       └── types.rs
+│   │   │       ├── arch
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── x86_64
+│   │   │       │       ├── cpu
+│   │   │       │       │   ├── context.rs
+│   │   │       │       │   ├── gdt.rs
+│   │   │       │       │   ├── idt.rs
+│   │   │       │       │   ├── mod.rs
+│   │   │       │       │   ├── msr.rs
+│   │   │       │       │   ├── tests.rs
+│   │   │       │       │   └── tss.rs
+│   │   │       │       ├── devices
+│   │   │       │       │   ├── apic.rs
+│   │   │       │       │   ├── apic_timer.rs
+│   │   │       │       │   ├── hpet.rs
+│   │   │       │       │   ├── ioapic.rs
+│   │   │       │       │   ├── mod.rs
+│   │   │       │       │   ├── pit.rs
+│   │   │       │       │   └── tests.rs
+│   │   │       │       ├── memory
+│   │   │       │       │   ├── cache.rs
+│   │   │       │       │   ├── mod.rs
+│   │   │       │       │   ├── paging.rs
+│   │   │       │       │   ├── segments.rs
+│   │   │       │       │   ├── tests.rs
+│   │   │       │       │   └── tlb.rs
+│   │   │       │       └── mod.rs
+│   │   │       ├── fs
+│   │   │       │   ├── block
+│   │   │       │   │   ├── bio.rs
+│   │   │       │   │   ├── device.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── partition.rs
+│   │   │       │   │   ├── queue.rs
+│   │   │       │   │   ├── ramdisk.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── drivers
+│   │   │       │   │   ├── ext4
+│   │   │       │   │   │   ├── dir.rs
+│   │   │       │   │   │   ├── extents.rs
+│   │   │       │   │   │   ├── inode.rs
+│   │   │       │   │   │   ├── journal.rs
+│   │   │       │   │   │   ├── mod.rs
+│   │   │       │   │   │   ├── superblock.rs
+│   │   │       │   │   │   └── tests.rs
+│   │   │       │   │   └── mod.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── vfs
+│   │   │       │       ├── dentry.rs
+│   │   │       │       ├── file.rs
+│   │   │       │       ├── inode.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── mount.rs
+│   │   │       │       ├── superblock.rs
+│   │   │       │       └── tests.rs
+│   │   │       ├── hal
+│   │   │       │   ├── buses
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── pci
+│   │   │       │   │       ├── bar.rs
+│   │   │       │   │       ├── capabilities.rs
+│   │   │       │   │       ├── config.rs
+│   │   │       │   │       ├── enum.rs
+│   │   │       │   │       ├── mod.rs
+│   │   │       │   │       ├── msi.rs
+│   │   │       │   │       └── tests.rs
+│   │   │       │   ├── interrupts
+│   │   │       │   │   ├── affinity.rs
+│   │   │       │   │   ├── controller.rs
+│   │   │       │   │   ├── handlers.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── tests.rs
+│   │   │       │   │   └── vectors.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── timers
+│   │   │       │       ├── clockevents.rs
+│   │   │       │       ├── clocksource.rs
+│   │   │       │       ├── hrtimer.rs
+│   │   │       │       ├── jiffies.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       └── tests.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── mm
+│   │   │       │   ├── alloc
+│   │   │       │   │   ├── heap.rs
+│   │   │       │   │   ├── kmalloc.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── percpu.rs
+│   │   │       │   │   ├── slab.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── pmm
+│   │   │       │   │   ├── bitmap.rs
+│   │   │       │   │   ├── buddy.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── numa.rs
+│   │   │       │   │   ├── page.rs
+│   │   │       │   │   ├── tests.rs
+│   │   │       │   │   └── zones.rs
+│   │   │       │   └── vmm
+│   │   │       │       ├── aslr.rs
+│   │   │       │       ├── cow.rs
+│   │   │       │       ├── fault.rs
+│   │   │       │       ├── mapper.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── tests.rs
+│   │   │       │       └── vma.rs
+│   │   │       ├── net
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── sockets
+│   │   │       │   │   ├── api.rs
+│   │   │       │   │   ├── buffer.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── poll.rs
+│   │   │       │   │   ├── protocols.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   └── stack
+│   │   │       │       ├── ip
+│   │   │       │       │   ├── arp.rs
+│   │   │       │       │   ├── fragmentation.rs
+│   │   │       │       │   ├── icmp.rs
+│   │   │       │       │   ├── mod.rs
+│   │   │       │       │   ├── routing.rs
+│   │   │       │       │   └── tests.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       └── tcp
+│   │   │       │           ├── congestion.rs
+│   │   │       │           ├── mod.rs
+│   │   │       │           ├── options.rs
+│   │   │       │           ├── retransmission.rs
+│   │   │       │           ├── state.rs
+│   │   │       │           └── tests.rs
+│   │   │       ├── sched
+│   │   │       │   ├── core
+│   │   │       │   │   ├── cfs.rs
+│   │   │       │   │   ├── idle.rs
+│   │   │       │   │   ├── load.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── rt.rs
+│   │   │       │   │   ├── runqueue.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── process
+│   │   │       │   │   ├── cgroups.rs
+│   │   │       │   │   ├── exit.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── namespace.rs
+│   │   │       │   │   ├── task.rs
+│   │   │       │   │   ├── tests.rs
+│   │   │       │   │   └── tree.rs
+│   │   │       │   └── thread
+│   │   │       │       ├── futex.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── stack.rs
+│   │   │       │       ├── tcb.rs
+│   │   │       │       ├── tests.rs
+│   │   │       │       └── tls.rs
+│   │   │       ├── security
+│   │   │       │   ├── auth
+│   │   │       │   │   ├── audit.rs
+│   │   │       │   │   ├── capabilities.rs
+│   │   │       │   │   ├── credentials.rs
+│   │   │       │   │   ├── mac.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── crypto
+│   │   │       │   │   ├── ciphers.rs
+│   │   │       │   │   ├── hashes.rs
+│   │   │       │   │   ├── kdf.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── rng.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   └── mod.rs
+│   │   │       ├── sync
+│   │   │       │   ├── lockfree
+│   │   │       │   │   ├── atomic.rs
+│   │   │       │   │   ├── hazard.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── queue.rs
+│   │   │       │   │   ├── rcu.rs
+│   │   │       │   │   └── tests.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── primitives
+│   │   │       │       ├── condvar.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── mutex.rs
+│   │   │       │       ├── rwlock.rs
+│   │   │       │       ├── semaphore.rs
+│   │   │       │       ├── spinlock.rs
+│   │   │       │       └── tests.rs
+│   │   │       └── utils
+│   │   │           ├── collections
+│   │   │           │   ├── btree.rs
+│   │   │           │   ├── hashmap.rs
+│   │   │           │   ├── linked_list.rs
+│   │   │           │   ├── mod.rs
+│   │   │           │   ├── ring_buffer.rs
+│   │   │           │   ├── tests.rs
+│   │   │           │   └── vec.rs
+│   │   │           ├── macros
+│   │   │           │   ├── bitflags.rs
+│   │   │           │   ├── mod.rs
+│   │   │           │   ├── offsets.rs
+│   │   │           │   ├── printk.rs
+│   │   │           │   ├── syscall.rs
+│   │   │           │   └── tests.rs
+│   │   │           ├── mod.rs
+│   │   │           └── panic
+│   │   │               ├── backtrace.rs
+│   │   │               ├── dump.rs
+│   │   │               ├── handler.rs
+│   │   │               ├── mod.rs
+│   │   │               ├── reboot.rs
+│   │   │               └── tests.rs
 │   │   └── kc-abi-menager
 │   │       ├── Cargo.toml
 │   │       └── src
@@ -3002,6 +3495,101 @@
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
 │   │   │       └── lib.rs
+│   │   ├── kstd_os_workspace
+│   │   │   ├── Cargo.toml
+│   │   │   ├── gluecore
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── bindings.rs
+│   │   │   │       ├── boot.rs
+│   │   │   │       ├── context.rs
+│   │   │   │       ├── interrupts.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       └── syscalls.rs
+│   │   │   ├── kstd_alloc
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── heap.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── oom.rs
+│   │   │   │       ├── page.rs
+│   │   │   │       ├── slab.rs
+│   │   │   │       └── traits.rs
+│   │   │   ├── kstd_base
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── errors.rs
+│   │   │   │       ├── intrinsics.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── macros.rs
+│   │   │   │       ├── markers.rs
+│   │   │   │       └── primitives.rs
+│   │   │   ├── kstd_core
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── panic.rs
+│   │   │   │       ├── sync.rs
+│   │   │   │       ├── task.rs
+│   │   │   │       ├── thread.rs
+│   │   │   │       └── time.rs
+│   │   │   ├── kstd_data
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── list.rs
+│   │   │   │       ├── map.rs
+│   │   │   │       ├── string.rs
+│   │   │   │       ├── tree.rs
+│   │   │   │       └── vec.rs
+│   │   │   ├── kstd_io
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── buffered.rs
+│   │   │   │       ├── console.rs
+│   │   │   │       ├── handles.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── pipes.rs
+│   │   │   │       └── traits.rs
+│   │   │   ├── linix_abi
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── caps.rs
+│   │   │   │       ├── errcodes.rs
+│   │   │   │       ├── ipc.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── sysnums.rs
+│   │   │   │       └── uctx.rs
+│   │   │   ├── linix_abi_com
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── channels.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── msgpass.rs
+│   │   │   │       ├── netproto.rs
+│   │   │   │       ├── ports.rs
+│   │   │   │       └── sockets.rs
+│   │   │   ├── linix_abi_driverspace
+│   │   │   │   ├── Cargo.toml
+│   │   │   │   └── src
+│   │   │   │       ├── devmodel.rs
+│   │   │   │       ├── devtree.rs
+│   │   │   │       ├── dma.rs
+│   │   │   │       ├── lib.rs
+│   │   │   │       ├── pci.rs
+│   │   │   │       └── usb.rs
+│   │   │   ├── rust-toolchain.toml
+│   │   │   ├── src
+│   │   │   │   └── lib.rs
+│   │   │   └── windows-com
+│   │   │       ├── Cargo.toml
+│   │   │       └── src
+│   │   │           ├── build.rs
+│   │   │           ├── com_ifaces.rs
+│   │   │           ├── hostfs.rs
+│   │   │           ├── hostnet.rs
+│   │   │           ├── lib.rs
+│   │   │           └── win32.rs
 │   │   ├── linix_abi
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
@@ -3575,6 +4163,172 @@
 │   │   └── src
 │   │       └── main.rs
 │   ├── Odin_base
+│   │   ├── kernel_Workspace
+│   │   │   └── Odin_base
+│   │   │       └── odin-core
+│   │   │           ├── Cargo.toml
+│   │   │           └── src
+│   │   │               ├── abi_core
+│   │   │               │   ├── calling_conv
+│   │   │               │   │   ├── odin_fast.rs
+│   │   │               │   │   ├── register_alloc.rs
+│   │   │               │   │   ├── stack_frame.rs
+│   │   │               │   │   ├── sysv_fastcall.rs
+│   │   │               │   │   └── variadic.rs
+│   │   │               │   ├── compound
+│   │   │               │   │   ├── dynamic_arrays.rs
+│   │   │               │   │   ├── enums_maps.rs
+│   │   │               │   │   ├── slices.rs
+│   │   │               │   │   ├── strings.rs
+│   │   │               │   │   └── structs_unions.rs
+│   │   │               │   ├── context
+│   │   │               │   │   ├── allocators.rs
+│   │   │               │   │   ├── ctx_switch.rs
+│   │   │               │   │   ├── loggers.rs
+│   │   │               │   │   ├── temp_alloc.rs
+│   │   │               │   │   └── thread_local.rs
+│   │   │               │   ├── memory_layout
+│   │   │               │   │   ├── alignment.rs
+│   │   │               │   │   ├── endianness.rs
+│   │   │               │   │   ├── offsets.rs
+│   │   │               │   │   ├── padding.rs
+│   │   │               │   │   └── sizeof_typeof.rs
+│   │   │               │   ├── mod.rs
+│   │   │               │   └── primitives
+│   │   │               │       ├── bools_runes.rs
+│   │   │               │       ├── c_interop.rs
+│   │   │               │       ├── ints_floats.rs
+│   │   │               │       ├── raw_pointers.rs
+│   │   │               │       └── simd_types.rs
+│   │   │               ├── bin_loader
+│   │   │               │   ├── dynamic_deps
+│   │   │               │   │   ├── circular_chk.rs
+│   │   │               │   │   ├── dep_tree.rs
+│   │   │               │   │   ├── lib_search.rs
+│   │   │               │   │   ├── unload.rs
+│   │   │               │   │   └── versioning.rs
+│   │   │               │   ├── execution
+│   │   │               │   │   ├── arg_parse.rs
+│   │   │               │   │   ├── aux_vec.rs
+│   │   │               │   │   ├── entry_point.rs
+│   │   │               │   │   ├── env_vars.rs
+│   │   │               │   │   └── stack_setup.rs
+│   │   │               │   ├── mapper
+│   │   │               │   │   ├── cow_setup.rs
+│   │   │               │   │   ├── page_perms.rs
+│   │   │               │   │   ├── phys_map.rs
+│   │   │               │   │   ├── tlb_flush.rs
+│   │   │               │   │   └── vmm_alloc.rs
+│   │   │               │   ├── mod.rs
+│   │   │               │   ├── parser
+│   │   │               │   │   ├── elf_hdr.rs
+│   │   │               │   │   ├── odin_meta.rs
+│   │   │               │   │   ├── sections.rs
+│   │   │               │   │   ├── segments.rs
+│   │   │               │   │   └── symbols.rs
+│   │   │               │   └── resolver
+│   │   │               │       ├── dyn_syms.rs
+│   │   │               │       ├── got_plt.rs
+│   │   │               │       ├── lazy_bind.rs
+│   │   │               │       ├── relocs.rs
+│   │   │               │       └── weak_refs.rs
+│   │   │               ├── ffi_bridge
+│   │   │               │   ├── callbacks
+│   │   │               │   │   ├── closures.rs
+│   │   │               │   │   ├── dyn_dispatch.rs
+│   │   │               │   │   ├── odin_to_rust.rs
+│   │   │               │   │   ├── rust_to_odin.rs
+│   │   │               │   │   └── vtables.rs
+│   │   │               │   ├── error_handling
+│   │   │               │   │   ├── odin_ok.rs
+│   │   │               │   │   ├── option_conv.rs
+│   │   │               │   │   ├── panic_map.rs
+│   │   │               │   │   ├── result_conv.rs
+│   │   │               │   │   └── rust_err.rs
+│   │   │               │   ├── memory_sharing
+│   │   │               │   │   ├── alloc_sync.rs
+│   │   │               │   │   ├── arena_map.rs
+│   │   │               │   │   ├── borrow_check.rs
+│   │   │               │   │   ├── gc_handshake.rs
+│   │   │               │   │   └── leak_detect.rs
+│   │   │               │   ├── mod.rs
+│   │   │               │   ├── thread_state
+│   │   │               │   │   ├── core_local.rs
+│   │   │               │   │   ├── ctx_switch.rs
+│   │   │               │   │   ├── fiber_map.rs
+│   │   │               │   │   ├── interrupt_save.rs
+│   │   │               │   │   └── tls_sync.rs
+│   │   │               │   └── type_casting
+│   │   │               │       ├── ptr_conv.rs
+│   │   │               │       ├── safe_cast.rs
+│   │   │               │       ├── slice_conv.rs
+│   │   │               │       ├── string_conv.rs
+│   │   │               │       └── unsafe_cast.rs
+│   │   │               ├── lib.rs
+│   │   │               ├── meta_codegen
+│   │   │               │   ├── ast_transform
+│   │   │               │   │   ├── const_fold.rs
+│   │   │               │   │   ├── dead_code.rs
+│   │   │               │   │   ├── inline_hint.rs
+│   │   │               │   │   ├── loop_unroll.rs
+│   │   │               │   │   └── vec_simd.rs
+│   │   │               │   ├── bindgen
+│   │   │               │   │   ├── c_compat.rs
+│   │   │               │   │   ├── doc_gen.rs
+│   │   │               │   │   ├── json_schema.rs
+│   │   │               │   │   ├── odin_to_rust.rs
+│   │   │               │   │   └── rust_to_odin.rs
+│   │   │               │   ├── jit_support
+│   │   │               │   │   ├── backend_arm.rs
+│   │   │               │   │   ├── backend_x86.rs
+│   │   │               │   │   ├── cache_mgr.rs
+│   │   │               │   │   ├── hot_paths.rs
+│   │   │               │   │   └── ir_emit.rs
+│   │   │               │   ├── linting
+│   │   │               │   │   ├── abi_violations.rs
+│   │   │               │   │   ├── gc_rules.rs
+│   │   │               │   │   ├── mem_leaks.rs
+│   │   │               │   │   ├── panic_paths.rs
+│   │   │               │   │   └── thread_safety.rs
+│   │   │               │   ├── mod.rs
+│   │   │               │   └── proc_macros
+│   │   │               │       ├── abi_align.rs
+│   │   │               │       ├── bench_fn.rs
+│   │   │               │       ├── context_inject.rs
+│   │   │               │       ├── ffi_export.rs
+│   │   │               │       └── trace_calls.rs
+│   │   │               └── odin_runtime
+│   │   │                   ├── coroutines
+│   │   │                   │   ├── async_bridge.rs
+│   │   │                   │   ├── fiber_alloc.rs
+│   │   │                   │   ├── io_uring_map.rs
+│   │   │                   │   ├── stack_grow.rs
+│   │   │                   │   └── yield_resume.rs
+│   │   │                   ├── debugging
+│   │   │                   │   ├── break_points.rs
+│   │   │                   │   ├── core_dump.rs
+│   │   │                   │   ├── source_map.rs
+│   │   │                   │   ├── stack_trace.rs
+│   │   │                   │   └── watchpoints.rs
+│   │   │                   ├── gc_integration
+│   │   │                   │   ├── finalizers.rs
+│   │   │                   │   ├── gc_ctx.rs
+│   │   │                   │   ├── mark_sweep.rs
+│   │   │                   │   ├── trace_roots.rs
+│   │   │                   │   └── write_barrier.rs
+│   │   │                   ├── io_traits
+│   │   │                   │   ├── async_io.rs
+│   │   │                   │   ├── buf_reader.rs
+│   │   │                   │   ├── reader_map.rs
+│   │   │                   │   ├── seek_map.rs
+│   │   │                   │   └── writer_map.rs
+│   │   │                   ├── math_intrinsics
+│   │   │                   │   ├── crypto_hw.rs
+│   │   │                   │   ├── float_fast.rs
+│   │   │                   │   ├── int_sat.rs
+│   │   │                   │   ├── matrix_ops.rs
+│   │   │                   │   └── simd_ops.rs
+│   │   │                   └── mod.rs
 │   │   ├── odin-abi
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
@@ -4743,4 +5497,4 @@
     ├── Cargo.toml
     └── crates
 
-1217 directories, 3527 files
+1361 directories, 4137 files
