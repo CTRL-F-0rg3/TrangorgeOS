@@ -1,15 +1,13 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[macro_use]
+pub mod console;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod traits;
+pub mod buffer;
+pub mod input;
+
+pub use traits::{Write, Read};
+pub use buffer::RingBuffer;
+pub use console::{Serial, VgaConsole};
+pub use input::{RawInput, CookedInput, raw_scancode, cooked_char, buffered_byte};
