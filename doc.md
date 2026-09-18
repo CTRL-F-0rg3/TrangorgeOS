@@ -1,12 +1,12 @@
-# 📚 TrangorgeOS Architecture Documentation
+# TrangorgeOS Architecture Documentation
 
-**Generated:** 2026-09-18 20:54:30  
-**Files Scanned:** `1710` | **API Items Extracted:** `4008`  
+**Generated:** 2026-09-18 21:00:50
+**Files Scanned:** `1709` | **API Items Extracted:** `4008`
 **Languages:** Rust, C/C++, Ada SPARK, Odin, Nim, Assembly
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [c.rs](#c.rs)
 - [comgrub](#comgrub)
@@ -44,10 +44,10 @@
 
 ---
 
-## 📂 c.rs
+## c.rs
 
 <details>
-<summary><b>📄 c.rs</b> (2 items)</summary>
+<summary><b>c.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **BlockHeader** <sub>line 57</sub>
 ```rust
@@ -61,10 +61,10 @@ struct BlockHeader* prev;           /* Wskaźnik do poprzedniego bloku */
 
 </details>
 
-## 📂 comgrub
+## comgrub
 
 <details>
-<summary><b>📄 comgrub/build.rs</b> (1 items)</summary>
+<summary><b>comgrub/build.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -73,10 +73,10 @@ fn main() {
 
 </details>
 
-## 📂 comgrub/src
+## comgrub/src
 
 <details>
-<summary><b>📄 comgrub/src/main.rs</b> (2 items)</summary>
+<summary><b>comgrub/src/main.rs</b> (2 items)</summary>
 
 #### `FN`: **kernel_main** <sub>line 11</sub>
 ```rust
@@ -90,10 +90,10 @@ fn panic(_info: &PanicInfo) -> ! {
 
 </details>
 
-## 📂 comlimine
+## comlimine
 
 <details>
-<summary><b>📄 comlimine/build.rs</b> (1 items)</summary>
+<summary><b>comlimine/build.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -102,10 +102,10 @@ fn main() {
 
 </details>
 
-## 📂 comlimine/src
+## comlimine/src
 
 <details>
-<summary><b>📄 comlimine/src/main.c</b> (2 items)</summary>
+<summary><b>comlimine/src/main.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **kernel_main** <sub>line 6</sub>
 ```c
@@ -120,7 +120,7 @@ void _start(void) {
 </details>
 
 <details>
-<summary><b>📄 comlimine/src/main.rs</b> (1 items)</summary>
+<summary><b>comlimine/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -129,10 +129,10 @@ fn main() {}
 
 </details>
 
-## 📂 drivers/amdgpu_driver
+## drivers/amdgpu_driver
 
 <details>
-<summary><b>📄 drivers/amdgpu_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>drivers/amdgpu_driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -141,10 +141,10 @@ fn main() {
 
 </details>
 
-## 📂 drivers/audiodriver
+## drivers/audiodriver
 
 <details>
-<summary><b>📄 drivers/audiodriver/build.rs</b> (1 items)</summary>
+<summary><b>drivers/audiodriver/build.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 12</sub>
 ```rust
@@ -154,7 +154,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/jacklib.rs</b> (6 items)</summary>
+<summary><b>drivers/audiodriver/src/jacklib.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **JackMgr** <sub>line 4</sub>
 ```rust
@@ -190,7 +190,7 @@ pub fn amp_enabled(&self) -> bool {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/lib.rs</b> (14 items)</summary>
+<summary><b>drivers/audiodriver/src/lib.rs</b> (14 items)</summary>
 
 #### `FN`: **ad_init** <sub>line 7</sub>
 ```rust
@@ -265,12 +265,14 @@ pub fn position() -> u32 {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/main.rs</b> (1 items)</summary>
+<summary><b>drivers/audiodriver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 8</sub>
 ```rust
 fn main() {
 ```
+> Punkt wejścia binarki pomocniczej. 
+>  
 > Właściwy sterownik działa w driver space przez `ds_entry` (patrz 
 > `driverspace/src/main.rs`); ta binarka jest cienkim wrapperem CLI, który 
 > pozwala sprawdzić stan gniazda jack z poziomu hosta.
@@ -278,7 +280,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/odin/driver.odin</b> (8 items)</summary>
+<summary><b>drivers/audiodriver/src/odin/driver.odin</b> (8 items)</summary>
 
 #### `STRUCT`: **Bdl_Entry** <sub>line 8</sub>
 ```odin
@@ -325,7 +327,7 @@ ad_position :: proc "C" () -> u32 {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/odin/jack.odin</b> (2 items)</summary>
+<summary><b>drivers/audiodriver/src/odin/jack.odin</b> (2 items)</summary>
 
 #### `PROC`: **ad_jack_present** <sub>line 8</sub>
 ```odin
@@ -340,7 +342,7 @@ ad_set_amp :: proc "C" (on: i32) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/odin/microphone.odin</b> (1 items)</summary>
+<summary><b>drivers/audiodriver/src/odin/microphone.odin</b> (1 items)</summary>
 
 #### `PROC`: **ad_capture** <sub>line 6</sub>
 ```odin
@@ -350,7 +352,7 @@ ad_capture :: proc "C" (data_phys: u64, len: u32, bdl_va: u64, bdl_phys: u64) ->
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/odin/speaker.odin</b> (1 items)</summary>
+<summary><b>drivers/audiodriver/src/odin/speaker.odin</b> (1 items)</summary>
 
 #### `PROC`: **ad_play** <sub>line 6</sub>
 ```odin
@@ -360,7 +362,7 @@ ad_play :: proc "C" (data_phys: u64, len: u32, bdl_va: u64, bdl_phys: u64) -> i3
 </details>
 
 <details>
-<summary><b>📄 drivers/audiodriver/src/tone.rs</b> (1 items)</summary>
+<summary><b>drivers/audiodriver/src/tone.rs</b> (1 items)</summary>
 
 #### `FN`: **fill_square** <sub>line 1</sub>
 ```rust
@@ -369,10 +371,10 @@ pub fn fill_square(buf: &mut [u8], periods: u32) {
 
 </details>
 
-## 📂 drivers/intelgpu_driver
+## drivers/intelgpu_driver
 
 <details>
-<summary><b>📄 drivers/intelgpu_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>drivers/intelgpu_driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -381,10 +383,10 @@ fn main() {
 
 </details>
 
-## 📂 drivers/netcam_driver
+## drivers/netcam_driver
 
 <details>
-<summary><b>📄 drivers/netcam_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>drivers/netcam_driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -393,10 +395,10 @@ fn main() {
 
 </details>
 
-## 📂 drivers/vgpu
+## drivers/vgpu
 
 <details>
-<summary><b>📄 drivers/vgpu/vgpu.h</b> (7 items)</summary>
+<summary><b>drivers/vgpu/vgpu.h</b> (7 items)</summary>
 
 #### `FUNCTION`: **vgpu_init** <sub>line 22</sub>
 ```c
@@ -436,7 +438,7 @@ void vgpu_process_ring(volatile void *ring);
 </details>
 
 <details>
-<summary><b>📄 drivers/vgpu/vgpu_driver.c</b> (11 items)</summary>
+<summary><b>drivers/vgpu/vgpu_driver.c</b> (11 items)</summary>
 
 #### `FUNCTION`: **pci_void** <sub>line 12</sub>
 ```c
@@ -495,10 +497,10 @@ void ds_entry(uint64_t params_va)
 
 </details>
 
-## 📂 drivers/wacomgraphic_driver
+## drivers/wacomgraphic_driver
 
 <details>
-<summary><b>📄 drivers/wacomgraphic_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>drivers/wacomgraphic_driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -507,10 +509,10 @@ fn main() {
 
 </details>
 
-## 📂 driverspace/src
+## driverspace/src
 
 <details>
-<summary><b>📄 driverspace/src/drivers/storage.rs</b> (4 items)</summary>
+<summary><b>driverspace/src/drivers/storage.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **StorageDrv** <sub>line 9</sub>
 ```rust
@@ -537,7 +539,7 @@ fn init(&mut self, _info: &DeviceInfo) -> Result<(), DsError> {
 </details>
 
 <details>
-<summary><b>📄 driverspace/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **panic** <sub>line 32</sub>
 ```rust
@@ -546,10 +548,10 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 </details>
 
-## 📂 driverspace_workspace/crates
+## driverspace_workspace/crates
 
 <details>
-<summary><b>📄 driverspace_workspace/crates/ds-manager/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/crates/ds-manager/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -558,20 +560,10 @@ fn main() {
 
 </details>
 
-## 📂 driverspace_workspace/drivers
+## driverspace_workspace/drivers
 
 <details>
-<summary><b>📄 driverspace_workspace/drivers/amdgpu-driver/src/main.rs</b> (1 items)</summary>
-
-#### `FN`: **main** <sub>line 1</sub>
-```rust
-fn main() {
-```
-
-</details>
-
-<details>
-<summary><b>📄 driverspace_workspace/drivers/audiodriver/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/drivers/amdgpu-driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -581,7 +573,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/drivers/intelgpu-driver/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/drivers/audiodriver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -591,7 +583,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/drivers/netcam_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/drivers/intelgpu-driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -601,7 +593,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/drivers/vgpu/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/drivers/netcam_driver/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -611,7 +603,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/drivers/wacomgraphic_driver/src/main.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/drivers/vgpu/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 1</sub>
 ```rust
@@ -620,10 +612,20 @@ fn main() {
 
 </details>
 
-## 📂 driverspace_workspace/formal
+<details>
+<summary><b>driverspace_workspace/drivers/wacomgraphic_driver/src/main.rs</b> (1 items)</summary>
+
+#### `FN`: **main** <sub>line 1</sub>
+```rust
+fn main() {
+```
+
+</details>
+
+## driverspace_workspace/formal
 
 <details>
-<summary><b>📄 driverspace_workspace/formal/ds-spark-core/src/ds_buddy_math.adb</b> (7 items)</summary>
+<summary><b>driverspace_workspace/formal/ds-spark-core/src/ds_buddy_math.adb</b> (7 items)</summary>
 
 #### `PACKAGE`: **body** <sub>line 2</sub>
 ```ada
@@ -664,7 +666,7 @@ function Safe_Calculate_DMA_End (
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/formal/ds-spark-core/src/ds_buddy_math.ads</b> (9 items)</summary>
+<summary><b>driverspace_workspace/formal/ds-spark-core/src/ds_buddy_math.ads</b> (9 items)</summary>
 
 #### `PACKAGE`: **DS_Buddy_Math** <sub>line 4</sub>
 ```ada
@@ -716,10 +718,10 @@ function Safe_Calculate_DMA_End (
 
 </details>
 
-## 📂 driverspace_workspace/lib
+## driverspace_workspace/lib
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-formal-ffi/build.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-formal-ffi/build.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 10</sub>
 ```rust
@@ -729,7 +731,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-formal-ffi/src/lib.rs</b> (6 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-formal-ffi/src/lib.rs</b> (6 items)</summary>
 
 #### `FN`: **ds_spark_safe_add_32** <sub>line 7</sub>
 ```rust
@@ -764,7 +766,7 @@ pub fn get_buddy(addr: u64, exp: u64) -> u64 {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-fw-audio/src/lib.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-fw-audio/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 1</sub>
 ```rust
@@ -779,7 +781,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-fw-block/src/request.rs</b> (8 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-fw-block/src/request.rs</b> (8 items)</summary>
 
 #### `ENUM`: **RequestState** <sub>line 7</sub>
 ```rust
@@ -825,7 +827,7 @@ pub fn mark_failed(&self) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-fw-block/src/traits.rs</b> (11 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-fw-block/src/traits.rs</b> (11 items)</summary>
 
 #### `STRUCT`: **BlockRequest** <sub>line 6</sub>
 ```rust
@@ -894,7 +896,7 @@ pub fn total_bytes(&self) -> u64 {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-fw-gpu/src/lib.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-fw-gpu/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 1</sub>
 ```rust
@@ -909,7 +911,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-fw-input/src/lib.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-fw-input/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 1</sub>
 ```rust
@@ -924,7 +926,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-ipc/src/client.rs</b> (4 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-ipc/src/client.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **ManagerClient** <sub>line 7</sub>
 ```rust
@@ -949,7 +951,7 @@ pub fn bind_irq(&self, irq_num: u32) -> Result<(), DsError> {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-ipc/src/dispatcher.rs</b> (5 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-ipc/src/dispatcher.rs</b> (5 items)</summary>
 
 #### `TYPE`: **HandlerFn** <sub>line 8</sub>
 ```rust
@@ -979,7 +981,7 @@ pub fn dispatch(&self, sender: Handle, opcode_raw: u32, payload_ptr: *const u8, 
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-log/src/formatter.rs</b> (6 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-log/src/formatter.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **LogBuffer** <sub>line 7</sub>
 ```rust
@@ -1014,7 +1016,7 @@ fn write_str(&mut self, s: &str) -> fmt::Result {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-log/src/levels.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-log/src/levels.rs</b> (2 items)</summary>
 
 #### `ENUM`: **LogLevel** <sub>line 5</sub>
 ```rust
@@ -1029,7 +1031,7 @@ impl LogLevel {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-log/src/lib.rs</b> (5 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-log/src/lib.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **EndpointRef** <sub>line 14</sub>
 ```rust
@@ -1060,7 +1062,7 @@ pub fn set(&self, handle: Handle) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-log/src/transport.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-log/src/transport.rs</b> (2 items)</summary>
 
 #### `FN`: **uart_putchar** <sub>line 12</sub>
 ```rust
@@ -1075,7 +1077,7 @@ pub fn emit_log(level: LogLevel, module: &str, buf: &LogBuffer) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/alloc/buddy.rs</b> (4 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/alloc/buddy.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **BuddyAllocator** <sub>line 5</sub>
 ```rust
@@ -1100,7 +1102,7 @@ pub fn free_pages(&mut self, addr: usize, order: usize) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/alloc/heap.rs</b> (3 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/alloc/heap.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **DriverHeap** <sub>line 6</sub>
 ```rust
@@ -1120,7 +1122,7 @@ pub fn init(&mut self, base_addr: usize, total_pages: usize) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/alloc/slab.rs</b> (4 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/alloc/slab.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **SlabAllocator** <sub>line 1</sub>
 ```rust
@@ -1145,7 +1147,7 @@ pub fn free(&mut self, ptr: usize) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/dma/buffer.rs</b> (6 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/dma/buffer.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **DmaFlags** <sub>line 10</sub>
 ```rust
@@ -1180,7 +1182,7 @@ fn drop(&mut self) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/dma/mapping.rs</b> (6 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/dma/mapping.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **MmioRegion** <sub>line 8</sub>
 ```rust
@@ -1215,7 +1217,7 @@ pub fn write(&mut self, value: T) {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/ds-mem/src/vmm.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/ds-mem/src/vmm.rs</b> (2 items)</summary>
 
 #### `FN`: **map_memory** <sub>line 6</sub>
 ```rust
@@ -1230,7 +1232,7 @@ pub fn unmap_memory(manager_ep: Handle, virt_addr: u64, size: u64) -> Result<(),
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/build.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/build.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 9</sub>
 ```rust
@@ -1240,7 +1242,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/errors.rs</b> (3 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/errors.rs</b> (3 items)</summary>
 
 #### `ENUM`: **DsError** <sub>line 7</sub>
 ```rust
@@ -1261,7 +1263,7 @@ pub fn from_u32(val: u32) -> Self {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/opcodes.rs</b> (3 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/opcodes.rs</b> (3 items)</summary>
 
 #### `ENUM`: **Opcode** <sub>line 6</sub>
 ```rust
@@ -1281,7 +1283,7 @@ pub fn from_u32(val: u32) -> Option<Self> {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/payloads/dev.rs</b> (3 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/payloads/dev.rs</b> (3 items)</summary>
 
 #### `ENUM`: **BusType** <sub>line 10</sub>
 ```rust
@@ -1301,7 +1303,7 @@ pub struct DevAttachPayload {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/payloads/irq.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/payloads/irq.rs</b> (1 items)</summary>
 
 #### `STRUCT`: **IrqBindPayload** <sub>line 6</sub>
 ```rust
@@ -1311,7 +1313,7 @@ pub struct IrqBindPayload {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/payloads/mem.rs</b> (2 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/payloads/mem.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **MmioMapPayload** <sub>line 8</sub>
 ```rust
@@ -1326,7 +1328,7 @@ pub struct DmaAllocPayload {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/payloads/sys.rs</b> (1 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/payloads/sys.rs</b> (1 items)</summary>
 
 #### `STRUCT`: **LogPayload** <sub>line 9</sub>
 ```rust
@@ -1336,7 +1338,7 @@ pub struct LogPayload {
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-abi/src/primitives.rs</b> (6 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-abi/src/primitives.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **Handle** <sub>line 8</sub>
 ```rust
@@ -1371,7 +1373,7 @@ pub struct VirtAddr(pub u64);
 </details>
 
 <details>
-<summary><b>📄 driverspace_workspace/lib/kapi-syscall/src/lib.rs</b> (5 items)</summary>
+<summary><b>driverspace_workspace/lib/kapi-syscall/src/lib.rs</b> (5 items)</summary>
 
 #### `FN`: **kapi_ipc_send** <sub>line 16</sub>
 ```rust
@@ -1406,10 +1408,10 @@ pub fn sys_ipc_call(
 
 </details>
 
-## 📂 driverspacelib/src
+## driverspacelib/src
 
 <details>
-<summary><b>📄 driverspacelib/src/abi.rs</b> (7 items)</summary>
+<summary><b>driverspacelib/src/abi.rs</b> (7 items)</summary>
 
 #### `ENUM`: **DsCmd** <sub>line 53</sub>
 ```rust
@@ -1449,7 +1451,7 @@ fn from(v: i32) -> Self {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/audio.rs</b> (5 items)</summary>
+<summary><b>driverspacelib/src/audio.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **AudioBars** <sub>line 4</sub>
 ```rust
@@ -1479,7 +1481,7 @@ pub fn page_phys_take(id: u64) -> Option<u64> {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/driver.rs</b> (3 items)</summary>
+<summary><b>driverspacelib/src/driver.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **DeviceInfo** <sub>line 6</sub>
 ```rust
@@ -1501,7 +1503,7 @@ fn init(&mut self, info: &DeviceInfo) -> Result<(), DsError>;
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/input.rs</b> (2 items)</summary>
+<summary><b>driverspacelib/src/input.rs</b> (2 items)</summary>
 
 #### `FN`: **key_req** <sub>line 4</sub>
 ```rust
@@ -1516,7 +1518,7 @@ pub fn key_take(id: u64) -> Option<u8> {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/jack.rs</b> (6 items)</summary>
+<summary><b>driverspacelib/src/jack.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **JackInfo** <sub>line 4</sub>
 ```rust
@@ -1551,7 +1553,7 @@ pub fn stop() {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/log.rs</b> (2 items)</summary>
+<summary><b>driverspacelib/src/log.rs</b> (2 items)</summary>
 
 #### `FN`: **ds_log** <sub>line 10</sub>
 ```rust
@@ -1568,7 +1570,7 @@ pub fn ds_log_raw(ptr: *const u8, len: usize) {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/runtime.rs</b> (6 items)</summary>
+<summary><b>driverspacelib/src/runtime.rs</b> (6 items)</summary>
 
 #### `FN`: **init_once** <sub>line 38</sub>
 ```rust
@@ -1612,7 +1614,7 @@ pub fn take_resp(id: u64) -> Option<DsMsg> {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/svc.rs</b> (2 items)</summary>
+<summary><b>driverspacelib/src/svc.rs</b> (2 items)</summary>
 
 #### `FN`: **call** <sub>line 4</sub>
 ```rust
@@ -1627,7 +1629,7 @@ pub fn take(id: u64) -> Option<DsMsg> {
 </details>
 
 <details>
-<summary><b>📄 driverspacelib/src/video.rs</b> (5 items)</summary>
+<summary><b>driverspacelib/src/video.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **FbInfo** <sub>line 4</sub>
 ```rust
@@ -1656,10 +1658,10 @@ pub fn release() -> u64 {
 
 </details>
 
-## 📂 kernel_Workspace/C_base
+## kernel_Workspace/C_base
 
 <details>
-<summary><b>📄 kernel_Workspace/C_base/kc-abi-menager/src/main.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/C_base/kc-abi-menager/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 2</sub>
 ```rust
@@ -1669,7 +1671,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/C_base/kc-abi/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/C_base/kc-abi/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1683,25 +1685,10 @@ fn it_works() {
 
 </details>
 
-## 📂 kernel_Workspace/Odin_base
+## kernel_Workspace/Odin_base
 
 <details>
-<summary><b>📄 kernel_Workspace/Odin_base/odin-abi-bridge/src/lib.rs</b> (2 items)</summary>
-
-#### `FN`: **add** <sub>line 2</sub>
-```rust
-pub fn add(left: u64, right: u64) -> u64 {
-```
-
-#### `FN`: **it_works** <sub>line 11</sub>
-```rust
-fn it_works() {
-```
-
-</details>
-
-<details>
-<summary><b>📄 kernel_Workspace/Odin_base/odin-abi/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/Odin_base/odin-abi-bridge/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1716,7 +1703,22 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/Odin_base/odin-bin-loader/src/main.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/Odin_base/odin-abi/src/lib.rs</b> (2 items)</summary>
+
+#### `FN`: **add** <sub>line 2</sub>
+```rust
+pub fn add(left: u64, right: u64) -> u64 {
+```
+
+#### `FN`: **it_works** <sub>line 11</sub>
+```rust
+fn it_works() {
+```
+
+</details>
+
+<details>
+<summary><b>kernel_Workspace/Odin_base/odin-bin-loader/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **main** <sub>line 2</sub>
 ```rust
@@ -1725,10 +1727,10 @@ fn main() {
 
 </details>
 
-## 📂 kernel_Workspace/base
+## kernel_Workspace/base
 
 <details>
-<summary><b>📄 kernel_Workspace/base/kw-C-abi/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/base/kw-C-abi/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1743,7 +1745,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/base/kw-base/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/base/kw-base/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1758,7 +1760,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/base/kw-libs/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/base/kw-libs/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1773,7 +1775,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/base/kw-odin-abi/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/base/kw-odin-abi/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1787,25 +1789,10 @@ fn it_works() {
 
 </details>
 
-## 📂 kernel_Workspace/core
+## kernel_Workspace/core
 
 <details>
-<summary><b>📄 kernel_Workspace/core/kstd_alloc/src/lib.rs</b> (2 items)</summary>
-
-#### `FN`: **add** <sub>line 2</sub>
-```rust
-pub fn add(left: u64, right: u64) -> u64 {
-```
-
-#### `FN`: **it_works** <sub>line 11</sub>
-```rust
-fn it_works() {
-```
-
-</details>
-
-<details>
-<summary><b>📄 kernel_Workspace/core/kstd_base/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/kstd_alloc/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1820,7 +1807,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/kstd_core/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/kstd_base/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1835,7 +1822,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/kstd_data/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/kstd_core/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1850,7 +1837,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/kstd_io/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/kstd_data/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1865,7 +1852,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/linix_abi/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/kstd_io/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1880,7 +1867,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/linix_abi_com/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/linix_abi/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1895,7 +1882,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/linix_abi_driverspace/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/linix_abi_com/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1910,7 +1897,7 @@ fn it_works() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/core/windows-com/src/lib.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/core/linix_abi_driverspace/src/lib.rs</b> (2 items)</summary>
 
 #### `FN`: **add** <sub>line 2</sub>
 ```rust
@@ -1924,10 +1911,25 @@ fn it_works() {
 
 </details>
 
-## 📂 kernel_Workspace/kernel
+<details>
+<summary><b>kernel_Workspace/core/windows-com/src/lib.rs</b> (2 items)</summary>
+
+#### `FN`: **add** <sub>line 2</sub>
+```rust
+pub fn add(left: u64, right: u64) -> u64 {
+```
+
+#### `FN`: **it_works** <sub>line 11</sub>
+```rust
+fn it_works() {
+```
+
+</details>
+
+## kernel_Workspace/kernel
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/build.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/build.rs</b> (3 items)</summary>
 
 #### `FN`: **collect_c_files** <sub>line 6</sub>
 ```rust
@@ -1947,7 +1949,7 @@ fn main() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/arch/mod.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/arch/mod.rs</b> (4 items)</summary>
 
 #### `FN`: **init** <sub>line 13</sub>
 ```rust
@@ -1972,7 +1974,7 @@ pub fn current_cpu() -> usize {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/arch/riscv64.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/arch/riscv64.rs</b> (10 items)</summary>
 
 #### `STRUCT`: **HeapSpace** <sub>line 9</sub>
 ```rust
@@ -2027,7 +2029,7 @@ pub fn early_uart(s: &str) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/arch/x86_64.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/arch/x86_64.rs</b> (6 items)</summary>
 
 #### `FN`: **x86_panic** <sub>line 6</sub>
 ```rust
@@ -2062,7 +2064,7 @@ fn x86_boot(boot_info: &'static BootInfo) -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/audio/jack.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/audio/jack.rs</b> (6 items)</summary>
 
 #### `FN`: **init** <sub>line 6</sub>
 ```rust
@@ -2097,7 +2099,7 @@ pub fn stop() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/aut.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/aut.rs</b> (1 items)</summary>
 
 #### `FN`: **authorize** <sub>line 4</sub>
 ```rust
@@ -2107,7 +2109,7 @@ pub fn authorize(ring: u8, op: u8) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/battery.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/battery.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **battery_init** <sub>line 21</sub>
 ```c
@@ -2152,7 +2154,7 @@ void battery_sim_tick(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/bridge.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/bridge.rs</b> (3 items)</summary>
 
 #### `FN`: **battery_status_packed** <sub>line 5</sub>
 ```rust
@@ -2172,7 +2174,7 @@ pub fn batt_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/init.c</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/init.c</b> (1 items)</summary>
 
 #### `FUNCTION`: **battery_init** <sub>line 6</sub>
 ```c
@@ -2182,7 +2184,7 @@ bool battery_init(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/init.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/init.rs</b> (2 items)</summary>
 
 #### `FN`: **battery_init** <sub>line 2</sub>
 ```rust
@@ -2197,7 +2199,7 @@ pub fn init() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/operation.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/operation.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **model_present** <sub>line 16</sub>
 ```c
@@ -2252,7 +2254,7 @@ void battery_sim_tick(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/battery/operation.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/battery/operation.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **battery_register_backend** <sub>line 11</sub>
 ```c
@@ -2262,7 +2264,7 @@ void battery_register_backend(const battery_backend_t *b);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/aut.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/aut.rs</b> (1 items)</summary>
 
 #### `FN`: **authorize** <sub>line 8</sub>
 ```rust
@@ -2272,7 +2274,7 @@ pub fn authorize(ring: u8, op: u32) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/bridge.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/bridge.rs</b> (8 items)</summary>
 
 #### `FN`: **bt_init** <sub>line 7</sub>
 ```rust
@@ -2317,7 +2319,7 @@ pub fn bt_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/bt.h</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/bt.h</b> (7 items)</summary>
 
 #### `FUNCTION`: **bt_init** <sub>line 8</sub>
 ```c
@@ -2357,7 +2359,7 @@ bool bt_acl_recv(uint8_t *data, uint16_t cap, uint16_t *len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/init.c</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/init.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **wait_cmd_complete** <sub>line 9</sub>
 ```c
@@ -2382,7 +2384,7 @@ void bt_info(uint8_t *hci_ver, uint8_t *bdaddr)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/init.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/init.rs</b> (4 items)</summary>
 
 #### `FN`: **bt_init** <sub>line 2</sub>
 ```rust
@@ -2407,7 +2409,7 @@ pub fn ready() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/operation.c</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/operation.c</b> (12 items)</summary>
 
 #### `FUNCTION`: **evt_push** <sub>line 16</sub>
 ```c
@@ -2472,7 +2474,7 @@ bool bt_acl_recv(uint8_t *data, uint16_t cap, uint16_t *len)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/bluetooth/operation.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/bluetooth/operation.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **bt_op_model_init** <sub>line 11</sub>
 ```c
@@ -2487,7 +2489,7 @@ bool bt_op_model_run_cmd(uint16_t opcode, const uint8_t *params, uint8_t len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/aut.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/aut.rs</b> (1 items)</summary>
 
 #### `FN`: **authorize** <sub>line 6</sub>
 ```rust
@@ -2497,7 +2499,7 @@ pub fn authorize(ring: u8, op: u8) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/bridge.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/bridge.rs</b> (6 items)</summary>
 
 #### `FN`: **camera_caps_get_w** <sub>line 5</sub>
 ```rust
@@ -2532,7 +2534,7 @@ pub fn cam_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/camera.h</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/camera.h</b> (7 items)</summary>
 
 #### `FUNCTION`: **camera_init** <sub>line 19</sub>
 ```c
@@ -2572,7 +2574,7 @@ bool camera_frame_to_phys(uint64_t phys, uint32_t cap, uint64_t *frame_id);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/init.c</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/init.c</b> (1 items)</summary>
 
 #### `FUNCTION`: **camera_init** <sub>line 5</sub>
 ```c
@@ -2582,7 +2584,7 @@ bool camera_init(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/init.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/init.rs</b> (2 items)</summary>
 
 #### `FN`: **camera_init** <sub>line 2</sub>
 ```rust
@@ -2597,7 +2599,7 @@ pub fn init() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/operation.c</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/operation.c</b> (12 items)</summary>
 
 #### `FUNCTION`: **model_present** <sub>line 15</sub>
 ```c
@@ -2662,7 +2664,7 @@ bool camera_frame_to_phys(uint64_t phys, uint32_t cap, uint64_t *fid)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/camera/operation.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/camera/operation.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **camera_register_backend** <sub>line 13</sub>
 ```c
@@ -2672,7 +2674,7 @@ void camera_register_backend(const camera_backend_t *b);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/audit.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/audit.rs</b> (17 items)</summary>
 
 #### `ENUM`: **EventKind** <sub>line 6</sub>
 ```rust
@@ -2762,7 +2764,7 @@ fn test_audit() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/caps.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/caps.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **caps_self_bits** <sub>line 10</sub>
 ```c
@@ -2807,7 +2809,7 @@ unsigned long long caps_audit_count(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/check.rs</b> (21 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/check.rs</b> (21 items)</summary>
 
 #### `FN`: **kernel_world_id** <sub>line 10</sub>
 ```rust
@@ -2917,7 +2919,7 @@ fn test_require() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/defaults.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/defaults.rs</b> (3 items)</summary>
 
 #### `FN`: **default_for_ring** <sub>line 6</sub>
 ```rust
@@ -2937,7 +2939,7 @@ pub fn register_for_ring(ring: u8, parent: Option<u32>) -> Result<u32, &'static 
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/export.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/export.rs</b> (1 items)</summary>
 
 #### `FN`: **cap_from_id** <sub>line 7</sub>
 ```rust
@@ -2947,7 +2949,7 @@ fn cap_from_id(id: u8) -> Option<Capability> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/grant.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/grant.rs</b> (10 items)</summary>
 
 #### `FN`: **grant_cap** <sub>line 18</sub>
 ```rust
@@ -3002,7 +3004,7 @@ fn test_inherit() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/hierarchy.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/hierarchy.rs</b> (10 items)</summary>
 
 #### `FN`: **parent** <sub>line 5</sub>
 ```rust
@@ -3057,7 +3059,7 @@ fn test_depth() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/mod.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/mod.rs</b> (4 items)</summary>
 
 #### `FN`: **init** <sub>line 31</sub>
 ```rust
@@ -3082,7 +3084,7 @@ pub fn self_test() -> crate::testing::TestResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/policy.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/policy.rs</b> (6 items)</summary>
 
 #### `TYPE`: **PolicyHook** <sub>line 5</sub>
 ```rust
@@ -3117,7 +3119,7 @@ pub fn allowed(world: u32, cap: Capability) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/revoke.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/revoke.rs</b> (8 items)</summary>
 
 #### `FN`: **revoke_from_world** <sub>line 7</sub>
 ```rust
@@ -3162,7 +3164,7 @@ fn test_revoke() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/sets.rs</b> (22 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/sets.rs</b> (22 items)</summary>
 
 #### `STRUCT`: **CapSetBuilder** <sub>line 4</sub>
 ```rust
@@ -3277,7 +3279,7 @@ fn test_effective() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/store.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/store.rs</b> (17 items)</summary>
 
 #### `STRUCT`: **WorldCaps** <sub>line 9</sub>
 ```rust
@@ -3367,7 +3369,7 @@ fn test_world_registration() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/syscalls.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/syscalls.rs</b> (2 items)</summary>
 
 #### `FN`: **cap_from_id** <sub>line 13</sub>
 ```rust
@@ -3382,7 +3384,7 @@ pub fn cap_syscall(num: u64, a0: u64, a1: u64, a2: u64) -> u64 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/tests.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/tests.rs</b> (4 items)</summary>
 
 #### `FN`: **test_full_flow** <sub>line 8</sub>
 ```rust
@@ -3407,7 +3409,7 @@ fn test_audit_trail() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/caps/types.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/caps/types.rs</b> (17 items)</summary>
 
 #### `TYPE`: **CapID** <sub>line 3</sub>
 ```rust
@@ -3497,7 +3499,7 @@ fn test_set_operations() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/ast.c</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/ast.c</b> (1 items)</summary>
 
 #### `FUNCTION`: **cl_arena_init** <sub>line 3</sub>
 ```c
@@ -3507,7 +3509,7 @@ void cl_arena_init(arena_t *a, uint8_t *buf, size_t cap)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/ast.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/ast.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **cl_arena_init** <sub>line 50</sub>
 ```c
@@ -3517,7 +3519,7 @@ void cl_arena_init(arena_t *a, uint8_t *buf, size_t cap);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/bridge.c</b> (18 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/bridge.c</b> (18 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 3</sub>
 ```c
@@ -3612,7 +3614,7 @@ int cl_bridge_init(cl_vm_t *vm, uint8_t ring)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/bridge.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/bridge.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **cl_bridge_init** <sub>line 6</sub>
 ```c
@@ -3627,7 +3629,7 @@ int cl_bridge_add(cl_vm_t *vm, const char *name, cl_ext_fn fn);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/codegen.c</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/codegen.c</b> (7 items)</summary>
 
 #### `FUNCTION`: **find_global** <sub>line 39</sub>
 ```c
@@ -3667,7 +3669,7 @@ static void gen_stmt(cg_t *g, ast_node_t *n)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/lexer.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/lexer.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **peek** <sub>line 35</sub>
 ```c
@@ -3722,7 +3724,7 @@ bool cl_lex_next(lexer_t *l, token_t *t)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/lexer.h</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/lexer.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **cl_lexer_init** <sub>line 16</sub>
 ```c
@@ -3742,7 +3744,7 @@ int cl_lex_all(lexer_t *l, token_t *buf, size_t cap, size_t *count);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/loader.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/loader.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **wr_u8** <sub>line 86</sub>
 ```c
@@ -3797,7 +3799,7 @@ static long read_all(const char *path, uint8_t *buf, size_t cap)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/loader.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/loader.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **cl_save_bc** <sub>line 15</sub>
 ```c
@@ -3807,7 +3809,7 @@ size_t cl_save_bc(cl_prog_t *P, uint8_t *buf, size_t cap);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/native.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/native.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **uint64_t** <sub>line 9</sub>
 ```c
@@ -3824,7 +3826,7 @@ size_t cl_native_size(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/native_x86.c</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/native_x86.c</b> (13 items)</summary>
 
 #### `FUNCTION`: **nb_u8** <sub>line 10</sub>
 ```c
@@ -3894,7 +3896,7 @@ size_t cl_native_size(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/parser.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/parser.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **copy_name** <sub>line 3</sub>
 ```c
@@ -3949,7 +3951,7 @@ static void nl_commit(parser_t *p, nlist_t *l, ast_node_t *parent)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/run.c</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/run.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **cl_kernel_read** <sub>line 4</sub>
 ```c
@@ -3974,7 +3976,7 @@ extern void cl_make_exec(void *p, size_t len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/sema.c</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/sema.c</b> (12 items)</summary>
 
 #### `FUNCTION`: **push_scope** <sub>line 75</sub>
 ```c
@@ -4039,7 +4041,7 @@ size_t cl_sema_diag_count(const sema_ctx_t *s)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/sema.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/sema.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **cl_sema_run** <sub>line 16</sub>
 ```c
@@ -4054,7 +4056,7 @@ size_t cl_sema_diag_count(const sema_ctx_t *s);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/vm.c</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/vm.c</b> (13 items)</summary>
 
 #### `FUNCTION`: **cl_wbytes** <sub>line 3</sub>
 ```c
@@ -4124,7 +4126,7 @@ void cl_shr(uint8_t *r, const uint8_t *a, uint32_t n, int w)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/core-lang/vm.h</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/core-lang/vm.h</b> (12 items)</summary>
 
 #### `FUNCTION`: **uint64_t** <sub>line 16</sub>
 ```c
@@ -4189,7 +4191,7 @@ void cl_shr(uint8_t *r, const uint8_t *a, uint32_t n, int w);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/acpi.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/acpi.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **CpuEntry** <sub>line 4</sub>
 ```rust
@@ -4229,7 +4231,7 @@ pub fn find_rsdp(phys_offset: u64) -> Option<u64> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/lapic.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/lapic.rs</b> (13 items)</summary>
 
 #### `FN`: **x2apic_msr** <sub>line 20</sub>
 ```rust
@@ -4299,7 +4301,7 @@ pub fn send_startup_ipi(apic_id: u32, vector: u8) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/mod.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/mod.rs</b> (3 items)</summary>
 
 #### `FN`: **init_riscv** <sub>line 18</sub>
 ```rust
@@ -4319,7 +4321,7 @@ pub fn total_cpus() -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/riscv.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/riscv.rs</b> (5 items)</summary>
 
 #### `FN`: **init** <sub>line 7</sub>
 ```rust
@@ -4349,7 +4351,7 @@ fn system_reset(reset_type: u32) -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/arch/risc_v/context_swich.rs</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/arch/risc_v/context_swich.rs</b> (12 items)</summary>
 
 #### `FN`: **get_switch_count** <sub>line 639</sub>
 ```rust
@@ -4414,7 +4416,7 @@ fn test_satp_mode_name() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/arch/x86_64/context_swich.rs</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/arch/x86_64/context_swich.rs</b> (12 items)</summary>
 
 #### `STRUCT`: **XSaveArea** <sub>line 45</sub>
 ```rust
@@ -4479,7 +4481,7 @@ fn test_cr3_masks() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/arch_hooks.rs</b> (35 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/arch_hooks.rs</b> (35 items)</summary>
 
 #### `FN`: **register_runqueue** <sub>line 49</sub>
 ```rust
@@ -4659,7 +4661,7 @@ fn booted_cpu_count_starts_at_or_above_zero() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/class.rs</b> (18 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/class.rs</b> (18 items)</summary>
 
 #### `STRUCT`: **SchedClassOps** <sub>line 12</sub>
 ```rust
@@ -4754,7 +4756,7 @@ fn fair_charge_dispatches_to_underlying_rqfair() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/bitmap.rs</b> (58 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/bitmap.rs</b> (58 items)</summary>
 
 #### `STRUCT`: **Bitmap** <sub>line 27</sub>
 ```rust
@@ -4947,6 +4949,9 @@ pub fn is_full(&self) -> bool {
 ```rust
 pub fn find_first_zero_and_set(&self) -> Option<usize> {
 ```
+> Bez blokad: skanuje słowa w poszukiwaniu pierwszego wyzerowanego 
+> bitu i próbuje go zająć przez `compare_exchange_weak`. Przegrany 
+> wyścig oznacza, że ktoś inny właśnie zajął ten sam bit (albo inny 
 > w tym samym słowie) — ponawiamy próbę na TYM SAMYM słowie zamiast 
 > przechodzić dalej, żeby nie pominąć bitów zwolnionych w 
 > międzyczasie.
@@ -5054,7 +5059,7 @@ fn atomic_bitmap_out_of_range_set_is_harmless() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/cpumask.rs</b> (16 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/cpumask.rs</b> (16 items)</summary>
 
 #### `STRUCT`: **AtomicCpuMask** <sub>line 17</sub>
 ```rust
@@ -5139,7 +5144,7 @@ pub fn package_mask(cpu: u32) -> CpuMask {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/plist.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/plist.rs</b> (6 items)</summary>
 
 #### `FN`: **plist_prio** <sub>line 20</sub>
 ```rust
@@ -5172,6 +5177,13 @@ pub fn first(&self) -> *mut TaskStruct {
 ```rust
 pub fn last(&self) -> *mut TaskStruct {
 ```
+> Zadanie o najniższym priorytecie (ostatni poziom), ostatnie 
+> w kolejności FIFO na tym poziomie. 
+>  
+> O(1) — poprzednio ta funkcja mogła degenerować się do O(N) 
+> przy wielu zadaniach na tym samym (najniższym) priorytecie, 
+> bo szła liniowo przez `same_prio.prev` licząc na to, że 
+> wskaźnik "prev" head'a wskazuje bezpośrednio na ogon (co nie 
 > było gwarantowane przez ówczesny `insert`). Teraz `insert` 
 > utrzymuje ten inwariant jawnie: `same_prio.prev` head'a 
 > zawsze wskazuje ogon FIFO, więc odczyt jest bezpośredni.
@@ -5179,7 +5191,7 @@ pub fn last(&self) -> *mut TaskStruct {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/rbtree.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/rbtree.rs</b> (9 items)</summary>
 
 #### `FN`: **rb_parent** <sub>line 23</sub>
 ```rust
@@ -5229,7 +5241,7 @@ fn rb_insert_fixup(&mut self, mut node: *mut TaskStruct) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/rt_array.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/rt_array.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **RtArray** <sub>line 4</sub>
 ```rust
@@ -5265,6 +5277,11 @@ pub fn highest_prio(&self) -> Option<usize> {
 ```rust
 pub fn active_levels(&self) -> u32 {
 ```
+> Liczba unikalnych aktywnych poziomów priorytetu (nie mylić 
+> z `nr_running`, które liczy wszystkie zakolejkowane zadania). 
+>  
+> Dopisane, bo bez tego nie da się odróżnić "jeden proces o 
+> wysokim priorytecie" od "wiele procesów rozłożonych na wiele 
 > priorytetów" bez przechodzenia całej bitmapy ręcznie za każdym 
 > razem, gdy taka informacja jest potrzebna (np. w heurystykach 
 > load-balancingu między CPU).
@@ -5272,7 +5289,7 @@ pub fn active_levels(&self) -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/collections/task.rs</b> (62 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/collections/task.rs</b> (62 items)</summary>
 
 #### `STRUCT`: **PidAllocator** <sub>line 15</sub>
 ```rust
@@ -5587,7 +5604,7 @@ impl PidNamespace {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/core.rs</b> (24 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/core.rs</b> (24 items)</summary>
 
 #### `FN`: **alloc_pid** <sub>line 22</sub>
 ```rust
@@ -5714,7 +5731,7 @@ fn priority_range_helpers_match_posix_expectations() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/debug/tracepoints.rs</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/debug/tracepoints.rs</b> (12 items)</summary>
 
 #### `STRUCT`: **Tracepoint** <sub>line 1</sub>
 ```rust
@@ -5779,7 +5796,7 @@ pub struct PerCpuTracebuffer{}
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/entities/runqueue.rs</b> (112 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/entities/runqueue.rs</b> (112 items)</summary>
 
 #### `STRUCT`: **EnqueueFlags** <sub>line 19</sub>
 ```rust
@@ -6346,7 +6363,7 @@ fn load_balance_is_noop_below_imbalance_threshold() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/entities/stats.rs</b> (44 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/entities/stats.rs</b> (44 items)</summary>
 
 #### `FN`: **account_switch** <sub>line 21</sub>
 ```rust
@@ -6572,7 +6589,7 @@ fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/entities/task.rs</b> (199 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/entities/task.rs</b> (199 items)</summary>
 
 #### `TYPE`: **TaskId** <sub>line 13</sub>
 ```rust
@@ -7573,7 +7590,7 @@ impl TaskStruct {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/mod.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/mod.rs</b> (2 items)</summary>
 
 #### `FN`: **self_test** <sub>line 57</sub>
 ```rust
@@ -7588,7 +7605,7 @@ pub fn current_cpu_id() -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/power/em.rs</b> (38 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/power/em.rs</b> (38 items)</summary>
 
 #### `STRUCT`: **CapacityState** <sub>line 16</sub>
 ```rust
@@ -7783,7 +7800,7 @@ pub fn em_build_synthetic_huge_pd(cpus: CpuMask) -> PerformanceDomain {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/power/mod.rs</b> (26 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/power/mod.rs</b> (26 items)</summary>
 
 #### `STRUCT`: **PidState** <sub>line 28</sub>
 ```rust
@@ -7918,7 +7935,7 @@ pub fn dump_thermal_state(&self) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/power/placement.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/power/placement.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **CpuSnapshot** <sub>line 14</sub>
 ```rust
@@ -7963,7 +7980,7 @@ impl PlacementResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/active.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/active.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **ActiveBalanceArg** <sub>line 13</sub>
 ```rust
@@ -7983,7 +8000,7 @@ fn active_balance_is_noop_when_target_equals_busiest() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/calculate.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/calculate.rs</b> (9 items)</summary>
 
 #### `ENUM`: **GroupType** <sub>line 17</sub>
 ```rust
@@ -8033,7 +8050,7 @@ fn calculate_imbalance_is_zero_for_balanced_groups() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/env.rs</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/balancing/env.rs</b> (14 items)</summary>
 
 #### `STRUCT`: **LoadBalanceEnv** <sub>line 18</sub>
 ```rust
@@ -8110,7 +8127,7 @@ fn reset_clears_loop_counter_and_need_break() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/ipi.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/ipi.rs</b> (4 items)</summary>
 
 #### `ENUM`: **IpiType** <sub>line 8</sub>
 ```rust
@@ -8135,7 +8152,7 @@ fn handle_ipi_entry_ignores_unimplemented_types_without_panicking() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/migration/stopper.rs</b> (22 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/migration/stopper.rs</b> (22 items)</summary>
 
 #### `ENUM`: **StopperState** <sub>line 10</sub>
 ```rust
@@ -8250,7 +8267,7 @@ fn execute_work_without_queued_job_is_a_noop() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/smp/topology.rs</b> (21 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/smp/topology.rs</b> (21 items)</summary>
 
 #### `ENUM`: **CacheLevel** <sub>line 24</sub>
 ```rust
@@ -8360,7 +8377,7 @@ fn sched_domain_flags_logic() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/tests/test_balance_math.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/tests/test_balance_math.rs</b> (13 items)</summary>
 
 #### `FN`: **make_idle** <sub>line 5</sub>
 ```rust
@@ -8430,7 +8447,7 @@ fn load_balance_is_noop_below_threshold() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/tests/test_pelt.rs</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/tests/test_pelt.rs</b> (15 items)</summary>
 
 #### `FN`: **default_load_avg_is_zero** <sub>line 4</sub>
 ```rust
@@ -8510,7 +8527,7 @@ fn consecutive_accumulates_update_last_time_correctly() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/tests/test_rbtree.rs</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/tests/test_rbtree.rs</b> (14 items)</summary>
 
 #### `FN`: **fair_key** <sub>line 5</sub>
 ```rust
@@ -8585,7 +8602,7 @@ fn stress_test_insert_delete_cycles() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/time/plist.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/time/plist.rs</b> (6 items)</summary>
 
 #### `FN`: **plist_prio** <sub>line 20</sub>
 ```rust
@@ -8618,6 +8635,13 @@ pub fn first(&self) -> *mut TaskStruct {
 ```rust
 pub fn last(&self) -> *mut TaskStruct {
 ```
+> Zadanie o najniższym priorytecie (ostatni poziom), ostatnie 
+> w kolejności FIFO na tym poziomie. 
+>  
+> O(1) — poprzednio ta funkcja mogła degenerować się do O(N) 
+> przy wielu zadaniach na tym samym (najniższym) priorytecie, 
+> bo szła liniowo przez `same_prio.prev` licząc na to, że 
+> wskaźnik "prev" head'a wskazuje bezpośrednio na ogon (co nie 
 > było gwarantowane przez ówczesny `insert`). Teraz `insert` 
 > utrzymuje ten inwariant jawnie: `same_prio.prev` head'a 
 > zawsze wskazuje ogon FIFO, więc odczyt jest bezpośredni.
@@ -8625,7 +8649,7 @@ pub fn last(&self) -> *mut TaskStruct {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/time/rbtree.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/time/rbtree.rs</b> (9 items)</summary>
 
 #### `FN`: **rb_parent** <sub>line 23</sub>
 ```rust
@@ -8675,7 +8699,7 @@ fn rb_insert_fixup(&mut self, mut node: *mut TaskStruct) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/time/rt_array.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/time/rt_array.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **RtArray** <sub>line 4</sub>
 ```rust
@@ -8711,6 +8735,11 @@ pub fn highest_prio(&self) -> Option<usize> {
 ```rust
 pub fn active_levels(&self) -> u32 {
 ```
+> Liczba unikalnych aktywnych poziomów priorytetu (nie mylić 
+> z `nr_running`, które liczy wszystkie zakolejkowane zadania). 
+>  
+> Dopisane, bo bez tego nie da się odróżnić "jeden proces o 
+> wysokim priorytecie" od "wiele procesów rozłożonych na wiele 
 > priorytetów" bez przechodzenia całej bitmapy ręcznie za każdym 
 > razem, gdy taka informacja jest potrzebna (np. w heurystykach 
 > load-balancingu między CPU).
@@ -8718,7 +8747,7 @@ pub fn active_levels(&self) -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/scheduler/time/task.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/scheduler/time/task.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **ListHead** <sub>line 7</sub>
 ```rust
@@ -8758,7 +8787,7 @@ impl TaskStruct {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/smp.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/smp.rs</b> (13 items)</summary>
 
 #### `STRUCT`: **ApStack** <sub>line 32</sub>
 ```rust
@@ -8830,7 +8859,7 @@ pub fn self_test() -> TestResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/cpu/trampoline.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/cpu/trampoline.rs</b> (2 items)</summary>
 
 #### `FN`: **install** <sub>line 23</sub>
 ```rust
@@ -8845,7 +8874,7 @@ pub fn set_stack_and_arg(stack_top: u64, arg: u64) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/common.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/common.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **PackageId** <sub>line 2</sub>
 ```rust
@@ -8875,7 +8904,7 @@ pub enum CtrlInstallError {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/init/bootstrap.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/init/bootstrap.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **BootstrapResult** <sub>line 1</sub>
 ```rust
@@ -8890,7 +8919,7 @@ pub fn bootstrap() -> Result<BootstrapResult, CtrlInstallError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/init/state.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/init/state.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **SystemState** <sub>line 1</sub>
 ```rust
@@ -8930,7 +8959,7 @@ pub fn unregister(&mut self, name: &str) -> Result<(), CtrlInstallError> { todo!
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/install/executor.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/install/executor.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **InstallExecutor** <sub>line 1</sub>
 ```rust
@@ -8945,7 +8974,7 @@ pub fn execute(&mut self, tx: &Transaction) -> Result<(), CtrlInstallError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/install/resolver.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/install/resolver.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **ResolvedPlan** <sub>line 1</sub>
 ```rust
@@ -8960,7 +8989,7 @@ pub fn resolve(
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/install/transaction.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/install/transaction.rs</b> (2 items)</summary>
 
 #### `ENUM`: **TransactionStep** <sub>line 1</sub>
 ```rust
@@ -8975,7 +9004,7 @@ pub struct Transaction {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/mod.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/mod.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **CtrlInstall** <sub>line 9</sub>
 ```rust
@@ -9010,7 +9039,7 @@ pub fn list_installed(&self) -> &[init::state::InstalledPackage] {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/repo/fetch.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/repo/fetch.rs</b> (4 items)</summary>
 
 #### `TRAIT`: **PackageFetcher** <sub>line 1</sub>
 ```rust
@@ -9035,7 +9064,7 @@ pub struct RemoteFetcher {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/repo/index.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/repo/index.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **RepositoryIndex** <sub>line 1</sub>
 ```rust
@@ -9065,7 +9094,7 @@ pub fn search(&self, query: &str) -> alloc::vec::Vec<&PackageManifest> { todo!()
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/repo/manifest.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/repo/manifest.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **PackageManifest** <sub>line 1</sub>
 ```rust
@@ -9085,7 +9114,7 @@ pub struct FileEntry {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/update/diff.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/update/diff.rs</b> (2 items)</summary>
 
 #### `ENUM`: **UpdateAction** <sub>line 1</sub>
 ```rust
@@ -9100,7 +9129,7 @@ pub fn diff(
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ctrlinstall/update/upgrade.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ctrlinstall/update/upgrade.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **UpgradePlan** <sub>line 1</sub>
 ```rust
@@ -9120,7 +9149,7 @@ pub fn execute_upgrade(plan: &UpgradePlan, executor: &mut InstallExecutor) -> Re
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/aut.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/aut.rs</b> (1 items)</summary>
 
 #### `FN`: **authorize** <sub>line 7</sub>
 ```rust
@@ -9130,7 +9159,7 @@ pub fn authorize(ring: u8, op: u8) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/aux.c</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/aux.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **dp_aux_sink_init** <sub>line 35</sub>
 ```c
@@ -9155,7 +9184,7 @@ bool dp_aux_read_edid(void *buf, uint32_t len)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/aux.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/aux.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **dp_aux_sink_init** <sub>line 17</sub>
 ```c
@@ -9180,7 +9209,7 @@ bool dp_aux_read_edid(void *buf, uint32_t len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/bridge.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/bridge.rs</b> (6 items)</summary>
 
 #### `FN`: **dp_ready** <sub>line 5</sub>
 ```rust
@@ -9215,7 +9244,7 @@ pub fn dp_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/dp.h</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/dp.h</b> (7 items)</summary>
 
 #### `FUNCTION`: **dp_init** <sub>line 10</sub>
 ```c
@@ -9255,7 +9284,7 @@ bool dp_fb_set(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/init.c</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/init.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **dp_init** <sub>line 11</sub>
 ```c
@@ -9290,7 +9319,7 @@ bool dp_fb_set(uint64_t phys, uint32_t w, uint32_t h, uint32_t stride)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/init.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/init.rs</b> (4 items)</summary>
 
 #### `FN`: **dp_init** <sub>line 2</sub>
 ```rust
@@ -9315,7 +9344,7 @@ pub fn ready() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/link.c</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/link.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **dp_link_train** <sub>line 7</sub>
 ```c
@@ -9330,7 +9359,7 @@ void dp_link_info(uint32_t *rate_mbps, uint32_t *lanes)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/link.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/link.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **dp_link_train** <sub>line 7</sub>
 ```c
@@ -9345,7 +9374,7 @@ void dp_link_info(uint32_t *rate_mbps, uint32_t *lanes);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/operation.c</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/operation.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **dp_op_set_fb** <sub>line 8</sub>
 ```c
@@ -9360,7 +9389,7 @@ void dp_op_state(uint64_t *phys, uint32_t *ww, uint32_t *hh, uint32_t *s)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/displayport/operation.h</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/displayport/operation.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **dp_op_set_fb** <sub>line 6</sub>
 ```c
@@ -9380,7 +9409,7 @@ void dp_op_fill(uint32_t color, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/pci/mod.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/pci/mod.rs</b> (17 items)</summary>
 
 #### `STRUCT`: **PciDev** <sub>line 2</sub>
 ```rust
@@ -9470,7 +9499,7 @@ pub fn find_class(class: u8, subclass: u8, prog_if: u8) -> Option<PciDev> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/hid/keyboard.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/hid/keyboard.rs</b> (3 items)</summary>
 
 #### `FN`: **key_to_ascii** <sub>line 18</sub>
 ```rust
@@ -9490,7 +9519,7 @@ pub fn take_char() -> Option<u8> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/hid/mod.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/hid/mod.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **HidKeyboard** <sub>line 16</sub>
 ```rust
@@ -9515,7 +9544,7 @@ pub fn poll(x: &mut Xhci) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/hid/report.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/hid/report.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **BootReport** <sub>line 1</sub>
 ```rust
@@ -9530,7 +9559,7 @@ pub fn parse_boot_keyboard(report: &[u8]) -> Option<BootReport> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/mass/blockdev.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/mass/blockdev.rs</b> (6 items)</summary>
 
 #### `IMPL`: **BlockDevice** <sub>line 4</sub>
 ```rust
@@ -9565,7 +9594,7 @@ fn write_block(&self, block: u64, buf: &[u8]) -> Result<(), DriverError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/mass/mod.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/mass/mod.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **UsbMass** <sub>line 17</sub>
 ```rust
@@ -9605,7 +9634,7 @@ pub fn with_controller<F: FnOnce(&mut Xhci) -> R, R>(f: F) -> R {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/mass/scsi.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/mass/scsi.rs</b> (3 items)</summary>
 
 #### `FN`: **read_capacity** <sub>line 5</sub>
 ```rust
@@ -9625,7 +9654,7 @@ pub fn write10(x: &mut Xhci, m: &mut UsbMass,
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/class/mod.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/class/mod.rs</b> (2 items)</summary>
 
 #### `TRAIT`: **ClassDriver** <sub>line 5</sub>
 ```rust
@@ -9640,7 +9669,7 @@ fn probe(&self, dev: &UsbDevice) -> bool;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/core/descriptor.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/core/descriptor.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **DeviceDesc** <sub>line 2</sub>
 ```rust
@@ -9670,7 +9699,7 @@ pub fn parse_config(buf: &[u8],
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/core/device.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/core/device.rs</b> (3 items)</summary>
 
 #### `STRUCT`: **UsbDevice** <sub>line 7</sub>
 ```rust
@@ -9690,7 +9719,7 @@ pub fn new(slot: u8, speed: u32, ctx_size: usize) -> Result<Self, UsbError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/core/enumerate.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/core/enumerate.rs</b> (2 items)</summary>
 
 #### `FN`: **kprintf** <sub>line 11</sub>
 ```rust
@@ -9705,7 +9734,7 @@ pub fn enumerate(x: &mut Xhci, port: u32) -> Result<UsbDevice, UsbError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/core/speed.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/core/speed.rs</b> (1 items)</summary>
 
 #### `FN`: **default_ep0_mps** <sub>line 6</sub>
 ```rust
@@ -9715,7 +9744,7 @@ pub fn default_ep0_mps(speed: u32) -> u16 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/dma.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/dma.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **DmaBuf** <sub>line 5</sub>
 ```rust
@@ -9750,7 +9779,7 @@ fn drop(&mut self) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/context.rs</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/context.rs</b> (11 items)</summary>
 
 #### `STRUCT`: **Contexts** <sub>line 4</sub>
 ```rust
@@ -9810,7 +9839,7 @@ pub fn setup_evaluate_mps(&mut self, mps: u16) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/control.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/control.rs</b> (5 items)</summary>
 
 #### `FN`: **wait_transfer** <sub>line 6</sub>
 ```rust
@@ -9840,7 +9869,7 @@ pub fn control_out(x: &mut Xhci, dev: &mut UsbDevice,
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/event.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/event.rs</b> (3 items)</summary>
 
 #### `FN`: **kprintf** <sub>line 5</sub>
 ```rust
@@ -9860,7 +9889,7 @@ pub fn drain_events(&mut self) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/init.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/init.rs</b> (9 items)</summary>
 
 #### `FN`: **kprintf** <sub>line 8</sub>
 ```rust
@@ -9910,7 +9939,7 @@ fn attach_port(&mut self, p: u32) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/regs.rs</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/regs.rs</b> (14 items)</summary>
 
 #### `STRUCT`: **XhciRegs** <sub>line 36</sub>
 ```rust
@@ -9985,7 +10014,7 @@ pub fn port_speed(&self, port: u32) -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/ring.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/ring.rs</b> (17 items)</summary>
 
 #### `STRUCT`: **CmdRing** <sub>line 5</sub>
 ```rust
@@ -10075,7 +10104,7 @@ pub fn erdp(&self) -> u64 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/host/xhci/trb.rs</b> (19 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/host/xhci/trb.rs</b> (19 items)</summary>
 
 #### `STRUCT`: **Trb** <sub>line 29</sub>
 ```rust
@@ -10175,7 +10204,7 @@ pub fn pack_setup(bm_request: u8, b_request: u8, value: u16,
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/mod.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/mod.rs</b> (4 items)</summary>
 
 #### `ENUM`: **UsbError** <sub>line 10</sub>
 ```rust
@@ -10200,7 +10229,7 @@ pub fn self_test() -> TestResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/drivers/usb/pci_glue.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/drivers/usb/pci_glue.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **XhciPci** <sub>line 8</sub>
 ```rust
@@ -10215,7 +10244,7 @@ pub fn find_xhci() -> Result<XhciPci, UsbError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/abi/abi.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/abi/abi.rs</b> (3 items)</summary>
 
 #### `ENUM`: **DsCmd** <sub>line 9</sub>
 ```rust
@@ -10235,7 +10264,7 @@ pub struct DsRing {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/abi/src.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/abi/src.rs</b> (7 items)</summary>
 
 #### `FN`: **ring_bytes** <sub>line 3</sub>
 ```rust
@@ -10275,7 +10304,7 @@ pub fn pop(&self) -> Option<DsMsg> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/init/enter.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/init/enter.rs</b> (1 items)</summary>
 
 #### `FN`: **enter** <sub>line 61</sub>
 ```rust
@@ -10285,7 +10314,7 @@ pub fn enter() -> Result<(), DsError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/init/init.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/init/init.rs</b> (10 items)</summary>
 
 #### `STRUCT`: **Driverspace** <sub>line 9</sub>
 ```rust
@@ -10340,7 +10369,7 @@ pub fn unmap_from_ds(va: u64, len: usize) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/init/initabi.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/init/initabi.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **DsSwitch** <sub>line 7</sub>
 ```rust
@@ -10355,7 +10384,7 @@ pub struct DsInitParams {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/init/initcommand.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/init/initcommand.rs</b> (5 items)</summary>
 
 #### `ENUM`: **DsError** <sub>line 5</sub>
 ```rust
@@ -10385,7 +10414,7 @@ pub fn run(&mut self, params_va: u64) -> Result<(), DsError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/driverspaceinit/init/service.rs</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/driverspaceinit/init/service.rs</b> (15 items)</summary>
 
 #### `FN`: **kprintf** <sub>line 10</sub>
 ```rust
@@ -10465,7 +10494,7 @@ pub fn post_event(cmd: DsCmd, a0: u64, a1: u64) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ds_ipc/buffer.rs</b> (32 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ds_ipc/buffer.rs</b> (32 items)</summary>
 
 #### `ENUM`: **BufferTransferMode** <sub>line 24</sub>
 ```rust
@@ -10630,7 +10659,7 @@ fn test_buffer_alignment_check() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ds_ipc/endpoint.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ds_ipc/endpoint.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **Endpoint** <sub>line 8</sub>
 ```rust
@@ -10675,7 +10704,7 @@ pub fn dequeue_receiver(&self) -> Option<*mut Task> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ds_ipc/msg.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ds_ipc/msg.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **MessageInfo** <sub>line 5</sub>
 ```rust
@@ -10705,7 +10734,7 @@ pub struct IpcMessage {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/ds_ipc/syscall.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/ds_ipc/syscall.rs</b> (8 items)</summary>
 
 #### `ENUM`: **IpcSyscall** <sub>line 8</sub>
 ```rust
@@ -10750,7 +10779,7 @@ fn switch_context() {}
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/editor/editor.c</b> (22 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/editor/editor.c</b> (22 items)</summary>
 
 #### `FUNCTION`: **console_set_enabled** <sub>line 11</sub>
 ```c
@@ -10865,7 +10894,7 @@ __asm__ volatile("pause");
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/editor/editor.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/editor/editor.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **editor_run** <sub>line 21</sub>
 ```c
@@ -10875,7 +10904,7 @@ int editor_run(const char *path);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/editor/mouse.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/editor/mouse.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **outb** <sub>line 3</sub>
 ```c
@@ -10930,7 +10959,7 @@ int mouse_poll(int *dx, int *dy, int *dz, int *buttons)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/editor/mouse.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/editor/mouse.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **mouse_init** <sub>line 6</sub>
 ```c
@@ -10945,7 +10974,7 @@ int mouse_poll(int *dx, int *dy, int *dz, int *buttons);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/disc.rs</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/disc.rs</b> (11 items)</summary>
 
 #### `ENUM`: **DiscError** <sub>line 4</sub>
 ```rust
@@ -11005,7 +11034,7 @@ pub fn end_lba(&self) -> Option<u64> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/driver/ata_pio.rs</b> (22 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/driver/ata_pio.rs</b> (22 items)</summary>
 
 #### `STRUCT`: **AtaPio** <sub>line 26</sub>
 ```rust
@@ -11120,7 +11149,7 @@ pub fn probe() -> usize {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/driver/block.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/driver/block.rs</b> (9 items)</summary>
 
 #### `ENUM`: **DriverError** <sub>line 2</sub>
 ```rust
@@ -11170,7 +11199,7 @@ fn write_blocks(&self, start: u64, buf: &[u8]) -> Result<(), DriverError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/driver/lock.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/driver/lock.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **IrqGuard** <sub>line 3</sub>
 ```rust
@@ -11200,7 +11229,7 @@ fn drop(&mut self) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/driver/mod.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/driver/mod.rs</b> (2 items)</summary>
 
 #### `FN`: **init** <sub>line 7</sub>
 ```rust
@@ -11215,7 +11244,7 @@ pub fn self_test() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/driver/registry.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/driver/registry.rs</b> (4 items)</summary>
 
 #### `FN`: **register** <sub>line 7</sub>
 ```rust
@@ -11240,7 +11269,7 @@ pub fn count() -> usize {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/ext4/mod.rs</b> (20 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/ext4/mod.rs</b> (20 items)</summary>
 
 #### `ENUM`: **ExtError** <sub>line 6</sub>
 ```rust
@@ -11345,7 +11374,7 @@ pub fn list_path(&self, path: &str) -> Result<Vec<DirEntry>, ExtError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/fat32/mod.rs</b> (18 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/fat32/mod.rs</b> (18 items)</summary>
 
 #### `ENUM`: **FatError** <sub>line 6</sub>
 ```rust
@@ -11440,7 +11469,7 @@ pub fn list_path(&self, path: &str) -> Result<Vec<FatEntry>, FatError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/mbr.rs</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/mbr.rs</b> (12 items)</summary>
 
 #### `FN`: **kprintf** <sub>line 5</sub>
 ```rust
@@ -11505,7 +11534,7 @@ pub fn init() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/mod.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/mod.rs</b> (4 items)</summary>
 
 #### `FN`: **init** <sub>line 9</sub>
 ```rust
@@ -11530,7 +11559,7 @@ pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/btree.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/btree.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **BtreeNode** <sub>line 9</sub>
 ```rust
@@ -11565,7 +11594,7 @@ fn collect_leaf_entries(node: &BtreeNode, entries: &mut Vec<DirEntry>) -> Result
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/dir.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/dir.rs</b> (1 items)</summary>
 
 #### `STRUCT`: **DirEntry** <sub>line 2</sub>
 ```rust
@@ -11575,7 +11604,7 @@ pub struct DirEntry {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/extern.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/extern.rs</b> (2 items)</summary>
 
 #### `FN`: **allocate_block** <sub>line 4</sub>
 ```rust
@@ -11590,7 +11619,7 @@ pub fn free_block(fs: &TangFs, block: u64) -> Result<()> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/file.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/file.rs</b> (3 items)</summary>
 
 #### `FN`: **read_file** <sub>line 4</sub>
 ```rust
@@ -11610,7 +11639,7 @@ fn allocate_block_for_inode(fs: &TangFs, inode: &mut Inode, logical_block: u64) 
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/inode.rs</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/inode.rs</b> (12 items)</summary>
 
 #### `STRUCT`: **Inode** <sub>line 7</sub>
 ```rust
@@ -11675,7 +11704,7 @@ fn stat(&self) -> Result<crate::fs::vfs::Stat> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/journal.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/journal.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **Journal** <sub>line 5</sub>
 ```rust
@@ -11705,7 +11734,7 @@ pub fn replay(&self) -> Result<()> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/mod.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/mod.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **TangFs** <sub>line 18</sub>
 ```rust
@@ -11750,7 +11779,7 @@ fn statfs(&self) -> Result<crate::fs::vfs::StatFs> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tangfs/superblock.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tangfs/superblock.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **Superblock** <sub>line 5</sub>
 ```rust
@@ -11795,7 +11824,7 @@ fn clone(&self) -> Self {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/tfs.rs</b> (20 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/tfs.rs</b> (20 items)</summary>
 
 #### `ENUM`: **FsError** <sub>line 19</sub>
 ```rust
@@ -11900,7 +11929,7 @@ pub fn read_file(dev: &dyn BlockDevice, dir: u32, name: &str) -> Result<alloc::v
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/fs/vfs.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/fs/vfs.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **FsEntry** <sub>line 6</sub>
 ```rust
@@ -11940,7 +11969,7 @@ pub fn root() -> Option<&'static Mounted> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gdt.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gdt.rs</b> (2 items)</summary>
 
 #### `STRUCT`: **Selectors** <sub>line 18</sub>
 ```rust
@@ -11955,7 +11984,7 @@ pub fn init() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/console.rs</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/console.rs</b> (15 items)</summary>
 
 #### `FN`: **fb** <sub>line 28</sub>
 ```rust
@@ -12035,7 +12064,7 @@ fn draw_cell(row: usize, col: usize, ch: u8, attr: u8) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/framebuffer.rs</b> (16 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/framebuffer.rs</b> (16 items)</summary>
 
 #### `ENUM`: **PixelFormat** <sub>line 8</sub>
 ```rust
@@ -12120,7 +12149,7 @@ pub fn rgb(r: u32, g: u32, b: u32) -> u32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/galaxy.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/galaxy.rs</b> (7 items)</summary>
 
 #### `FN`: **hash2** <sub>line 6</sub>
 ```rust
@@ -12160,7 +12189,7 @@ pub fn render(fb: &mut Framebuffer, t: u32) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/mod.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/mod.rs</b> (7 items)</summary>
 
 #### `FN`: **init** <sub>line 16</sub>
 ```rust
@@ -12200,7 +12229,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/panic_screen.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/panic_screen.rs</b> (1 items)</summary>
 
 #### `FN`: **show** <sub>line 11</sub>
 ```rust
@@ -12210,7 +12239,7 @@ pub fn show(info: &PanicInfo) -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/gfx/vga.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/gfx/vga.rs</b> (9 items)</summary>
 
 #### `ENUM`: **VideoMode** <sub>line 4</sub>
 ```rust
@@ -12260,7 +12289,7 @@ pub fn bochs_lfb_base() -> Option<u64> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/aut.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/aut.rs</b> (2 items)</summary>
 
 #### `FN`: **authorize** <sub>line 18</sub>
 ```rust
@@ -12275,7 +12304,7 @@ pub fn tick_reset() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/bridge.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/bridge.rs</b> (13 items)</summary>
 
 #### `FN`: **hdmi_iface_acquire** <sub>line 5</sub>
 ```rust
@@ -12345,7 +12374,7 @@ pub fn hdmi_call(op: u32, m: &DsMsg, r: &mut DsMsg, ring: u8, owner: u32) -> i32
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/hdmi.h</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/hdmi.h</b> (14 items)</summary>
 
 #### `FUNCTION`: **hdmi_init_with** <sub>line 41</sub>
 ```c
@@ -12420,7 +12449,7 @@ bool hdmi_fb_granted(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/init.c</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/init.c</b> (7 items)</summary>
 
 #### `FUNCTION`: **hdmi_init_with** <sub>line 6</sub>
 ```c
@@ -12460,7 +12489,7 @@ bool hdmi_mode_current_raw(uint32_t *id, uint32_t *w, uint32_t *h, uint32_t *r)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/init.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/init.rs</b> (4 items)</summary>
 
 #### `FN`: **hdmi_init_with** <sub>line 2</sub>
 ```rust
@@ -12485,7 +12514,7 @@ pub fn ready() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/interface.c</b> (22 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/interface.c</b> (22 items)</summary>
 
 #### `FUNCTION`: **hdmi_iface_acquire** <sub>line 7</sub>
 ```c
@@ -12600,7 +12629,7 @@ bool hdmi_iface_fb_revoke(uint32_t owner)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/interface.h</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/interface.h</b> (14 items)</summary>
 
 #### `FUNCTION`: **hdmi_iface_acquire** <sub>line 9</sub>
 ```c
@@ -12675,7 +12704,7 @@ bool hdmi_iface_fb_revoke(uint32_t owner);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/mode.c</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/mode.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **hdmi_mode_count** <sub>line 15</sub>
 ```c
@@ -12700,7 +12729,7 @@ bool hdmi_mode_at_raw(uint32_t i, uint32_t *id, uint32_t *w, uint32_t *h, uint32
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/mode.h</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/mode.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **hdmi_mode_count** <sub>line 23</sub>
 ```c
@@ -12720,7 +12749,7 @@ bool hdmi_mode_apply(const hdmi_mode_t *m);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/operation.c</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/operation.c</b> (14 items)</summary>
 
 #### `FUNCTION`: **hdmi_op_state** <sub>line 20</sub>
 ```c
@@ -12795,7 +12824,7 @@ void hdmi_caps_raw(uint32_t *w, uint32_t *h, uint32_t *s, uint64_t *phys)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/hdmi/operation.h</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/hdmi/operation.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **hdmi_op_set_mode** <sub>line 7</sub>
 ```c
@@ -12825,7 +12854,7 @@ bool hdmi_op_ready(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/interrupts.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/interrupts.rs</b> (5 items)</summary>
 
 #### `ENUM`: **InterruptIndex** <sub>line 50</sub>
 ```rust
@@ -12855,7 +12884,7 @@ pub fn init_idt() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/kernel_glue.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/kernel_glue.rs</b> (2 items)</summary>
 
 #### `FN`: **cstr_to_str** <sub>line 3</sub>
 ```rust
@@ -12870,7 +12899,7 @@ fn tfs_read_path(dev: &dyn crate::fs::driver::block::BlockDevice, path: &str) ->
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/kstd_glue.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/kstd_glue.rs</b> (1 items)</summary>
 
 #### `FN`: **cstr_to_str** <sub>line 3</sub>
 ```rust
@@ -12880,7 +12909,7 @@ fn cstr_to_str<'a>(p: *const u8) -> Option<&'a str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/main.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/main.rs</b> (5 items)</summary>
 
 #### `FN`: **init** <sub>line 141</sub>
 ```rust
@@ -12910,7 +12939,7 @@ pub fn kernel_main_riscv() -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/api/alloc.c</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/api/alloc.c</b> (17 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 8</sub>
 ```c
@@ -13000,7 +13029,7 @@ void kalloc_dump(void) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/api/alloc.h</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/api/alloc.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **kfree** <sub>line 13</sub>
 ```c
@@ -13030,7 +13059,7 @@ void kalloc_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/alloc_debug.c</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/alloc_debug.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 11</sub>
 ```c
@@ -13065,7 +13094,7 @@ void mm_debug_dump(void) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/alloc_debug.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/alloc_debug.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **dbg_free** <sub>line 9</sub>
 ```c
@@ -13090,7 +13119,7 @@ void mm_debug_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/leak.c</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/leak.c</b> (7 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 4</sub>
 ```c
@@ -13130,7 +13159,7 @@ void leak_dump(void) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/leak.h</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/leak.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **leak_track** <sub>line 8</sub>
 ```c
@@ -13165,7 +13194,7 @@ void leak_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/stats.c</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/stats.c</b> (9 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 4</sub>
 ```c
@@ -13215,7 +13244,7 @@ void alloc_stats_dump(void) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/debug/stats.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/debug/stats.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **alloc_stats_note_alloc** <sub>line 8</sub>
 ```c
@@ -13260,7 +13289,7 @@ void alloc_stats_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/buddy.c</b> (16 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/buddy.c</b> (16 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 6</sub>
 ```c
@@ -13345,7 +13374,7 @@ void buddy_dump(void) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/buddy.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/buddy.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **bool** <sub>line 8</sub>
 ```c
@@ -13390,7 +13419,7 @@ void buddy_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/heap.c</b> (16 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/heap.c</b> (16 items)</summary>
 
 #### `FUNCTION`: **heap_map_cb** <sub>line 25</sub>
 ```c
@@ -13475,7 +13504,7 @@ void heap_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/heap.h</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/heap.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **heap_init** <sub>line 8</sub>
 ```c
@@ -13505,7 +13534,7 @@ void heap_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/slab.c</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/slab.c</b> (17 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 9</sub>
 ```c
@@ -13595,7 +13624,7 @@ void slab_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/heap/slab.h</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/heap/slab.h</b> (7 items)</summary>
 
 #### `FUNCTION`: **slab_init** <sub>line 10</sub>
 ```c
@@ -13635,7 +13664,7 @@ void slab_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/bitmap.c</b> (27 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/bitmap.c</b> (27 items)</summary>
 
 #### `FUNCTION`: **size_min** <sub>line 7</sub>
 ```c
@@ -13775,7 +13804,7 @@ size_t bitmap_count_free(const bitmap_t *bm)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/bitmap.h</b> (21 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/bitmap.h</b> (21 items)</summary>
 
 #### `FUNCTION`: **bitmap_words_for_bits** <sub>line 30</sub>
 ```c
@@ -13885,7 +13914,7 @@ size_t bitmap_count_free(const bitmap_t *bm);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/frame.c</b> (24 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/frame.c</b> (24 items)</summary>
 
 #### `FUNCTION`: **count_dma32_in_range** <sub>line 20</sub>
 ```c
@@ -14010,7 +14039,7 @@ size_t frame_zone_normal_free(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/frame.h</b> (19 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/frame.h</b> (19 items)</summary>
 
 #### `FUNCTION`: **frame_init** <sub>line 12</sub>
 ```c
@@ -14110,7 +14139,7 @@ size_t frame_zone_normal_free(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/pmm.c</b> (39 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/pmm.c</b> (39 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 6</sub>
 ```c
@@ -14310,7 +14339,7 @@ void pmm_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/physical/pmm.h</b> (21 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/physical/pmm.h</b> (21 items)</summary>
 
 #### `FUNCTION`: **pmm_init** <sub>line 10</sub>
 ```c
@@ -14420,7 +14449,7 @@ bool pmm_self_test(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/special/contiguous.c</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/special/contiguous.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **contig_bytes_to_frames** <sub>line 7</sub>
 ```c
@@ -14440,7 +14469,7 @@ void contig_free(uint64_t phys, size_t bytes)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/special/contiguous.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/special/contiguous.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **contig_free** <sub>line 13</sub>
 ```c
@@ -14450,7 +14479,7 @@ void contig_free(uint64_t phys, size_t bytes);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/special/dma.c</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/special/dma.c</b> (8 items)</summary>
 
 #### `FUNCTION`: **dma_bytes_to_frames** <sub>line 8</sub>
 ```c
@@ -14495,7 +14524,7 @@ void dma_sync_for_cpu(void *virt, size_t len)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/special/dma.h</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/special/dma.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **dma_free_coherent** <sub>line 16</sub>
 ```c
@@ -14515,7 +14544,7 @@ void dma_sync_for_cpu(void *virt, size_t len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/mapping.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/mapping.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **resolve_space** <sub>line 9</sub>
 ```c
@@ -14570,7 +14599,7 @@ __asm__ volatile("" ::: "memory");
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/mapping.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/mapping.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **mapping_init** <sub>line 12</sub>
 ```c
@@ -14595,7 +14624,7 @@ bool mapping_is_mapped(mapping_space_t space, uint64_t virt);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/page.c</b> (20 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/page.c</b> (20 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 5</sub>
 ```c
@@ -14700,7 +14729,7 @@ void page_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/page.h</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/page.h</b> (13 items)</summary>
 
 #### `FUNCTION`: **page_init** <sub>line 22</sub>
 ```c
@@ -14770,7 +14799,7 @@ void page_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/vmm.c</b> (24 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/vmm.c</b> (24 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 7</sub>
 ```c
@@ -14895,7 +14924,7 @@ void vmm_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/alloc/virtual/vmm.h</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/alloc/virtual/vmm.h</b> (14 items)</summary>
 
 #### `FUNCTION`: **vmm_init** <sub>line 18</sub>
 ```c
@@ -14970,7 +14999,7 @@ void vmm_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/api.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/api.rs</b> (9 items)</summary>
 
 #### `FN`: **kmalloc** <sub>line 5</sub>
 ```rust
@@ -15020,7 +15049,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/aarch64/memory.h</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/aarch64/memory.h</b> (9 items)</summary>
 
 #### `FUNCTION`: **arch_memory_ready** <sub>line 25</sub>
 ```c
@@ -15070,7 +15099,7 @@ void arch_memory_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/aarch64/paging.c</b> (26 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/aarch64/paging.c</b> (26 items)</summary>
 
 #### `FUNCTION`: **hw_bits** <sub>line 47</sub>
 ```c
@@ -15205,7 +15234,7 @@ __asm__ volatile("isb");
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/aarch64/paging.h</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/aarch64/paging.h</b> (9 items)</summary>
 
 #### `FUNCTION`: **paging_init** <sub>line 17</sub>
 ```c
@@ -15255,7 +15284,7 @@ uint64_t paging_translate_in(uint64_t pml4, uint64_t virt);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/aarch64/tlb.c</b> (16 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/aarch64/tlb.c</b> (16 items)</summary>
 
 #### `FUNCTION`: **tlb_init** <sub>line 5</sub>
 ```c
@@ -15340,7 +15369,7 @@ void tlb_flush_range(const void *addr, size_t pages)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/aarch64/tlb.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/aarch64/tlb.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **tlb_init** <sub>line 8</sub>
 ```c
@@ -15385,7 +15414,7 @@ void tlb_flush_range_addr(uint64_t addr, size_t pages);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/memory.c</b> (21 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/memory.c</b> (21 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 106</sub>
 ```c
@@ -15495,7 +15524,7 @@ void arch_memory_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/memory.h</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/memory.h</b> (11 items)</summary>
 
 #### `FUNCTION`: **arch_memory_ready** <sub>line 71</sub>
 ```c
@@ -15555,7 +15584,7 @@ static inline uint64_t arch_virt_to_phys(const void *virt)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/paging.c</b> (25 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/paging.c</b> (25 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 5</sub>
 ```c
@@ -15666,6 +15695,121 @@ void paging_init(uint64_t phys_offset)
 ```c
 __asm__ volatile("wrmsr" : : "A"(efer), "c"(0xC0000080));
 ```
+> ------------------------------------------------------------------ */ 
+> Arch-specific operations used by the generic paging layer           */ 
+> ------------------------------------------------------------------ */ 
+>  
+> bool paging_map_page_in(uint64_t pml4, uint64_t virt, uint64_t phys, uint64_t flags) 
+> { 
+> uint64_t *pte; 
+>  
+> if (!boot_phys_offset_valid) { 
+> return false; 
+> } 
+> if ((virt & PAGING_PAGE_MASK) != 0 || (phys & PAGING_PAGE_MASK) != 0) { 
+> return false; 
+> } 
+> flags &= ~PTE_PAGE_SIZE; 
+>  
+> pte = resolve_pte(pml4, virt, true); 
+> if (pte == NULL) { 
+> return false; 
+> } 
+> pte = (phys & PAGING_ADDR_MASK) | flags | PTE_PRESENT; 
+>  
+> paging_flush_page(virt); 
+> return true; 
+> } 
+>  
+> bool paging_unmap_page_in(uint64_t pml4, uint64_t virt) 
+> { 
+> uint64_t *pte = resolve_pte(pml4, virt, false); 
+>  
+> if (pte == NULL || !(*pte & PTE_PRESENT)) { 
+> return false; 
+> } 
+> pte = 0; 
+> paging_flush_page(virt); 
+> return true; 
+> } 
+>  
+> uint64_t paging_translate_in(uint64_t pml4, uint64_t virt) 
+> { 
+> uint64_t *pte = resolve_pte(pml4, virt, false); 
+>  
+> if (pte == NULL || !(*pte & PTE_PRESENT)) { 
+> return 0; 
+> } 
+> return (*pte & PAGING_ADDR_MASK) | (virt & PAGING_PAGE_MASK); 
+> } 
+>  
+> bool paging_is_mapped_in(uint64_t pml4, uint64_t virt) 
+> { 
+> const uint64_t *pte = resolve_pte(pml4, virt, false); 
+>  
+> return pte != NULL && (*pte & PTE_PRESENT) != 0; 
+> } 
+>  
+> bool paging_set_flags_in(uint64_t pml4, uint64_t virt, uint64_t flags) 
+> { 
+> uint64_t *pte = resolve_pte(pml4, virt, false); 
+>  
+> if (pte == NULL || !(*pte & PTE_PRESENT)) { 
+> return false; 
+> } 
+> flags &= ~PTE_PAGE_SIZE; 
+> pte = (*pte & PAGING_ADDR_MASK) | flags | PTE_PRESENT; 
+> paging_flush_page(virt); 
+> return true; 
+> } 
+>  
+> bool paging_get_flags_in(uint64_t pml4, uint64_t virt, uint64_t *out_flags) 
+> { 
+> const uint64_t *pte = resolve_pte(pml4, virt, false); 
+>  
+> if (pte == NULL || !(*pte & PTE_PRESENT)) { 
+> return false; 
+> } 
+> if (out_flags != NULL) { 
+> out_flags = *pte & ~PAGING_ADDR_MASK; 
+> } 
+> return true; 
+> } 
+>  
+> bool paging_is_mapped(uint64_t virt) 
+> { 
+> return paging_is_mapped_in(paging_read_cr3(), virt); 
+> } 
+>  
+> uint64_t paging_translate(uint64_t virt) 
+> { 
+> return paging_translate_in(paging_read_cr3(), virt); 
+> } 
+>  
+> bool paging_unmap_page(uint64_t virt) 
+> { 
+> return paging_unmap_page_in(paging_read_cr3(), virt); 
+> } 
+>  
+> bool paging_set_flags(uint64_t virt, uint64_t flags) 
+> { 
+> return paging_set_flags_in(paging_read_cr3(), virt, flags); 
+> } 
+>  
+> bool paging_get_flags(uint64_t virt, uint64_t *out_flags) 
+> { 
+> return paging_get_flags_in(paging_read_cr3(), virt, out_flags); 
+> } 
+>  
+> NX is enabled once via the EFER MSR; this is idempotent. */ 
+> static bool nx_enabled = false; 
+>  
+> void paging_enable_nx(void) 
+> { 
+> uint64_t efer; 
+>  
+> if (nx_enabled) { 
+> return; 
 > } 
 > __asm__ volatile("rdmsr" : "=A"(efer) : "c"(0xC0000080)); 
 > efer |= (1ULL << 11); /* NXE bit
@@ -15688,7 +15832,7 @@ __asm__ volatile("mov %0, %%cr3" : : "r"(pml4_phys) : "memory");
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/paging.h</b> (39 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/paging.h</b> (39 items)</summary>
 
 #### `FUNCTION`: **paging_set_boot_phys_offset** <sub>line 35</sub>
 ```c
@@ -15888,7 +16032,7 @@ void paging_write_cr3(uint64_t pml4_phys);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/tlb.c</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/tlb.c</b> (14 items)</summary>
 
 #### `FUNCTION`: **tlb_init** <sub>line 39</sub>
 ```c
@@ -15963,7 +16107,7 @@ void tlb_clflush(uint64_t addr)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/tlb.h</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/tlb.h</b> (14 items)</summary>
 
 #### `FUNCTION`: **tlb_init** <sub>line 14</sub>
 ```c
@@ -16038,7 +16182,7 @@ void tlb_clflush(uint64_t addr);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/arch/x86_64/tlb_asm.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/arch/x86_64/tlb_asm.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **tlb_asm_invlpg** <sub>line 6</sub>
 ```c
@@ -16083,7 +16227,7 @@ void tlb_asm_clflush(uint64_t addr);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/cache.c</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/cache.c</b> (5 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 3</sub>
 ```c
@@ -16113,7 +16257,7 @@ void cache_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/cache.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/cache.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **cache_init** <sub>line 7</sub>
 ```c
@@ -16138,7 +16282,7 @@ void cache_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/object_cache.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/object_cache.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **cache_lock** <sub>line 9</sub>
 ```c
@@ -16193,7 +16337,7 @@ size_t kcache_total_count(kcache_t *c)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/object_cashe.h</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/object_cashe.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **void** <sub>line 12</sub>
 ```c
@@ -16228,7 +16372,7 @@ size_t kcache_total_count(kcache_t *c);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/per_cpu.c</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/per_cpu.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **per_cpu_init** <sub>line 5</sub>
 ```c
@@ -16248,7 +16392,7 @@ size_t per_cpu_id(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/cache/per_cpu.h</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/cache/per_cpu.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **per_cpu_init** <sub>line 12</sub>
 ```c
@@ -16268,7 +16412,7 @@ size_t per_cpu_id(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/address.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/address.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **addr_is_canonical** <sub>line 4</sub>
 ```c
@@ -16323,7 +16467,7 @@ uint64_t addr_direct_to_phys(uint64_t va)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/address.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/address.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **addr_is_canonical** <sub>line 10</sub>
 ```c
@@ -16368,7 +16512,7 @@ uint64_t addr_direct_to_phys(uint64_t va);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/mm.c</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/mm.c</b> (8 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 15</sub>
 ```c
@@ -16413,7 +16557,7 @@ void mm_dump(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/mm.h</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/mm.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **mm_init** <sub>line 26</sub>
 ```c
@@ -16443,7 +16587,7 @@ void mm_dump(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/range.c</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/range.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **range_is_canonical** <sub>line 3</sub>
 ```c
@@ -16458,7 +16602,7 @@ static bool is_pow2(uint64_t v)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/range.h</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/range.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **range_is_canonical** <sub>line 18</sub>
 ```c
@@ -16468,7 +16612,7 @@ bool range_is_canonical(uint64_t addr);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/region.c</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/region.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **region_make** <sub>line 3</sub>
 ```c
@@ -16503,7 +16647,7 @@ region_t region_intersect(region_t a, region_t b)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/region.h</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/region.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **region_make** <sub>line 13</sub>
 ```c
@@ -16538,7 +16682,7 @@ region_t region_intersect(region_t a, region_t b);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/sizeutil.c</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/sizeutil.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **size_is_pow2** <sub>line 3</sub>
 ```c
@@ -16553,7 +16697,7 @@ bool size_round_up_pow2(size_t v, size_t *out)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/sizeutil.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/sizeutil.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **size_is_pow2** <sub>line 8</sub>
 ```c
@@ -16568,7 +16712,7 @@ bool size_round_up_pow2(size_t v, size_t *out);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/smp_lock.c</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/smp_lock.c</b> (8 items)</summary>
 
 #### `FUNCTION`: **cpu_pause** <sub>line 3</sub>
 ```c
@@ -16613,7 +16757,7 @@ bool smp_lock_release(smp_ticket_lock_t *lock)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/core/smp_lock.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/core/smp_lock.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **smp_lock_init** <sub>line 21</sub>
 ```c
@@ -16638,7 +16782,7 @@ int64_t smp_current_cpu_id(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/ffi.rs</b> (53 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/ffi.rs</b> (53 items)</summary>
 
 #### `STRUCT`: **RawMemEntry** <sub>line 5</sub>
 ```rust
@@ -16908,7 +17052,7 @@ pub fn paging_aspace_cr3(aspace: *mut c_void) -> u64;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/init.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/init.rs</b> (10 items)</summary>
 
 #### `STRUCT`: **Driverspace** <sub>line 9</sub>
 ```rust
@@ -16963,7 +17107,7 @@ pub fn unmap_from_ds(va: u64, len: usize) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/kprintf.c</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/kprintf.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **inb** <sub>line 14</sub>
 ```c
@@ -17018,7 +17162,7 @@ void serial_write_str(const char *s)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/mm_bridge.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/mm_bridge.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **RawMemEntry** <sub>line 14</sub>
 ```rust
@@ -17043,7 +17187,7 @@ fn arch_memory_dump();
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/mod.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/mod.rs</b> (7 items)</summary>
 
 #### `FN`: **init** <sub>line 20</sub>
 ```rust
@@ -17083,7 +17227,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/paging.c</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/paging.c</b> (15 items)</summary>
 
 #### `FUNCTION`: **prot_to_pte** <sub>line 13</sub>
 ```c
@@ -17163,7 +17307,7 @@ return paging_aspace_unmap((address_space_t *)&(address_space_t){
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/paging.h</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/paging.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **paging_subsystem_init** <sub>line 19</sub>
 ```c
@@ -17208,7 +17352,7 @@ bool paging_kernel_unmap(uint64_t virt, size_t len);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/pml.c</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/pml.c</b> (5 items)</summary>
 
 #### `FUNCTION`: **pml_level_shift** <sub>line 5</sub>
 ```c
@@ -17238,7 +17382,7 @@ uint64_t pml_entry_addr(uint64_t entry)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/pml.h</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/pml.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **pml_level_shift** <sub>line 14</sub>
 ```c
@@ -17268,7 +17412,7 @@ uint64_t pml_entry_addr(uint64_t entry);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/tlb.c</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/tlb.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **tlb_batch_begin** <sub>line 4</sub>
 ```c
@@ -17293,7 +17437,7 @@ void tlb_batch_commit(tlb_batch_t *batch)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/paging/tlb.h</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/paging/tlb.h</b> (4 items)</summary>
 
 #### `FUNCTION`: **tlb_batch_begin** <sub>line 16</sub>
 ```c
@@ -17318,7 +17462,7 @@ void tlb_batch_commit(tlb_batch_t *batch);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/phys.rs</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/phys.rs</b> (11 items)</summary>
 
 #### `FN`: **alloc_frame** <sub>line 3</sub>
 ```rust
@@ -17378,7 +17522,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/process/address_space.c</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/process/address_space.c</b> (15 items)</summary>
 
 #### `FUNCTION`: **as_lock** <sub>line 20</sub>
 ```c
@@ -17458,7 +17602,7 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/process/address_space.h</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/process/address_space.h</b> (9 items)</summary>
 
 #### `FUNCTION`: **aspace_subsystem_init** <sub>line 30</sub>
 ```c
@@ -17508,7 +17652,7 @@ uint64_t aspace_brk(proc_aspace_t *pa, uint64_t new_brk);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/process/mmap.c</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/process/mmap.c</b> (5 items)</summary>
 
 #### `FUNCTION`: **aspace_map_at** <sub>line 17</sub>
 ```c
@@ -17538,7 +17682,7 @@ bool mprotect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/process/mmap.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/process/mmap.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **munmap** <sub>line 20</sub>
 ```c
@@ -17553,7 +17697,7 @@ bool mprotect(proc_aspace_t *pa, uint64_t addr, size_t len, uint32_t prot);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/guard.c</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/guard.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **guard_install** <sub>line 4</sub>
 ```c
@@ -17573,7 +17717,7 @@ bool guard_user_stack(proc_aspace_t *pa)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/guard.h</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/guard.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **guard_install** <sub>line 9</sub>
 ```c
@@ -17588,7 +17732,7 @@ bool guard_user_stack(proc_aspace_t *pa);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/isolation.c</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/isolation.c</b> (12 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 5</sub>
 ```c
@@ -17653,7 +17797,7 @@ bool isolation_init(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/isolation.h</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/isolation.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **isolation_init** <sub>line 8</sub>
 ```c
@@ -17688,7 +17832,7 @@ size_t isolation_audit_kernel(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/permissions.c</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/permissions.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **perm_is_wx** <sub>line 5</sub>
 ```c
@@ -17723,7 +17867,7 @@ uint32_t perm_user_default(void)
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/protection/permissions.h</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/protection/permissions.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **perm_sanitize** <sub>line 8</sub>
 ```c
@@ -17758,7 +17902,7 @@ uint32_t perm_user_default(void);
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/riscv.rs</b> (85 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/riscv.rs</b> (85 items)</summary>
 
 #### `STRUCT`: **FramePool** <sub>line 10</sub>
 ```rust
@@ -18188,7 +18332,7 @@ pub fn init() -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/space.rs</b> (25 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/space.rs</b> (25 items)</summary>
 
 #### `STRUCT`: **ProtFlags** <sub>line 7</sub>
 ```rust
@@ -18318,7 +18462,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/mm/virt.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/mm/virt.rs</b> (10 items)</summary>
 
 #### `STRUCT`: **VmmFlags** <sub>line 6</sub>
 ```rust
@@ -18373,7 +18517,7 @@ pub fn self_test() -> Result<&'static str, &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/arp.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/arp.rs</b> (10 items)</summary>
 
 #### `STRUCT`: **ArpPacket** <sub>line 13</sub>
 ```rust
@@ -18428,7 +18572,7 @@ fn arp_round_trip_and_cache_expiry() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/checksum.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/checksum.rs</b> (5 items)</summary>
 
 #### `FN`: **ones_complement_sum** <sub>line 2</sub>
 ```rust
@@ -18458,7 +18602,7 @@ fn checksum_round_trip() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/command.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/command.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **NetworkCommandRunner** <sub>line 7</sub>
 ```rust
@@ -18498,7 +18642,7 @@ fn rejects_invalid_ipv4() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/device.rs</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/device.rs</b> (11 items)</summary>
 
 #### `STRUCT`: **PollResult** <sub>line 4</sub>
 ```rust
@@ -18558,7 +18702,7 @@ fn recycle_rx(&mut self, buffer_id: u16) -> Result<(), NetworkError>;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/driver.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/driver.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **DriverRegistry** <sub>line 5</sub>
 ```rust
@@ -18598,7 +18742,7 @@ fn default() -> Self {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/error.rs</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/error.rs</b> (2 items)</summary>
 
 #### `ENUM`: **NetworkError** <sub>line 2</sub>
 ```rust
@@ -18613,7 +18757,7 @@ pub enum PacketError {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/ethernet.rs</b> (8 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/ethernet.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **EthernetHeader** <sub>line 11</sub>
 ```rust
@@ -18658,7 +18802,7 @@ fn ethernet_round_trip_and_padding() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/icmp.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/icmp.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **IcmpPacket** <sub>line 8</sub>
 ```rust
@@ -18693,7 +18837,7 @@ fn echo_request_and_reply_keep_identity_and_payload() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/ipv4.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/ipv4.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **Ipv4Packet** <sub>line 9</sub>
 ```rust
@@ -18728,7 +18872,7 @@ fn ipv4_build_then_parse() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/packet.rs</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/packet.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **IcmpEchoRequest** <sub>line 8</sub>
 ```rust
@@ -18753,7 +18897,7 @@ fn self_test_passes() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/ping.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/ping.rs</b> (6 items)</summary>
 
 #### `ENUM`: **PingResult** <sub>line 9</sub>
 ```rust
@@ -18788,7 +18932,7 @@ fn map_packet_error(error: PacketError) -> NetworkError {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/protocols.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/protocols.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **MacAddress** <sub>line 3</sub>
 ```rust
@@ -18828,7 +18972,7 @@ pub struct UdpHeader {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/runtime.rs</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/runtime.rs</b> (6 items)</summary>
 
 #### `STRUCT`: **NetworkRuntime** <sub>line 23</sub>
 ```rust
@@ -18863,7 +19007,7 @@ fn legacy_virtio_device() -> Option<PciDevice> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/stack.rs</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/stack.rs</b> (14 items)</summary>
 
 #### `STRUCT`: **NetworkConfig** <sub>line 11</sub>
 ```rust
@@ -18938,7 +19082,7 @@ fn arp_request_and_ping_are_ethernet_padded() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/types.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/types.rs</b> (9 items)</summary>
 
 #### `STRUCT`: **MacAddress** <sub>line 5</sub>
 ```rust
@@ -18988,7 +19132,7 @@ fn subnet_check_uses_mask() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/descriptor.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/descriptor.rs</b> (1 items)</summary>
 
 #### `STRUCT`: **VirtqDescriptor** <sub>line 7</sub>
 ```rust
@@ -18998,7 +19142,7 @@ pub struct VirtqDescriptor {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/device.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/device.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **Capabilities** <sub>line 5</sub>
 ```rust
@@ -19038,7 +19182,7 @@ fn receive(&mut self) -> Option<&[u8]>;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/net.rs</b> (27 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/net.rs</b> (27 items)</summary>
 
 #### `STRUCT`: **VirtioNetHeader** <sub>line 48</sub>
 ```rust
@@ -19178,7 +19322,7 @@ fn recycle_rx(&mut self, buffer_id: u16) -> Result<(), NetworkError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/pci_legacy.rs</b> (30 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/pci_legacy.rs</b> (30 items)</summary>
 
 #### `STRUCT`: **VirtioNetHeader** <sub>line 38</sub>
 ```rust
@@ -19333,7 +19477,7 @@ fn recycle_rx(&mut self, buffer_id: u16) -> Result<(), NetworkError> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/queue.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/queue.rs</b> (13 items)</summary>
 
 #### `STRUCT`: **Descriptor** <sub>line 8</sub>
 ```rust
@@ -19403,7 +19547,7 @@ fn zero_sized_pool_fails_cleanly() {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nic/virtio/transport.rs</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nic/virtio/transport.rs</b> (11 items)</summary>
 
 #### `STRUCT`: **QueueSetup** <sub>line 4</sub>
 ```rust
@@ -19463,7 +19607,7 @@ fn read_config(&self, offset: u16, out: &mut [u8]) -> Result<(), NetworkError>;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore.rs</b> (14 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore.rs</b> (14 items)</summary>
 
 #### `FN`: **nim_u64_to_str** <sub>line 2</sub>
 ```rust
@@ -19538,7 +19682,7 @@ pub fn parse_u64(s: &str, base: u8) -> Option<u64> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore/banner.nim</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore/banner.nim</b> (3 items)</summary>
 
 #### `CONST`: **ART** <sub>line 1</sub>
 ```nim
@@ -19558,7 +19702,7 @@ var o = 0u32
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore/format.nim</b> (12 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore/format.nim</b> (12 items)</summary>
 
 #### `PROC`: **nim_u64_to_str** <sub>line 1</sub>
 ```nim
@@ -19623,7 +19767,7 @@ let b = src[i]
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore/parse.nim</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore/parse.nim</b> (6 items)</summary>
 
 #### `PROC`: **nim_parse_u64** <sub>line 1</sub>
 ```nim
@@ -19658,7 +19802,7 @@ let d =
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore/ringbuf.nim</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore/ringbuf.nim</b> (7 items)</summary>
 
 #### `TYPE`: **Rb** <sub>line 1</sub>
 ```nim
@@ -19698,7 +19842,7 @@ proc nim_rb_len(): uint32 {.exportc, cdecl.} =
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/nimcore/shell.nim</b> (11 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/nimcore/shell.nim</b> (11 items)</summary>
 
 #### `TYPE`: **Handler** <sub>line 1</sub>
 ```nim
@@ -19758,7 +19902,7 @@ var alen = 0u32
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/pci.rs</b> (17 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/pci.rs</b> (17 items)</summary>
 
 #### `STRUCT`: **PciAddress** <sub>line 11</sub>
 ```rust
@@ -19848,7 +19992,7 @@ pub fn self_test() -> TestResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/ada/policy.adb</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/ada/policy.adb</b> (2 items)</summary>
 
 #### `PACKAGE`: **body** <sub>line 1</sub>
 ```ada
@@ -19863,7 +20007,7 @@ function Evaluate (Ring  : Ring_Id;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/ada/policy.ads</b> (6 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/ada/policy.ads</b> (6 items)</summary>
 
 #### `PACKAGE`: **Policy** <sub>line 3</sub>
 ```ada
@@ -19898,7 +20042,7 @@ function Evaluate (Ring  : Ring_Id;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/ada/policy_c.adb</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/ada/policy_c.adb</b> (4 items)</summary>
 
 #### `PACKAGE`: **body** <sub>line 3</sub>
 ```ada
@@ -19923,7 +20067,7 @@ function policy_evaluate (ring : Unsigned_8;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/ada/policy_c.ads</b> (2 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/ada/policy_c.ads</b> (2 items)</summary>
 
 #### `PACKAGE`: **Policy_C** <sub>line 4</sub>
 ```ada
@@ -19938,7 +20082,7 @@ function policy_evaluate (ring : Unsigned_8;
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/bridge.rs</b> (3 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/bridge.rs</b> (3 items)</summary>
 
 #### `FN`: **policy_evaluate** <sub>line 2</sub>
 ```rust
@@ -19958,7 +20102,7 @@ pub fn check(ring: u8, cmd: u32, arg: u64) -> bool {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/mod.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/mod.rs</b> (13 items)</summary>
 
 #### `FN`: **evaluate** <sub>line 34</sub>
 ```rust
@@ -20028,7 +20172,7 @@ pub fn decide_current(cmd: u32, arg: u64) -> Result<(), &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/policy/nim/policynim.nim</b> (4 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/policy/nim/policynim.nim</b> (4 items)</summary>
 
 #### `PROC`: **nim_policy_log** <sub>line 10</sub>
 ```nim
@@ -20053,7 +20197,7 @@ let e = logbuf[idx]
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/process/fd.rs</b> (10 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/process/fd.rs</b> (10 items)</summary>
 
 #### `ENUM`: **FdKind** <sub>line 9</sub>
 ```rust
@@ -20108,7 +20252,7 @@ pub fn close_for(pid: u32, fd: i32) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/process/proc.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/process/proc.rs</b> (1 items)</summary>
 
 #### `STRUCT`: **Process** <sub>line 3</sub>
 ```rust
@@ -20118,7 +20262,7 @@ pub struct Process {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/serial.rs</b> (13 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/serial.rs</b> (13 items)</summary>
 
 #### `FN`: **init** <sub>line 9</sub>
 ```rust
@@ -20188,7 +20332,7 @@ pub fn print_args(args: fmt::Arguments) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/terminal/mod.rs</b> (26 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/terminal/mod.rs</b> (26 items)</summary>
 
 #### `FN`: **editor_run** <sub>line 7</sub>
 ```rust
@@ -20323,7 +20467,7 @@ pub fn self_test() -> crate::testing::TestResult {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/testing.rs</b> (5 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/testing.rs</b> (5 items)</summary>
 
 #### `TYPE`: **TestResult** <sub>line 4</sub>
 ```rust
@@ -20353,7 +20497,7 @@ pub fn run_all(tests: &[Test]) {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/trampoline_rings/arch/aarch64/trampoline_rings.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/trampoline_rings/arch/aarch64/trampoline_rings.rs</b> (9 items)</summary>
 
 #### `STRUCT`: **CpuCtx** <sub>line 15</sub>
 ```rust
@@ -20403,7 +20547,7 @@ pub fn start() -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/trampoline_rings/arch/risc-v/trampoline_rings.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/trampoline_rings/arch/risc-v/trampoline_rings.rs</b> (9 items)</summary>
 
 #### `STRUCT`: **CpuCtx** <sub>line 16</sub>
 ```rust
@@ -20453,7 +20597,7 @@ pub fn start() -> ! {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/trampoline_rings/arch/x86_64/trampoline_rings.rs</b> (15 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/trampoline_rings/arch/x86_64/trampoline_rings.rs</b> (15 items)</summary>
 
 #### `STRUCT`: **CpuCtx** <sub>line 20</sub>
 ```rust
@@ -20533,7 +20677,7 @@ fn ctx_mut(&mut self) -> &mut CpuCtx {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/userspace/process/proc.rs</b> (7 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/userspace/process/proc.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **IpcMsg** <sub>line 5</sub>
 ```rust
@@ -20573,7 +20717,7 @@ pub fn recv(pid: u32) -> Option<IpcMsg> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/userspace/process/runcl.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/userspace/process/runcl.rs</b> (9 items)</summary>
 
 #### `FN`: **k_fs_read** <sub>line 2</sub>
 ```rust
@@ -20623,7 +20767,7 @@ pub fn run(path: &str) -> i32 {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/userspace/process/spawn.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/userspace/process/spawn.rs</b> (1 items)</summary>
 
 #### `FN`: **spawn_init** <sub>line 6</sub>
 ```rust
@@ -20633,7 +20777,7 @@ pub fn spawn_init() -> Result<(), &'static str> {
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/userspace/process/syscall.rs</b> (9 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/userspace/process/syscall.rs</b> (9 items)</summary>
 
 #### `FN`: **paging_translate_in** <sub>line 17</sub>
 ```rust
@@ -20683,7 +20827,7 @@ fn paging_map_page_in(pml4: u64, virt: u64,
 </details>
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel/src/vga_buffer.rs</b> (23 items)</summary>
+<summary><b>kernel_Workspace/kernel/src/vga_buffer.rs</b> (23 items)</summary>
 
 #### `ENUM`: **Color** <sub>line 6</sub>
 ```rust
@@ -20802,10 +20946,10 @@ pub fn _print_colored(_color: Color, args: fmt::Arguments) {
 
 </details>
 
-## 📂 kernel_Workspace/kernel-bin
+## kernel_Workspace/kernel-bin
 
 <details>
-<summary><b>📄 kernel_Workspace/kernel-bin/src/main.rs</b> (1 items)</summary>
+<summary><b>kernel_Workspace/kernel-bin/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **kernel_main** <sub>line 8</sub>
 ```rust
@@ -20814,10 +20958,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
 </details>
 
-## 📂 kstd/include
+## kstd/include
 
 <details>
-<summary><b>📄 kstd/include/kstd.h</b> (1 items)</summary>
+<summary><b>kstd/include/kstd.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **tr_log** <sub>line 12</sub>
 ```c
@@ -20827,7 +20971,7 @@ void tr_log(const char *s);
 </details>
 
 <details>
-<summary><b>📄 kstd/include/kstd_audio.h</b> (2 items)</summary>
+<summary><b>kstd/include/kstd_audio.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **tr_free** <sub>line 7</sub>
 ```c
@@ -20842,7 +20986,7 @@ tr_status_t tr_map_mmio(uint64_t phys, uint32_t len, void **out_va);
 </details>
 
 <details>
-<summary><b>📄 kstd/include/kstd_bt.h</b> (5 items)</summary>
+<summary><b>kstd/include/kstd_bt.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **tr_bt_info** <sub>line 6</sub>
 ```c
@@ -20872,7 +21016,7 @@ tr_status_t tr_bt_acl_recv(void *buf, uint16_t *len);
 </details>
 
 <details>
-<summary><b>📄 kstd/include/kstd_fs.h</b> (2 items)</summary>
+<summary><b>kstd/include/kstd_fs.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **tr_fs_read** <sub>line 6</sub>
 ```c
@@ -20887,7 +21031,7 @@ tr_status_t tr_fs_exists(const char *path);
 </details>
 
 <details>
-<summary><b>📄 kstd/include/kstd_input.h</b> (1 items)</summary>
+<summary><b>kstd/include/kstd_input.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **tr_input_key** <sub>line 6</sub>
 ```c
@@ -20897,7 +21041,7 @@ int32_t tr_input_key(void);
 </details>
 
 <details>
-<summary><b>📄 kstd/include/kstd_mem.h</b> (2 items)</summary>
+<summary><b>kstd/include/kstd_mem.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **tr_free** <sub>line 7</sub>
 ```c
@@ -20911,10 +21055,10 @@ tr_status_t tr_map_mmio(uint64_t phys, uint32_t len, void **out_va);
 
 </details>
 
-## 📂 kstd/src
+## kstd/src
 
 <details>
-<summary><b>📄 kstd/src/kernel/audio.c</b> (10 items)</summary>
+<summary><b>kstd/src/kernel/audio.c</b> (10 items)</summary>
 
 #### `FUNCTION`: **k_audio_play** <sub>line 3</sub>
 ```c
@@ -20969,7 +21113,7 @@ tr_status_t tr_audio_amp(bool on)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/kernel/bt.c</b> (15 items)</summary>
+<summary><b>kstd/src/kernel/bt.c</b> (15 items)</summary>
 
 #### `FUNCTION`: **bt_ready** <sub>line 3</sub>
 ```c
@@ -21049,7 +21193,7 @@ return bt_acl_recv(buf, len) ? TR_OK : TR_ERR_TIMEOUT;
 </details>
 
 <details>
-<summary><b>📄 kstd/src/kernel/fs.c</b> (5 items)</summary>
+<summary><b>kstd/src/kernel/fs.c</b> (5 items)</summary>
 
 #### `FUNCTION`: **k_fs_read** <sub>line 3</sub>
 ```c
@@ -21079,7 +21223,7 @@ return k_fs_exists(path) == 1 ? TR_OK : TR_ERR_NOTFOUND;
 </details>
 
 <details>
-<summary><b>📄 kstd/src/kernel/input.c</b> (3 items)</summary>
+<summary><b>kstd/src/kernel/input.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **k_input_key** <sub>line 3</sub>
 ```c
@@ -21099,7 +21243,7 @@ return k_input_key();
 </details>
 
 <details>
-<summary><b>📄 kstd/src/kernel/log.c</b> (2 items)</summary>
+<summary><b>kstd/src/kernel/log.c</b> (2 items)</summary>
 
 #### `FUNCTION`: **kprintf** <sub>line 3</sub>
 ```c
@@ -21114,7 +21258,7 @@ void tr_log(const char *s)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/kernel/mem.c</b> (6 items)</summary>
+<summary><b>kstd/src/kernel/mem.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **kfree** <sub>line 4</sub>
 ```c
@@ -21149,7 +21293,7 @@ tr_status_t tr_map_mmio(uint64_t phys, uint32_t len, void **out_va)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/audio.c</b> (6 items)</summary>
+<summary><b>kstd/src/user/audio.c</b> (6 items)</summary>
 
 #### `FUNCTION`: **ds_poll** <sub>line 7</sub>
 ```c
@@ -21184,7 +21328,7 @@ tr_status_t tr_audio_amp(bool on)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/bt.c</b> (7 items)</summary>
+<summary><b>kstd/src/user/bt.c</b> (7 items)</summary>
 
 #### `FUNCTION`: **ds_poll** <sub>line 6</sub>
 ```c
@@ -21224,7 +21368,7 @@ tr_status_t tr_bt_acl_recv(void *buf, uint16_t *len)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/fs.c</b> (4 items)</summary>
+<summary><b>kstd/src/user/fs.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **ds_poll** <sub>line 6</sub>
 ```c
@@ -21249,7 +21393,7 @@ tr_status_t tr_fs_exists(const char *path)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/input.c</b> (3 items)</summary>
+<summary><b>kstd/src/user/input.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **ds_poll** <sub>line 6</sub>
 ```c
@@ -21269,7 +21413,7 @@ int32_t tr_input_key(void)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/log.c</b> (1 items)</summary>
+<summary><b>kstd/src/user/log.c</b> (1 items)</summary>
 
 #### `FUNCTION`: **tr_log** <sub>line 6</sub>
 ```c
@@ -21279,7 +21423,7 @@ void tr_log(const char *s)
 </details>
 
 <details>
-<summary><b>📄 kstd/src/user/mem.c</b> (4 items)</summary>
+<summary><b>kstd/src/user/mem.c</b> (4 items)</summary>
 
 #### `FUNCTION`: **ds_poll** <sub>line 6</sub>
 ```c
@@ -21303,10 +21447,10 @@ tr_status_t tr_map_mmio(uint64_t phys, uint32_t len, void **out_va)
 
 </details>
 
-## 📂 libs
+## libs
 
 <details>
-<summary><b>📄 libs/dsasync.h</b> (2 items)</summary>
+<summary><b>libs/dsasync.h</b> (2 items)</summary>
 
 #### `FUNCTION`: **ds_req_poll** <sub>line 19</sub>
 ```c
@@ -21321,7 +21465,7 @@ static inline int ds_req_ok(ds_req_t *r)
 </details>
 
 <details>
-<summary><b>📄 libs/dsaudio.h</b> (6 items)</summary>
+<summary><b>libs/dsaudio.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **ds_audio_play** <sub>line 5</sub>
 ```c
@@ -21356,7 +21500,7 @@ static inline void ds_audio_amp(int on)
 </details>
 
 <details>
-<summary><b>📄 libs/dsclient.c</b> (3 items)</summary>
+<summary><b>libs/dsclient.c</b> (3 items)</summary>
 
 #### `FUNCTION`: **ds_init** <sub>line 12</sub>
 ```c
@@ -21376,7 +21520,7 @@ int ds_take(uint64_t id, ds_msg_t *out)
 </details>
 
 <details>
-<summary><b>📄 libs/dsinput.h</b> (3 items)</summary>
+<summary><b>libs/dsinput.h</b> (3 items)</summary>
 
 #### `FUNCTION`: **ds_key_req** <sub>line 5</sub>
 ```c
@@ -21396,7 +21540,7 @@ static inline int ds_key_take(uint64_t id, uint8_t *out)
 </details>
 
 <details>
-<summary><b>📄 libs/dslock.h</b> (6 items)</summary>
+<summary><b>libs/dslock.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **ds_blk_count** <sub>line 5</sub>
 ```c
@@ -21431,7 +21575,7 @@ return ds_call(SVC_BLOCK, BLK_WRITE, disk, block, 0);
 </details>
 
 <details>
-<summary><b>📄 libs/dslog.h</b> (1 items)</summary>
+<summary><b>libs/dslog.h</b> (1 items)</summary>
 
 #### `FUNCTION`: **ds_log** <sub>line 5</sub>
 ```c
@@ -21441,7 +21585,7 @@ static inline void ds_log(const char *s)
 </details>
 
 <details>
-<summary><b>📄 libs/dsmem.h</b> (8 items)</summary>
+<summary><b>libs/dsmem.h</b> (8 items)</summary>
 
 #### `FUNCTION`: **ds_alloc_pages** <sub>line 5</sub>
 ```c
@@ -21486,7 +21630,7 @@ return ds_call(SVC_SYS, OP_PAGEPHYS, va, 0, 0);
 </details>
 
 <details>
-<summary><b>📄 libs/dsvgpu.h</b> (5 items)</summary>
+<summary><b>libs/dsvgpu.h</b> (5 items)</summary>
 
 #### `FUNCTION`: **ds_call** <sub>line 6</sub>
 ```c
@@ -21516,7 +21660,7 @@ return ds_take(id, &r) && r.status == 0;
 </details>
 
 <details>
-<summary><b>📄 libs/dsvideo.h</b> (6 items)</summary>
+<summary><b>libs/dsvideo.h</b> (6 items)</summary>
 
 #### `FUNCTION`: **ds_fb_info_req** <sub>line 12</sub>
 ```c
@@ -21550,10 +21694,10 @@ static inline uint32_t ds_rgb(uint8_t r, uint8_t g, uint8_t b)
 
 </details>
 
-## 📂 mp4_to_bmp/src
+## mp4_to_bmp/src
 
 <details>
-<summary><b>📄 mp4_to_bmp/src/main.rs</b> (6 items)</summary>
+<summary><b>mp4_to_bmp/src/main.rs</b> (6 items)</summary>
 
 #### `FN`: **main** <sub>line 23</sub>
 ```rust
@@ -21588,16 +21732,17 @@ fn read_exact_or_eof<R: Read>(reader: &mut R, buf: &mut [u8]) -> Result<bool, St
 ```rust
 fn write_bmp(path: &str, pixels: &[u8], width: usize, height: usize) -> std::io::Result<()> {
 ```
+> Zapisuje surowa, nieskompresowana bitmape 24-bit BGR (BITMAPFILEHEADER + 
 > BITMAPINFOHEADER + piksele). `pixels` to width*height*3 bajtow w kolejnosci 
 > B,G,R, wiersz po wierszu, gora->dol (uzywamy ujemnej wysokosci w naglowku, 
 > zeby BMP tez czytal je jako top-down — bez potrzeby odwracania wierszy).
 
 </details>
 
-## 📂 trangorgelibc/src
+## trangorgelibc/src
 
 <details>
-<summary><b>📄 trangorgelibc/src/abi/errno.rs</b> (2 items)</summary>
+<summary><b>trangorgelibc/src/abi/errno.rs</b> (2 items)</summary>
 
 #### `ENUM`: **Errno** <sub>line 5</sub>
 ```rust
@@ -21612,7 +21757,7 @@ pub type TResult<T> = Result<T, Errno>;
 </details>
 
 <details>
-<summary><b>📄 trangorgelibc/src/abi/ktable.rs</b> (4 items)</summary>
+<summary><b>trangorgelibc/src/abi/ktable.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **KernelTable** <sub>line 6</sub>
 ```rust
@@ -21637,7 +21782,7 @@ pub fn print(&self, s: &str) {
 </details>
 
 <details>
-<summary><b>📄 trangorgelibc/src/abi/syscall.rs</b> (1 items)</summary>
+<summary><b>trangorgelibc/src/abi/syscall.rs</b> (1 items)</summary>
 
 #### `ENUM`: **Syscall** <sub>line 4</sub>
 ```rust
@@ -21647,7 +21792,7 @@ pub enum Syscall {
 </details>
 
 <details>
-<summary><b>📄 trangorgelibc/src/abi/types.rs</b> (5 items)</summary>
+<summary><b>trangorgelibc/src/abi/types.rs</b> (5 items)</summary>
 
 #### `STRUCT`: **SystemInfo** <sub>line 4</sub>
 ```rust
@@ -21677,7 +21822,7 @@ pub struct Stat {
 </details>
 
 <details>
-<summary><b>📄 trangorgelibc/src/lib.rs</b> (27 items)</summary>
+<summary><b>trangorgelibc/src/lib.rs</b> (27 items)</summary>
 
 #### `FN`: **sc0** <sub>line 31</sub>
 ```rust
@@ -21698,6 +21843,7 @@ fn sc3(n: u64, a0: u64, a1: u64, a2: u64) -> u64 {
 ```rust
 fn cstr(s: &str) -> ([u8; 256], usize) {
 ```
+> Kopiuje `s` do lokalnego bufora zakonczonego NUL. 
 >  
 > Jadro czyta sciezki/teksty jako C-stringi, a `&str` z Rusta nie ma bajtu 
 > NUL na koncu, dlatego kazda sciezka przechodzi przez ten pomocnik.
@@ -21828,10 +21974,10 @@ pub fn put_u32(v: u32) {
 
 </details>
 
-## 📂 triang-lang/src
+## triang-lang/src
 
 <details>
-<summary><b>📄 triang-lang/src/ast.rs</b> (11 items)</summary>
+<summary><b>triang-lang/src/ast.rs</b> (11 items)</summary>
 
 #### `STRUCT`: **Program** <sub>line 2</sub>
 ```rust
@@ -21891,7 +22037,7 @@ pub enum CmpOp {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/codegen/asm.rs</b> (7 items)</summary>
+<summary><b>triang-lang/src/codegen/asm.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **Emitter** <sub>line 8</sub>
 ```rust
@@ -21931,7 +22077,7 @@ pub fn emit(ir: &[Ir]) -> String {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/codegen/c.rs</b> (7 items)</summary>
+<summary><b>triang-lang/src/codegen/c.rs</b> (7 items)</summary>
 
 #### `STRUCT`: **FnChunk** <sub>line 4</sub>
 ```rust
@@ -21971,7 +22117,7 @@ pub fn emit(ir: &[Ir]) -> String {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/codegen/mod.rs</b> (1 items)</summary>
+<summary><b>triang-lang/src/codegen/mod.rs</b> (1 items)</summary>
 
 #### `ENUM`: **Emit** <sub>line 6</sub>
 ```rust
@@ -21981,7 +22127,7 @@ pub enum Emit {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/codegen/target.rs</b> (4 items)</summary>
+<summary><b>triang-lang/src/codegen/target.rs</b> (4 items)</summary>
 
 #### `ENUM`: **Target** <sub>line 2</sub>
 ```rust
@@ -22006,7 +22152,7 @@ pub fn ret_reg(&self) -> &'static str {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/ir.rs</b> (14 items)</summary>
+<summary><b>triang-lang/src/ir.rs</b> (14 items)</summary>
 
 #### `ENUM`: **Val** <sub>line 5</sub>
 ```rust
@@ -22081,7 +22227,7 @@ fn binop(s: &str) -> BinOp {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/iso.rs</b> (8 items)</summary>
+<summary><b>triang-lang/src/iso.rs</b> (8 items)</summary>
 
 #### `STRUCT`: **IsoFile** <sub>line 1</sub>
 ```rust
@@ -22126,7 +22272,7 @@ pub fn build(volume: &str, files: &[IsoFile]) -> Vec<u8> {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/lexer.rs</b> (13 items)</summary>
+<summary><b>triang-lang/src/lexer.rs</b> (13 items)</summary>
 
 #### `STRUCT`: **LexError** <sub>line 5</sub>
 ```rust
@@ -22196,7 +22342,7 @@ fn is_ident_cont(c: char) -> bool {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/main.rs</b> (10 items)</summary>
+<summary><b>triang-lang/src/main.rs</b> (10 items)</summary>
 
 #### `FN`: **main** <sub>line 18</sub>
 ```rust
@@ -22251,7 +22397,7 @@ fn run_objcopy(elf: &str, bin: &str) -> bool {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/parser.rs</b> (31 items)</summary>
+<summary><b>triang-lang/src/parser.rs</b> (31 items)</summary>
 
 #### `STRUCT`: **ParseError** <sub>line 5</sub>
 ```rust
@@ -22411,7 +22557,7 @@ fn parse_return(&mut self) -> Result<Stmt, ParseError> {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/project.rs</b> (4 items)</summary>
+<summary><b>triang-lang/src/project.rs</b> (4 items)</summary>
 
 #### `STRUCT`: **Project** <sub>line 4</sub>
 ```rust
@@ -22436,7 +22582,7 @@ fn parse(text: &str) -> Project {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/sema.rs</b> (15 items)</summary>
+<summary><b>triang-lang/src/sema.rs</b> (15 items)</summary>
 
 #### `ENUM`: **Symbol** <sub>line 5</sub>
 ```rust
@@ -22516,7 +22662,7 @@ fn check_op(&self, call: &OpCall) -> Result<(), SemaError> {
 </details>
 
 <details>
-<summary><b>📄 triang-lang/src/token.rs</b> (2 items)</summary>
+<summary><b>triang-lang/src/token.rs</b> (2 items)</summary>
 
 #### `ENUM`: **TokenKind** <sub>line 4</sub>
 ```rust
@@ -22530,10 +22676,10 @@ pub struct Token {
 
 </details>
 
-## 📂 userspace-legasy/demo
+## userspace-legasy/demo
 
 <details>
-<summary><b>📄 userspace-legasy/demo/src/main.rs</b> (1 items)</summary>
+<summary><b>userspace-legasy/demo/src/main.rs</b> (1 items)</summary>
 
 #### `FN`: **panic** <sub>line 24</sub>
 ```rust
@@ -22542,10 +22688,10 @@ fn panic(_i: &core::panic::PanicInfo) -> ! { loop {} }
 
 </details>
 
-## 📂 userspace-legasy/init
+## userspace-legasy/init
 
 <details>
-<summary><b>📄 userspace-legasy/init/src/main.rs</b> (2 items)</summary>
+<summary><b>userspace-legasy/init/src/main.rs</b> (2 items)</summary>
 
 #### `FN`: **load_autostart** <sub>line 6</sub>
 ```rust
@@ -22559,10 +22705,10 @@ fn panic(_i: &core::panic::PanicInfo) -> ! {
 
 </details>
 
-## 📂 userspace-legasy/shell
+## userspace-legasy/shell
 
 <details>
-<summary><b>📄 userspace-legasy/shell/src/main.rs</b> (3 items)</summary>
+<summary><b>userspace-legasy/shell/src/main.rs</b> (3 items)</summary>
 
 #### `FN`: **cstr** <sub>line 13</sub>
 ```rust
@@ -22582,10 +22728,10 @@ fn panic(_i: &core::panic::PanicInfo) -> ! { loop {} }
 
 </details>
 
-## 📂 userspace-legasy/terminal
+## userspace-legasy/terminal
 
 <details>
-<summary><b>📄 userspace-legasy/terminal/src/main.rs</b> (2 items)</summary>
+<summary><b>userspace-legasy/terminal/src/main.rs</b> (2 items)</summary>
 
 #### `FN`: **push_hist** <sub>line 16</sub>
 ```rust
@@ -22596,6 +22742,85 @@ fn push_hist(line: &[u8]) {
 ```rust
 fn panic(_i: &core::panic::PanicInfo) -> ! {
 ```
+
+</details>
+
+## Existing Markdown Documentation
+
+<details>
+<summary><b>README.md</b></summary>
+
+['# TrangorgeOS\n', '\n', '# TrangorgeOS\n', '\n', '> A modern, high-performance bare-metal operating system built ground-up on a custom **Separated Tri-Partition Architecture** (*Architektura Trójpodziału Rozdzielnego*).\n', '\n', '---\n', '\n', '## Overview & Philosophy\n', '\n', 'TrangorgeOS is built with a strict **from-scratch philosophy** (~35,000+ lines of code, actively expanding). It discards classic microkernel overhead and hybrid kernel bloat in favor of a strictly isolated, policy-enforced driver architecture. \n', '\n', 'The project operates under an intensive development cycle aimed at producing a stable, bare-metal kernel fully functional on physical hardware.\n', '\n', '---\n', '\n', '## Visuals & Screenshots\n', '\n', '| Kernel Loading & Memory Allocation Testing | Kernel Base Resolution | Kernel in 1080p |\n', '|:---:|:---:|:---:|\n', '| ![Kernel Loading](kernelloading.png) | ![Kernel Base Res](kernel_loader_base_res.png) | ![Kernel 1080p](kernelin1920x1080.png) |\n', '\n', '---\n', '\n', '## Architectural Model: Separated Tri-Partition Architecture\n', '\n', 'TrangorgeOS decouples driver functionality and system privilege into 4 distinct operational layers (3 main domains + userspace abstraction):\n', '\n', '\n', '```\n', '\n', '+-----------------------------------------------------------------+\n', '|                         USERSPACE                               |\n', '|   - Applications & High-Level Libraries                         |\n', '+-----------------------------------------------------------------+\n', '|                   USER DRIVER SPACE (UDS)                       |\n', '|   - High-risk / Peripherals (Fault-isolated, strict boundary)   |\n', '+-----------------------------------------------------------------+\n', '|                     DRIVER SPACE (DS)                           |\n', '|   * Dynamic Drivers   : GPU & complex hardware                  |\n', '|   * Static Drivers    : Init & single-action hardware setup       |\n', '|   * Library Drivers   : Inter-driver interface providers        |\n', '+-----------------------------------------------------------------+\n', '|                    KERNEL CORE / DRIVERS                        |\n', '|   - Trusted Core Drivers (Network, USB stack base, Core MM)     |\n', '|   - Fine-grained Kernel Policy Enforcement & Data Flow Control  |\n', '+-----------------------------------------------------------------+\n', '\n', '```\n', '\n', '1. **Kernel Core & Trusted Drivers:** Holds only maximum-trust drivers (e.g., base network, USB stack core) to eliminate IPC latency for essential paths without compromising core stability. Exports explicit system interfaces.\n', '2. **Driver Space (DS):** Modular driver execution environment with strict error margins:\n', '   - **Dynamic Drivers:** Handle complex, stateful hardware (e.g., GPU control).\n', '   - **Static Drivers:** Perform hardware initialization or non-exporting, single-purpose setup.\n', '   - **Library Drivers:** Expose specialized interfaces (e.g., PCI, HDMI control) for other drivers to consume.\n', '3. **User Driver Space (UDS):** High-level peripheral drivers isolated at a safe distance from the core to prevent system crashes on fault.\n', '4. **Userspace & User Library Drivers:** Top-level space housing application runtime and user-level library interfaces.\n', '\n', '---\n', '\n', '## Current Subsystems & Refactoring Status\n', '\n', '> **Notice:** The kernel is currently undergoing a major refactoring phase (modernization and safety audit) across multiple subsystems.\n', '\n', '- **Memory Management (MM):** Fully custom memory management subsystem and dynamic allocator written in C (~9,000 LOC currently, expanding to ~16,000 LOC during refactoring to eliminate security/safety bugs).\n', '- **Network & USB:** Network driver base operational; USB stack operating under a controlled bare-metal environment.\n', '- **Input & Display:** Built-in BIOS PS/2 fallback support; active development on modern USB input. Kernel features an in-kernel text editor, serial UART output (COM1), and an automated internal system tester executing real-time sanity checks.\n', '- **Multiprocessing & Interrupts:** SMP multi-core initialization active. APIC/IDT interrupt architecture and process scheduler are actively being overhauled.\n', '- **Binary Support:** Native execution support for `ELF` and custom `.bin` binaries with custom IPC interfaces.\n', '\n', '---\n', '\n', '## Custom Versioning System\n', '\n', 'TrangorgeOS uses an in-house versioning scheme reflecting the precise state of development:\n', '\n', '$$\\text{Major} . \\text{Changes} . \\text{FixesPerChange} . \\text{Iteration}\\text{State}$$\n', '\n', '*Example: `v0.182.7.1a`*\n', '- **`0` (Major):** Pre-release major build.\n', '- **`182` (Changes):** Total cumulative feature changes introduced.\n', '- **`7` (Fixes):** Bugfixes applied for the current change.\n', '- **`1` (Iteration):** Single target architecture fully active.\n', '- **`a` (State):** Alpha phase (`a` = initial work $\\rightarrow$ `b` = stabilization $\\rightarrow$ `g` = pre-release gamma).\n', '\n', '### Scale Milestones:\n', '- **Alpha:** Pre-release scale (up to ~60,000 LOC), active architectural building.\n', '- **Beta:** System runs stably on physical hardware.\n', '- **Gamma:** Final stabilization phase prior to Release `v1.0`.\n', '\n', '---\n', '\n', '## Git Branch Model & Workflow\n', '\n', 'The repository relies on a strict multi-tier branch hierarchy:\n', '\n', '| Branch | Purpose |\n', '|:---|:---|\n', '| `init` | Conceptual structure, architecture blueprints, no active codebase. |\n', '| `new` | Experimental features and isolated proof-of-concept tests. |\n', '| `unstable` | Primary active development branch. |\n', '| `stabilizing` | Refactoring, bug-hunting, and code modernizing before release. |\n', '| `stable` | Tested, incremental updates with guaranteed stability. |\n', '| `main` | Production showcase branch. |\n', '\n', '---\n', '\n', '## Project Roadmap\n', '\n', '- [x] **Current Stage (`stabilizing` / Alpha v0.182.x):** Deep refactoring of MM allocator, scheduler modernization, bug localization.\n', '- [ ] **Milestone 1 (~1.5 Months):** Complete memory allocator refactoring, lock down current subsystem rewrite, merge to `stable`.\n', '- [ ] **Milestone 2 (~4 Months):** Mature active drivers, write dedicated GPU/display drivers, initiate multi-architecture porting.\n', '- [ ] **Milestone 3 (~1 Year):** Complete full bare-metal testing on physical hardware, establish stable kernel runtime, expand userspace tooling.\n', '\n', '---\n', '\n', '<p align="center">\n', '  <i>TrangorgeOS — Building bare-metal systems from scratch, one commit at a time.</i>\n', '</p>\n']
+
+</details>
+
+<details>
+<summary><b>TrangorgeOS — TODO.md</b></summary>
+
+['# TrangorgeOS — TODO\n', '\n', '> **Purpose:** This file tracks the remaining work required to move TrangorgeOS from the current `unstable` development state toward a reliable, testable, and eventually stable system.\n', '>\n', '> **Status convention:** `TODO` means not started or not verified; `WIP` means partially implemented; `BLOCKED` means dependent on another task; `DONE` should only be used after the stated acceptance criteria have been verified.\n', '>\n', '> **Priority convention:** `P0` blocks reliable boot or basic correctness; `P1` is required for the next serious development milestone; `P2` improves robustness and maintainability; `P3` is ecosystem or long-term work.\n', '\n', '## 0. Current snapshot\n', '\n', '| Area | Current state | Priority |\n', '|---|---|---|\n', '| Kernel boot and x86_64 baseline | Present, but requires repeatable build and boot verification | P0 |\n', '| Memory subsystem | Layered implementation exists; initialization order is defined in `mm_init()` | P0 |\n', '| Heap allocator | Buddy path is active; slab implementation exists but `HEAP_USE_SLAB` is `0` | P1 |\n', '| Driver space | Separate address space, shared rings, initialization parameters, and services are present | P0 |\n', '| Driver-space ABI | Implemented enough for experiments, not yet documented as stable | P0 |\n', '| Filesystem | FAT32/EXT4 and additional filesystem code are present; correctness and integration tests are needed | P1 |\n', '| USB/PCI | Significant infrastructure exists; device coverage and hardware validation are incomplete | P1 |\n', '| Networking | NIC/VirtIO structures exist; network-driver work is explicitly a project priority | P1 |\n', '| ARM64 and RISC-V | Public target goals; feature parity and build/boot status must be established | P2 |\n', '| Package manager | Kernel-side `ctrlinstall` modules exist; end-to-end package workflow needs completion | P2 |\n', '| Toolchain and ecosystem | `triang-lang`, libraries, ISO tooling, and auxiliary tools exist at different maturity levels | P2/P3 |\n', '| Release process | No published release; stable branch criteria are not yet formalized | P1 |\n', '\n', '## 1. P0 — immediate correctness blockers\n', '\n', '### 1.1 Repair and compile-check driver-space initialization\n', '\n', '**Status:** TODO  \n', '**Area:** `kernel/src/driverspaceinit/init/init.rs`\n', '\n', 'The visible implementation creates a `Driverspace` structure with an address space, two ring physical addresses, an initialization-parameter page, and a preparation flag. Later helper functions reference scratch-page state that is not visibly represented in the structure. Resolve this inconsistency rather than masking it with an unrelated workaround.\n', '\n', '**Tasks:**\n', '\n', '- Add or remove scratch-page state consistently in the `Driverspace` structure and initialization path.\n', '- Ensure the scratch page is allocated, zeroed, mapped, and released exactly once.\n', '- Ensure `scratch_view()` cannot return a pointer after the driver-space instance has been destroyed.\n', '- Ensure every failure after partial allocation releases previously allocated frames and address-space mappings.\n', '- Compile the kernel after the fix with the repository’s documented target.\n', '\n', '**Acceptance criteria:** The driver-space initialization module compiles without undefined fields or unreachable top-level statements; all allocation failures clean up; a self-test completes successfully.\n', '\n', '### 1.2 Establish a reproducible baseline build\n', '\n', '**Status:** TODO  \n', '**Area:** root Docker scripts, `kernel/`, `targets/`\n', '\n', 'Document and verify the one canonical build command. The repository contains Docker scripts, target configuration, boot components, and an ISO builder, but the expected artifact and exact run command must be explicit.\n', '\n', '**Tasks:**\n', '\n', '- Verify the required Rust toolchain and external binaries.\n', '- Run the Docker build from a clean environment.\n', '- Record the produced kernel, image, and ISO paths.\n', '- Run the image in an emulator and capture serial output.\n', '- Add a short “Build and run” section to the root `README.md`.\n', '- Make the build fail on warnings or errors that affect the boot artifact, where practical.\n', '\n', '**Acceptance criteria:** A new contributor can clone the repository, run the documented commands, produce the same boot artifact, and reach the kernel’s expected boot milestone.\n', '\n', '### 1.3 Define the driver-space ABI versioning rules\n', '\n', '**Status:** TODO  \n', '**Area:** `kernel/src/driverspaceinit/abi/`, `driverspacelib/src/`\n', '\n', 'The protocol already contains `DsMsg`, ring structures, magic/version fields, and command identifiers. It needs a written compatibility contract before more drivers depend on it.\n', '\n', '**Tasks:**\n', '\n', '- Document the binary layout, field widths, alignment, endianness, and reserved fields of `DsMsg` and ring metadata.\n', '- Define the meaning of every command and every argument.\n', '- Define error/status codes and whether negative values are stable ABI values.\n', '- Define how unknown commands, malformed messages, full rings, and stale IDs are handled.\n', '- Define the compatibility policy for `DS_MAGIC`, `DS_VERSION`, and command additions.\n', '- Add compile-time size/alignment assertions on both kernel and driver-space sides.\n', '- Add a protocol version document and a small ABI conformance test.\n', '\n', '**Acceptance criteria:** The same ABI document can be used to implement a driver without reading kernel internals, and the conformance test passes on both sides of the boundary.\n', '\n', '### 1.4 Make driver-space isolation explicit and testable\n', '\n', '**Status:** TODO  \n', '**Area:** `kernel/src/driverspaceinit/`, `kernel/src/mm/protection/`, `kernel/src/mm/process/`\n', '\n', 'The kernel creates a separate address space and maps shared pages into it. The security and failure-isolation properties need tests rather than only implementation intent.\n', '\n', '**Tasks:**\n', '\n', '- Test that driver space cannot read arbitrary kernel virtual addresses.\n', '- Test that driver-space mappings are limited to explicitly granted RAM and MMIO regions.\n', '- Validate permissions for shared rings, initialization parameters, RAM grants, and MMIO grants.\n', '- Reject overlapping, unaligned, out-of-range, and double-freed grants.\n', '- Add a driver crash or invalid-command test and verify that kernel execution continues.\n', '- Define whether and how a failed driver can be restarted or detached.\n', '\n', '**Acceptance criteria:** Negative tests demonstrate that unauthorized mappings and malformed service requests are rejected without corrupting kernel state.\n', '\n', '## 2. P1 — kernel and hardware reliability\n', '\n', '### 2.1 Complete the allocator specification and test suite\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/mm/alloc/`\n', '\n', 'The active heap path uses buddy allocation. Slab code is present but disabled with `HEAP_USE_SLAB 0`. The allocator needs an explicit contract and stress tests before it is treated as a kernel foundation.\n', '\n', '**Tasks:**\n', '\n', '- Document physical-frame, virtual-mapping, heap, buddy, slab, DMA, and contiguous-memory responsibilities.\n', '- Add tests for zero-size allocations, alignment, large allocations, `krealloc`, double free, invalid free, and out-of-memory behavior.\n', '- Test buddy split and coalescing across every supported order.\n', '- Test page mapping rollback when a physical-frame allocation fails partway through.\n', '- Verify `heap_usable_size()` for active and invalid pointers.\n', '- Decide whether slab should remain disabled, be enabled for small objects, or be redesigned.\n', '- Add allocator statistics and leak checks to a repeatable debug test.\n', '- Define which allocator functions are safe during interrupt context and early boot.\n', '\n', '**Acceptance criteria:** The allocator passes deterministic unit/stress tests and its public contract describes ownership, alignment, blocking, context restrictions, and failure behavior.\n', '\n', '### 2.2 Finish filesystem correctness and integration tests\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/fs/`\n', '\n', 'The tree contains MBR, disk, ATA PIO, block-driver, FAT32, EXT4, TFS, and filesystem initialization code. The project needs tests that verify data integrity across the complete stack.\n', '\n', '**Tasks:**\n', '\n', '- Define the supported FAT32 and EXT4 feature subset.\n', '- Test mounting, directory creation, file creation, reads, writes, truncation, append, rename, delete, and remount persistence.\n', '- Test unaligned reads/writes and operations spanning multiple blocks.\n', '- Test corrupted superblocks, invalid MBR data, short reads, failed writes, and unexpected device removal.\n', '- Define and test filesystem locking and concurrent access rules.\n', '- Separate experimental TFS behavior from the stable filesystem API.\n', '- Add image-based regression fixtures for each supported filesystem.\n', '\n', '**Acceptance criteria:** Filesystem tests pass on generated disk images and data remains correct after unmount/remount cycles.\n', '\n', '### 2.3 Stabilize PCI and USB discovery\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/drivers/`, `kernel/src/pci.rs`\n', '\n', 'USB core, EHCI/XHCI, HID, CDC, and mass-storage structures exist. The next step is reliable enumeration, error handling, and ownership of device resources.\n', '\n', '**Tasks:**\n', '\n', '- Document PCI configuration access and BAR discovery.\n', '- Verify MMIO BAR validation and alignment.\n', '- Complete USB device, configuration, interface, endpoint, and speed handling.\n', '- Add enumeration tests with recorded or emulated descriptor sets.\n', '- Test device removal, reset, stalled endpoints, transfer timeouts, and controller errors.\n', '- Define which USB classes remain in kernel space and which move to driver space.\n', '- Connect mass-storage discovery to the block-device registry and filesystem layer.\n', '\n', '**Acceptance criteria:** A supported USB storage device and a supported HID device can be enumerated repeatedly without kernel instability.\n', '\n', '### 2.4 Build a functional network-driver milestone\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/nic/`\n', '\n', 'The website identifies network-driver development as an important contribution area. The repository contains NIC abstractions, Ethernet, packets, protocols, and VirtIO queues, but a complete validated network path is still required.\n', '\n', '**Tasks:**\n', '\n', '- Define the minimum supported NIC and VirtIO feature set.\n', '- Complete RX/TX queue setup, descriptor ownership, interrupt or polling behavior, and recovery.\n', '- Add packet-buffer ownership and lifetime rules.\n', '- Implement and test a minimal Ethernet/ARP/IPv4 path, or explicitly document the current scope.\n', '- Add checksum, MTU, malformed-packet, and queue-exhaustion tests.\n', '- Add an emulator-based network test with captured packets.\n', '- Define how network drivers are exposed to driver space.\n', '\n', '**Acceptance criteria:** The selected NIC can transmit and receive validated packets in an emulator or test harness without memory leaks or queue corruption.\n', '\n', '### 2.5 Define and test audio driver integration\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/audio/`, `drivers/audiodriver/`, `driverspacelib/src/audio.rs`\n', '\n', 'Audio code spans kernel services, driver-space helpers, JACK-related bindings, and driver code. The ownership and trust boundary must be made explicit.\n', '\n', '**Tasks:**\n', '\n', '- Define which audio operations are kernel services and which belong to the audio driver.\n', '- Document buffer ownership, physical-page grants, sample format, rate, channel count, and duration units.\n', '- Test `AudioInfo`, `AudioPlay`, `AudioStop`, and amplifier controls with invalid buffers and lengths.\n', '- Verify that audio buffers cannot be used after revocation.\n', '- Decide whether JACK integration is a development dependency or part of the target runtime.\n', '- Add a minimal deterministic tone test in an emulator or supported host environment.\n', '\n', '**Acceptance criteria:** Audio requests use a documented ABI, invalid grants are rejected, and the driver can start/stop playback without corrupting shared memory.\n', '\n', '### 2.6 Formalize bootloader and ISO output\n', '\n', '**Status:** TODO  \n', '**Area:** `comgrub/`, `comlimine/`, `iso-builder/`\n', '\n', 'The project contains GRUB and Limine-related boot components and a separate ISO builder. Their supported roles and artifact formats need to be clear.\n', '\n', '**Tasks:**\n', '\n', '- Choose the primary supported boot path for the next milestone.\n', '- Document the difference between GRUB and Limine images.\n', '- Verify linker scripts, kernel load addresses, entry points, memory-map handoff, and initrd placement.\n', '- Add ISO-content validation before boot.\n', '- Add emulator smoke tests for each supported boot path.\n', '- Record serial and graphical output expected at each milestone.\n', '\n', '**Acceptance criteria:** The canonical ISO boots through the documented bootloader and fails with a useful diagnostic if a required artifact is missing.\n', '\n', '## 3. P1 — code quality and integration\n', '\n', '### 3.1 Define the kernel ABI boundary\n', '\n', '**Status:** TODO  \n', '**Area:** `kernel/src/abi/`, `trangorgelibc/src/abi/`\n', '\n', 'The kernel ABI and client-side library must agree on types, error values, syscall numbers, pointer rules, and versioning.\n', '\n', '**Tasks:**\n', '\n', '- Inventory every public ABI type and function.\n', '- Define integer widths, structure layout, alignment, ownership, and lifetime rules.\n', '- Define pointer validation and user/kernel buffer-copy rules.\n', '- Synchronize error handling between kernel and `trangorgelibc`.\n', '- Add generated or checked bindings where possible.\n', '- Add ABI compatibility tests.\n', '\n', '**Acceptance criteria:** A client library can be rebuilt against the documented ABI and pass layout and behavior tests.\n', '\n', '### 3.2 Define driver lifecycle and registration\n', '\n', '**Status:** TODO  \n', '**Area:** `driverspace/src/`, `driverspacelib/src/driver.rs`, `kernel/src/driverspaceinit/`\n', '\n', 'The project needs one lifecycle model for discovery, initialization, registration, attachment, running, detachment, shutdown, and failure recovery.\n', '\n', '**Tasks:**\n', '\n', '- Define driver states and allowed transitions.\n', '- Define device identity, vendor/class fields, capabilities, and ownership.\n', '- Complete driver registration and device attachment commands or remove unused commands from the public ABI.\n', '- Define resource acquisition and release for IRQs, MMIO, DMA, and shared memory.\n', '- Define shutdown ordering and timeout handling.\n', '- Add a mock driver used in CI to exercise the complete lifecycle.\n', '\n', '**Acceptance criteria:** A mock driver can register, attach to a device, request resources, handle a request, detach, and shut down cleanly.\n', '\n', '### 3.3 Reduce duplicated or experimental paths\n', '\n', '**Status:** TODO  \n', '**Area:** whole repository\n', '\n', 'Several components appear to contain experimental or partially connected paths. These should be clearly labeled or removed before a stable branch is created.\n', '\n', '**Tasks:**\n', '\n', '- Mark unused driver initialization helpers and experimental commands.\n', '- Remove stale generated output from source-controlled directories where appropriate.\n', '- Document intentionally empty or placeholder modules.\n', '- Run formatting and static checks for Rust, C, Zig, and assembly sources where tools are available.\n', '- Remove IDE metadata from production source directories unless intentionally retained.\n', '- Record known warnings and decide whether each is acceptable or must be fixed.\n', '\n', '**Acceptance criteria:** The repository has a documented list of experimental components, no unexplained generated artifacts, and a clean baseline check command.\n', '\n', '## 4. P2 — architecture portability\n', '\n', '### 4.1 Separate architecture-independent and architecture-specific code\n', '\n', '**Status:** TODO  \n', '**Area:** `kernel/src/mm/arch/x86_64/`, CPU, paging, boot, targets\n', '\n', 'The current memory code visibly contains x86_64-specific implementations. Portability requires clear interfaces before ARM64 or RISC-V work expands.\n', '\n', '**Tasks:**\n', '\n', '- Define architecture-independent interfaces for page tables, TLB operations, interrupts, timers, CPU startup, and memory barriers.\n', '- Move x86_64-only constants and operations behind architecture modules.\n', '- Define target-specific linker scripts and boot parameters.\n', '- Add architecture capability tables for page size, address width, cache behavior, and DMA constraints.\n', '- Add compile-only CI checks for ARM64 and RISC-V targets.\n', '\n', '**Acceptance criteria:** Architecture-independent kernel code compiles without importing x86_64 implementation details, and each announced target has a reproducible compile target.\n', '\n', '### 4.2 ARM64 milestone\n', '\n', '**Status:** BLOCKED by architecture abstraction work  \n', '\n', '- Define the ARM64 target specification.\n', '- Implement or stub the boot entry and exception vector.\n', '- Implement page-table and TLB operations.\n', '- Implement interrupt-controller integration.\n', '- Port the memory bootstrap and serial diagnostics.\n', '- Boot a minimal ARM64 image in an emulator.\n', '\n', '**Acceptance criteria:** A documented ARM64 smoke test reaches kernel initialization and reports memory-subsystem status.\n', '\n', '### 4.3 RISC-V milestone\n', '\n', '**Status:** BLOCKED by architecture abstraction work  \n', '\n', '- Define the RISC-V target specification.\n', '- Implement boot entry, trap handling, paging mode, and timer setup.\n', '- Port serial diagnostics and memory initialization.\n', '- Boot a minimal RISC-V image in an emulator.\n', '\n', '**Acceptance criteria:** A documented RISC-V smoke test reaches kernel initialization and reports memory-subsystem status.\n', '\n', '## 5. P2 — package manager and user ecosystem\n', '\n', '### 5.1 Complete `ctrlinstall`\n', '\n', '**Status:** WIP  \n', '**Area:** `kernel/src/ctrlinstall/`\n', '\n', 'The repository contains repository fetching, indexes, manifests, dependency resolution, transactions, diffs, and upgrades. The complete user-facing workflow still needs to be defined and tested.\n', '\n', '**Tasks:**\n', '\n', '- Define repository and package formats.\n', '- Define signatures, trust roots, hashes, and rollback behavior.\n', '- Complete dependency resolution and conflict diagnostics.\n', '- Test interrupted transactions and power-loss recovery.\n', '- Add install, remove, update, search, and list interfaces.\n', '- Document how driver packages and kernel-compatible packages are separated.\n', '\n', '**Acceptance criteria:** A package can be fetched, verified, installed, listed, upgraded, rolled back, and removed from a test repository.\n', '\n', '### 5.2 Stabilize `trangorgelibc`\n', '\n', '**Status:** TODO  \n', '\n', '- Inventory implemented versus placeholder modules.\n', '- Define syscall wrappers and error semantics.\n', '- Add memory, I/O, synchronization, and ABI tests.\n', '- Document which interfaces are safe for applications and which are experimental.\n', '\n', '### 5.3 Advance `triang-lang`\n', '\n', '**Status:** WIP  \n', '\n', '- Document the language syntax and project format.\n', '- Define the AST and IR stability policy.\n', '- Add parser and semantic-analysis tests.\n', '- Add deterministic code-generation tests for C and assembly.\n', '- Define the x86_64 output ABI.\n', '- Decide which language features are required for system tools.\n', '\n', '## 6. P3 — tools, documentation, and community\n', '\n', '### 6.1 Documentation structure\n', '\n', '**Status:** WIP\n', '\n', '- Move the architecture documents into a stable `docs/` directory.\n', '- Add a contributor guide and development-environment guide.\n', '- Add a boot-flow diagram and driver-space sequence diagram.\n', '- Add per-subsystem pages for memory, filesystem, USB, network, ABI, and package management.\n', '- Keep English as the reference language or define an explicit bilingual-document policy.\n', '- Add a changelog policy for ABI and boot-image changes.\n', '\n', '### 6.2 Code editor and developer tools\n', '\n', '**Status:** TODO\n', '\n', '- Define the dedicated editor’s scope and minimum viable feature set.\n', '- Decide whether the editor is part of the OS image or a host-side development tool.\n', '- Document project files, build integration, syntax support, and debugger/serial integration.\n', '- Connect editor workflows to `triang-lang` and package-management tools.\n', '\n', '### 6.3 Contribution and release process\n', '\n', '**Status:** TODO\n', '\n', '- Define branch policy for `main`, `unstable`, and the future stable branch.\n', '- Define release criteria and a versioning scheme.\n', '- Add CI for formatting, compilation, ABI tests, allocator tests, filesystem-image tests, and emulator boot tests.\n', '- Add issue templates for kernel bugs, driver bugs, build failures, and documentation gaps.\n', '- Document the AGPLv3 licensing requirements and contribution expectations.\n', '\n', '## 7. Suggested milestone order\n', '\n', 'The recommended order is intentionally dependency-driven:\n', '\n', '1. Repair and compile-check driver-space initialization.\n', '2. Establish a reproducible x86_64 build, ISO, and emulator boot test.\n', '3. Freeze and test the driver-space ABI at an experimental version.\n', '4. Add isolation and invalid-request tests.\n', '5. Finish allocator, filesystem, USB, and network regression suites.\n', '6. Define driver lifecycle and complete a mock driver.\n', '7. Stabilize the kernel ABI and `trangorgelibc`.\n', '8. Define architecture abstractions and add compile-only ARM64/RISC-V targets.\n', '9. Complete package-manager and custom-language workflows.\n', '10. Define stable-branch and release criteria.\n', '\n', '## 8. Definition of “ready for stable”\n', '\n', 'The kernel should not move to a stable branch merely because it boots once. A stable milestone should require a reproducible build, a documented boot artifact, passing allocator and filesystem regression tests, a versioned driver-space ABI, negative isolation tests, at least one validated storage path, one validated input path, one validated network path, and a known list of unsupported hardware.\n', '\n', 'The branch should also have a rollback or recovery story for failed package transactions and driver failures. Every public architecture claim should distinguish between “compiles,” “boots,” “has tested core services,” and “has feature parity.”\n', '\n', '## 9. Source references\n', '\n', '[1]: https://github.com/CTRL-F-0rg3/TrangorgeOS/tree/unstable "TrangorgeOS — unstable branch"\n', '\n', '[2]: https://trangorgeos.website/ "Official TrangorgeOS website"\n', '\n', '[3]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/unstable/kernel/src/driverspaceinit/init/init.rs "TrangorgeOS — driver-space preparation"\n', '\n', '[4]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/unstable/kernel/src/driverspaceinit/init/service.rs "TrangorgeOS — driver-space services"\n', '\n', '[5]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/unstable/kernel/src/mm/alloc/heap/heap.c "TrangorgeOS — heap buddy/slab routing"\n', '\n', '[6]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/unstable/kernel/src/mm/alloc/api/alloc.c "TrangorgeOS — allocator API"\n', '\n', '[7]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/unstable/kernel/src/mm/core/mm.c "TrangorgeOS — memory subsystem initialization"\n']
+
+</details>
+
+<details>
+<summary><b>panic.md</b></summary>
+
+['# Kernel Hang / Panic Report — 2026-10-09\n', '# Kernel Hang / Panic Report — LAPIC base sanity check\n', '\n', 'Key findings:\n', '- `APIC_BASE_MSR` read reports x2APIC when bit 10 set; else LAPIC assumed at `base_phys` passed in.\n', "- `lapic::init(base_phys)` uses `base_phys` straight as virtual if it's `>= 0xFFFF800000000000`.\n", '- In SMP init, APs are booted with `send_startup_ipi` using `trampoline::TRAMPOLINE_BASE >> 12` as vector.\n', '\n', 'Open question:\n', '- Where is actual LAPIC physical base loaded from? Current code does not show base-specific usage beyond `send_startup_ipi` vector.\n', '\n', 'Next active items:\n', '1. Confirm TRAMPOLINE_BASE value and that identity mapping covers it.\n', '2. Confirm `build.rs` linker path behavior for x86_64.\n', '3. Add serial console capture in QEMU and reproduce hang location.\n', '\n', '\n', '## Status\n', 'Kernel **builds and boots** in qemu (GTK display, 4 vCPUs) but **freezes during\n', 'runtime**. No console / serial output was captured from the GTK session — the VM\n', 'stays quiet and appears hung.\n', '\n', 'Attempted serial capture with qemu (`-serial file:/tmp/qemu_serial_out.txt`)\n', 'did not produce a readable guest log at the time of this report, so the exact\n', 'stop point is inferred from the boot path rather than from live kernel prints.\n', '\n', '## Boot entry\n', "`kernel_main(boot_info: &'static bootloader::BootInfo) -> !` (`src/main.rs`)\n", '\n', 'Sequence:\n', '1. `init()`\n', '2. `mm::init_from_boot_info(boot_info)`  → “[mm] allocator initialized OK” expected\n', '3. `init_permissions()`\n', '4. `gfx::init()`  → “[gfx] framebuffer initialized OK” expected\n', '5. (optional) `hdmi::init::init()`\n', '6. `pci::init()`\n', '7. `nic::runtime::init()`\n', '8. `bluetooth::init::init()`\n', '9. `fs::init()`\n', '10. **`cpu::init(boot_info)`**  ← SMP bring-up, tight waits per AP\n', '11. `testing::run_all(TESTS)`\n', '12. `println!("Welcome in my Galaxy!")`\n', '13. `gfx::refresh()`, `terminal::init()`, `terminal::run()`\n', '\n', '## Where the hang manifests\n', 'In the GTK qemu session the kernel reaches `cpu::init(boot_info)` (step 10) and\n', 'then stops producing visible progress. The SMP initialization polls for each AP\n', 'to reach its trampoline entry within a tight per-AP timeout (about 100 ms per\n', 'AP, 3 APs with 4 vCPUs). If an AP does not become ready in time, the boot path\n', 'blocks waiting for it without emitting a visible panic in the GTK display.\n', '\n', '## Observations from the code\n', '- SMP init lives in `src/cpu/mod.rs` / `src/cpu/smp.rs` and reaches into\n', '  `src/cpu/scheduler/smp/mod.rs` plus the migration / stopper / balancing\n', '  subtrees. AP boot uses a trampoline at `TRAMPOLINE_BASE`.\n', '- The bootloader crate (`bootloader = 0.9` with `map_physical_memory` +\n', '### Changed technical context\n', '\n', '- Trampoline base is `TRAMPOLINE_BASE = 0x8000` in `kernel/src/cpu/trampoline.rs` and `.set TRAMPOLINE_BASE, 0x8000` in `kernel/src/cpu/trampoline.s`.\n', '- SMP bringup uses `send_startup_ipi(apic_id, (trampoline::TRAMPOLINE_BASE >> 12) as u8)`.\n', '- Paging init in `kernel/src/mm/arch/x86_64/paging.c` skips identity work when `boot_phys_offset == ARCH_DIRECT_MAP_BASE`, else it maps `boot_phys_offset` → `ARCH_DIRECT_MAP_BASE`.\n', '- Kernel MM bridge is compiled by `kernel/build.rs`, but on x86_64 it does **not** inject an explicit `-T <linker.ld>`; on riscv64 it does (`riscv64-link.ld`).\n', '- Trampoline identity map is done relative to `TRAMPOLINE_BASE` before paging is enabled.\n', '- ACPI parsing path uses `phys_offset` for RSDP/MADT/FADT reads; MADT can carry `lapic_base_override` (type 5), current code does not show LAPIC base being initialized from MADT, only from `base_phys` passed to `lapic::init`.\n', '\n', '### Still blocked\n', '\n', '- Cannot reproduce and capture exact panic address or serial log yet in this environment; recommended next step is QEMU `-serial stdio` or `-serial file:` boot and bisection with early prints.\n', '\n', '  `vga_320x200`) maps physical memory and provides `BootInfo`. The kernel\n', '  C bridge (`libmm.a`) is compiled by `build.rs` for x86_64.\n', '- There is **no explicit x86_64 kernel linker script** in the repo at the\n', '- MADT is already used to read `lapic_base` in `kernel/src/cpu/acpi.rs`; `lapic_base_override` is also parsed but the AP boot path currently passes `trampoline::TRAMPOLINE_BASE >> 12` as the startup vector and does not override LAPIC base elsewhere.\n', '\n', '  moment — `build.rs` adds `-T .../riscv64-link.ld` only for riscv64. On x86_64\n', '  the bootloader’s default layout is used. If that layout does not match kernel\n', '  assumptions about load address / trampoline placement, early boot can fail\n', '  silently.\n', '- **566 Rust warnings** remain (Rust 2024 strictness around `&mut static` /\n', '  shared references to mutable statics in `gfx/console.rs`, `vga_buffer.rs`,\n', '  `fs/mbr.rs`, and several scheduler files). These are not compile errors yet,\n', '  but some are UB-adjacent and can corrupt early-boot state.\n', '- Current `cargo run` uses the GTK display variant, so kernel `println!` /\n', '  panic output is not visible from the host side.\n', '\n', '## Likely root causes (ranked)\n', '1. **SMP AP bring-up timeout / deadlock** — an AP never reaches the trampoline\n', '   or does not complete early init within the per-AP timeout, and the BSP waits\n', '   indefinitely (or until a timeout path that may not panic). This is the most\n', '   probable hang location with 4 vCPUs / 3 APs.\n', '2. **Incorrect / incomplete physical memory mapping for the kernel image or\n', '   trampoline region** — if `BootInfo` mapping is wrong, AP bootstrap code can\n', '   fault silently without a visible triple fault in GTK mode.\n', '3. **Undefined behavior from `&mut static` / shared-ref patterns** in early boot\n', '   (GFX, scheduler, FS) corrupting state that SMP init / tests depend on.\n', '4. **Missing explicit kernel linker script for x86_64** — the bootloader\n', '   default layout may not match kernel expectations for section / trampoline\n', '   placement, causing early code to run at wrong addresses.\n', '\n', '## Częste miejsce (hang point)\n', '- `cpu::init(boot_info)` in `src/cpu/mod.rs` / `src/cpu/smp.rs` — specifically\n', '  the per-AP wait loop after the SMP startup IPI(s). If the AP never signals\n', '  readiness, the BSP waits here and the system hangs.\n', '\n', '## Verification needed\n', '- Run qemu with a **serial console** (`-serial stdio` or `-serial\n', '  file:/tmp/qemu_serial_out.txt`) and `< /dev/null` so host can read kernel\n', '  prints and any panic message.\n', '- Determine whether the log stops at `[mm]`, `[gfx]`, `pci`, `nic`, `bluetooth`,\n', '  `fs`, or at `cpu::init` / AP bring-up.\n', '- Inspect the SMP trampoline path and per-AP early stack / GDT / IDT setup.\n', '- Validate the bootloader-provided memory map and kernel load / trampoline\n', '  addresses against kernel expectations.\n', '- Consider adding an explicit x86_64 linker script if the bootloader layout is\n', '  not what the kernel assumes.\n', '\n', '## Verification status\n', '- Build: clean (exit 0) for `driverspacelib`, `driverspace`, `kernel`.\n', '- Boot: `cargo run` builds the bootimage and launches qemu.\n', '- Runtime: hung; no serial console output captured yet in this session.\n', '\n', '## Notes\n', '- The GTK display session shows only qemu theme warnings; no kernel console\n', '### Architecture-specific physical-memory offset notes\n', '\n', '- On x86_64, `mm::init` receives `boot_phys_offset` from `boot_info.physical_memory_offset` and passes it to paging init.\n', '- Paging code in `kernel/src/mm/arch/x86_64/paging.c` has an early exit when `boot_phys_offset == ARCH_DIRECT_MAP_BASE`; otherwise it treats the offset differently.\n', '- If the bootloader does not map physical memory at the expected offset, the direct map and/or trampoline identity map can be wrong, which can show up as AP startup failures or early triple faults.\n', '- The LAPIC base can come from ACPI MADT; if that value is used directly as a virtual address somewhere without the same offset assumptions as paging init, it can also cause faults.\n', '\n', '### Actionable next steps\n', '\n', '1. Boot the kernel with `-serial stdio` and capture the exact panic / hang point, not just the GTK display.\n', '2. If there is no serial access yet, add an early, unconditional serial write right after paging enable and before MM-heavy init, to check whether paging itself is the fault point.\n', '3. Compare the bootloader-provided `physical_memory_offset` with the value the kernel expects before calling `mm::init` and after paging is on.\n', '4. If APs are not starting, focus on the trampoline region identity mapping and the startup-IPI path, and also confirm that the MADT LAPIC base is being used consistently across init.\n', '\n', '## 2026-09-14 — objdump evidence from debug ELF (`kernel`)\n', '\n', '- Static data (confirmed in objdump relocation output):\n', '  - `boot_phys_offset`: `0x5c6d88`\n', '  - `boot_phys_offset_valid`: `0x5c6d80`\n', '- Disassembly shows explicit checks against `<boot_phys_offset_valid>` and\n', '  `<boot_phys_offset>` in main, paging, serial, and CPU bringup paths.\n', '- Paging init path includes early-exit / map logic matching the C/Rust preamble\n', '  already discussed.\n', '\n', '### Observability findings\n', '- The debug kernel ELF (`target/x86_64-kernel/debug/kernel`) exists.\n', '- Serial console capture remains the biggest gap:\n', '  - `/tmp/kernel_serial_out.txt` is empty.\n', '  - `/tmp/kernel_serial_err.txt` was too short to contain a clear panic line.\n', '\n', '### Interpretation\n', '- Because the binary clearly looks at `boot_phys_offset` / `boot_phys_offset_valid`\n', '  around paging init `77b2…a5`, the most likely first failures are:\n', '  1. Paging init fault when bootloader-provided offset is incompatible with\n', '     `ARCH_DIRECT_MAP_BASE`, OR\n', '  2. SMP bringup fault when AP trampoline/stack/identity mapping is inconsistent\n', '     with LAPIC/ACPI MADT info.\n', '- Correlation is now feasible if serial output is captured and mapped back with\n', '  the debug ELF.\n', '\n', '## Branch state\n', '- `git status`: modified: `panic.md`; otherwise on `stabilizing`.\n', '- HEAD: `183557c` (`stabilizing`).\n', '\n', '  output is visible there.\n', '\n', '\n', '### Current working branch and state\n', '\n', '- Branch: `stabilizing` (tracking remote `origin/stabilizing`).\n', '- Working tree has unstaged changes mainly in scheduler / SMP and some target/flycheck artifacts; kernel source has been modified recently in:\n', '  - `kernel/src/cpu/scheduler/collections/mod.rs`\n', '  - `kernel/src/cpu/scheduler/smp/migration/mod.rs`\n', '- The most relevant panic context is in `panic.md`; the key code references are `kernel/src/main.rs`, `kernel/src/cpu/smp.rs`, `kernel/src/cpu/lapic.rs`, `kernel/src/cpu/acpi.rs`, `kernel/src/mm/mod.rs`, and the x86_64 paging/memory files.\n', '\n', '### Current working branch and state\n', '\n', '- Branch: `stabilizing` (tracking remote `origin/stabilizing`).\n', '- Working tree has unstaged changes mainly in scheduler / SMP and some target/flycheck artifacts; kernel source has been modified recently in:\n', '  - `kernel/src/cpu/scheduler/collections/mod.rs`\n', '  - `kernel/src/cpu/scheduler/smp/migration/mod.rs`\n', '- The most relevant panic context is in `panic.md`; the key code references are `kernel/src/main.rs`, `kernel/src/cpu/smp.rs`, `kernel/src/cpu/lapic.rs`, `kernel/src/cpu/acpi.rs`, `kernel/src/mm/mod.rs`, and the x86_64 paging/memory files.\n', '\n', '## TODO\n', '\n', '## References\n', '## References\n', '\n', '- [ ] Capture reliable serial console output with `-serial stdio`/`-serial file:`.\n', '- [ ] Add an early unconditional serial write after paging enable, before MM/SMP init.\n', '- [ ] Compare bootloader `physical_memory_offset` vs `ARCH_DIRECT_MAP_BASE` and\n', '      LAPIC direct-map expectations.\n', '- [ ] Confirm trampoline identity mapping covers AP trampoline code/stack.\n', '- [ ] If serial log appears, correlate RIP with `kernel` ELF using addr2line/objdump.\n', '- [ ] If offset mismatch is confirmed, decide whether to support dynamic offset or\n', '      force early remap before paging enable.\n', '- [ ] Fix `kernel/src/cpu/scheduler/collections/mod.rs` and\n', '      `kernel/src/cpu/scheduler/smp/migration/mod.rs` (`pub pub mod ...`) so\n', '      `cargo build --release` can produce the release bootimage again.\n', '\n', '\n', '\n', '- `kernel/src/main.rs`\n', '- `kernel/src/cpu/smp.rs`\n', '- `kernel/src/cpu/lapic.rs`\n', '- `kernel/src/cpu/acpi.rs`\n', '- `kernel/src/mm/mod.rs`\n', '- `kernel/src/mm/arch/x86_64/paging.c`\n', '- `kernel/src/mm/arch/x86_64/memory.c`\n', '- `kernel/src/cpu/trampoline.s`\n', '- `kernel/src/cpu/trampoline.rs`\n', '- `panic.md`\n', '\n', 'This report is intended as a continuation note for kernel hang debugging on x86_64 and is not yet a root-cause analysis.\n', '\n', '\n', '- `kernel/src/main.rs`\n', '- `kernel/src/cpu/smp.rs`\n', '- `kernel/src/cpu/lapic.rs`\n', '- `kernel/src/cpu/acpi.rs`\n', '- `kernel/src/mm/mod.rs`\n', '- `kernel/src/mm/arch/x86_64/paging.c`\n', '- `kernel/src/mm/arch/x86_64/memory.c`\n', '- `kernel/src/cpu/trampoline.s`\n', '- `kernel/src/cpu/trampoline.rs`\n', '- `panic.md`\n', '\n', 'This report is intended as a continuation note for kernel hang debugging on x86_64 and is not yet a root-cause analysis.\n', '\n', '\n', '- [ ] Add a serial-handshake early print right after paging enable, before SMP bringup.\n', '- [ ] Add a small test mode to boot with QEMU and a serial file/stdio in CI or locally, so the hang can be correlated to a log line.\n', '- [ ] Compare actual bootloader-provided `physical_memory_offset` with the offset used by paging init and LAPIC direct reads.\n', '- [ ] Confirm trampoline identity map covers at least the trampoline code and stack range used by AP bringup.\n', '\n']
+
+</details>
+
+<details>
+<summary><b>driverspace_workspace/Todo.md</b></summary>
+
+['# TODO.md: Driver Space Migration and Implementation Guide\n', '\n', '## Overview\n', 'This document outlines the pending tasks, architectural constraints, and execution steps for migrating and implementing hardware drivers within the newly structured `driverspace_workspace`. \n', '\n', 'The legacy monolithic implementations (`driverspacelib` and the old `driverspace` daemon) are deprecated. All driver development must now occur in the `drivers/` directory of the new workspace, strictly adhering to the modular architecture.\n', '\n', '## 1. Prerequisites\n', 'Before beginning driver implementation, the foundational libraries located in `lib/` must be fully implemented and stabilized. Drivers cannot be compiled or tested without the following components:\n', '\n', '- [ ] **`lib/kapi-abi`**: Finalize all IPC message structures, opcodes, and error codes. Ensure `cbindgen` is generating accurate C/Odin headers.\n', '- [ ] **`lib/kapi-syscall`**: Implement architecture-specific SVC/syscall wrappers.\n', '- [ ] **`lib/ds-ipc`**: Stabilize the channel, port, and shared memory abstractions.\n', '- [ ] **`lib/ds-mem`**: Finalize the `no_std` allocators (Buddy/Slab) and DMA mapping utilities.\n', '- [ ] **`lib/ds-fw-*`**: Define the core traits for device classes (`BlockDevice`, `AudioDevice`, `DisplayDevice`, `InputDevice`).\n', '\n', '## 2. Driver Implementation Checklist\n', 'The following drivers require migration from the legacy codebase or complete reimplementation using the new framework traits.\n', '\n', '### 2.1. Graphics and Display\n', '- [ ] **`amdgpu_driver`**\n', '  - [ ] Implement MMIO register read/write wrappers.\n', '  - [ ] Implement ring buffer management for command submission.\n', '  - [ ] Implement Display PHY initialization.\n', '  - [ ] Implement the `DisplayDevice` and `GpuDevice` traits from `ds-fw-gpu`.\n', '- [ ] **`intelgpu_driver`**\n', '  - [ ] Implement Graphics Technology (GT) and Display Engine (DE) initialization.\n', '  - [ ] Implement GuC (Graphics Microcontroller) firmware loading.\n', '  - [ ] Implement the `DisplayDevice` trait from `ds-fw-gpu`.\n', '- [ ] **`vgpu` (Virtual GPU)**\n', '  - [ ] Set up the Rust-to-C FFI bridge (`build.rs` and `ffi.rs`).\n', '  - [ ] Implement virtual framebuffer memory management.\n', '  - [ ] Ensure the C implementation strictly uses the `kapi-abi` headers.\n', '\n', '### 2.2. Audio\n', '- [ ] **`audiodriver`**\n', '  - [ ] Implement DMA stream management for audio buffers.\n', '  - [ ] Implement codec communication protocols (I2C / Intel HDA).\n', '  - [ ] Integrate the Odin/C DSP components via the defined FFI boundaries.\n', '  - [ ] Implement the `AudioDevice` trait from `ds-fw-audio`.\n', '\n', '### 2.3. Input and HID\n', '- [ ] **`wacomgraphic_driver`**\n', '  - [ ] Implement Wacom-specific HID report parsing.\n', '  - [ ] Implement raw-to-logical data conversion for pen pressure and tilt (X/Y).\n', '  - [ ] Implement the `InputDevice` trait from `ds-fw-input`.\n', '\n', '### 2.4. Networking and Multimedia\n', '- [ ] **`netcam_driver`**\n', '  - [ ] Implement USB Video Class (UVC) protocol parsing.\n', '  - [ ] Implement isochronous USB transfer handling.\n', '  - [ ] Implement device control interfaces (brightness, contrast, zoom).\n', '\n', '## 3. Strict Architectural Rules for Contributors\n', 'All contributors must adhere to the following rules when writing driver code. Violations will result in rejected pull requests.\n', '\n', '1. **Unidirectional Dependencies**: \n', '   - Drivers (`drivers/`) may **only** depend on libraries in `lib/`. \n', '   - Drivers must **never** depend on the management daemons in `crates/`. Communication with the manager must happen exclusively via IPC (`ds-ipc`).\n', '2. **No Standard Library**: \n', '   - All Rust driver code must be `#![no_std]`. The use of the Rust standard library is strictly prohibited.\n', '3. **Zero Code Duplication**: \n', '   - If a utility, protocol parser, or hardware abstraction is needed by more than one driver, it must be extracted and placed into the appropriate module in `lib/ds-fw-*` or `lib/ds-*`. Do not copy-paste code between drivers.\n', '4. **Strict FFI Boundaries**: \n', '   - If a driver requires C or Odin code, it must be isolated in a dedicated subdirectory (e.g., `c/` or `odin/`). \n', '   - Compilation of foreign code must be handled via `build.rs` using the `cc` crate or equivalent tooling. \n', '   - Rust wrappers for foreign functions must be isolated in an `ffi.rs` file.\n', '5. **Capability and Resource Management**: \n', '   - Drivers must not attempt to access hardware resources (MMIO, IRQs, DMA) directly via hardcoded addresses. All resources must be requested from and granted by the `ds-manager` via the new Kernel API (`kapi-abi`).\n', '\n', '## 4. Execution Steps for a New Driver\n', 'When starting work on a driver, follow this exact sequence:\n', '\n', '1. **Initialize the Crate**: Create the directory under `drivers/<driver_name>/` and generate a new `Cargo.toml` with `#![no_std]` configured.\n', '2. **Update Workspace**: Add the new crate path to the `members` array in the root `driverspace_workspace/Cargo.toml`.\n', "3. **Define Dependencies**: Add only the necessary `lib/` crates to the driver's `Cargo.toml` (e.g., `kapi-abi`, `ds-ipc`, `ds-fw-gpu`).\n", '4. **Implement Entry Point**: Create `main.rs` (or `lib.rs`), initialize the driver runtime, and establish the IPC connection to the `ds-manager`.\n', '5. **Implement the Trait**: Implement the required trait from the corresponding `ds-fw-*` framework.\n', '6. **Hardware Logic**: Implement the actual hardware register manipulation and state machines.\n', '\n', '## 5. Current Status\n', '- [ ] Workspace structure created and validated.\n', '- [ ] Legacy `driverspacelib` code analyzed for extraction.\n', '- [ ] `lib/kapi-abi` definitions finalized.\n', '- [ ] First driver (`amdgpu_driver` or `audiodriver`) migrated to the new workspace.\n', '\n', '*For questions regarding the architecture or the new Kernel API, refer to the main Architecture Documentation or consult the core maintainers.*']
+
+</details>
+
+<details>
+<summary><b>driverspace_workspace/Tree_readme.md</b></summary>
+
+['driverspace_workspace/\n', '├── Cargo.toml                     # Główny workspace manifest\n', '├── rust-toolchain.toml            # Wymuszenie nightly i specyficznych targetów\n', '│\n', '├── lib/                           # 🧰 FUNDAMENT: API, INFRASTRUKTURA I FRAMEWORKI\n', '│   │\n', '│   ├── kapi-abi/                  # Nowe API Jądra: Definicje binarne (Single Source of Truth)\n', '│   │   ├── Cargo.toml\n', '│   │   ├── build.rs               # Generowanie nagłówków C/Odin przez cbindgen\n', '│   │   └── src/\n', '│   │       ├── lib.rs             # Tylko re-eksporty i flagi no_std\n', '│   │       ├── primitives.rs      # Podstawowe typy (Handle, CapId, Status)\n', '│   │       ├── opcodes.rs         # Enumy z numerami wywołań (Syscall/IPC opcodes)\n', '│   │       ├── errors.rs          # Wspólne kody błędów (DsError)\n', '│   │       ├── capabilities.rs    # Struktury uprawnień (Capability tokens)\n', '│   │       ├── wire/              # Serializacja/Deserializacja wiadomości\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── encode.rs      # Zapis do bufora\n', '│   │       │   ├── decode.rs      # Odczyt z bufora\n', '│   │       │   └── endian.rs      # Konwersje kolejności bajtów\n', '│   │       └── payloads/          # Konkretne struktury wiadomości (#[repr(C)])\n', '│   │           ├── mod.rs\n', '│   │           ├── mem.rs         # Żądania mapowania pamięci\n', '│   │           ├── ipc.rs         # Żądania tworzenia kanałów\n', '│   │           ├── dev.rs         # Żądania rejestracji urządzeń\n', '│   │           └── irq.rs         # Żądania obsługi przerwań\n', '│   │\n', '│   ├── kapi-syscall/              # Surowe wywołania systemowe (SVC / INT)\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── arch/              # Implementacje zależne od architektury\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── x86_64.rs      # Makra asm! dla x86_64 (syscall/sysenter)\n', '│   │       │   └── riscv64.rs     # Makra asm! dla RISC-V (ecall)\n', '│   │       └── wrappers.rs        # Bezpieczne (lub unsafe) wrappery nad surowym asm\n', '│   │\n', '│   ├── ds-ipc/                    # Infrastruktura IPC (Komunikacja między procesami)\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── channel.rs         # Abstrakcja kanału (dwukierunkowego)\n', '│   │       ├── port.rs            # Abstrakcja portu (nasłuchiwanie)\n', '│   │       ├── router.rs          # Logika routowania wiadomości\n', '│   │       ├── shared_mem.rs      # Zarządzanie buforami pamięci współdzielonej\n', '│   │       └── sync/              # Primitivy synchronizacji dla IPC\n', '│   │           ├── mod.rs\n', '│   │           ├── spinlock.rs    # Spinlock (no_std)\n', '│   │           └── semaphore.rs   # Semafory dla kolejek wiadomości\n', '│   │\n', '│   ├── ds-mem/                    # Zarządzanie pamięcią w przestrzeni sterownika\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── alloc/             # Własne alokatory (brak std::alloc)\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── buddy.rs       # Alokator Buddy (dla dużych bloków)\n', '│   │       │   ├── slab.rs        # Alokator Slab (dla małych, stałych obiektów)\n', '│   │       │   └── heap.rs        # Globalny heap sterownika\n', '│   │       ├── dma/               # Obsługa DMA (Direct Memory Access)\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── buffer.rs      # Bufory DMA (pamięć fizyczna/ciągła)\n', '│   │       │   └── mapping.rs     # Mapowanie pamięci dla urządzeń\n', '│   │       └── vmm.rs             # Abstrakcje nad Wirtualną Pamięcią (stronicowanie)\n', '│   │\n', '│   ├── ds-log/                    # System logowania\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── levels.rs          # Enumy poziomów (Trace, Info, Error, Panic)\n', '│   │       ├── formatter.rs       # Formatowanie tekstu (bez std::fmt)\n', '│   │       ├── transport.rs       # Wysyłanie logów przez IPC do managera\n', '│   │       └── macros.rs          # Makra: ds_log::info!, ds_log::error!\n', '│   │\n', '│   ├── ds-fw-block/               # Framework dla urządzeń blokowych (Dyski, USB Mass)\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── traits.rs          # Trait BlockDevice (read, write, flush)\n', '│   │       ├── request.rs         # Struktura żądania I/O (LBA, rozmiar, bufor)\n', '│   │       ├── queue.rs           # Kolejka żądań (I/O Scheduler)\n', '│   │       └── partition.rs       # Abstrakcja tablic partycji (MBR/GPT)\n', '│   │\n', '│   ├── ds-fw-audio/               # Framework dla Audio\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── traits.rs          # Trait AudioDevice (play, record)\n', '│   │       ├── stream.rs          # Abstrakcja strumienia audio\n', '│   │       ├── formats.rs         # Formaty próbek (PCM, Float, Sample rates)\n', '│   │       └── ringbuffer.rs      # Lock-free ring buffer dla danych audio\n', '│   │\n', '│   ├── ds-fw-gpu/                 # Framework dla GPU / Display\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── lib.rs\n', '│   │       ├── traits.rs          # Trait DisplayDevice, GpuDevice\n', '│   │       ├── framebuffer.rs     # Abstrakcja bufora ramki (pitch, format)\n', '│   │       ├── modeset.rs         # Ustawianie rozdzielczości i trybu\n', '│   │       ├── edid.rs            # Parser EDID (dane monitora)\n', '│   │       └── cmd_buffer.rs      # Abstrakcja bufora poleceń GPU (Command Submission)\n', '│   │\n', '│   └── ds-fw-input/               # Framework dla HID (Klawiatura, Mysz, Wacom)\n', '│       ├── Cargo.toml\n', '│       └── src/\n', '│           ├── lib.rs\n', '│           ├── traits.rs          # Trait InputDevice (poll_event)\n', '│           ├── events.rs          # Typy zdarzeń (KeyPress, MouseMove, PenPressure)\n', "│           ├── scancodes.rs       # Mapowanie scancode'ów na kody klawiszy\n", '│           └── hid_parser.rs      # Parser raportów HID (USB HID descriptors)\n', '│\n', '├── crates/                        # 🧠 ZARZĄDZANIE: DAEMONY DRIVERSPACE\n', '│   │\n', '│   ├── ds-manager/                # Główny daemon zarządzający sterownikami\n', '│   │   ├── Cargo.toml\n', '│   │   └── src/\n', '│   │       ├── main.rs            # Entry point, inicjalizacja pętli zdarzeń\n', '│   │       ├── lifecycle/         # Zarządzanie cyklem życia sterowników\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── spawn.rs       # Ładowanie i startowanie procesów sterowników\n', '│   │       │   ├── monitor.rs     # Watchdog (restartowanie craszy sterowników)\n', '│   │       │   └── shutdown.rs    # Bezpieczne zamykanie\n', '│   │       ├── resources/         # Przydzielanie zasobów sprzętowych\n', '│   │       │   ├── mod.rs\n', '│   │       │   ├── irq.rs         # Routing i przydzielanie IRQ\n', '│   │       │   ├── mmio.rs        # Mapowanie pamięci urządzeń\n', '│   │       │   └── dma.rs         # Przydzielanie buforów DMA\n', '│   │       ├── ipc_handler.rs     # Nasłuchiwanie żądań od jądra i sterowników\n', '│   │       └── config.rs          # Wczytywanie konfiguracji (np. z TOML/JSON)\n', '│   │\n', '│   └── ds-registry/               # Rejestr urządzeń i sterowników\n', '│       ├── Cargo.toml\n', '│       └── src/\n', '│           ├── lib.rs\n', '│           ├── database.rs        # Przechowywanie mapy DeviceID -> Driver\n', '│           ├── matching.rs        # Logika dopasowywania (PCI ID, USB ID, ACPI)\n', '│           └── state.rs           # Śledzenie stanu urządzeń (Podłączone, Usunięte, Błąd)\n', '│\n', '└── drivers/                       # 🚗 STEROWNIKI SPRZĘTOWE\n', '    │\n', '    ├── amdgpu_driver/             # Sterownik AMD GPU\n', '    │   ├── Cargo.toml\n', '    │   ├── build.rs               # (Opcjonalnie) kompilacja C jeśli używasz blobów\n', '    │   └── src/\n', '    │       ├── main.rs            # Entry point, inicjalizacja ds-runtime\n', '    │       ├── probe.rs           # Detekcja karty, odczyt BAR-ów\n', '    │       ├── mmio.rs            # Wrappery do odczytu/zapisu rejestrów MMIO\n', '    │       ├── irq.rs             # Obsługa przerwań GPU\n', '    │       ├── registers/         # Definicje rejestrów (atomowo!)\n', '    │       │   ├── mod.rs\n', '    │       │   ├── gc.rs          # Graphics Controller\n', '    │       │   ├── sdma.rs        # System DMA\n', '    │       │   └── nbio.rs        # Northbridge IO\n', '    │       ├── ring_buffer.rs     # Implementacja pierścieni poleceń (Ring Buffers)\n', '    │       └── display/           # Podmoduł wyświetlania\n', '    │           ├── mod.rs\n', '    │           └── phy.rs         # Inicjalizacja PHY (Physical layer)\n', '    │\n', '    ├── audiodriver/               # Sterownik Audio (Hybryda Rust/C/Okładka na Odina)\n', '    │   ├── Cargo.toml\n', '    │   ├── build.rs               # Kompilacja kodu C i linkowanie z Odinem\n', '    │   ├── c/                     # Kod C (jeśli potrzebny do specyficznych DSP)\n', '    │   │   ├── dsp.c\n', '    │   │   └── dsp.h\n', '    │   └── src/\n', '    │       ├── main.rs\n', '    │       ├── codec.rs           # Komunikacja z kodekiem audio (I2C/HDA)\n', '    │       ├── dma_stream.rs      # Zarządzanie strumieniami DMA dla audio\n', '    │       └── ffi.rs             # Funkcje `extern "C"` wywoływane przez C/Okładki\n', '    │\n', '    ├── intelgpu_driver/           # Sterownik Intel GPU (i915/xe)\n', '    │   ├── Cargo.toml\n', '    │   └── src/\n', '    │       ├── main.rs\n', '    │       ├── probe.rs\n', '    │       ├── gt.rs              # Graphics Technology (rdzeń GPU)\n', '    │       ├── display.rs         # Display Engine (DE)\n', '    │       └── guc.rs             # GuC (Graphics Microcontroller) firmware loading\n', '    │\n', '    ├── netcam_driver/             # Sterownik kamer sieciowych (UVC/USB)\n', '    │   ├── Cargo.toml\n', '    │   └── src/\n', '    │       ├── main.rs\n', '    │       ├── uvc.rs             # USB Video Class protocol parser\n', '    │       ├── isoc.rs            # Obsługa transferów izochronicznych USB\n', '    │       └── controls.rs        # Panel sterowania (jasność, kontrast, zoom)\n', '    │\n', '    ├── vgpu/                      # Wirtualne GPU (Głównie C, z Rust FFI)\n', '    │   ├── Cargo.toml\n', '    │   ├── build.rs               # Kompilacja vgpu_driver.c\n', '    │   ├── c/\n', '    │   │   ├── vgpu_driver.c      # Główna logika w C\n', '    │   │   ├── vgpu.h\n', '    │   │   └── vgpu_mmio.c        # Operacje na pamięci w C\n', '    │   └── src/\n', '    │       ├── lib.rs             # Rust wrapper, eksportujący ABI dla ds-manager\n', '    │       └── ffi.rs             # Definicje `extern "C"` dla funkcji z C\n', '    │\n', '    └── wacomgraphic_driver/       # Tablet graficzny Wacom (HID)\n', '        ├── Cargo.toml\n', '        └── src/\n', '            ├── main.rs\n', '            ├── hid_report.rs      # Parsowanie specyficznych raportów Wacom\n', '            ├── pressure.rs        # Konwersja surowych danych na nacisk\n', '            └── tilt.rs            # Obsługa nachylenia rysika (Tilt X/Y)']
+
+</details>
+
+<details>
+<summary><b>driverspace_workspace/Workspace.md</b></summary>
+
+['Oto profesjonalna dokumentacja architektury, przygotowana w języku angielskim, zgodnie z Twoimi wytycznymi.\n', '\n', '***\n', '\n', '# TrangorgeOS Driver Space Architecture and Workspace Documentation\n', '\n', '## 1. Executive Summary\n', 'This document outlines the architectural redesign of the Driver Space subsystem within TrangorgeOS. The objective is to transition from a monolithic implementation (`driverspacelib` and `driverspace`) to a highly modular, strictly layered workspace. This restructuring enforces clear boundaries between the kernel interface, driver management daemons, and individual hardware drivers, ensuring maintainability, preventing code duplication, and establishing a robust foundation for the new Kernel API.\n', '\n', '## 2. Workspace Topology\n', 'The `driverspace_workspace` is divided into three primary pillars. This strict separation of concerns dictates the dependency graph and ensures that hardware-specific logic remains isolated from system management and core abstractions.\n', '\n', '```text\n', 'driverspace_workspace/\n', '├── Cargo.toml                 # Workspace root configuration\n', '├── lib/                       # Core libraries, frameworks, and the new Kernel API\n', '├── crates/                    # Driver space management daemons and services\n', '└── drivers/                   # Individual hardware driver implementations\n', '```\n', '\n', '## 3. Component Breakdown\n', '\n', '### 3.1. `lib/` (Core Libraries and Kernel API)\n', 'The `lib/` directory serves as the foundational layer of the driver space. It contains the new Kernel API, infrastructure utilities, and device-class frameworks. **No hardware-specific logic resides here.**\n', '\n', '*   **Kernel API (`kapi-*`)**\n', '    *   `kapi-abi`: The single source of truth for all data structures, IPC message formats, opcodes, and error codes. All structures are strictly `#[repr(C)]` to ensure binary compatibility across different languages (Rust, C, Odin).\n', '    *   `kapi-syscall`: Low-level, architecture-specific wrappers for kernel transitions (e.g., SVC calls, interrupt handling).\n', '*   **Infrastructure (`ds-*`)**\n', '    *   `ds-ipc`: Inter-process communication primitives, channel management, and message routing logic.\n', '    *   `ds-mem`: Memory management utilities, including custom allocators for `no_std` environments, DMA mapping, and shared memory handling.\n', '    *   `ds-log`: Standardized logging infrastructure that routes driver logs to the central manager or kernel console.\n', '*   **Device Frameworks (`ds-fw-*`)**\n', '    *   `ds-fw-block`, `ds-fw-audio`, `ds-fw-gpu`, `ds-fw-input`: High-level abstractions for specific device classes. These frameworks provide traits (e.g., `BlockDevice`) and handle protocol boilerplate, allowing driver authors to focus solely on hardware register manipulation and state machines.\n', '\n', '### 3.2. `crates/` (Driver Space Management)\n', 'The `crates/` directory contains the privileged user-space (or kernel-space) daemons responsible for orchestrating the driver ecosystem. These components manage the lifecycle of drivers but do not interact directly with hardware.\n', '\n', '*   `ds-manager`: The central daemon responsible for device enumeration, resource allocation (IRQs, MMIO regions, memory pages), and driver instantiation. It listens for hardware events from the kernel and dispatches them to the appropriate drivers.\n', '*   `ds-registry`: A database service that maintains the mapping of hardware device identifiers (e.g., PCI Vendor/Device IDs) to their corresponding driver modules.\n', '\n', '### 3.3. `drivers/` (Hardware Drivers)\n', 'The `drivers/` directory contains the actual implementations for specific hardware peripherals (e.g., `amdgpu_driver`, `audiodriver`, `wacomgraphic_driver`). \n', '\n', '*   Each driver is an independent crate (or an external project for C/Odin implementations).\n', '*   Drivers implement the traits defined in the `ds-fw-*` frameworks.\n', '*   Drivers communicate with the `ds-manager` and the kernel exclusively through the APIs provided in `lib/`.\n', '\n', '## 4. The New Kernel API (`kapi`)\n', "The legacy C headers (`libs/*.h`) and the old `abi.rs` are deprecated. The new `kapi` (Kernel API) is designed specifically for TrangorgeOS's architecture. \n", '\n', 'Key characteristics of the new API:\n', '1.  **Explicit Message Passing:** All communication between the kernel, the manager, and the drivers is handled via strictly typed IPC messages defined in `kapi-abi`.\n', '2.  **Capability-Based Security:** Resource sharing (like memory or IRQs) is handled through explicit capability transfers, ensuring drivers cannot access memory or hardware they are not authorized to use.\n', '3.  **Language Agnostic:** The ABI is designed to be easily consumable by Rust, C, and Odin, facilitating a multi-language driver ecosystem.\n', '\n', '## 5. Architectural Rules and Dependency Graph\n', 'To maintain the integrity of the workspace, the following strict rules apply:\n', '\n', '1.  **Unidirectional Dependencies:** \n', '    *   `drivers/` may only depend on `lib/`.\n', '    *   `crates/` may only depend on `lib/`.\n', "    *   **Crucial Rule:** `drivers/` must **never** depend on `crates/`. Drivers must not have compile-time knowledge of the manager's internal implementation.\n", '2.  **No Code Duplication:** If a utility, protocol parser, or hardware abstraction is needed by more than one driver, it must be extracted and placed into the appropriate module in `lib/` (either in `ds-*` infrastructure or `ds-fw-*` frameworks).\n', '3.  **Strict `no_std` Compliance:** All crates within `lib/` and `crates/` must be `#![no_std]`. Standard library features are prohibited to ensure compatibility with the bare-metal and constrained environments of the OS.\n', '\n', '## 6. Cross-Language Interoperability (FFI)\n', 'TrangorgeOS utilizes multiple languages (Rust, C, Odin, Nim). The `lib/kapi-abi` crate acts as the central boundary. \n', '*   Rust structures must use `#[repr(C)]`.\n', '*   A build script (`build.rs`) utilizing `cbindgen` should be implemented in `kapi-abi` to automatically generate the corresponding C and Odin headers. This ensures that any modification to the Rust ABI is instantly reflected in the headers used by C and Odin drivers, preventing binary incompatibilities.\n', '\n', '## 7. Summary\n', 'This modular workspace architecture transforms the TrangorgeOS driver space from a tightly coupled monolith into a scalable, secure, and maintainable subsystem. By enforcing strict dependency rules, centralizing the ABI in `lib/kapi-abi`, and separating management logic (`crates/`) from hardware logic (`drivers/`), the system is now prepared for robust multi-language driver development and secure resource isolation.']
+
+</details>
+
+<details>
+<summary><b>driverspace_workspace/formal/README.md</b></summary>
+
+[]
+
+</details>
+
+<details>
+<summary><b>kernel_Workspace/README.md</b></summary>
+
+['       ┌──────────────┐\n', '       │  kernel-bin  │  (wykonywalna binarka / punkt startowy)\n', '       └──────┬───────┘\n', '              │\n', '      ┌───────┴──────────────┐\n', '      ▼                      ▼\n', '┌──────────┐          ┌──────────────┐\n', '│  kernel  │ (lib)    │ core/* (lib) │ (kstd_core, gluecore, itp.)\n', '└────┬─────┘          └──────┬───────┘\n', '     │                       │\n', '     └───────────┬───────────┘\n', '                 ▼\n', '       ┌──────────────────┐\n', '       │ base/* / ABI libs│\n', '       └──────────────────┘']
+
+</details>
+
+<details>
+<summary><b>kernel_Workspace/core/core.md</b></summary>
+
+[]
+
+</details>
+
+<details>
+<summary><b>kernel_Workspace/kernel/README.md</b></summary>
+
+['...']
+
+</details>
+
+<details>
+<summary><b>kernel_Workspace/kernel/src/mm/MM_PLAN_ULEPSZENIA.md</b></summary>
+
+['# Plan ulepszenia podsystemu MM w TrangorgeOS\n', '\n', '**Repozytorium:** [CTRL-F-0rg3/TrangorgeOS](https://github.com/CTRL-F-0rg3/TrangorgeOS)  \n', '**Analizowana gałąź:** `stabilizing`  \n', '**Analizowany commit:** `7a0d836f2180874aac3e8c92493c791aec89a8b3`  \n', '**Autor analizy:** ctrl \n', '**Data analizy:** 20 sierpnia 2026 r.\n', ' \n', ' \n', ' masz kropke gdzie ostatnio dodałem\n', '\n', '\n', '## 1. Zakres i podsumowanie\n', '\n', 'Przeanalizowany został cały katalog `kernel/src/mm`, w tym: inicjalizacja pamięci architektury, bitmapowy PMM, allocator ramek, mapowanie wirtualne, paging, TLB, sterta buddy/slab, API `kmalloc`, debug allocator, DMA, pamięć ciągła, cache, ochrona oraz przestrzenie adresowe procesów.\n', '\n', 'Architektura jest sensownie rozdzielona na warstwy. Obecny przepływ startowy (`arch_memory_init` → paging → PMM → VMM → heap → cache → paging subsystem → isolation → address spaces) daje dobrą bazę do dalszego rozwoju. Największym problemem nie jest brak komponentów, lecz to, że część API jest jeszcze prototypowa: ścieżka slab jest wyłączona, blokady nie zapewniają bezpieczeństwa SMP, operacje zakresowe nie wszędzie sprawdzają overflow, a obsługa VMA/mmap nie ma jeszcze pełnej semantyki systemowej.\n', '\n', '> **Najważniejsza rekomendacja:** przed dodawaniem nowych funkcji należy ustabilizować kontrakty allocatorów, walidację zakresów i synchronizację. Bez tego rozwój procesów, sterowników i DMA będzie zwiększał ryzyko cichych uszkodzeń pamięci.\n', '\n', '## 2. Ocena stanu obecnego\n', '\n', '| Obszar | Stan | Ocena |\n', '|---|---|---|\n', '| Rozdzielenie PMM/VMM/heap/process | Istnieje i jest czytelne | Dobra baza architektoniczna |\n', '| Bitmapa ramek | Obsługuje pojedyncze i ciągłe zakresy | Wymaga testów granicznych i lepszej wydajności |\n', '| Buddy allocator | Działa jako główna ścieżka heap | Brak synchronizacji SMP i dokładnego rozmiaru żądania |\n', '| Slab allocator | Zaimplementowany, ale `HEAP_USE_SLAB` wynosi `0` | Niewykorzystana optymalizacja; ma ryzyko double-free |\n', '| API alokacji | `kmalloc`, `kzalloc`, `kcalloc`, `krealloc`, strony | Kontrakty `aligned/pages` są niepełne |\n', '| Paging/VMM | Są mapowanie, translate, protect i address spaces | Brakuje pełnej transakcyjności i walidacji overflow |\n', '| DMA/contiguous | Istnieją osobne moduły | Wymagają bezpiecznego liczenia rozmiarów i modelu cache |\n', '| Izolacja | SMEP/SMAP/NX i audyt PML4 | Włączenie mechanizmów nie jest raportowane jako błąd krytyczny |\n', '| Testy | Jest `kernel/src/testing.rs` i kilka self-testów | Brak automatycznej, szerokiej macierzy testów MM |\n', '| Build/CI | W środowisku analizy `cargo` nie było dostępne | Nie udało się potwierdzić kompilacji; potrzebny CI z cross-toolchainem |\n', '\n', '## 3. Problemy wymagające naprawy\n', '\n', '### P0 — bezpieczeństwo i poprawność krytyczna\n', '\n', '#### P0.1. Blokady wyłączające przerwania nie są blokadami SMP\n', '\n', 'PMM, slab i przestrzenie adresowe używają wzorca `pushfq; cli` oraz lokalnego licznika zagnieżdżenia. Wyłączenie przerwań chroni stan tylko przed przerwaniem na bieżącym CPU; nie chroni przed drugim rdzeniem. Przy konfiguracji wielordzeniowej (`-smp 4` w konfiguracji uruchomieniowej) dwa CPU mogą jednocześnie zmienić bitmapę, listy wolnych bloków lub listę VMA.\n', '\n', '**Pliki:** `kernel/src/mm/alloc/physical/pmm.c`, `kernel/src/mm/alloc/heap/slab.c`, `kernel/src/mm/process/address_space.c`.\n', '\n', '**Zadanie:** zastąpić blokady per-CPU rzeczywistymi spinlockami ticket/MCS albo istniejącym prymitywem SMP z projektu. Zachować wariant `irqsave`, ale używać go dopiero razem ze spinlockiem. Udokumentować kolejność blokad, aby uniknąć deadlocków PMM → mapping → heap.\n', '\n', '**Kryterium akceptacji:** test wielordzeniowy wykonuje równolegle co najmniej 100 000 alokacji i zwolnień z wielu CPU; bitmapa, liczniki i listy wolnych bloków pozostają spójne.\n', '\n', '#### P0.2. Double-free w slabie może uszkodzić listę wolnych obiektów\n', '\n', '`slab_free()` sprawdza zakres i wyrównanie wskaźnika, ale nie przechowuje informacji, czy konkretny obiekt jest już wolny. Dwukrotne zwolnienie tego samego adresu ponownie wpisuje go do free-listy i może zwiększyć `free_count` ponad `objects_per_slab`. Należy dodać bitmapę zajętości per slab albo bezpieczny stan obiektu w trybie debug.\n', '\n', '**Plik:** `kernel/src/mm/alloc/heap/slab.c`, szczególnie ścieżka `slab_free()`.\n', '\n', '**Kryterium akceptacji:** drugie `slab_free(ptr)` nie modyfikuje allocatorów i generuje błąd diagnostyczny; test obejmuje także zwolnienie wskaźnika z wnętrza obiektu.\n', '\n', '#### P0.3. Brak walidacji overflow w API przestrzeni adresowych\n', '\n', 'W wielu miejscach granice są liczone jako `addr + len`, a następnie wyrównywane, np. w `aspace_map_at`, `aspace_unmap`, `aspace_protect` i `aspace_reserve_at`. Overflow może zmienić zakres na mały lub niepoprawny i ominąć oczekiwaną walidację użytkownika.\n', '\n', '**Plik:** `kernel/src/mm/process/address_space.c`, okolice obliczeń `a`/`b`.\n', '\n', '**Zadanie:** wprowadzić wspólną funkcję `range_from_addr_len(addr, len, alignment, out_start, out_end)`, która:\n', '\n', '1. odrzuca `len == 0`;\n', '2. sprawdza `addr + len` bez overflow;\n', '3. bezpiecznie wyrównuje początek w dół i koniec w górę;\n', '4. sprawdza kanoniczność oraz pełne granice user space;\n', '5. zwraca zakres półotwarty `[start, end)`.\n', '\n', '**Kryterium akceptacji:** testy dla `UINT64_MAX`, adresów niekanonicznych, przejścia przez granicę user/kernel i długości powodujących overflow kończą się odmową operacji.\n', '\n', '#### P0.4. Nieatomowy rollback w `aspace_brk()`\n', '\n', '`aspace_brk()` najpierw tworzy lub rozszerza VMA, a dopiero potem wywołuje `map_anon_pages()`. Jeżeli alokacja ramek albo mapowanie zakończy się częściowym błędem, funkcja zwraca stare `brk`, ale powiększona VMA pozostaje. Stan metadanych przestaje wtedy odpowiadać tablicom stron.\n', '\n', '**Plik:** `kernel/src/mm/process/address_space.c`, ścieżka powiększania sterty.\n', '\n', '**Zadanie:** zastosować transakcję: najpierw przygotować zakres i zmapować strony, a dopiero po pełnym sukcesie zatwierdzić zmianę VMA i `pa->brk`; w razie błędu zwolnić wszystkie częściowo zmapowane strony i nie zmieniać metadanych.\n', '\n', '**Kryterium akceptacji:** wymuszony brak ramek w połowie operacji pozostawia identyczne VMA, `brk` i liczbę zajętych ramek jak przed wywołaniem.\n', '\n', '### P1 — błędy kontraktów allocatorów\n', '\n', '#### P1.1. `kmalloc_aligned()` nie gwarantuje dowolnego wyrównania\n', '\n', '`buddy_alloc_aligned()` zaokrągla potrzebny rozmiar do potęgi dwójki i zakłada, że baza buddy jest odpowiednio wyrównana. To działa dla wyrównań będących potęgą dwójki, ale nie dla dowolnego wyrównania przekazanego przez użytkownika. Brakuje też odrzucenia niepoprawnego `align` i ochrony przed overflow podczas `p <<= 1`.\n', '\n', '**Pliki:** `kernel/src/mm/alloc/api/alloc.c`, `kernel/src/mm/alloc/heap/buddy.c`.\n', '\n', '**Zadanie:** jasno zdefiniować API: albo przyjmować wyłącznie potęgi dwójki i to walidować, albo dodać over-allocation z nagłówkiem zawierającym oryginalny wskaźnik i rozmiar. Dla każdego wariantu dodać `kmalloc_usable_size` i testy wyrównań 1, 8, 4096, 64 KiB oraz wartości niebędących potęgami dwójki.\n', '\n', '#### P1.2. `kfree_pages()` ignoruje parametr `pages`\n', '\n', '`kfree_pages(void *ptr, size_t pages)` ignoruje `pages` i deleguje do `heap_free()`. To tworzy mylący kontrakt: funkcja wygląda jak para dla alokacji stron, ale faktycznie zwalnia blok buddy na podstawie metadanych. Należy albo usunąć parametr, albo wdrożyć osobny allocator stron z dokładnym śledzeniem długości i ochroną przed niezgodną wartością.\n', '\n', '**Plik:** `kernel/src/mm/alloc/api/alloc.c`.\n', '\n', '#### P1.3. `krealloc()` nie przechowuje rzeczywistego rozmiaru żądania\n', '\n', 'Poza debug mode `heap_usable_size()` zwraca rozmiar zaokrąglonego bloku buddy, a nie liczbę bajtów żądanych przez użytkownika. `krealloc()` kopiuje cały rozmiar usable block. Jest to zwykle bezpieczne fizycznie, ale może kopiować nieinicjalizowane dane, a późniejsze allocatory nie mają informacji o rozmiarze logicznym. Warto dodać nagłówek alokacji albo zunifikować metadane debug/release.\n', '\n', '#### P1.4. Overflow w alokacji contiguous i DMA\n', '\n', '`contig_bytes_to_frames()` i `dma_bytes_to_frames()` wykonują `bytes + ARCH_PAGE_SIZE - 1` bez jawnej ochrony overflow. Późniejsze `frames * ARCH_PAGE_SIZE` również powinno być sprawdzane przed konwersją do długości mapowania.\n', '\n', '**Pliki:** `kernel/src/mm/alloc/special/contiguous.c`, `kernel/src/mm/alloc/special/dma.c`.\n', '\n', '**Kryterium akceptacji:** największe wartości `size_t`, `UINT64_MAX`, długości niebędące wielokrotnością strony i wyrównania większe od pamięci fizycznej są odrzucane bez zmiany stanu PMM.\n', '\n', '### P1 — paging, TLB i mapowania\n', '\n', 'Należy przeprowadzić audyt wszystkich ścieżek `map`, `unmap` i `protect` pod kątem transakcyjności. Jeżeli mapowanie wielu stron nie powiedzie się po kilku stronach, funkcja powinna odmapować wykonany prefiks i zwolnić jego ramki. Po zmianie uprawnień lub usunięciu mapowania trzeba jawnie zagwarantować poprawne unieważnienie TLB lokalnie oraz na innych CPU, gdy dana przestrzeń adresowa jest aktywna na wielu rdzeniach.\n', '\n', '**Zadania:**\n', '\n', '| Zadanie | Oczekiwany rezultat |\n', '|---|---|\n', '| Ujednolicić `map_range`/`unmap_range` | Jedna polityka wyrównania, overflow i rollbacku |\n', '| Dodać statusy błędów | Rozróżnienie `invalid`, `already mapped`, `no memory`, `permission` |\n', '| Dokończyć batch TLB | Jedno `invlpg` na adres lub pełny flush przy przepełnieniu batcha |\n', '| Dodać shootdown SMP | IPI lub bezpieczny mechanizm synchronizacji aktywnych CR3 |\n', '| Walidować PTE flags | Zakaz USER w mapowaniach kernela i spójne NX/WRITE/DEVICE |\n', '| Testować aliasy | Mapowanie tej samej ramki pod różne VA z kontrolą uprawnień |\n', '\n', '### P1 — semantyka `mmap`/VMA\n', '\n', 'Obecne `mmap()` rozpoznaje głównie `MAP_FIXED` i kieruje pozostałe przypadki do anonimowego mapowania. `MAP_SHARED`, `MAP_PRIVATE`, `MAP_ANONYMOUS` i pozostałe flagi nie są jeszcze pełną semantyką systemową. `mprotect()` wyszukuje VMA przed wejściem w blokadę, co może być wyścigiem na SMP. Dodatkowo ochrona jest ustawiana dla całego VMA, bez rozbijania VMA na fragmenty, gdy zakres dotyczy tylko części.\n', '\n', '**Zadania:**\n', '\n', '1. Walidować dozwolone kombinacje flag i odrzucać nieobsługiwane zamiast je ignorować.\n', '2. Rozdzielić VMA na prefix/zakres/suffix przy częściowym `mprotect`.\n', '3. Wykonywać wyszukanie VMA pod tą samą blokadą co modyfikację.\n', '4. Ustalić, czy mapowanie anonimowe ma być eager czy demand-paged.\n', '5. Dodać guard pages dla stosu oraz limit wzrostu stosu.\n', '6. Wprowadzić copy-on-write dla `MAP_PRIVATE`, gdy pojawi się fork/procesy potomne.\n', '\n', '## 4. Ulepszenia architektury i wydajności\n', '\n', '\n', '# .\n', '\n', '\n', '### 4.1. PMM strefowy zamiast jednej bitmapy dla całego maksimum fizycznego\n', '\n', 'Obecna bitmapa indeksuje PFN-y aż do najwyższego użytecznego adresu, także przez dziury w fizycznej przestrzeni adresowej. Jest to proste, ale przy dużych i rozproszonych mapach pamięci zużywa niepotrzebne metadane. Kolejny etap powinien wprowadzić strefy `DMA32`, `NORMAL` i opcjonalnie `HIGHMEM`, z osobnymi statystykami oraz polityką preferencji.\n', '\n', '### 4.2. Per-CPU cache dla małych alokacji\n', '\n', 'Po ustabilizowaniu slaba warto dodać per-CPU magazine/cache dla najczęstszych klas 16–256 B. Ograniczy to globalną konkurencję i liczbę wejść do PMM. Uzupełnieniem powinny być batchowe pobieranie i oddawanie obiektów.\n', '\n', '### 4.3. Lepszy allocator stron dla dużych bloków\n', '\n', 'Buddy jest dobrym źródłem dużych bloków, ale obecna sterta mapuje i odmapowuje strony przy każdej operacji. Warto dodać cache pustych stron, opcjonalne lazy unmap oraz osobny `vmap` dla dużych, rzadko używanych zakresów. Każda optymalizacja musi jednak zachować jasny ownership ramki.\n', '\n', '### 4.4. Cache i DMA\n', '\n', '`dma_alloc_coherent()` potrzebuje jawnego modelu spójności zależnego od architektury. Należy rozróżnić pamięć coherent od streaming DMA oraz zdefiniować operacje `dma_sync_for_device()` i `dma_sync_for_cpu()`. `clflush` powinien być używany tylko wtedy, gdy capabilities CPU i typ mapowania tego wymagają; zakresy muszą być sprawdzane pod kątem overflow.\n', '\n', '### 4.5. Bezpieczne flagi ochrony\n', '\n', 'Należy ustalić jedną reprezentację ochrony. Obecnie występują osobne zestawy `PROT_*` i `virt::*` flags. Warto wprowadzić typ/enum warstwy C oraz cienkie, sprawdzane konwersje w Rust, aby nie dało się pomylić flag użytkownika z flagami PTE.\n', '\n', '## 5. Diagnostyka i obserwowalność\n', '\n', 'Debug allocator ma dobre podstawy: magic, poison, canary, leak table i statystyki. Ograniczeniem jest stałe `LEAK_MAX 2048`, brak synchronizacji oraz brak identyfikacji CPU/obiektu/stack trace. W trybie debug należy:\n', '\n', '| Ulepszenie | Cel |\n', '|---|---|\n', '| Rozszerzyć leak table lub użyć hash table | Brak cichego nieśledzenia alokacji po przekroczeniu limitu |\n', '| Dodać `alloc_id` | Jednoznaczne śledzenie życia obiektu |\n', '| Dodać guard pages dla dużych alokacji | Wykrywanie overrun/underrun poza canary |\n', '| Raportować ownera cache i CPU | Debugowanie SMP |\n', '| Dodać histogram rozmiarów | Strojenie klas slab/buddy |\n', '| Wykrywać niezgodną parę allocator/free | Natychmiastowe raportowanie błędów ownership |\n', '| Eksportować snapshot MM | Testy regresyjne: free/used, VMA, mapowania, TLB |\n', '\n', '## 6. Plan implementacji etapami\n', '\n', '| Etap | Zakres | Priorytet | Definicja ukończenia |\n', '|---|---|---:|---|\n', '| A | Wspólne helpery overflow/range/alignment | P0 | Wszystkie publiczne API zakresowe używają helperów |\n', '| B | Spinlocki SMP + kolejność blokad | P0 | Test równoległy nie wykazuje race/double allocation |\n', '| C | Transakcyjny map/unmap/`aspace_brk` | P0 | Błąd w połowie operacji nie zmienia stanu |\n', '| D | Bezpieczny slab z bitmapą obiektów | P0 | Double-free i invalid-free są wykrywane |\n', '| E | Kontrakty aligned/pages/realloc | P1 | API ma dokumentowane i testowane gwarancje |\n', '| F | Overflow DMA/contiguous + strefy PMM | P1 | Testy graniczne przechodzą, DMA32 działa deterministycznie |\n', '| G | Pełniejsze VMA/mmap/mprotect | P1 | Częściowe zakresy są poprawnie dzielone |\n', '| H | TLB shootdown SMP i batchowanie | P1 | Zmiany mapowania są widoczne na wszystkich CPU |\n', '| I | Per-CPU cache i optymalizacja buddy/slab | P2 | Benchmark pokazuje mniejszą kontencję bez regresji |\n', '| J | Demand paging/COW/huge pages | P2 | Funkcje mają testy integracyjne z procesami |\n', '\n', '## 7. Minimalny zestaw testów regresyjnych\n', '\n', 'Należy dodać testy jednostkowe możliwe do uruchamiania poza jądrem dla bitmapy, regionów, alignmentu i obliczeń rozmiaru. Testy integracyjne powinny działać w QEMU z co najmniej czterema vCPU.\n', '\n', '| Grupa | Przypadki |\n', '|---|---|\n', '| Bitmapa | pusta, pełna, jeden bit, granice 63/64/65, zakres przez granicę słowa, double-free |\n', '| PMM | pojedyncze ramki, contiguous, align 0/1/nie-potęga, max address, brak pamięci |\n', '| Buddy | każdy order, koalescencja, fragmentacja, invalid pointer, double-free, overflow align |\n', '| Slab | każda klasa, pełny/pusty slab, double-free, invalid pointer, równoległość |\n', '| API heap | `calloc` overflow, `realloc(NULL)`, `realloc(ptr,0)`, aligned, pages |\n', '| Mapowanie | częściowy błąd, rollback, overlap, unmap fragmentu, protect fragmentu |\n', '| VMA | zakresy graniczne, `brk` rollback, guard page, sąsiednie VMA |\n', '| DMA | 32-bit zone, długość overflow, unmap rollback, sync CPU/device |\n', '| Ochrona | NX, SMEP, SMAP, USER/KERNEL PTE, zakaz W^X |\n', '\n', '## 8. Dokumentacja i CI\n', '\n', 'Dokumentacja architektury powinna używać gałęzi `stabilizing`, a nie nieaktualnych linków do `unstable`. Warto dodać do każdego modułu krótką sekcję ownership: kto alokuje ramkę, kto ją mapuje, kto ją zwalnia i kiedy wolno wykonać flush TLB.\n', '\n', 'Repozytorium powinno mieć CI, który buduje kernel w tym samym cross-toolchainie co Docker/QEMU, uruchamia testy hostowe bitmapy/regionów oraz wykonuje testy bootowalne w QEMU. Sama kontrola `cargo check` nie wystarczy dla kodu `no_std`, inline assembly i linkowania obrazu systemowego.\n', '\n', '## 9. Kolejność rekomendowana dla autora\n', '\n', 'Najpierw należy wdrożyć helpery zakresów i overflow, następnie spinlocki SMP. Dopiero potem warto naprawić transakcje mapowania i `aspace_brk`, ponieważ poprawna synchronizacja jest warunkiem wiarygodnych testów. Trzecim krokiem powinien być bezpieczny slab i ujednolicenie kontraktów alokacji. Po tej bazie można rozwijać pełne VMA/mmap, DMA, demand paging, COW i optymalizacje per-CPU.\n', '\n', '> **Nie rekomenduję jeszcze włączania `HEAP_USE_SLAB` w produkcyjnej ścieżce.** Najpierw trzeba dodać wykrywanie double-free, testy SMP oraz potwierdzić poprawność mapowania i zwalniania pustych slabów.\n', '\n', '## 10. Odwołania do kodu\n', '\n', 'Najważniejsze ustalenia wynikają bezpośrednio z analizowanej gałęzi:\n', '\n', '- [API alokacji](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/api/alloc.c) — `krealloc`, `kalloc_pages`, `kfree_pages`, `kmalloc_aligned`.\n', '- [Buddy allocator](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/heap/buddy.c) — orders, listy wolnych bloków, mapowanie i koalescencja.\n', '- [Slab allocator](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/heap/slab.c) — free-list obiektów i zwalnianie pustych slabów.\n', '- [PMM](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/physical/pmm.c) oraz [frame allocator](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/physical/frame.c) — bitmapa ramek i synchronizacja.\n', '- [Przestrzenie adresowe](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/process/address_space.c) — VMA, `mmap`, `unmap`, `protect`, `brk`.\n', '- [DMA](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/special/dma.c) i [pamięć ciągła](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/special/contiguous.c) — specjalne ścieżki alokacji.\n', '- [Dokumentacja architektury](https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/TrangorgeOS%20%E2%80%94%20dokumentacja%20architektury.markdown) — opis warstw i kolejności inicjalizacji.\n', '\n', '## References\n', '\n', '[1]: https://github.com/CTRL-F-0rg3/TrangorgeOS/tree/stabilizing "TrangorgeOS — gałąź stabilizing"\n', '[2]: https://github.com/CTRL-F-0rg3/TrangorgeOS/commit/7a0d836f2180874aac3e8c92493c791aec89a8b3 "TrangorgeOS — analizowany commit"\n', '[3]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/heap/buddy.c "Buddy allocator"\n', '[4]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/heap/slab.c "Slab allocator"\n', '[5]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/process/address_space.c "Address spaces"\n', '[6]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/physical/pmm.c "Physical memory manager"\n', '[7]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/kernel/src/mm/alloc/special/dma.c "DMA allocator"\n', '[8]: https://github.com/CTRL-F-0rg3/TrangorgeOS/blob/stabilizing/TrangorgeOS%20%E2%80%94%20dokumentacja%20architektury.markdown "Dokumentacja architektury TrangorgeOS"\n']
 
 </details>
 
