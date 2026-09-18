@@ -4918,8 +4918,389 @@
 ├── README.md
 ├── rust-toolchain.toml
 ├── server_workspace
+│   ├── c
+│   │   ├── bridge
+│   │   │   ├── crypto
+│   │   │   │   ├── aesni.c
+│   │   │   │   ├── aesni.h
+│   │   │   │   ├── chacha.c
+│   │   │   │   ├── chacha.h
+│   │   │   │   ├── poly1305.c
+│   │   │   │   ├── poly1305.h
+│   │   │   │   ├── sha_hw.c
+│   │   │   │   └── sha_hw.h
+│   │   │   ├── disk
+│   │   │   │   ├── dma.c
+│   │   │   │   ├── dma.h
+│   │   │   │   ├── nvme_passthrough.c
+│   │   │   │   ├── nvme_passthrough.h
+│   │   │   │   ├── spdk.c
+│   │   │   │   └── spdk.h
+│   │   │   ├── memory
+│   │   │   │   ├── arena.c
+│   │   │   │   ├── arena.h
+│   │   │   │   ├── buddy.c
+│   │   │   │   ├── buddy.h
+│   │   │   │   ├── slab.c
+│   │   │   │   ├── slab.h
+│   │   │   │   ├── tls.c
+│   │   │   │   └── tls.h
+│   │   │   ├── net
+│   │   │   │   ├── epoll.c
+│   │   │   │   ├── epoll.h
+│   │   │   │   ├── io_uring.c
+│   │   │   │   ├── io_uring.h
+│   │   │   │   ├── tcp_fastopen.c
+│   │   │   │   ├── tcp_fastopen.h
+│   │   │   │   ├── xdp.c
+│   │   │   │   └── xdp.h
+│   │   │   ├── simd
+│   │   │   │   ├── avx2.c
+│   │   │   │   ├── avx2.h
+│   │   │   │   ├── neon.c
+│   │   │   │   ├── neon.h
+│   │   │   │   ├── sve.c
+│   │   │   │   ├── sve.h
+│   │   │   │   ├── wasm.c
+│   │   │   │   └── wasm.h
+│   │   │   └── sync
+│   │   │       ├── atomic_ops.c
+│   │   │       ├── atomic_ops.h
+│   │   │       ├── futex.c
+│   │   │       ├── futex.h
+│   │   │       ├── rwlock.c
+│   │   │       └── rwlock.h
+│   │   ├── c-bridge
+│   │   │   ├── build.rs
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── crypto.rs
+│   │   │       ├── disk.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── memory.rs
+│   │   │       ├── net.rs
+│   │   │       ├── simd.rs
+│   │   │       └── sync.rs
+│   │   └── include
+│   │       ├── bridge_crypto.h
+│   │       ├── bridge_disk.h
+│   │       ├── bridge_errors.h
+│   │       ├── bridge_memory.h
+│   │       ├── bridge_net.h
+│   │       ├── bridge_simd.h
+│   │       ├── bridge_sync.h
+│   │       └── bridge_types.h
 │   ├── Cargo.toml
-│   └── crates
+│   ├── compute
+│   │   ├── dag-exec
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── checkpoint.rs
+│   │   │       ├── fault_tolerance.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── scheduler.rs
+│   │   │       └── state.rs
+│   │   ├── jit-compiler
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── ir.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── optimizer.rs
+│   │   │       ├── regs.rs
+│   │   │       └── x86.rs
+│   │   └── wasm-runtime
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── imports.rs
+│   │           ├── instance.rs
+│   │           ├── lib.rs
+│   │           ├── memory.rs
+│   │           ├── table.rs
+│   │           └── trap.rs
+│   ├── core
+│   │   ├── core-alloc
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── arena.rs
+│   │   │       ├── buddy.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── oom.rs
+│   │   │       ├── slab.rs
+│   │   │       ├── stats.rs
+│   │   │       └── tls.rs
+│   │   ├── core-crypto
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── aes.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── rng.rs
+│   │   │       └── sha.rs
+│   │   ├── core-ffi
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── ada_abi.rs
+│   │   │       ├── c_abi.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── marshalling.rs
+│   │   │       ├── nim_abi.rs
+│   │   │       └── odin_abi.rs
+│   │   ├── core-io
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── async_io.rs
+│   │   │       ├── buffer.rs
+│   │   │       ├── direct.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── mmap.rs
+│   │   │       └── poll.rs
+│   │   ├── core-math
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── crc.rs
+│   │   │       ├── fixed.rs
+│   │   │       ├── hash.rs
+│   │   │       ├── interpolate.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── rand.rs
+│   │   │       └── simd.rs
+│   │   ├── core-sync
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── atomic.rs
+│   │   │       ├── barrier.rs
+│   │   │       ├── condvar.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── mpsc.rs
+│   │   │       ├── mutex.rs
+│   │   │       ├── rcu.rs
+│   │   │       ├── rwlock.rs
+│   │   │       └── spinlock.rs
+│   │   └── core-telemetry
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── lib.rs
+│   │           ├── metrics.rs
+│   │           └── tracing.rs
+│   ├── domain
+│   │   ├── auth-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── jwt.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── mfa.rs
+│   │   │       ├── oauth.rs
+│   │   │       ├── rbac.rs
+│   │   │       └── sessions.rs
+│   │   ├── catalog-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── inventory.rs
+│   │   │       ├── lib.rs
+│   │   │       └── product.rs
+│   │   ├── graph-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── community.rs
+│   │   │       ├── index.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── shortest_path.rs
+│   │   │       └── traversal.rs
+│   │   ├── identity-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── lib.rs
+│   │   │       ├── session.rs
+│   │   │       └── user.rs
+│   │   ├── ledger-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── audit.rs
+│   │   │       ├── balance.rs
+│   │   │       ├── double_entry.rs
+│   │   │       ├── lib.rs
+│   │   │       └── tx.rs
+│   │   ├── orders-core
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── lib.rs
+│   │   │       ├── line_item.rs
+│   │   │       ├── order.rs
+│   │   │       └── saga.rs
+│   │   └── ts-core
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── aggregate.rs
+│   │           ├── downsample.rs
+│   │           ├── forecast.rs
+│   │           ├── interpolate.rs
+│   │           └── lib.rs
+│   ├── net
+│   │   ├── dns-resolver
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── cache.rs
+│   │   │       ├── edns.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── tcp_client.rs
+│   │   │       └── udp_client.rs
+│   │   ├── proto-grpc
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── health.rs
+│   │   │       ├── interop.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── metadata.rs
+│   │   │       └── reflection.rs
+│   │   ├── proto-rpc
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── codec.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── load_balancer.rs
+│   │   │       ├── middleware.rs
+│   │   │       └── router.rs
+│   │   ├── stack-http3
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── hpack.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── priority.rs
+│   │   │       ├── qpack.rs
+│   │   │       ├── server_push.rs
+│   │   │       └── settings.rs
+│   │   ├── stack-quic
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── connection.rs
+│   │   │       ├── crypto.rs
+│   │   │       ├── frames.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── loss.rs
+│   │   │       └── streams.rs
+│   │   ├── stack-tcp
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── congestion.rs
+│   │   │       ├── keepalive.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── retransmit.rs
+│   │   │       ├── sack.rs
+│   │   │       ├── state.rs
+│   │   │       └── window.rs
+│   │   └── stack-udp
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── checksum.rs
+│   │           ├── gro.rs
+│   │           ├── gso.rs
+│   │           ├── lib.rs
+│   │           └── mux.rs
+│   ├── storage
+│   │   ├── store-btree
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── iter.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── merge.rs
+│   │   │       ├── node.rs
+│   │   │       ├── prefix.rs
+│   │   │       └── split.rs
+│   │   ├── store-disk
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── allocator.rs
+│   │   │       ├── direct_io.rs
+│   │   │       ├── ioring.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── scheduler.rs
+│   │   │       └── trim.rs
+│   │   ├── store-lsm
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── bloom.rs
+│   │   │       ├── compaction.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── manifest.rs
+│   │   │       ├── memtable.rs
+│   │   │       └── sstable.rs
+│   │   ├── store-page
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── buffer_pool.rs
+│   │   │       ├── dirty.rs
+│   │   │       ├── eviction.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── lru.rs
+│   │   │       └── pinning.rs
+│   │   └── store-wal
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── checkpoint.rs
+│   │           ├── codec.rs
+│   │           ├── fsync.rs
+│   │           ├── lib.rs
+│   │           ├── recovery.rs
+│   │           └── segment.rs
+│   ├── svc
+│   │   ├── svc-api
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── graphql.rs
+│   │   │       ├── main.rs
+│   │   │       └── rest.rs
+│   │   ├── svc-gateway
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── auth_proxy.rs
+│   │   │       ├── main.rs
+│   │   │       ├── rate_limit.rs
+│   │   │       ├── routing.rs
+│   │   │       └── tls_termination.rs
+│   │   ├── svc-ingest
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── batch.rs
+│   │   │       ├── dedup.rs
+│   │   │       ├── kafka.rs
+│   │   │       ├── main.rs
+│   │   │       └── transform.rs
+│   │   ├── svc-query
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── cache.rs
+│   │   │       ├── executor.rs
+│   │   │       ├── main.rs
+│   │   │       ├── optimizer.rs
+│   │   │       └── planner.rs
+│   │   └── svc-sync
+│   │       ├── Cargo.toml
+│   │       └── src
+│   │           ├── consensus.rs
+│   │           ├── gossip.rs
+│   │           ├── main.rs
+│   │           ├── raft.rs
+│   │           └── snapshot.rs
+│   └── tools
+│       ├── tool-bench
+│       │   ├── Cargo.toml
+│       │   └── src
+│       │       ├── load.rs
+│       │       ├── main.rs
+│       │       ├── profiler.rs
+│       │       └── report.rs
+│       ├── tool-codegen
+│       │   ├── Cargo.toml
+│       │   └── src
+│       │       ├── ffi.rs
+│       │       ├── main.rs
+│       │       ├── proto.rs
+│       │       └── schema.rs
+│       └── tool-migrator
+│           ├── Cargo.toml
+│           └── src
+│               ├── main.rs
+│               ├── migrations.rs
+│               └── schema.rs
 ├── targets
 │   └── x86_64-unknown-none
 ├── tatus --porcelain
@@ -5497,4 +5878,4 @@
     ├── Cargo.toml
     └── crates
 
-1361 directories, 4137 files
+1452 directories, 4427 files
