@@ -5,12 +5,18 @@ members = [
     "C_base/*",
     "core/*",
     "kernel",
-    "Odin_base/*", "kernel-bin",
+    "kernel-bin",
+    "Odin_base/*",
 ]
+
+[workspace.metadata.cargo-config]
+# Domyślny wykonywalny binarek w workspace
+default-run = "kernel-bin"
+
+[profile.dev]
+panic = "abort"
+opt-level = 0
 
 [profile.release]
 panic = "abort"
 opt-level = 2
-
-[profile.dev]
-panic = "abort"

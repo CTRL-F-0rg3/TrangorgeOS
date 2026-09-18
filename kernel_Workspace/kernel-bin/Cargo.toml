@@ -1,6 +1,20 @@
 [package]
 name = "kernel-bin"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+
+[[bin]]
+name = "kernel-bin"
+path = "src/main.rs"
 
 [dependencies]
+kernel = { path = "../kernel" }
+kstd_core = { path = "../core/kstd_core" }
+kc-abi-menager = { path = "../C_base/kc-abi-menager" }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
+
+[package.metadata.bootimage]
+build-command = ["build"]
+run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}", "-drive", "format=raw,file=data.img,if=ide,index=1", "-device", "qemu-xhci", "-smp", "4", "-display", "gtk"]
