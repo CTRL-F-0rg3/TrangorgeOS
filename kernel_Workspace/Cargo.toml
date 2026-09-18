@@ -5,7 +5,7 @@ members = [
     "C_base/*",
     "core/*",
     "kernel",
-    "Odin_base/*",
+    "Odin_base/*", "kernel-bin",
 ]
 
 [profile.release]
