@@ -1,6 +1,10 @@
 [package]
 name = "ds-mem"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+kapi-abi = { path = "../kapi-abi" }
+kapi-syscall = { path = "../kapi-syscall" }
+ds-log = { path = "../ds-log" }
+bitflags = "2.4"

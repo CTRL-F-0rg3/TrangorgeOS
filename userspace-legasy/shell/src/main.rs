@@ -1,38 +1,21 @@
 #![no_std]
 #![no_main]
+// W tej malej, jednowatkowej aplikacji odwołania do `static mut` są bezpieczne;
+// w edycji 2024 lint `static_mut_refs` jest domyślnie błędem.
+#![allow(static_mut_refs)]
 
-use trangorgelibc as tr;
+use trangorgelib as tr;
 
 static mut LINE: [u8; 128] = [0; 128];
 static mut LEN: usize = 0;
 
-fn run(cmd: &str) {
-    if cmd.is_empty() {
-        return;
-    }
-
-    if cmd == "help" {
-        tr::log("shell: help | echo | ver | pid | run <path>");
-    } else if cmd == "ver" {
-        tr::log("TrangorgeOS 0.4 (trójpodział dzielny)");
-    } else if cmd == "pid" {
-        tr::put_u32(tr::getpid());
-    } else if cmd == "echo" {
-        tr::log(cmd);
-    } else if let Some(p) = cmd.strip_prefix("run ") {
-        match tr::spawn(p) {
-            -1 => tr::log("shell: spawn failed"),
-            pid => {
-                tr::log("shell: spawned pid");
-                tr::put_u32(pid as u32);
-            }
-        }
-    } else {
-        tr::log("shell: unknown command");
-    }
+/// Zamienia bufor zakonczony NUL na `&str` (nazwy z `readdir`).
+fn cstr(buf: &[u8]) -> &str {
+    let end = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
+    core::str::from_utf8(&buf[..end]).unwrap_or("")
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
     tr::log("shell: ready $");
 
@@ -117,7 +100,7 @@ fn run(cmd: &str) {
             }
             None => tr::print("wait: brak\n"),
         }
-        } else if cmd == "ls" {
+    } else if cmd == "ls" {
         let mut idx = 0u64;
         let mut name = [0u8; 128];
 
@@ -149,7 +132,6 @@ fn run(cmd: &str) {
                 tr::print("\n");
             }
         }
-    }
     } else {
         tr::print("shell: nieznana komenda\n");
     }

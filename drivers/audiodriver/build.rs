@@ -1,3 +1,10 @@
+// Build script dla sterownika audio.
+//
+// Część logiki sterownika jest napisana w Odinie (`src/odin`) i kompilowana do
+// statycznej biblioteki, którą linkujemy do crate'a. Kompilator `odin` jest
+// zależnością opcjonalną: bez niego `cargo check` ma nadal działać (tylko bez
+// natywnej części Odin), zamiast wywalać cały build panicem.
+
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -6,7 +13,7 @@ fn main() {
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let odin_dir = manifest.join("odin");
+    let odin_dir = manifest.join("src/odin");
     let lib_name = "audiodriver_odin";
     let lib_path = out.join(format!("lib{}.a", lib_name));
 
@@ -14,6 +21,20 @@ fn main() {
     println!("cargo:rerun-if-changed={}", odin_dir.display());
 
     let odin = env::var("ODIN").unwrap_or_else(|_| "odin".to_string());
+
+    let odin_available = Command::new(&odin)
+        .arg("version")
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+
+    if !odin_available {
+        println!(
+            "cargo:warning=nie znaleziono kompilatora `odin` (ustaw ODIN=/sciezka/odin); \
+             pomijam budowanie natywnej czesci sterownika audio"
+        );
+        return;
+    }
 
     let status = Command::new(&odin)
         .arg("build")
@@ -24,7 +45,7 @@ fn main() {
         .arg("-o:speed")
         .arg(format!("-out:{}", lib_path.to_str().unwrap()))
         .status()
-        .expect("nie znaleziono `odin` w PATH (ustaw ODIN=/sciezka/odin)");
+        .expect("nie udalo sie uruchomic `odin`");
 
     if !status.success() {
         panic!("odin build failed");

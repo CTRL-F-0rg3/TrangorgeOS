@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-path = "lib.rs"
+path = "src/lib.rs"
 
 [[bin]]
 name = "audiodriver"
-path = "main.rs"
+path = "src/main.rs"
 
 [dependencies]
 driverspacelib = { path = "../../driverspacelib" }

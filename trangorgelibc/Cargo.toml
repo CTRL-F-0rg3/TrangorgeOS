@@ -6,6 +6,10 @@ description = "Biblioteka systemowa TrangorgeOS - ABI jądra i helpery"
 
 [lib]
 crate-type = ["rlib"]
+# Bare-metal (`x86_64-unknown-none`) nie ma ani `std`, ani crate'a `test`,
+# więc harness testowy nie da się tu zbudować. Wyłączamy target testowy,
+# zeby `cargo check --tests`/`cargo test` nie konczyl sie bledem E0463.
+test = false
 
 [dependencies]
 # Celowo puste - biblioteka musi byc no_std i bez zaleznosci

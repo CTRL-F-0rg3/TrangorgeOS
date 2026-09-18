@@ -6,23 +6,30 @@ version = 4
 name = "demo"
 version = "0.1.0"
 dependencies = [
- "trangorgelibc",
+ "trangorgelib",
 ]
 
 [[package]]
 name = "shell"
 version = "0.1.0"
 dependencies = [
- "trangorgelibc",
+ "trangorgelib",
+]
+
+[[package]]
+name = "terminal"
+version = "0.1.0"
+dependencies = [
+ "trangorgelib",
 ]
 
 [[package]]
 name = "tr-init"
 version = "0.1.0"
 dependencies = [
- "trangorgelibc",
+ "trangorgelib",
 ]
 
 [[package]]
-name = "trangorgelibc"
+name = "trangorgelib"
 version = "0.1.0"

@@ -21,21 +21,22 @@ mboot_header_end:
 section .bss
 align 16
 stack_bottom:
-    resb 65536            :
+    resb 65536
+stack_top:
 
 section .text
 bits 32
 
 global _start
-extern kernel_main
+extern _rust_entry
 
 _start:
     mov esp, stack_top
 
-    push ebx
-    push eax
+    push ebx              ; Multiboot2: EBX = adres struktury informacyjnej
+    push eax              ; Multiboot2: EAX = magic
 
-    call kernel_main
+    call _rust_entry
 
 .hang:
     cli

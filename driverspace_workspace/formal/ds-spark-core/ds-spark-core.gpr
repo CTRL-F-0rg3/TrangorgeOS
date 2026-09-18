@@ -1,19 +1,18 @@
 project DS_Spark_Core is
    -- Wymuszenie trybu SPARK dla wszystkich plików
-   for Default_Switches ("Ada") use ("-gnatwa", "-gnatVa", "-gnatQ");
+      for Default_Switches ("Ada") use ("-gnatwa", "-gnatVa", "-gnatQ");
    
    -- Konfiguracja Bare Metal: brak taskingu, brak wyjątków, brak standardowego IO
    package Compiler is
       for Default_Switches ("Ada") use 
-         Compiler'Default_Switches ("Ada") & 
-         ("-gnatp",           -- Wyłączenie sprawdzania w runtime (brak OS do zgłaszania błędów)
-          "-gnatws",          -- Traktuj ostrzeżenia jako błędy
-          "-fno-strict-aliasing");
+          ("-gnatp",           -- Wyłączenie sprawdzania w runtime (brak OS do zgłaszania błędów)
+           "-gnatws",          -- Traktuj ostrzeżenia jako błędy
+           "-fno-strict-aliasing");
    end Compiler;
 
    -- Wymuszenie profilu Ravenscar (lub No_Task) dla bare metal
    package Builder is
-      for Default_Switches ("Ada") use ("--RTS=ravenscar-sfp"); -- Lub własny no-os runtime
+        for Switches ("Ada") use ("--RTS=ravenscar-sfp"); -- Lub własny no-os runtime
    end Builder;
 
    -- Budujemy jako bibliotekę statyczną (.a), którą Rust będzie linkował

@@ -3,4 +3,10 @@ name = "shell"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "shell"
+path = "src/main.rs"
+test = false
+
 [dependencies]
+trangorgelib = { path = "../../trangorgelibc" }

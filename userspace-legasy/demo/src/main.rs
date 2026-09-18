@@ -1,9 +1,12 @@
 #![no_std]
 #![no_main]
+// W tej malej, jednowatkowej aplikacji odwołania do `static mut` są bezpieczne;
+// w edycji 2024 lint `static_mut_refs` jest domyślnie błędem.
+#![allow(static_mut_refs)]
 
-use trangorgelibc as tr;
+use trangorgelib as tr;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
     tr::log("demo: hello, wysylam IPC do init (pid 1)");
 

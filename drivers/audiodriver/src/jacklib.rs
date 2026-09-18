@@ -35,4 +35,9 @@ impl JackMgr {
     pub fn present(&self) -> bool {
         self.present
     }
+
+    /// Czy wzmacniacz (amp) jest aktualnie wlaczony.
+    pub fn amp_enabled(&self) -> bool {
+        self.amp_on
+    }
 }
