@@ -1,7 +1,210 @@
 .
+├── ada
+│   ├── gc_bounds.adb
+│   ├── gc_bounds.ads
+│   ├── gc_ffi_export.ads
+│   ├── gc_policy.adb
+│   ├── gc_policy.ads
+│   ├── gc_safe_math.adb
+│   └── gc_safe_math.ads
+├── build.rs
+├── c
+│   ├── compat
+│   │   ├── linux_types.c
+│   │   └── posix_shim.c
+│   ├── include
+│   │   ├── gc_error.h
+│   │   ├── gc_lifecycle.h
+│   │   ├── gc_memory.h
+│   │   ├── gc_sync.h
+│   │   ├── gc_types.h
+│   │   └── gluecore.h
+│   ├── memory
+│   │   ├── guard.c
+│   │   ├── safe_copy.c
+│   │   └── validate.c
+│   └── runtime
+│       ├── abort.c
+│       ├── init.c
+│       └── panic.c
 ├── Cargo.toml
+├── gluecore.gpr
+├── link.ld
 ├── src
-│   └── lib.rs
+│   ├── audit
+│   │   ├── mod.rs
+│   │   ├── report.rs
+│   │   ├── stats.rs
+│   │   ├── trace.rs
+│   │   └── violation.rs
+│   ├── bridge
+│   │   ├── caps
+│   │   │   ├── check.rs
+│   │   │   ├── grant.rs
+│   │   │   ├── mod.rs
+│   │   │   └── store.rs
+│   │   ├── drivers
+│   │   │   ├── block.rs
+│   │   │   ├── interrupt.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── pci.rs
+│   │   │   └── usb.rs
+│   │   ├── fs
+│   │   │   ├── devfs.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── tangfs.rs
+│   │   │   └── vfs.rs
+│   │   ├── gfx
+│   │   │   ├── console.rs
+│   │   │   ├── framebuffer.rs
+│   │   │   └── mod.rs
+│   │   ├── hw
+│   │   │   ├── battery.rs
+│   │   │   ├── bluetooth.rs
+│   │   │   ├── camera.rs
+│   │   │   ├── displayport.rs
+│   │   │   ├── hdmi.rs
+│   │   │   └── mod.rs
+│   │   ├── mm
+│   │   │   ├── alloc.rs
+│   │   │   ├── mmap.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── paging.rs
+│   │   │   ├── pmm.rs
+│   │   │   └── vmm.rs
+│   │   ├── mod.rs
+│   │   ├── net
+│   │   │   ├── mod.rs
+│   │   │   ├── stack.rs
+│   │   │   └── virtio.rs
+│   │   ├── policy
+│   │   │   ├── ada_bridge.rs
+│   │   │   ├── c_bridge.rs
+│   │   │   ├── mod.rs
+│   │   │   └── nim_bridge.rs
+│   │   └── scheduler
+│   │       ├── context.rs
+│   │       ├── mod.rs
+│   │       ├── runqueue.rs
+│   │       └── task.rs
+│   ├── compat
+│   │   ├── linux
+│   │   │   ├── errno.rs
+│   │   │   ├── ioctl.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── signal.rs
+│   │   │   ├── syscall.rs
+│   │   │   └── types.rs
+│   │   ├── mod.rs
+│   │   ├── posix
+│   │   │   ├── fd.rs
+│   │   │   ├── mmap.rs
+│   │   │   ├── mod.rs
+│   │   │   └── pthread.rs
+│   │   └── windows
+│   │       ├── handle.rs
+│   │       ├── mod.rs
+│   │       └── ntstatus.rs
+│   ├── core_lang
+│   │   ├── loader.rs
+│   │   ├── mod.rs
+│   │   ├── native.rs
+│   │   └── vm.rs
+│   ├── error
+│   │   ├── chain.rs
+│   │   ├── codes.rs
+│   │   ├── context.rs
+│   │   ├── mod.rs
+│   │   ├── panic.rs
+│   │   └── translate.rs
+│   ├── ffi
+│   │   ├── ada
+│   │   │   ├── convention.rs
+│   │   │   ├── extern_block.rs
+│   │   │   └── mod.rs
+│   │   ├── asm
+│   │   │   ├── calling_conv.rs
+│   │   │   ├── inline.rs
+│   │   │   ├── mod.rs
+│   │   │   └── register.rs
+│   │   ├── c
+│   │   │   ├── callbacks.rs
+│   │   │   ├── extern_block.rs
+│   │   │   ├── linkage.rs
+│   │   │   ├── mod.rs
+│   │   │   └── varargs.rs
+│   │   ├── mod.rs
+│   │   └── nim
+│   │       ├── extern_block.rs
+│   │       ├── gc_compat.rs
+│   │       └── mod.rs
+│   ├── init
+│   │   ├── early.rs
+│   │   ├── late.rs
+│   │   ├── mod.rs
+│   │   └── shutdown.rs
+│   ├── lib.rs
+│   ├── lifecycle
+│   │   ├── destructor.rs
+│   │   ├── leak.rs
+│   │   ├── mod.rs
+│   │   ├── refcount.rs
+│   │   ├── registry.rs
+│   │   └── weak.rs
+│   ├── memory
+│   │   ├── arena.rs
+│   │   ├── borrow.rs
+│   │   ├── dma.rs
+│   │   ├── guard.rs
+│   │   ├── mod.rs
+│   │   ├── pool.rs
+│   │   ├── shared.rs
+│   │   ├── transfer.rs
+│   │   └── validate.rs
+│   ├── sync
+│   │   ├── atomic.rs
+│   │   ├── barrier.rs
+│   │   ├── condvar.rs
+│   │   ├── mod.rs
+│   │   ├── mutex.rs
+│   │   ├── rwlock.rs
+│   │   └── spinlock.rs
+│   ├── trampoline
+│   │   ├── abi_switch.rs
+│   │   ├── arch
+│   │   │   ├── aarch64
+│   │   │   │   ├── context.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── svc.rs
+│   │   │   ├── mod.rs
+│   │   │   ├── riscv64
+│   │   │   │   ├── context.rs
+│   │   │   │   ├── ecall.rs
+│   │   │   │   └── mod.rs
+│   │   │   └── x86_64
+│   │   │       ├── context.rs
+│   │   │       ├── interrupt.rs
+│   │   │       ├── mod.rs
+│   │   │       └── syscall.rs
+│   │   ├── mod.rs
+│   │   └── ring
+│   │       ├── mod.rs
+│   │       ├── ring0_to_ring3.rs
+│   │       ├── ring3_to_ring0.rs
+│   │       └── vmexit.rs
+│   └── types
+│       ├── arrays.rs
+│       ├── enums.rs
+│       ├── handles.rs
+│       ├── mod.rs
+│       ├── pointers.rs
+│       ├── primitives.rs
+│       ├── result.rs
+│       └── strings.rs
+├── tests
+│   ├── ffi_roundtrip.rs
+│   ├── lifecycle.rs
+│   └── memory_safety.rs
 └── tree.txt
 
-2 directories, 3 files
+42 directories, 166 files
