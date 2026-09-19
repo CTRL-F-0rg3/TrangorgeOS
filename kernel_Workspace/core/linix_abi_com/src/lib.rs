@@ -1,15 +1,9 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod sockets;
+pub mod msgpass;
+pub mod channels;
+pub mod ports;
+pub mod netproto;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use sockets::*;
