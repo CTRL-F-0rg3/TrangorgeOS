@@ -1,4 +1,3 @@
-// kernel_Workspace/core/gluecore/src/lib.rs
 #![no_std]
 
 pub use kstd_base;
@@ -7,8 +6,11 @@ pub use kstd_core;
 pub use kstd_data;
 pub use kstd_io;
 
-pub mod ffi;
-pub mod bridge;
+pub mod bindings;
+pub mod boot;
+pub mod context;
+pub mod interrupts;
+pub mod syscalls;
 
-pub use bridge::mm;
-pub use bridge::caps;
+// If you still want the nested bridge/mm from earlier, you can add `pub mod bridge;` here,
+// but this flat structure matches your tree.txt perfectly.
