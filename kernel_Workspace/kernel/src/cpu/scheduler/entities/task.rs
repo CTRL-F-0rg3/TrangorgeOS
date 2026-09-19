@@ -1647,7 +1647,8 @@ pub fn deadline_has_priority(a: &TaskStruct, b: &TaskStruct) -> bool {
 }
 
 
-#[cfg(test)]
+/// Runtime-safe task constructors (also used by the non-test scheduler
+/// self-test to bring a real runqueue online without context switching).
 impl TaskStruct {
     pub fn blank() -> TaskStruct {
         TaskStruct {
