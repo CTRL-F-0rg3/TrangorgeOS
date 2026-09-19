@@ -29,6 +29,8 @@ The public `unstable` branch contains the main project components and is still a
 
 ## 3. High-level architecture
 
+.
+
 ```text
 +----------------------------------------------------------------+
 | Applications, tools, and user-facing libraries                |
