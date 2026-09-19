@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "base/*",
+    "C_base/*",
+    "core/*",
+    "kernel",
+    "kernel-bin",
+    "Odin_base/*",
+]
+
+[workspace.metadata.cargo-config]
+# Domyślny wykonywalny binarek w workspace
+default-run = "kernel-bin"
+
+[profile.dev]
+panic = "abort"
+opt-level = 0
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+# xc

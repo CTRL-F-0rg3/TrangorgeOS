@@ -1,1 +1,7 @@
 [workspace]
+resolver="2"
+members=["c/*","core/*","storage/*","net/*","compute/*","domain/*","svc/*","tools/*"]
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="abort"
