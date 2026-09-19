@@ -30,15 +30,11 @@ fi
 exec qemu-system-x86_64 \
     -drive "format=raw,file=$IMAGE" \
     -drive "format=raw,file=$DATA_IMG,if=ide,index=1" \
+    -device qemu-xhci \
     -m 512M \
     -smp 4 \
     -serial stdio \
     -display gtk \
     -no-reboot \
     "$@"
-
-# NOTE: to exercise the in-tree xHCI driver, append `-device qemu-xhci`.
-# It currently trips a page-table bug in the legacy MM (vmm_map_device leaves
-# the BAR MMIO unmapped after the mm::address_space/allocator self-tests), so
-# it is left out of the default run to keep the boot clean.
 

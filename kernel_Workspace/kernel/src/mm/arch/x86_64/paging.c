@@ -1,6 +1,7 @@
 #include "paging.h"
 #include "memory.h"
 #include "tlb.h"
+#include "../../alloc/physical/pmm.h"
 
 extern void kprintf(const char *fmt, ...);
 
@@ -82,6 +83,20 @@ static uint64_t alloc_zeroed_table_page(void)
 {
     uint64_t phys = 0;
 
+    /*
+     * Once the physical frame allocator is up, page-table pages must come
+     * from the PMM so that `free_tables`/`paging_aspace_destroy` can hand
+     * them back with `pmm_free_frame` without corrupting the PMM's bookkeeping
+     * (the boot allocator has no "free", so freeing a boot-allocated page
+     * through the PMM double-frees it and later produces a MALFORMED_TABLE).
+     */
+    if (pmm_ready()) {
+        if (!pmm_alloc_zero_frame(&phys)) {
+            paging_panic("cannot allocate page table page (pmm)");
+        }
+        return phys;
+    }
+
     if (!arch_memory_boot_alloc(PAGING_PAGE_SIZE,
                                 PAGING_PAGE_SIZE,
                                 &phys)) {
@@ -106,7 +121,9 @@ static uint64_t ensure_table_entry(uint64_t *table,
              * Split it into smaller 4KB page entries.
              */
             uint64_t large_phys = entry & PAGING_ADDR_MASK;
-            uint64_t large_flags = entry & (PAGING_ADDR_MASK - 1);
+            /* Only keep the real flag bits (low 12 bits + high NX bit), not
+             * the physical-address bits that live in the middle of the entry. */
+            uint64_t large_flags = entry & ~PAGING_ADDR_MASK;
 
             /* Allocate a new page table */
             uint64_t table_phys = alloc_zeroed_table_page();
