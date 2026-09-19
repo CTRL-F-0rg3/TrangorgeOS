@@ -1,15 +1,16 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[macro_use]
+extern crate kstd_base;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod vec;
+pub mod string;
+pub mod list;
+pub mod map;
+pub mod tree;
+
+pub use vec::Vec;
+pub use string::String;
+pub use list::ListHead;
+pub use map::HashMap;
+pub use tree::TreeMap;
