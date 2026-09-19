@@ -44,5 +44,5 @@ unsafe impl GlobalAlloc for KernelAllocator {
 }
 
 
-#[global_allocator]
+//#[global_allocator]
 pub static GLOBAL: KernelAllocator = KernelAllocator;
