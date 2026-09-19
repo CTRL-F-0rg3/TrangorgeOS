@@ -8,8 +8,19 @@ name = "kernel-bin"
 path = "src/main.rs"
 
 [dependencies]
-# Tylko czyste jądro - brak jakichkolwiek wyższych warstw jak C_base czy ABI!
+# Legacy kernel engine (compiled as a static library)
 kernel = { path = "../kernel" }
+
+# --- Core Foundations (kstd_*) ---
+kstd_base = { path = "../core/kstd_base" }
+kstd_alloc = { path = "../core/kstd_alloc" }
+kstd_core = { path = "../core/kstd_core" }
+kstd_io = { path = "../core/kstd_io" }
+kstd_os_workspace = { path = "../core/kstd_os_workspace" }
+gluecore = { path = "../core/gluecore" }
+
+# --- High-level Abstractions ---
+kw-base = { path = "../base/kw-base" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
