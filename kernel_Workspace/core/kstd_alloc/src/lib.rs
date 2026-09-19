@@ -4,12 +4,19 @@ pub mod traits;
 pub mod page;
 pub mod heap;
 pub mod slab;
-pub mod oom;
 
 pub use traits::{Allocator, Layout};
 pub use heap::KernelHeap;
 
+
 use core::alloc::{GlobalAlloc, Layout as CoreLayout};
+
+#[inline]
+fn oom() -> ! {
+    loop {
+        core::hint::spin_loop();
+    }
+}
 
 pub struct KernelAllocator;
 
@@ -18,7 +25,7 @@ unsafe impl GlobalAlloc for KernelAllocator {
         let l = Layout::new(layout.size(), layout.align());
         match KernelHeap.alloc(l) {
             Ok(ptr) => ptr,
-            Err(_) => oom::invoke(),
+            Err(_) => oom(),
         }
     }
 
@@ -31,10 +38,11 @@ unsafe impl GlobalAlloc for KernelAllocator {
         let l = Layout::new(layout.size(), layout.align());
         match KernelHeap.realloc(ptr, l, new_size) {
             Ok(p) => p,
-            Err(_) => oom::invoke(),
+            Err(_) => oom(),
         }
     }
 }
+
 
 #[global_allocator]
 pub static GLOBAL: KernelAllocator = KernelAllocator;

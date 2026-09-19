@@ -1,9 +1,11 @@
-#![allow(unused_unsafe)]
 #![no_std]
 #![no_main]
+#![allow(unused_unsafe)]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
+#[macro_use]
 extern crate alloc;
+
 
 pub mod arch;
 

@@ -6,12 +6,13 @@ members = [
     "core/*",
     "kernel",
     "kernel-bin",
-    "Odin_base/*",
+    "Odin_base/odin-abi",
+    "Odin_base/odin-abi-bridge",
+    "Odin_base/odin-bin-loader",
 ]
 
-[workspace.metadata.cargo-config]
-# Domyślny wykonywalny binarek w workspace
-default-run = "kernel-bin"
+# `cargo run` at the workspace root should target the runnable kernel package.
+default-members = ["kernel-bin"]
 
 [profile.dev]
 panic = "abort"

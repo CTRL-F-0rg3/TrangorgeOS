@@ -4,6 +4,7 @@
 *.a
 *.bin
 kernel/data.img
+kernel_Workspace/kernel-bin/data.img
 .brass_control/
 # IDE garbage
 .idea/

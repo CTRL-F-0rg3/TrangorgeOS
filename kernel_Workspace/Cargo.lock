@@ -38,6 +38,13 @@ checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
 [[package]]
 name = "gluecore"
 version = "0.1.0"
+dependencies = [
+ "kstd_alloc",
+ "kstd_base",
+ "kstd_core",
+ "kstd_data",
+ "kstd_io",
+]
 
 [[package]]
 name = "kc-abi"
@@ -78,6 +85,9 @@ dependencies = [
 [[package]]
 name = "kstd_alloc"
 version = "0.1.0"
+dependencies = [
+ "kstd_base",
+]
 
 [[package]]
 name = "kstd_base"
@@ -86,14 +96,35 @@ version = "0.1.0"
 [[package]]
 name = "kstd_core"
 version = "0.1.0"
+dependencies = [
+ "kstd_base",
+ "kstd_data",
+ "kstd_io",
+]
 
 [[package]]
 name = "kstd_data"
 version = "0.1.0"
+dependencies = [
+ "kstd_alloc",
+ "kstd_base",
+ "kstd_io",
+]
 
 [[package]]
 name = "kstd_io"
 version = "0.1.0"
+
+[[package]]
+name = "kstd_os_workspace"
+version = "0.1.0"
+dependencies = [
+ "kstd_alloc",
+ "kstd_base",
+ "kstd_core",
+ "kstd_data",
+ "kstd_io",
+]
 
 [[package]]
 name = "kw-C-abi"
@@ -102,6 +133,15 @@ version = "0.1.0"
 [[package]]
 name = "kw-base"
 version = "0.1.0"
+dependencies = [
+ "gluecore",
+ "kstd_alloc",
+ "kstd_base",
+ "kstd_core",
+ "kstd_data",
+ "kstd_io",
+ "kstd_os_workspace",
+]
 
 [[package]]
 name = "kw-libs"

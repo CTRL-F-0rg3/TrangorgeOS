@@ -103,7 +103,7 @@ impl<K: Ord, V> BTreeMap<K, V> {
         let mut i = unsafe { (*node).len };
         unsafe {
             if (*node).leaf {
-                while i > 0 && key < (*node).keys[i - 1].assume_init_ref().clone() {
+                while i > 0 && key < *(*node).keys[i - 1].assume_init_ref() {
                     (*node).keys[i] = mem::MaybeUninit::new((*node).keys[i - 1].assume_init_read());
                     (*node).vals[i] = mem::MaybeUninit::new((*node).vals[i - 1].assume_init_read());
                     i -= 1;
@@ -112,12 +112,12 @@ impl<K: Ord, V> BTreeMap<K, V> {
                 (*node).vals[i] = mem::MaybeUninit::new(val);
                 (*node).len += 1;
             } else {
-                while i > 0 && key < (*node).keys[i - 1].assume_init_ref().clone() {
+                while i > 0 && key < *(*node).keys[i - 1].assume_init_ref() {
                     i -= 1;
                 }
                 if (*(*node).children[i]).len == MAX_KEYS {
                     self.split_child(node, i);
-                    if key > (*node).keys[i].assume_init_ref().clone() {
+                    if key > *(*node).keys[i].assume_init_ref() {
                         i += 1;
                     }
                 }
@@ -132,10 +132,10 @@ impl<K: Ord, V> BTreeMap<K, V> {
         loop {
             let n = unsafe { &*node };
             let mut i = 0;
-            while i < n.len && *key > unsafe { n.keys[i].assume_init_ref().clone() } {
+            while i < n.len && *key > *unsafe { n.keys[i].assume_init_ref() } {
                 i += 1;
             }
-            if i < n.len && *key == unsafe { n.keys[i].assume_init_ref().clone() } {
+            if i < n.len && *key == *unsafe { n.keys[i].assume_init_ref() } {
                 return Some(unsafe { n.vals[i].assume_init_ref() });
             }
             if n.leaf { return None; }

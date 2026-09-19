@@ -56,6 +56,12 @@ impl XhciRegs {
                 return Err(UsbError::MapFailed);
             }
 
+            // The legacy MM can leave the device MMIO unmapped even when
+            // vmm_map_device reports success; reading it would page-fault.
+            if !unsafe { ffi::paging_is_mapped(virt) } {
+                return Err(UsbError::MapFailed);
+            }
+
             virt
         };
 

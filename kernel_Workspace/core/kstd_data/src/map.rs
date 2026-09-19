@@ -90,16 +90,19 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 
     fn resize(&mut self, new_cap: usize) {
         let old_buckets = core::mem::replace(&mut self.buckets, Vec::with_capacity(new_cap));
-        self.buckets.extend_from_slice(&vec![Bucket::Empty; new_cap]); 
-        // Uwaga: powyzsze extend_from_slice wymaga, by Bucket implementowal Clone/Copy, 
-        // albo po prostu wypchamy to petla:
         for _ in 0..new_cap { self.buckets.push(Bucket::Empty); }
-        
+
         self.len = 0;
-        for b in old_buckets {
-            if let Bucket::Occupied(k, v) = b { self.insert(k, v); }
+        for b in old_buckets.as_slice() {
+            if let Bucket::Occupied(k, v) = b {
+                let k = unsafe { core::ptr::read(k) };
+                let v = unsafe { core::ptr::read(v) };
+                self.insert(k, v);
+            }
+
         }
     }
+
     
     pub fn len(&self) -> usize { self.len }
     pub fn is_empty(&self) -> bool { self.len == 0 }

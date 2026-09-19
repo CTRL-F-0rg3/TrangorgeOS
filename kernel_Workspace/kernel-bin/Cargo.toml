@@ -2,29 +2,19 @@
 name = "kernel-bin"
 version = "0.1.0"
 edition = "2021"
+default-run = "kernel-bin"
 
 [[bin]]
 name = "kernel-bin"
 path = "src/main.rs"
 
 [dependencies]
-# Legacy kernel engine (compiled as a static library)
+# Legacy kernel engine — provides entry_point!, panic handler and allocator.
 kernel = { path = "../kernel" }
-
-# --- Core Foundations (kstd_*) ---
-kstd_base = { path = "../core/kstd_base" }
-kstd_alloc = { path = "../core/kstd_alloc" }
-kstd_core = { path = "../core/kstd_core" }
-kstd_io = { path = "../core/kstd_io" }
-kstd_os_workspace = { path = "../core/kstd_os_workspace" }
-gluecore = { path = "../core/gluecore" }
-
-# --- High-level Abstractions ---
-kw-base = { path = "../base/kw-base" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory", "vga_320x200"] }
 
 [package.metadata.bootimage]
-build-command = ["build"]
+build-command = ["build", "-Zbuild-std=core,alloc,compiler_builtins", "-Zbuild-std-features=compiler-builtins-mem"]
 run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}", "-drive", "format=raw,file=data.img,if=ide,index=1", "-device", "qemu-xhci", "-smp", "4", "-display", "gtk"]

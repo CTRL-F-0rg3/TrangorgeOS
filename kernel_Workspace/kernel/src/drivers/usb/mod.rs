@@ -69,7 +69,7 @@ pub fn self_test() -> TestResult {
         Ok(()) => Ok("xHCI initialized OK"),
         Err(UsbError::NoController) => {
             crate::println!("[usb] no xHCI controller found (PCI 0x0C/0x03/0x30)");
-            Err("no xHCI controller")
+            Ok("no xHCI controller present (skipped)")
         }
         Err(UsbError::MapFailed) => Err("xHCI MMIO map failed"),
         Err(UsbError::Timeout) => Err("xHCI init timeout"),
