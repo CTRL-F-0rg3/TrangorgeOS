@@ -1,0 +1,98 @@
+.
+├── Cargo.toml
+├── gluecore
+│   ├── Cargo.toml
+│   └── src
+│       ├── bindings.rs
+│       ├── boot.rs
+│       ├── context.rs
+│       ├── interrupts.rs
+│       ├── lib.rs
+│       └── syscalls.rs
+├── kstd_alloc
+│   ├── Cargo.toml
+│   └── src
+│       ├── heap.rs
+│       ├── lib.rs
+│       ├── oom.rs
+│       ├── page.rs
+│       ├── slab.rs
+│       └── traits.rs
+├── kstd_base
+│   ├── Cargo.toml
+│   └── src
+│       ├── errors.rs
+│       ├── intrinsics.rs
+│       ├── lib.rs
+│       ├── macros.rs
+│       ├── markers.rs
+│       └── primitives.rs
+├── kstd_core
+│   ├── Cargo.toml
+│   └── src
+│       ├── lib.rs
+│       ├── panic.rs
+│       ├── sync.rs
+│       ├── task.rs
+│       ├── thread.rs
+│       └── time.rs
+├── kstd_data
+│   ├── Cargo.toml
+│   └── src
+│       ├── lib.rs
+│       ├── list.rs
+│       ├── map.rs
+│       ├── string.rs
+│       ├── tree.rs
+│       └── vec.rs
+├── kstd_io
+│   ├── Cargo.toml
+│   └── src
+│       ├── buffered.rs
+│       ├── console.rs
+│       ├── handles.rs
+│       ├── lib.rs
+│       ├── pipes.rs
+│       └── traits.rs
+├── linix_abi
+│   ├── Cargo.toml
+│   └── src
+│       ├── caps.rs
+│       ├── errcodes.rs
+│       ├── ipc.rs
+│       ├── lib.rs
+│       ├── sysnums.rs
+│       └── uctx.rs
+├── linix_abi_com
+│   ├── Cargo.toml
+│   └── src
+│       ├── channels.rs
+│       ├── lib.rs
+│       ├── msgpass.rs
+│       ├── netproto.rs
+│       ├── ports.rs
+│       └── sockets.rs
+├── linix_abi_driverspace
+│   ├── Cargo.toml
+│   └── src
+│       ├── devmodel.rs
+│       ├── devtree.rs
+│       ├── dma.rs
+│       ├── lib.rs
+│       ├── pci.rs
+│       └── usb.rs
+├── rust-toolchain.toml
+├── src
+│   └── lib.rs
+├── tree.txt
+└── windows-com
+    ├── Cargo.toml
+    └── src
+        ├── build.rs
+        ├── com_ifaces.rs
+        ├── hostfs.rs
+        ├── hostnet.rs
+        ├── lib.rs
+        └── win32.rs
+
+22 directories, 74 files
