@@ -3478,11 +3478,23 @@
 │   │   ├── kstd_alloc
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── heap.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── omm.rs
+│   │   │       ├── page.rs
+│   │   │       ├── slab.rs
+│   │   │       └── traits.rs
 │   │   ├── kstd_base
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── errors.rs
+│   │   │       ├── intrinsics.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── macros.rs
+│   │   │       ├── markers.rs
+│   │   │       ├── primitives.rs
+│   │   │       ├── trails.rs
+│   │   │       └── types.rs
 │   │   ├── kstd_core
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
@@ -3494,7 +3506,11 @@
 │   │   ├── kstd_io
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── buffer.rs
+│   │   │       ├── console.rs
+│   │   │       ├── input.rs
+│   │   │       ├── lib.rs
+│   │   │       └── traits.rs
 │   │   ├── kstd_os_workspace
 │   │   │   ├── Cargo.toml
 │   │   │   ├── gluecore
@@ -5878,4 +5894,4 @@
     ├── Cargo.toml
     └── crates
 
-1452 directories, 4427 files
+1452 directories, 4443 files
