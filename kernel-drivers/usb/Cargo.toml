@@ -1,0 +1,8 @@
+[package]
+name = "usb"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hw-sys = { path = "../hw-sys" }
+pcie = { path = "../pcie" }

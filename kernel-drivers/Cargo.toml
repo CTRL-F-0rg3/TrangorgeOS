@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "hw-sys",
+    "pcie",
+    "usb",
+    "audio",
+    "battery",
+    "bluetooth",
+    "camera",
+    "displayport",
+    "hdmi",
+    "gfx",
+]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 2
