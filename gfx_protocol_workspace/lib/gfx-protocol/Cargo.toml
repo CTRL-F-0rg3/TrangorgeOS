@@ -1,0 +1,6 @@
+[package]
+name = "gfx-protocol"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

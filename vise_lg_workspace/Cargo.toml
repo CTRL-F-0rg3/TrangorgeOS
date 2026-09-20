@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "lang/vise-lexer",
+    "lang/vise-parser",
+    "lang/vise-ir",
+    "lang/vise-codegen",
+    "lang/vise-optimizer",
+    "runtime/vise-api",
+    "runtime/vise-device",
+    "runtime/vise-pipeline",
+    "tools/vise-compiler", "lang/vise-sema",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+gfx-protocol = { path = "../gfx_workspace/lib/gfx-protocol" }
+gfx-api = { path = "../gfx_workspace/crates/gfx-api" }

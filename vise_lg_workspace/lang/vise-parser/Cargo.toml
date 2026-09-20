@@ -1,0 +1,7 @@
+[package]
+name = "vise-parser"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+vise-lexer = { path = "../vise-lexer" }

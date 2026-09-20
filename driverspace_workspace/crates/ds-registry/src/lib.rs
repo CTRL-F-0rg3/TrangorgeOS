@@ -1,8 +1,10 @@
-//! Rejestr sterowników driver space.
-//!
-//! Moduły są na razie szkieletem (`database.rs`, `matching.rs`, `state.rs` są
-//! puste) — to crate biblioteczny, więc nie ma tu `main`.
+// driverspace_workspace/crates/ds-registry/src/lib.rs
+#![no_std]
 
 pub mod database;
 pub mod matching;
 pub mod state;
+
+pub use database::{DriverId, Registry};
+pub use matching::find_driver_for_device;
+pub use state::{DeviceState, DeviceStatus};
