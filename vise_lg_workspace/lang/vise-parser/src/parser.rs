@@ -34,7 +34,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_top_level(&mut self) -> Option<TopLevel> {
-        match self.peek()?.kind {
+        match self.peek()?.kind.clone() {
             TokenKind::Fn => self.parse_function().map(TopLevel::Function),
             TokenKind::Struct => self.parse_struct().map(TopLevel::Struct),
             TokenKind::Enum => self.parse_enum().map(TopLevel::Enum),
@@ -51,7 +51,7 @@ impl<'a> Parser<'a> {
         let mut params = Vec::new();
         
         while !self.check(TokenKind::RParen) && !self.is_at_end() {
-            let qualifier = match self.peek()?.kind {
+            let qualifier = match self.peek()?.kind.clone() {
                 TokenKind::In => { self.advance(); ParamQualifier::In }
                 TokenKind::Out => { self.advance(); ParamQualifier::Out }
                 TokenKind::InOut => { self.advance(); ParamQualifier::InOut }
@@ -163,7 +163,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_stmt(&mut self) -> Option<Stmt> {
-        match self.peek()?.kind {
+        match self.peek()?.kind.clone() {
             TokenKind::Let => self.parse_let(),
             TokenKind::If => self.parse_if(),
             TokenKind::When => self.parse_when(),
@@ -302,7 +302,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_comparison()?;
         
         loop {
-            let op = match self.peek()?.kind {
+            let op = match self.peek()?.kind.clone() {
                 TokenKind::Eq => BinOp::Eq,
                 TokenKind::Ne => BinOp::Ne,
                 _ => break,
@@ -323,7 +323,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_addition()?;
         
         loop {
-            let op = match self.peek()?.kind {
+            let op = match self.peek()?.kind.clone() {
                 TokenKind::Lt => BinOp::Lt,
                 TokenKind::Le => BinOp::Le,
                 TokenKind::Gt => BinOp::Gt,
@@ -346,7 +346,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_multiplication()?;
         
         loop {
-            let op = match self.peek()?.kind {
+            let op = match self.peek()?.kind.clone() {
                 TokenKind::Plus => BinOp::Add,
                 TokenKind::Minus => BinOp::Sub,
                 _ => break,
@@ -367,7 +367,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_unary()?;
         
         loop {
-            let op = match self.peek()?.kind {
+            let op = match self.peek()?.kind.clone() {
                 TokenKind::Star => BinOp::Mul,
                 TokenKind::Slash => BinOp::Div,
                 TokenKind::Percent => BinOp::Mod,
@@ -386,7 +386,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_unary(&mut self) -> Option<Expr> {
-        let op = match self.peek()?.kind {
+        let op = match self.peek()?.kind.clone() {
             TokenKind::Minus => UnaryOp::Neg,
             TokenKind::Not => UnaryOp::Not,
             TokenKind::Tilde => UnaryOp::BitNot,
@@ -444,9 +444,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_primary(&mut self) -> Option<Expr> {
-        let token = self.peek()?;
+        let kind = self.peek()?.kind.clone();
         
-        match token.kind {
+        match kind {
             TokenKind::IntLiteral(val) => {
                 self.advance();
                 Some(Expr::IntLit(val))
@@ -459,7 +459,7 @@ impl<'a> Parser<'a> {
                 self.advance();
                 Some(Expr::BoolLit(val))
             }
-            TokenKind::Ident => {
+            TokenKind::Ident(_) => {
                 let name = self.expect_ident()?;
                 Some(Expr::Ident(name))
             }
@@ -476,7 +476,8 @@ impl<'a> Parser<'a> {
     fn parse_type(&mut self) -> Option<Type> {
         let token = self.peek()?;
         
-        let ty = match token.kind {
+        let kind = token.kind.clone();
+        let ty = match kind {
             TokenKind::Float => { self.advance(); Type::Float }
             TokenKind::Int => { self.advance(); Type::Int }
             TokenKind::Uint => { self.advance(); Type::Uint }
@@ -488,7 +489,7 @@ impl<'a> Parser<'a> {
             TokenKind::Mat4 => { self.advance(); Type::Mat4 }
             TokenKind::Sampler2D => { self.advance(); Type::Sampler2D }
             TokenKind::Image2D => { self.advance(); Type::Image2D }
-            TokenKind::Ident => {
+            TokenKind::Ident(_) => {
                 let name = self.expect_ident()?;
                 Type::Custom(name)
             }
@@ -538,9 +539,10 @@ impl<'a> Parser<'a> {
 
     fn expect_ident(&mut self) -> Option<String> {
         if let Some(token) = self.peek() {
-            if let TokenKind::Ident = token.kind {
+            if let TokenKind::Ident(ref name) = token.kind {
+                let name = name.clone();
                 self.advance();
-                return Some("ident".to_string());
+                return Some(name);
             }
         }
         None
@@ -548,7 +550,8 @@ impl<'a> Parser<'a> {
 
     fn expect_number(&mut self) -> Option<i64> {
         if let Some(token) = self.peek() {
-            if let TokenKind::IntLiteral(val) = token.kind {
+            if let TokenKind::IntLiteral(val) = &token.kind {
+                let val = *val;
                 self.advance();
                 return Some(val);
             }

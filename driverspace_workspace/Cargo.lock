@@ -60,6 +60,12 @@ version = "0.1.0"
 [[package]]
 name = "ds-mem"
 version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "ds-log",
+ "kapi-abi",
+ "kapi-syscall",
+]
 
 [[package]]
 name = "ds-registry"
