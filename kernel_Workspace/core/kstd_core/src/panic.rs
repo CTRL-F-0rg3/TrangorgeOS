@@ -7,7 +7,7 @@ fn write_all(serial: &mut kstd_io::Serial, vga: &mut kstd_io::VgaConsole, s: &st
     let _ = vga.write_str(s);
 }
 
-#[panic_handler]
+
 pub fn panic(info: &PanicInfo) -> ! {
     let mut serial = kstd_io::Serial;
     let mut vga = kstd_io::VgaConsole;

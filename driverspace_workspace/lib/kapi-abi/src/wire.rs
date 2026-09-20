@@ -1,4 +1,5 @@
 #![no_std]
+// driverspace_workspace/lib/kapi-abi/src/wire.rs (lub gdziekolwiek jest DsMsg)
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
