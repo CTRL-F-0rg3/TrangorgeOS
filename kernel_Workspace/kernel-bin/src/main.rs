@@ -1,53 +1,25 @@
 // kernel_Workspace/kernel-bin/src/main.rs
+//
+// The bootable binary of TrangorgeOS. `cargo bootimage` wraps it into
+// `target/x86_64-kernel/debug/bootimage-kernel-bin.bin`.
+//
+// This crate owns the bootloader 0.9 entry point (`_start`): it is the only
+// place in the workspace allowed to define it. The fully featured kernel lives
+// in the `kernel` library crate, the new IPC/DriverSpace layer in `src/lib.rs`.
 
 #![no_std]
 #![no_main]
 
-extern crate kstd_alloc;
-extern crate kstd_core;
-
-use bootloader::{entry_point, bootinfo::BootInfo};
-use kstd_io::traits::Write;
-use kapi_abi::DsMsg;
+use bootloader::{entry_point, BootInfo};
 
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    let mut serial = kstd_io::Serial;
-    
-    serial.write_str("\n[Kernel-Bin] Starting...\n").ok();
-    
-    unsafe { kernel::init(); }
-    serial.write_str("[Kernel-Bin] Legacy kernel initialized\n").ok();
-    
-    serial.write_str("[Kernel-Bin] Testing IPC ring...\n").ok();
-    
-    // Poprawna inicjalizacja DsMsg (bez arg3)
-    let msg = DsMsg {
-        id: 0,
-        cmd: 0xFF,
-        flags: 0,
-        arg0: 0x12345678,
-        arg1: 0xABCDEF00,
-        arg2: 0,
-        status: 0,
-        pad: 0,
-    };
-    
-    serial.write_str("[Kernel-Bin] IPC test message created\n").ok();
-    
-    serial.write_str("[Kernel-Bin] Entering IPC loop...\n").ok();
-    kernel_ipc_loop(&mut serial);
-}
+    // New layer: banner + plumbing that is linked into the image before the
+    // legacy kernel takes over.
+    kernel_bin::announce_boot();
 
-// Dodano '_' przed serial, żeby uciszyć warning o nieużywanej zmiennej
-fn kernel_ipc_loop(_serial: &mut kstd_io::Serial) -> ! {
-    loop {
-        unsafe { core::arch::asm!("hlt"); }
-    }
+    // Legacy kernel: full boot (arch, mm, gfx, drivers, fs, tests, terminal).
+    // It never returns (`kernel::terminal::run() -> !`).
+    kernel::kernel_main(boot_info)
 }
-
-// #[panic_handler]
-// fn panic(info: &core::panic::PanicInfo) -> ! {
-//     kstd_core::panic::panic(info)
-// }

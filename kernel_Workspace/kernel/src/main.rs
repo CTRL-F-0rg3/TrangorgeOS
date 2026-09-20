@@ -44,6 +44,9 @@ mod vga_buffer;
 
 use testing::Test;
 
+// NOTE: no `entry_point!(kernel_main)` here — this crate is a library. The
+// single `_start` of the bootimage is defined by the `kernel-bin` binary
+// (`kernel-bin/src/main.rs`), which forwards to `kernel_main` below.
 #[cfg(target_arch = "x86_64")]
 static TESTS: &[Test] = &[
     Test {
@@ -217,6 +220,19 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 
     terminal::init();
     terminal::run();
+
+    // Handoff into the new layer (`kernel-bin/src/lib.rs`, symbol
+    // `kernel_bin_entry`). NOTE: `terminal::run()` never returns, so this is
+    // unreachable today and only exists to keep the entry symbol wired up for
+    // the moment the terminal loop is made to return.
+    extern "C" {
+        fn kernel_bin_entry(boot_info_ptr: *const u8) -> !;
+    }
+
+    unsafe {
+        kernel_bin_entry(boot_info as *const _ as *const u8);
+    }
+    
 }
 
 #[cfg(target_arch = "riscv64")]
