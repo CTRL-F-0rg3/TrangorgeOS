@@ -1,15 +1,12 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod panic;
+pub mod sync;
+pub mod time;
+pub mod task;
+pub mod thread;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use sync::SpinLock;
+pub use time::{kernel_tick, rdtsc};
+pub use task::Task;
+pub use thread::Thread;

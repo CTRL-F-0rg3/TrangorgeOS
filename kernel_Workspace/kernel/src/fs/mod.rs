@@ -54,14 +54,10 @@ pub fn self_test() -> TestResult {
         None => return Err("no data disk"),
     };
 
-    pub fn ensure_formatted(dev: &dyn BlockDevice) -> Result<()> {
-        match read_superblock(dev) {
-            Ok(_) => Ok(()),
-            Err(_) => {
-                crate::println!("[fs] formatting disk with TFS...");
-                format(dev)
-            }
-        }
+    // The data disk may be raw/unformatted (e.g. a freshly created data.img),
+    // so make sure it carries a TFS superblock before touching the tree.
+    if ensure_formatted(data).is_err() {
+        return Err("tfs format failed");
     }
 
     if tfs::write_file(data, tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {
@@ -115,5 +111,17 @@ pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
         driver::registry::get(1)
     } else {
         driver::registry::first()
+    }
+}
+
+/// Makes sure the given block device carries a valid TFS superblock,
+/// formatting it when it is still raw (e.g. a freshly created data.img).
+pub fn ensure_formatted(dev: &dyn BlockDevice) -> Result<()> {
+    match read_superblock(dev) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            crate::println!("[fs] formatting disk with TFS...");
+            format(dev)
+        }
     }
 }

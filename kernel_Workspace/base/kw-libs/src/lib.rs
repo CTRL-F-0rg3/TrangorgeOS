@@ -1,15 +1,16 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// Re-export core foundations so sub-modules don't need to depend on kw-base directly if not needed.
+extern crate kw_base;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod utils;
+pub mod kernel;
+
+// Placeholder modules for future implementation
+pub mod mem;
+pub mod task;
+pub mod fs;
+pub mod net;
+pub mod drivers;
+pub mod ipc;
+pub mod arch;

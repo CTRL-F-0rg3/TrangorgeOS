@@ -1,6 +1,10 @@
 [package]
 name = "kstd_data"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+kstd_base = { path = "../kstd_base" }
+kstd_io = { path = "../kstd_io" }
+kstd_alloc = { path = "../kstd_alloc" }
+

@@ -1,6 +1,13 @@
 [package]
 name = "kw-base"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+kstd_base = { path = "../../core/kstd_base" }
+kstd_alloc = { path = "../../core/kstd_alloc" }
+kstd_core = { path = "../../core/kstd_core" }
+kstd_data = { path = "../../core/kstd_data" }
+kstd_io = { path = "../../core/kstd_io" }
+kstd_os_workspace = { path = "../../core/kstd_os_workspace" }
+gluecore = { path = "../../core/gluecore" }

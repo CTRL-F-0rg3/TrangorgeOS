@@ -1,15 +1,10 @@
-#[no_std]
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![no_std]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod devmodel;
+pub mod devtree;
+pub mod dma;
+pub mod pci;
+pub mod usb;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use devmodel::*;
+pub use dma::*;

@@ -1,30 +1,16 @@
-#[no_std]
-// kernel_Workspace/core/gluecore/src/bridge/mm/phys.rs
+#![no_std]
 
-use kstd_base::errors::CoreError;
-use kstd_base::types::PhysAddr;
+pub use kstd_base;
+pub use kstd_alloc;
+pub use kstd_core;
+pub use kstd_data;
+pub use kstd_io;
 
-// Importujemy "stare" jądro jako bibliotekę silnika
-use kernel::mm::phys as kernel_phys;
+pub mod bindings;
+pub mod boot;
+pub mod context;
+pub mod interrupts;
+pub mod syscalls;
 
-/// Bezpieczny wrapper nad fizycznym alokatorem ramek z jądra.
-pub mod pmm {
-    use super::*;
-
-    /// Bezpieczna alokacja jednej ramki fizycznej (4KB).
-    /// Tłumaczy `Option<u64>` z jądra na `Result<PhysAddr, CoreError>`.
-    pub fn alloc_frame() -> Result<PhysAddr, CoreError> {
-        kernel_phys::alloc_frame()
-            .map(PhysAddr)
-            .ok_or(CoreError::OutOfMemory)
-    }
-
-    /// Zwolnienie ramki.
-    pub fn free_frame(addr: PhysAddr) -> Result<(), CoreError> {
-        if kernel_phys::free_frame(addr.0) {
-            Ok(())
-        } else {
-            Err(CoreError::InvalidAddress)
-        }
-    }
-}
+// If you still want the nested bridge/mm from earlier, you can add `pub mod bridge;` here,
+// but this flat structure matches your tree.txt perfectly.

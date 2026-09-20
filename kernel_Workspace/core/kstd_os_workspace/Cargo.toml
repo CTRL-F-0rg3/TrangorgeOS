@@ -1,0 +1,12 @@
+[package]
+name = "kstd_os_workspace"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kstd_base = { path = "../kstd_base" }
+kstd_alloc = { path = "../kstd_alloc" }
+kstd_core = { path = "../kstd_core" }
+kstd_data = { path = "../kstd_data" }
+kstd_io = { path = "../kstd_io" }
+

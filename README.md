@@ -105,7 +105,29 @@ The repository relies on a strict multi-tier branch hierarchy:
 
 ---
 
+## Build
+
+The project builds as two Cargo workspaces:
+
+- **`kernel_Workspace/`** — the kernel and its bootable image (`kernel-bin`).
+- **`kernel-drivers/`** — the exported hardware-driver libraries (`pcie`, `usb`, `audio`, …), extracted from the legacy kernel as standalone `no_std` crates. The network driver (`nic`) is intentionally **not** exported.
+
+Build orchestration is handled with [Just](https://github.com/casey/just) (`justfile`):
+
+```sh
+just            # build everything (driver libraries -> kernel bootimage)
+just drivers    # build the driver libraries only
+just kernel     # build the kernel bootimage
+just run        # build + run the kernel in QEMU
+just check      # cargo check (no linking)
+```
+
+> **Note:** the experimental `ctrlfile` build tool was **excluded from the repository** for now — it is not mature enough yet — and has been replaced by the `justfile` above.
+
+---
+
 ## Project Roadmap
+
 
 - [x] **Current Stage (`stabilizing` / Alpha v0.182.x):** Deep refactoring of MM allocator, scheduler modernization, bug localization.
 - [ ] **Milestone 1 (~1.5 Months):** Complete memory allocator refactoring, lock down current subsystem rewrite, merge to `stable`.

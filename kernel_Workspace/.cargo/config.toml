@@ -1,0 +1,22 @@
+# kernel-bin — bare-metal build
+#
+# The kernel crate embeds the bootloader 0.9 `_start` and must be built for a
+# freestanding target. The custom target spec lives in kernel/x86_64-kernel.json.
+#
+# `build-std` is configured here so that plain `cargo run` / `cargo build`
+# build `core`/`alloc`/`compiler_builtins` for the JSON target automatically.
+
+[build]
+target = "./kernel/x86_64-kernel.json"
+
+[unstable]
+json-target-spec = true
+build-std = ["core", "alloc", "compiler_builtins"]
+build-std-features = ["compiler-builtins-mem"]
+
+[target.x86_64-kernel]
+rustflags = []
+runner = "/home/ctrl/TrangorgeOS/kernel_Workspace/kernel-bin/runner.sh"
+
+
+

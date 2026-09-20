@@ -1784,6 +1784,7 @@
 │   ├── base
 │   │   ├── kw-base
 │   │   │   ├── Cargo.toml
+│   │   │   ├── Cargo.toml.bak
 │   │   │   └── src
 │   │   │       ├── api
 │   │   │       │   ├── dispatch.rs
@@ -2417,6 +2418,7 @@
 │   │   │       │   │   ├── klog.rs
 │   │   │       │   │   └── panic.rs
 │   │   │       │   ├── debug.rs
+│   │   │       │   ├── mod.rs
 │   │   │       │   ├── security
 │   │   │       │   │   ├── audit.rs
 │   │   │       │   │   ├── capabilities.rs
@@ -2454,6 +2456,7 @@
 │   │   │       │   │   ├── stats.rs
 │   │   │       │   │   └── vmalloc.rs
 │   │   │       │   ├── cache.rs
+│   │   │       │   ├── mod.rs
 │   │   │       │   ├── physical
 │   │   │       │   │   ├── bitmap.rs
 │   │   │       │   │   ├── buddy.rs
@@ -2547,6 +2550,7 @@
 │   │   │           │   ├── fixed_point.rs
 │   │   │           │   └── random.rs
 │   │   │           ├── math.rs
+│   │   │           ├── mod.rs
 │   │   │           ├── string
 │   │   │           │   ├── buffer.rs
 │   │   │           │   ├── cstr.rs
@@ -2554,214 +2558,215 @@
 │   │   │           │   ├── parse.rs
 │   │   │           │   └── utf8.rs
 │   │   │           └── string.rs
-│   │   └── kw-odin-abi
-│   │       ├── Cargo.toml
-│   │       └── src
-│   │           ├── arch
-│   │           │   ├── aarch64
-│   │           │   │   ├── boot.rs
-│   │           │   │   ├── exceptions.rs
-│   │           │   │   ├── mmu.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── registers.rs
-│   │           │   │   └── timer.rs
-│   │           │   ├── common
-│   │           │   │   ├── cache.rs
-│   │           │   │   ├── cpu.rs
-│   │           │   │   ├── interrupts.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── sync.rs
-│   │           │   │   └── traits.rs
-│   │           │   └── x86_64
-│   │           │       ├── boot.rs
-│   │           │       ├── gdt.rs
-│   │           │       ├── idt.rs
-│   │           │       ├── mod.rs
-│   │           │       ├── paging.rs
-│   │           │       └── ports.rs
-│   │           ├── drivers
-│   │           │   ├── block
-│   │           │   │   ├── ahci.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── nvme.rs
-│   │           │   │   ├── queue.rs
-│   │           │   │   ├── ramdisk.rs
-│   │           │   │   └── virtio.rs
-│   │           │   ├── net
-│   │           │   │   ├── e1000.rs
-│   │           │   │   ├── loopback.rs
-│   │           │   │   ├── mac.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── phy.rs
-│   │           │   │   └── virtio_net.rs
-│   │           │   └── pci
-│   │           │       ├── bus.rs
-│   │           │       ├── config.rs
-│   │           │       ├── device.rs
-│   │           │       ├── mod.rs
-│   │           │       ├── msi.rs
-│   │           │       └── quirks.rs
-│   │           ├── dynamic
-│   │           │   ├── bindings.rs
-│   │           │   ├── jit.rs
-│   │           │   ├── loader.rs
-│   │           │   ├── mod.rs
-│   │           │   ├── relocation.rs
-│   │           │   └── symbols.rs
-│   │           ├── ffi
-│   │           │   ├── callbacks.rs
-│   │           │   ├── c_compat.rs
-│   │           │   ├── error_handling.rs
-│   │           │   ├── macros.rs
-│   │           │   ├── mod.rs
-│   │           │   └── rust_bridge.rs
-│   │           ├── fs
-│   │           │   ├── devfs
-│   │           │   │   ├── mem.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── null.rs
-│   │           │   │   ├── random.rs
-│   │           │   │   ├── tty.rs
-│   │           │   │   └── zero.rs
-│   │           │   ├── ext4
-│   │           │   │   ├── block.rs
-│   │           │   │   ├── dir.rs
-│   │           │   │   ├── inode.rs
-│   │           │   │   ├── journal.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   └── superblock.rs
-│   │           │   └── vfs
-│   │           │       ├── dentry.rs
-│   │           │       ├── dir.rs
-│   │           │       ├── file.rs
-│   │           │       ├── inode.rs
-│   │           │       ├── mod.rs
-│   │           │       └── mount.rs
-│   │           ├── kernel
-│   │           │   ├── init
-│   │           │   │   ├── bootinfo.rs
-│   │           │   │   ├── early.rs
-│   │           │   │   ├── logging.rs
-│   │           │   │   ├── main.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   └── panic.rs
-│   │           │   ├── ipc
-│   │           │   │   └── channels
-│   │           │   │       ├── mod.rs
-│   │           │   │       ├── pipes.rs
-│   │           │   │       ├── shared_mem.rs
-│   │           │   │       ├── signals.rs
-│   │           │   │       └── sockets.rs
-│   │           │   ├── scheduler
-│   │           │   │   ├── context.rs
-│   │           │   │   ├── fair.rs
-│   │           │   │   ├── idle.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── priority.rs
-│   │           │   │   └── runqueue.rs
-│   │           │   └── sync
-│   │           │       ├── condvar.rs
-│   │           │       ├── mod.rs
-│   │           │       ├── mutex.rs
-│   │           │       ├── rwlock.rs
-│   │           │       ├── semaphore.rs
-│   │           │       └── spinlock.rs
-│   │           ├── lib.rs
-│   │           ├── marshalling
-│   │           │   ├── decode.rs
-│   │           │   ├── encode.rs
-│   │           │   ├── mod.rs
-│   │           │   ├── pointers.rs
-│   │           │   ├── structs.rs
-│   │           │   └── traits.rs
-│   │           ├── mm
-│   │           │   ├── physical
-│   │           │   │   ├── allocator.rs
-│   │           │   │   ├── bitmap.rs
-│   │           │   │   ├── buddy.rs
-│   │           │   │   ├── frame.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   └── zone.rs
-│   │           │   ├── slab
-│   │           │   │   ├── cache.rs
-│   │           │   │   ├── freelist.rs
-│   │           │   │   ├── kmalloc.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── object.rs
-│   │           │   │   └── slab.rs
-│   │           │   └── virtual
-│   │           │       ├── cow.rs
-│   │           │       ├── heap.rs
-│   │           │       ├── mmap.rs
-│   │           │       ├── mod.rs
-│   │           │       ├── page.rs
-│   │           │       └── table.rs
-│   │           ├── net
-│   │           │   ├── socket
-│   │           │   │   ├── api.rs
-│   │           │   │   ├── buffer.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── raw.rs
-│   │           │   │   ├── tcp_state.rs
-│   │           │   │   └── udp_state.rs
-│   │           │   └── stack
-│   │           │       ├── arp.rs
-│   │           │       ├── icmp.rs
-│   │           │       ├── ipv4.rs
-│   │           │       ├── ipv6.rs
-│   │           │       ├── mod.rs
-│   │           │       └── tcp.rs
-│   │           ├── odin
-│   │           │   ├── calling_conv.rs
-│   │           │   ├── context.rs
-│   │           │   ├── mod.rs
-│   │           │   ├── slices.rs
-│   │           │   ├── strings.rs
-│   │           │   └── types.rs
-│   │           ├── syscall
-│   │           │   ├── dispatch
-│   │           │   │   ├── context.rs
-│   │           │   │   ├── handler.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── table.rs
-│   │           │   │   ├── traps.rs
-│   │           │   │   └── validate.rs
-│   │           │   ├── fs_ops
-│   │           │   │   ├── close.rs
-│   │           │   │   ├── mod.rs
-│   │           │   │   ├── open.rs
-│   │           │   │   ├── read.rs
-│   │           │   │   ├── stat.rs
-│   │           │   │   └── write.rs
-│   │           │   └── proc_ops
-│   │           │       ├── exec.rs
-│   │           │       ├── exit.rs
-│   │           │       ├── fork.rs
-│   │           │       ├── mod.rs
-│   │           │       ├── wait.rs
-│   │           │       └── yield.rs
-│   │           └── utils
-│   │               ├── collections
-│   │               │   ├── btree.rs
-│   │               │   ├── hashmap.rs
-│   │               │   ├── linked_list.rs
-│   │               │   ├── mod.rs
-│   │               │   ├── string.rs
-│   │               │   └── vec.rs
-│   │               ├── fmt
-│   │               │   ├── display.rs
-│   │               │   ├── format.rs
-│   │               │   ├── mod.rs
-│   │               │   ├── num.rs
-│   │               │   ├── parse.rs
-│   │               │   └── write.rs
-│   │               └── io
-│   │                   ├── buf_read.rs
-│   │                   ├── copy.rs
-│   │                   ├── mod.rs
-│   │                   ├── read.rs
-│   │                   ├── seek.rs
-│   │                   └── write.rs
+│   │   ├── kw-odin-abi
+│   │   │   ├── Cargo.toml
+│   │   │   └── src
+│   │   │       ├── arch
+│   │   │       │   ├── aarch64
+│   │   │       │   │   ├── boot.rs
+│   │   │       │   │   ├── exceptions.rs
+│   │   │       │   │   ├── mmu.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── registers.rs
+│   │   │       │   │   └── timer.rs
+│   │   │       │   ├── common
+│   │   │       │   │   ├── cache.rs
+│   │   │       │   │   ├── cpu.rs
+│   │   │       │   │   ├── interrupts.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── sync.rs
+│   │   │       │   │   └── traits.rs
+│   │   │       │   └── x86_64
+│   │   │       │       ├── boot.rs
+│   │   │       │       ├── gdt.rs
+│   │   │       │       ├── idt.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── paging.rs
+│   │   │       │       └── ports.rs
+│   │   │       ├── drivers
+│   │   │       │   ├── block
+│   │   │       │   │   ├── ahci.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── nvme.rs
+│   │   │       │   │   ├── queue.rs
+│   │   │       │   │   ├── ramdisk.rs
+│   │   │       │   │   └── virtio.rs
+│   │   │       │   ├── net
+│   │   │       │   │   ├── e1000.rs
+│   │   │       │   │   ├── loopback.rs
+│   │   │       │   │   ├── mac.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── phy.rs
+│   │   │       │   │   └── virtio_net.rs
+│   │   │       │   └── pci
+│   │   │       │       ├── bus.rs
+│   │   │       │       ├── config.rs
+│   │   │       │       ├── device.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── msi.rs
+│   │   │       │       └── quirks.rs
+│   │   │       ├── dynamic
+│   │   │       │   ├── bindings.rs
+│   │   │       │   ├── jit.rs
+│   │   │       │   ├── loader.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── relocation.rs
+│   │   │       │   └── symbols.rs
+│   │   │       ├── ffi
+│   │   │       │   ├── callbacks.rs
+│   │   │       │   ├── c_compat.rs
+│   │   │       │   ├── error_handling.rs
+│   │   │       │   ├── macros.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   └── rust_bridge.rs
+│   │   │       ├── fs
+│   │   │       │   ├── devfs
+│   │   │       │   │   ├── mem.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── null.rs
+│   │   │       │   │   ├── random.rs
+│   │   │       │   │   ├── tty.rs
+│   │   │       │   │   └── zero.rs
+│   │   │       │   ├── ext4
+│   │   │       │   │   ├── block.rs
+│   │   │       │   │   ├── dir.rs
+│   │   │       │   │   ├── inode.rs
+│   │   │       │   │   ├── journal.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── superblock.rs
+│   │   │       │   └── vfs
+│   │   │       │       ├── dentry.rs
+│   │   │       │       ├── dir.rs
+│   │   │       │       ├── file.rs
+│   │   │       │       ├── inode.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       └── mount.rs
+│   │   │       ├── kernel
+│   │   │       │   ├── init
+│   │   │       │   │   ├── bootinfo.rs
+│   │   │       │   │   ├── early.rs
+│   │   │       │   │   ├── logging.rs
+│   │   │       │   │   ├── main.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── panic.rs
+│   │   │       │   ├── ipc
+│   │   │       │   │   └── channels
+│   │   │       │   │       ├── mod.rs
+│   │   │       │   │       ├── pipes.rs
+│   │   │       │   │       ├── shared_mem.rs
+│   │   │       │   │       ├── signals.rs
+│   │   │       │   │       └── sockets.rs
+│   │   │       │   ├── scheduler
+│   │   │       │   │   ├── context.rs
+│   │   │       │   │   ├── fair.rs
+│   │   │       │   │   ├── idle.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── priority.rs
+│   │   │       │   │   └── runqueue.rs
+│   │   │       │   └── sync
+│   │   │       │       ├── condvar.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── mutex.rs
+│   │   │       │       ├── rwlock.rs
+│   │   │       │       ├── semaphore.rs
+│   │   │       │       └── spinlock.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── marshalling
+│   │   │       │   ├── decode.rs
+│   │   │       │   ├── encode.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── pointers.rs
+│   │   │       │   ├── structs.rs
+│   │   │       │   └── traits.rs
+│   │   │       ├── mm
+│   │   │       │   ├── physical
+│   │   │       │   │   ├── allocator.rs
+│   │   │       │   │   ├── bitmap.rs
+│   │   │       │   │   ├── buddy.rs
+│   │   │       │   │   ├── frame.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   └── zone.rs
+│   │   │       │   ├── slab
+│   │   │       │   │   ├── cache.rs
+│   │   │       │   │   ├── freelist.rs
+│   │   │       │   │   ├── kmalloc.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── object.rs
+│   │   │       │   │   └── slab.rs
+│   │   │       │   └── virtual
+│   │   │       │       ├── cow.rs
+│   │   │       │       ├── heap.rs
+│   │   │       │       ├── mmap.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── page.rs
+│   │   │       │       └── table.rs
+│   │   │       ├── net
+│   │   │       │   ├── socket
+│   │   │       │   │   ├── api.rs
+│   │   │       │   │   ├── buffer.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── raw.rs
+│   │   │       │   │   ├── tcp_state.rs
+│   │   │       │   │   └── udp_state.rs
+│   │   │       │   └── stack
+│   │   │       │       ├── arp.rs
+│   │   │       │       ├── icmp.rs
+│   │   │       │       ├── ipv4.rs
+│   │   │       │       ├── ipv6.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       └── tcp.rs
+│   │   │       ├── odin
+│   │   │       │   ├── calling_conv.rs
+│   │   │       │   ├── context.rs
+│   │   │       │   ├── mod.rs
+│   │   │       │   ├── slices.rs
+│   │   │       │   ├── strings.rs
+│   │   │       │   └── types.rs
+│   │   │       ├── syscall
+│   │   │       │   ├── dispatch
+│   │   │       │   │   ├── context.rs
+│   │   │       │   │   ├── handler.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── table.rs
+│   │   │       │   │   ├── traps.rs
+│   │   │       │   │   └── validate.rs
+│   │   │       │   ├── fs_ops
+│   │   │       │   │   ├── close.rs
+│   │   │       │   │   ├── mod.rs
+│   │   │       │   │   ├── open.rs
+│   │   │       │   │   ├── read.rs
+│   │   │       │   │   ├── stat.rs
+│   │   │       │   │   └── write.rs
+│   │   │       │   └── proc_ops
+│   │   │       │       ├── exec.rs
+│   │   │       │       ├── exit.rs
+│   │   │       │       ├── fork.rs
+│   │   │       │       ├── mod.rs
+│   │   │       │       ├── wait.rs
+│   │   │       │       └── yield.rs
+│   │   │       └── utils
+│   │   │           ├── collections
+│   │   │           │   ├── btree.rs
+│   │   │           │   ├── hashmap.rs
+│   │   │           │   ├── linked_list.rs
+│   │   │           │   ├── mod.rs
+│   │   │           │   ├── string.rs
+│   │   │           │   └── vec.rs
+│   │   │           ├── fmt
+│   │   │           │   ├── display.rs
+│   │   │           │   ├── format.rs
+│   │   │           │   ├── mod.rs
+│   │   │           │   ├── num.rs
+│   │   │           │   ├── parse.rs
+│   │   │           │   └── write.rs
+│   │   │           └── io
+│   │   │               ├── buf_read.rs
+│   │   │               ├── copy.rs
+│   │   │               ├── mod.rs
+│   │   │               ├── read.rs
+│   │   │               ├── seek.rs
+│   │   │               └── write.rs
+│   │   └── tree.txt
 │   ├── Cargo.lock
 │   ├── Cargo.toml
 │   ├── C_base
@@ -3297,6 +3302,7 @@
 │   │   │   │       ├── init.c
 │   │   │   │       └── panic.c
 │   │   │   ├── Cargo.toml
+│   │   │   ├── Cargo.toml.bak
 │   │   │   ├── gluecore.gpr
 │   │   │   ├── link.ld
 │   │   │   ├── src
@@ -3306,6 +3312,8 @@
 │   │   │   │   │   ├── stats.rs
 │   │   │   │   │   ├── trace.rs
 │   │   │   │   │   └── violation.rs
+│   │   │   │   ├── bindings.rs
+│   │   │   │   ├── boot.rs
 │   │   │   │   ├── bridge
 │   │   │   │   │   ├── caps
 │   │   │   │   │   │   ├── check.rs
@@ -3374,6 +3382,7 @@
 │   │   │   │   │       ├── handle.rs
 │   │   │   │   │       ├── mod.rs
 │   │   │   │   │       └── ntstatus.rs
+│   │   │   │   ├── context.rs
 │   │   │   │   ├── core_lang
 │   │   │   │   │   ├── loader.rs
 │   │   │   │   │   ├── mod.rs
@@ -3412,6 +3421,7 @@
 │   │   │   │   │   ├── late.rs
 │   │   │   │   │   ├── mod.rs
 │   │   │   │   │   └── shutdown.rs
+│   │   │   │   ├── interrupts.rs
 │   │   │   │   ├── lib.rs
 │   │   │   │   ├── lifecycle
 │   │   │   │   │   ├── destructor.rs
@@ -3438,6 +3448,7 @@
 │   │   │   │   │   ├── mutex.rs
 │   │   │   │   │   ├── rwlock.rs
 │   │   │   │   │   └── spinlock.rs
+│   │   │   │   ├── syscalls.rs
 │   │   │   │   ├── trampoline
 │   │   │   │   │   ├── abi_switch.rs
 │   │   │   │   │   ├── arch
@@ -3497,14 +3508,26 @@
 │   │   │       └── types.rs
 │   │   ├── kstd_core
 │   │   │   ├── Cargo.toml
+│   │   │   ├── Cargo.toml.bak
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── panic.rs
+│   │   │       ├── sync.rs
+│   │   │       ├── task.rs
+│   │   │       ├── thread.rs
+│   │   │       └── time.rs
 │   │   ├── kstd_data
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── list.rs
+│   │   │       ├── map.rs
+│   │   │       ├── string.rs
+│   │   │       ├── tree.rs
+│   │   │       └── vec.rs
 │   │   ├── kstd_io
 │   │   │   ├── Cargo.toml
+│   │   │   ├── Cargo.toml.bak
 │   │   │   └── src
 │   │   │       ├── buffer.rs
 │   │   │       ├── console.rs
@@ -3513,6 +3536,7 @@
 │   │   │       └── traits.rs
 │   │   ├── kstd_os_workspace
 │   │   │   ├── Cargo.toml
+│   │   │   ├── Cargo.toml.bak
 │   │   │   ├── gluecore
 │   │   │   │   ├── Cargo.toml
 │   │   │   │   └── src
@@ -3597,6 +3621,7 @@
 │   │   │   ├── rust-toolchain.toml
 │   │   │   ├── src
 │   │   │   │   └── lib.rs
+│   │   │   ├── tree.txt
 │   │   │   └── windows-com
 │   │   │       ├── Cargo.toml
 │   │   │       └── src
@@ -3609,15 +3634,25 @@
 │   │   ├── linix_abi
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── caps.rs
+│   │   │       ├── errcodes.rs
+│   │   │       ├── ipc.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── sysnums.rs
+│   │   │       └── uctx.rs
 │   │   ├── linix_abi_com
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
-│   │   │       └── lib.rs
+│   │   │       ├── lib.rs
+│   │   │       ├── msgpass.rs
+│   │   │       └── sockets.rs
 │   │   ├── linix_abi_driverspace
 │   │   │   ├── Cargo.toml
 │   │   │   └── src
+│   │   │       ├── devmodel.rs
+│   │   │       ├── dma.rs
 │   │   │       └── lib.rs
+│   │   ├── tree.txt
 │   │   └── windows-com
 │   │       ├── Cargo.toml
 │   │       └── src
@@ -3626,6 +3661,7 @@
 │   │   ├── build.rs
 │   │   ├── Cargo.lock
 │   │   ├── Cargo.toml
+│   │   ├── Cargo.toml.bak
 │   │   ├── ctrlfile
 │   │   ├── ctrlfilemaker
 │   │   ├── ctrlfile.toml
@@ -4175,8 +4211,11 @@
 │   │   │   └── vga_buffer.rs
 │   │   └── x86_64-kernel.json
 │   ├── kernel-bin
+│   │   ├── build.sh
 │   │   ├── Cargo.toml
+│   │   ├── linker.ld
 │   │   └── src
+│   │       ├── boot.asm
 │   │       └── main.rs
 │   ├── Odin_base
 │   │   ├── kernel_Workspace
@@ -4362,16 +4401,67 @@
 │       ├── CACHEDIR.TAG
 │       ├── debug
 │       │   ├── build
-│       │   │   ├── bootloader
-│       │   │   │   └── b409738de54a5396
+│       │   │   ├── bit_field
+│       │   │   │   └── 64ba15b2f9a00417
 │       │   │   │       ├── fingerprint
-│       │   │   │       │   ├── build-script-build-script-build
-│       │   │   │       │   ├── build-script-build-script-build.json
-│       │   │   │       │   ├── dep-build-script-build-script-build
-│       │   │   │       │   └── invoked.timestamp
+│       │   │   │       │   ├── dep-lib-bit_field
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-bit_field
+│       │   │   │       │   └── lib-bit_field.json
 │       │   │   │       └── out
-│       │   │   │           ├── build_script_build
-│       │   │   │           └── build_script_build.d
+│       │   │   │           ├── bit_field-64ba15b2f9a00417.d
+│       │   │   │           ├── libbit_field-64ba15b2f9a00417.rlib
+│       │   │   │           └── libbit_field-64ba15b2f9a00417.rmeta
+│       │   │   ├── bitflags
+│       │   │   │   └── dd27d124d9f8e833
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-bitflags
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-bitflags
+│       │   │   │       │   └── lib-bitflags.json
+│       │   │   │       └── out
+│       │   │   │           ├── bitflags-dd27d124d9f8e833.d
+│       │   │   │           ├── libbitflags-dd27d124d9f8e833.rlib
+│       │   │   │           └── libbitflags-dd27d124d9f8e833.rmeta
+│       │   │   ├── bootloader
+│       │   │   │   ├── 91100dcb96d09923
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── b409738de54a5396
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── cbfed5e19e704d5d
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-bootloader
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-bootloader
+│       │   │   │   │   │   └── lib-bootloader.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── bootloader-cbfed5e19e704d5d.d
+│       │   │   │   │       ├── libbootloader-cbfed5e19e704d5d.rlib
+│       │   │   │   │       └── libbootloader-cbfed5e19e704d5d.rmeta
+│       │   │   │   └── dad9ae9d82f9b7f6
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── run-build-script-build-script-build
+│       │   │   │       │   └── run-build-script-build-script-build.json
+│       │   │   │       ├── out
+│       │   │   │       └── run
+│       │   │   │           ├── invoked.timestamp
+│       │   │   │           ├── root-output
+│       │   │   │           ├── stderr
+│       │   │   │           └── stdout
 │       │   │   ├── compiler_builtins
 │       │   │   │   └── a069cbae8353c8bf
 │       │   │   │       ├── fingerprint
@@ -4383,6 +4473,17 @@
 │       │   │   │           ├── build_script_build
 │       │   │   │           └── build_script_build.d
 │       │   │   ├── const_fn
+│       │   │   │   ├── 1c01450f137d2228
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── run-build-script-build-script-build
+│       │   │   │   │   │   └── run-build-script-build-script-build.json
+│       │   │   │   │   ├── out
+│       │   │   │   │   │   └── version
+│       │   │   │   │   └── run
+│       │   │   │   │       ├── invoked.timestamp
+│       │   │   │   │       ├── root-output
+│       │   │   │   │       ├── stderr
+│       │   │   │   │       └── stdout
 │       │   │   │   ├── 2f7f555e9e519e17
 │       │   │   │   │   ├── fingerprint
 │       │   │   │   │   │   ├── dep-lib-const_fn
@@ -4403,7 +4504,25 @@
 │       │   │   │   │       ├── root-output
 │       │   │   │   │       ├── stderr
 │       │   │   │   │       └── stdout
-│       │   │   │   └── 8248caf9f03a4dc1
+│       │   │   │   ├── 8248caf9f03a4dc1
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── b2683e73c32f8ee2
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-const_fn
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-const_fn
+│       │   │   │   │   │   └── lib-const_fn.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── const_fn-b2683e73c32f8ee2.d
+│       │   │   │   │       └── libconst_fn-b2683e73c32f8ee2.so
+│       │   │   │   └── e5d1888763bcca51
 │       │   │   │       ├── fingerprint
 │       │   │   │       │   ├── build-script-build-script-build
 │       │   │   │       │   ├── build-script-build-script-build.json
@@ -4412,7 +4531,182 @@
 │       │   │   │       └── out
 │       │   │   │           ├── build_script_build
 │       │   │   │           └── build_script_build.d
+│       │   │   ├── font8x8
+│       │   │   │   └── 3e9f2f0f8cbe3b1a
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-font8x8
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-font8x8
+│       │   │   │       │   └── lib-font8x8.json
+│       │   │   │       └── out
+│       │   │   │           ├── font8x8-3e9f2f0f8cbe3b1a.d
+│       │   │   │           ├── libfont8x8-3e9f2f0f8cbe3b1a.rlib
+│       │   │   │           └── libfont8x8-3e9f2f0f8cbe3b1a.rmeta
+│       │   │   ├── gluecore
+│       │   │   │   ├── 5a3325c7478f0191
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-gluecore
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-gluecore
+│       │   │   │   │   │   ├── lib-gluecore.json
+│       │   │   │   │   │   └── output-lib-gluecore
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── gluecore-5a3325c7478f0191.d
+│       │   │   │   │       ├── libgluecore-5a3325c7478f0191.rlib
+│       │   │   │   │       └── libgluecore-5a3325c7478f0191.rmeta
+│       │   │   │   ├── 8a2a6da478f7ecc9
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 8c4c92c4e4daf07b
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── run-build-script-build-script-build
+│       │   │   │   │   │   └── run-build-script-build-script-build.json
+│       │   │   │   │   ├── out
+│       │   │   │   │   └── run
+│       │   │   │   │       ├── invoked.timestamp
+│       │   │   │   │       ├── root-output
+│       │   │   │   │       ├── stderr
+│       │   │   │   │       └── stdout
+│       │   │   │   ├── 8e4f7c96b0b0d3b3
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── a28d648e588392c8
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── e21c6c45f0c68328
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   └── output-lib-gluecore
+│       │   │   │   │   └── out
+│       │   │   │   │       └── gluecore-e21c6c45f0c68328.d
+│       │   │   │   └── ec733baf5889248e
+│       │   │   │       ├── fingerprint
+│       │   │   │       └── out
 │       │   │   ├── kernel
+│       │   │   │   ├── 2e52ea87fcad7e8f
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── run-build-script-build-script-build
+│       │   │   │   │   │   └── run-build-script-build-script-build.json
+│       │   │   │   │   ├── out
+│       │   │   │   │   │   ├── battery_init.c.o
+│       │   │   │   │   │   ├── battery_operation.c.o
+│       │   │   │   │   │   ├── bluetooth_init.c.o
+│       │   │   │   │   │   ├── bluetooth_operation.c.o
+│       │   │   │   │   │   ├── camera_init.c.o
+│       │   │   │   │   │   ├── camera_operation.c.o
+│       │   │   │   │   │   ├── core-lang_ast.c.o
+│       │   │   │   │   │   ├── core-lang_bridge.c.o
+│       │   │   │   │   │   ├── core-lang_codegen.c.o
+│       │   │   │   │   │   ├── core-lang_lexer.c.o
+│       │   │   │   │   │   ├── core-lang_loader.c.o
+│       │   │   │   │   │   ├── core-lang_native_x86.c.o
+│       │   │   │   │   │   ├── core-lang_parser.c.o
+│       │   │   │   │   │   ├── core-lang_run.c.o
+│       │   │   │   │   │   ├── core-lang_sema.c.o
+│       │   │   │   │   │   ├── core-lang_vm.c.o
+│       │   │   │   │   │   ├── cpu_trampoline.s.o
+│       │   │   │   │   │   ├── displayport_aux.c.o
+│       │   │   │   │   │   ├── displayport_edid.c.o
+│       │   │   │   │   │   ├── displayport_init.c.o
+│       │   │   │   │   │   ├── displayport_link.c.o
+│       │   │   │   │   │   ├── displayport_operation.c.o
+│       │   │   │   │   │   ├── editor_editor.c.o
+│       │   │   │   │   │   ├── editor_mouse.c.o
+│       │   │   │   │   │   ├── hdmi_init.c.o
+│       │   │   │   │   │   ├── hdmi_interface.c.o
+│       │   │   │   │   │   ├── hdmi_mode.c.o
+│       │   │   │   │   │   ├── hdmi_operation.c.o
+│       │   │   │   │   │   ├── interfejs_policy.c.o
+│       │   │   │   │   │   ├── interfejs_safe.c.o
+│       │   │   │   │   │   ├── interfejs_trangorge.c.o
+│       │   │   │   │   │   ├── libmm.a
+│       │   │   │   │   │   ├── mm_alloc_api_alloc.c.o
+│       │   │   │   │   │   ├── mm_alloc_debug_alloc_debug.c.o
+│       │   │   │   │   │   ├── mm_alloc_debug_leak.c.o
+│       │   │   │   │   │   ├── mm_alloc_debug_stats.c.o
+│       │   │   │   │   │   ├── mm_alloc_heap_buddy.c.o
+│       │   │   │   │   │   ├── mm_alloc_heap_heap.c.o
+│       │   │   │   │   │   ├── mm_alloc_heap_slab.c.o
+│       │   │   │   │   │   ├── mm_alloc_physical_bitmap.c.o
+│       │   │   │   │   │   ├── mm_alloc_physical_frame.c.o
+│       │   │   │   │   │   ├── mm_alloc_physical_pmm.c.o
+│       │   │   │   │   │   ├── mm_alloc_special_contiguous.c.o
+│       │   │   │   │   │   ├── mm_alloc_special_dma.c.o
+│       │   │   │   │   │   ├── mm_alloc_virtual_mapping.c.o
+│       │   │   │   │   │   ├── mm_alloc_virtual_page.c.o
+│       │   │   │   │   │   ├── mm_alloc_virtual_vmm.c.o
+│       │   │   │   │   │   ├── mm_arch_x86_64_memory.c.o
+│       │   │   │   │   │   ├── mm_arch_x86_64_paging.c.o
+│       │   │   │   │   │   ├── mm_arch_x86_64_tlb_asm.s.o
+│       │   │   │   │   │   ├── mm_arch_x86_64_tlb.c.o
+│       │   │   │   │   │   ├── mm_cache_cache.c.o
+│       │   │   │   │   │   ├── mm_cache_object_cache.c.o
+│       │   │   │   │   │   ├── mm_cache_per_cpu.c.o
+│       │   │   │   │   │   ├── mm_core_address.c.o
+│       │   │   │   │   │   ├── mm_core_mm.c.o
+│       │   │   │   │   │   ├── mm_core_range.c.o
+│       │   │   │   │   │   ├── mm_core_region.c.o
+│       │   │   │   │   │   ├── mm_core_sizeutil.c.o
+│       │   │   │   │   │   ├── mm_core_smp_lock.c.o
+│       │   │   │   │   │   ├── mm_kprintf.c.o
+│       │   │   │   │   │   ├── mm_paging_paging.c.o
+│       │   │   │   │   │   ├── mm_paging_pml.c.o
+│       │   │   │   │   │   ├── mm_paging_tlb.c.o
+│       │   │   │   │   │   ├── mm_process_address_space.c.o
+│       │   │   │   │   │   ├── mm_process_mmap.c.o
+│       │   │   │   │   │   ├── mm_protection_guard.c.o
+│       │   │   │   │   │   ├── mm_protection_isolation.c.o
+│       │   │   │   │   │   ├── mm_protection_permissions.c.o
+│       │   │   │   │   │   └── trampoline_rings_arch_x86_64_trampoline_rings.s.o
+│       │   │   │   │   └── run
+│       │   │   │   │       ├── invoked.timestamp
+│       │   │   │   │       ├── root-output
+│       │   │   │   │       ├── stderr
+│       │   │   │   │       └── stdout
+│       │   │   │   ├── 446ba44d00a5ca9f
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 953a32da446fe937
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-kernel
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-kernel
+│       │   │   │   │   │   ├── lib-kernel.json
+│       │   │   │   │   │   └── output-lib-kernel
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── kernel-953a32da446fe937.d
+│       │   │   │   │       ├── libkernel-953a32da446fe937.rlib
+│       │   │   │   │       └── libkernel-953a32da446fe937.rmeta
+│       │   │   │   ├── 9ec5c0bdbe0648dd
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── a583357e2525d10a
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── a99736c3111e7aba
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── e01168d988baef90
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
 │       │   │   │   └── fddb8ee82d6c5e9f
 │       │   │   │       ├── fingerprint
 │       │   │   │       │   ├── build-script-build-script-build
@@ -4422,123 +4716,1019 @@
 │       │   │   │       └── out
 │       │   │   │           ├── build_script_build
 │       │   │   │           └── build_script_build.d
-│       │   │   └── rustversion
-│       │   │       ├── 0584212db5fcf40f
+│       │   │   ├── kernel-bin
+│       │   │   │   ├── 17066aa935fe396c
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 20342afc668a69ea
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   └── output-bin-kernel-bin
+│       │   │   │   │   └── out
+│       │   │   │   │       └── kernel_bin.d
+│       │   │   │   ├── 407dbab2ebb96bc5
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 43626a43a05c3fae
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 659e4054743cf60e
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── abcba510df80f6a8
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   └── ff59cae9653807b3
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   └── output-bin-kernel-bin
+│       │   │   │       └── out
+│       │   │   │           ├── kernel_bin.5f216vu5nhejizp1jhbas6tcf.13m0hxj.rcgu.o
+│       │   │   │           ├── kernel_bin.5rnnu5hez7xxargu2xcxhz9io.13m0hxj.rcgu.o
+│       │   │   │           └── kernel_bin.d
+│       │   │   ├── kstd_alloc
+│       │   │   │   ├── 3ee3aa36e5d9b9b0
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   └── output-lib-kstd_alloc
+│       │   │   │   │   └── out
+│       │   │   │   │       └── kstd_alloc-3ee3aa36e5d9b9b0.d
+│       │   │   │   └── eb567e08a05337dc
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-kstd_alloc
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-kstd_alloc
+│       │   │   │       │   ├── lib-kstd_alloc.json
+│       │   │   │       │   └── output-lib-kstd_alloc
+│       │   │   │       └── out
+│       │   │   │           ├── kstd_alloc-eb567e08a05337dc.d
+│       │   │   │           ├── libkstd_alloc-eb567e08a05337dc.rlib
+│       │   │   │           └── libkstd_alloc-eb567e08a05337dc.rmeta
+│       │   │   ├── kstd_base
+│       │   │   │   └── 83d6ed1a6c6e7565
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-kstd_base
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-kstd_base
+│       │   │   │       │   └── lib-kstd_base.json
+│       │   │   │       └── out
+│       │   │   │           ├── kstd_base-83d6ed1a6c6e7565.d
+│       │   │   │           ├── libkstd_base-83d6ed1a6c6e7565.rlib
+│       │   │   │           └── libkstd_base-83d6ed1a6c6e7565.rmeta
+│       │   │   ├── kstd_core
+│       │   │   │   ├── 55b47444b636d270
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-kstd_core
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-kstd_core
+│       │   │   │   │   │   └── lib-kstd_core.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── kstd_core-55b47444b636d270.d
+│       │   │   │   │       ├── libkstd_core-55b47444b636d270.rlib
+│       │   │   │   │       └── libkstd_core-55b47444b636d270.rmeta
+│       │   │   │   ├── 7537bdf93ab1ac15
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   └── output-lib-kstd_core
+│       │   │   │   │   └── out
+│       │   │   │   │       └── kstd_core-7537bdf93ab1ac15.d
+│       │   │   │   └── bd5ab23503341c31
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   └── output-lib-kstd_core
+│       │   │   │       └── out
+│       │   │   │           └── kstd_core-bd5ab23503341c31.d
+│       │   │   ├── kstd_data
+│       │   │   │   ├── 94b18a58c47b4964
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-kstd_data
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-kstd_data
+│       │   │   │   │   │   ├── lib-kstd_data.json
+│       │   │   │   │   │   └── output-lib-kstd_data
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── kstd_data-94b18a58c47b4964.d
+│       │   │   │   │       ├── libkstd_data-94b18a58c47b4964.rlib
+│       │   │   │   │       └── libkstd_data-94b18a58c47b4964.rmeta
+│       │   │   │   ├── 957c33a2cd9aaabd
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   └── output-lib-kstd_data
+│       │   │   │   │   └── out
+│       │   │   │   └── ba3133921858015b
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   └── output-lib-kstd_data
+│       │   │   │       └── out
+│       │   │   │           └── kstd_data-ba3133921858015b.d
+│       │   │   ├── kstd_io
+│       │   │   │   └── 780c894a12a2fae9
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-kstd_io
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-kstd_io
+│       │   │   │       │   └── lib-kstd_io.json
+│       │   │   │       └── out
+│       │   │   │           ├── kstd_io-780c894a12a2fae9.d
+│       │   │   │           ├── libkstd_io-780c894a12a2fae9.rlib
+│       │   │   │           └── libkstd_io-780c894a12a2fae9.rmeta
+│       │   │   ├── kstd_os_workspace
+│       │   │   │   ├── 153833f590a541ce
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-kstd_os_workspace
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-kstd_os_workspace
+│       │   │   │   │   │   └── lib-kstd_os_workspace.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── kstd_os_workspace-153833f590a541ce.d
+│       │   │   │   │       ├── libkstd_os_workspace-153833f590a541ce.rlib
+│       │   │   │   │       └── libkstd_os_workspace-153833f590a541ce.rmeta
+│       │   │   │   ├── 22d9c7c56ca7c6d3
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   ├── 2ba92aa76cfda148
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   └── out
+│       │   │   │   └── c7aa78a0aeb70ae1
+│       │   │   │       ├── fingerprint
+│       │   │   │       └── out
+│       │   │   ├── kw-base
+│       │   │   │   ├── 86a75a6f79de0baa
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-kw_base
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-kw_base
+│       │   │   │   │   │   ├── lib-kw_base.json
+│       │   │   │   │   │   └── output-lib-kw_base
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── kw_base-86a75a6f79de0baa.d
+│       │   │   │   │       ├── libkw_base-86a75a6f79de0baa.rlib
+│       │   │   │   │       └── libkw_base-86a75a6f79de0baa.rmeta
+│       │   │   │   └── f980897c716974ff
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   └── output-lib-kw_base
+│       │   │   │       └── out
+│       │   │   ├── lazy_static
+│       │   │   │   └── 7c6a6a956f115eb5
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-lazy_static
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-lazy_static
+│       │   │   │       │   └── lib-lazy_static.json
+│       │   │   │       └── out
+│       │   │   │           ├── lazy_static-7c6a6a956f115eb5.d
+│       │   │   │           ├── liblazy_static-7c6a6a956f115eb5.rlib
+│       │   │   │           └── liblazy_static-7c6a6a956f115eb5.rmeta
+│       │   │   ├── pic8259
+│       │   │   │   └── 3f3102c4ff5f4d0f
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-pic8259
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-pic8259
+│       │   │   │       │   └── lib-pic8259.json
+│       │   │   │       └── out
+│       │   │   │           ├── libpic8259-3f3102c4ff5f4d0f.rlib
+│       │   │   │           ├── libpic8259-3f3102c4ff5f4d0f.rmeta
+│       │   │   │           └── pic8259-3f3102c4ff5f4d0f.d
+│       │   │   ├── rustversion
+│       │   │   │   ├── 0584212db5fcf40f
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── 20fc0aad3301e1d0
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── build-script-build-script-build
+│       │   │   │   │   │   ├── build-script-build-script-build.json
+│       │   │   │   │   │   ├── dep-build-script-build-script-build
+│       │   │   │   │   │   └── invoked.timestamp
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── build_script_build
+│       │   │   │   │       └── build_script_build.d
+│       │   │   │   ├── 45cb844aabead387
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── run-build-script-build-script-build
+│       │   │   │   │   │   └── run-build-script-build-script-build.json
+│       │   │   │   │   ├── out
+│       │   │   │   │   │   └── version.expr
+│       │   │   │   │   └── run
+│       │   │   │   │       ├── invoked.timestamp
+│       │   │   │   │       ├── root-output
+│       │   │   │   │       ├── stderr
+│       │   │   │   │       └── stdout
+│       │   │   │   ├── 5fcf89b6e38a6df9
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-rustversion
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-rustversion
+│       │   │   │   │   │   └── lib-rustversion.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── librustversion-5fcf89b6e38a6df9.so
+│       │   │   │   │       └── rustversion-5fcf89b6e38a6df9.d
+│       │   │   │   ├── acea2b2ba54cc62b
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-rustversion
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-rustversion
+│       │   │   │   │   │   └── lib-rustversion.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── librustversion-acea2b2ba54cc62b.so
+│       │   │   │   │       └── rustversion-acea2b2ba54cc62b.d
+│       │   │   │   └── d5a5db95c5016256
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── run-build-script-build-script-build
+│       │   │   │       │   └── run-build-script-build-script-build.json
+│       │   │   │       ├── out
+│       │   │   │       │   └── version.expr
+│       │   │   │       └── run
+│       │   │   │           ├── invoked.timestamp
+│       │   │   │           ├── root-output
+│       │   │   │           ├── stderr
+│       │   │   │           └── stdout
+│       │   │   ├── spin
+│       │   │   │   ├── 190e8fb036181f57
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-spin
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-spin
+│       │   │   │   │   │   └── lib-spin.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── libspin-190e8fb036181f57.rlib
+│       │   │   │   │       ├── libspin-190e8fb036181f57.rmeta
+│       │   │   │   │       └── spin-190e8fb036181f57.d
+│       │   │   │   └── f25c5315f267f0cd
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-spin
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-spin
+│       │   │   │       │   └── lib-spin.json
+│       │   │   │       └── out
+│       │   │   │           ├── libspin-f25c5315f267f0cd.rlib
+│       │   │   │           ├── libspin-f25c5315f267f0cd.rmeta
+│       │   │   │           └── spin-f25c5315f267f0cd.d
+│       │   │   ├── volatile
+│       │   │   │   ├── 28e617217a8b7f17
+│       │   │   │   │   ├── fingerprint
+│       │   │   │   │   │   ├── dep-lib-volatile
+│       │   │   │   │   │   ├── invoked.timestamp
+│       │   │   │   │   │   ├── lib-volatile
+│       │   │   │   │   │   └── lib-volatile.json
+│       │   │   │   │   └── out
+│       │   │   │   │       ├── libvolatile-28e617217a8b7f17.rlib
+│       │   │   │   │       ├── libvolatile-28e617217a8b7f17.rmeta
+│       │   │   │   │       └── volatile-28e617217a8b7f17.d
+│       │   │   │   └── cb5666b59ba4a4b8
+│       │   │   │       ├── fingerprint
+│       │   │   │       │   ├── dep-lib-volatile
+│       │   │   │       │   ├── invoked.timestamp
+│       │   │   │       │   ├── lib-volatile
+│       │   │   │       │   └── lib-volatile.json
+│       │   │   │       └── out
+│       │   │   │           ├── libvolatile-cb5666b59ba4a4b8.rlib
+│       │   │   │           ├── libvolatile-cb5666b59ba4a4b8.rmeta
+│       │   │   │           └── volatile-cb5666b59ba4a4b8.d
+│       │   │   └── x86_64
+│       │   │       ├── 46d4c6f5cabbd3b7
 │       │   │       │   ├── fingerprint
-│       │   │       │   │   ├── build-script-build-script-build
-│       │   │       │   │   ├── build-script-build-script-build.json
-│       │   │       │   │   ├── dep-build-script-build-script-build
-│       │   │       │   │   └── invoked.timestamp
+│       │   │       │   │   ├── dep-lib-x86_64
+│       │   │       │   │   ├── invoked.timestamp
+│       │   │       │   │   ├── lib-x86_64
+│       │   │       │   │   └── lib-x86_64.json
 │       │   │       │   └── out
-│       │   │       │       ├── build_script_build
-│       │   │       │       └── build_script_build.d
-│       │   │       ├── 45cb844aabead387
-│       │   │       │   ├── fingerprint
-│       │   │       │   │   ├── run-build-script-build-script-build
-│       │   │       │   │   └── run-build-script-build-script-build.json
-│       │   │       │   ├── out
-│       │   │       │   │   └── version.expr
-│       │   │       │   └── run
-│       │   │       │       ├── invoked.timestamp
-│       │   │       │       ├── root-output
-│       │   │       │       ├── stderr
-│       │   │       │       └── stdout
-│       │   │       └── acea2b2ba54cc62b
+│       │   │       │       ├── libx86_64-46d4c6f5cabbd3b7.rlib
+│       │   │       │       ├── libx86_64-46d4c6f5cabbd3b7.rmeta
+│       │   │       │       └── x86_64-46d4c6f5cabbd3b7.d
+│       │   │       └── 752e639700366441
 │       │   │           ├── fingerprint
-│       │   │           │   ├── dep-lib-rustversion
+│       │   │           │   ├── dep-lib-x86_64
 │       │   │           │   ├── invoked.timestamp
-│       │   │           │   ├── lib-rustversion
-│       │   │           │   └── lib-rustversion.json
+│       │   │           │   ├── lib-x86_64
+│       │   │           │   └── lib-x86_64.json
 │       │   │           └── out
-│       │   │               ├── librustversion-acea2b2ba54cc62b.so
-│       │   │               └── rustversion-acea2b2ba54cc62b.d
+│       │   │               ├── libx86_64-752e639700366441.rlib
+│       │   │               ├── libx86_64-752e639700366441.rmeta
+│       │   │               └── x86_64-752e639700366441.d
 │       │   ├── examples
 │       │   └── incremental
-│       │       └── build_script_build-2dwf61w6p03fg
-│       │           ├── s-hmeo032v17-1wta7uu-5moacj03zo905bfis0xe03okr
-│       │           │   ├── 0cp4i8edqmadfjvbbqkzmzhse.o
-│       │           │   ├── 0d38rmom6czhqe4ygsrr3l2v7.o
-│       │           │   ├── 0ouxskk5s4a62p179xen9jbmy.o
-│       │           │   ├── 0xwpgdcmnt2ny9rgcu7jt60rx.o
-│       │           │   ├── 1bbppua24dj6cwztrjlrmtmaj.o
-│       │           │   ├── 1dnmmq9ej00l03ucy0lvndghu.o
-│       │           │   ├── 1wj1hlchj2mnb7dn7er7ibpv0.o
-│       │           │   ├── 1yemix3sofwm7h7nno0xi1ady.o
-│       │           │   ├── 23y7xu3uzoc13rdz6zbdy3nki.o
-│       │           │   ├── 2azgy5sq9j2ll4anmpf8oyh8n.o
-│       │           │   ├── 2c1d19twbk3z3xhgqqbyhnfvn.o
-│       │           │   ├── 2dm6ozfnqzq84tk1gp6o7vbh8.o
-│       │           │   ├── 2np2do75wz78yxkmycdilh9l3.o
-│       │           │   ├── 2nyzexok7fduddll8m9k2tap5.o
-│       │           │   ├── 2r31a5a5q6mhhpuflwiuxm06n.o
-│       │           │   ├── 2u5trwy1pkqykzb9q8i2ypqi9.o
-│       │           │   ├── 2vnm2abs42784vqvvbgz05hpk.o
-│       │           │   ├── 2xao1n7s1wstd3o1xv264otw5.o
-│       │           │   ├── 3044daeb9y5hirt0leovvl89u.o
-│       │           │   ├── 37ow23iquq7swqm0n3jxotxyd.o
-│       │           │   ├── 3a1gc0q3l545kux67n35dfxwu.o
-│       │           │   ├── 3beczrm45ggtb0fxp0xzjf655.o
-│       │           │   ├── 3kb5cv9nq6sqivm20v40dqwly.o
-│       │           │   ├── 3mx86i4x2s2bysa8i6oea6utu.o
-│       │           │   ├── 3p3wyfuofqcbaw7wasruzxm4o.o
-│       │           │   ├── 40dzdn0h6jywonwu1as8r04h3.o
-│       │           │   ├── 44l590mxwwuztn7d5t71t4rxl.o
-│       │           │   ├── 45hdg0nyk5sybvfvlsxio8yi1.o
-│       │           │   ├── 4eoqfpqdoeguf9v2w2jaj8y3s.o
-│       │           │   ├── 57wynvs3xvvg3tupsatcekuer.o
-│       │           │   ├── 5cpaos0oy10e503v3pwtjagak.o
-│       │           │   ├── 5f25r8cspu3hq7wunvrjbumnk.o
-│       │           │   ├── 5uosw8z1fu5hrkvlpb40axj8b.o
-│       │           │   ├── 65o84maxjsknhndn3pd6ys3mb.o
-│       │           │   ├── 66hnqjml6k3sna5pk08u43zkq.o
-│       │           │   ├── 687vd7xo54muk3yi1ckpijl9a.o
-│       │           │   ├── 6d2xemg0lvzb1elsf8raa6xsy.o
-│       │           │   ├── 6jj28sm8jos1eqcn6ki3q20jw.o
-│       │           │   ├── 728bec71a2mik2zgqymrknkgj.o
-│       │           │   ├── 75eth5so8soau38awadz1y2h4.o
-│       │           │   ├── 7g14u6zpxmkywukxw1haa7f5j.o
-│       │           │   ├── 7k740mjcep1j5ys14sm24rcul.o
-│       │           │   ├── 7qv4xixblkueznqh4hey7tyk6.o
-│       │           │   ├── 7t8cx6d09zpclbaneb2j9whn7.o
-│       │           │   ├── 814425syfmpqh5qcwoo83pcwv.o
-│       │           │   ├── 8bma48wilt69e7znoh7qnmbq3.o
-│       │           │   ├── 8rnvpj3mxzddagw9io8stzyqn.o
-│       │           │   ├── 8yb8fc501myncxce8fdkzmyun.o
-│       │           │   ├── 983p3wgaxyb21vtwrswf865gd.o
-│       │           │   ├── 9axzwfnjthaieurntcgx710hz.o
-│       │           │   ├── 9iu8vsm8wv2fg4tnco7yvkt9a.o
-│       │           │   ├── 9kfmv7zbxsmmf4znrvsxmtedb.o
-│       │           │   ├── 9mo5wegembzaz86uqn8n13r31.o
-│       │           │   ├── 9up4ggx9ejoho5mhso6x67d0d.o
-│       │           │   ├── ae6x90nppygwjg5axx2zg0lp5.o
-│       │           │   ├── ao6smtz672infoorkosks4y52.o
-│       │           │   ├── atab4lvaf9zg83k66gvg36dk0.o
-│       │           │   ├── ayder2ytjju8ttccze37eliuo.o
-│       │           │   ├── b150ty6mvob88whd2e359wj0k.o
-│       │           │   ├── b5lxviutq2726qc1o33ptz484.o
-│       │           │   ├── b6lxnx2vwxp71wu87sf1v4vf7.o
-│       │           │   ├── bdixbdokzsbjh2lft9m4upvwu.o
-│       │           │   ├── bgimsw9o3rm6hxri7nif8x6bb.o
-│       │           │   ├── bh1gms9igcwc2tg9zzpu3ppxz.o
-│       │           │   ├── bz2cm1rirodkvseshxn937vcx.o
-│       │           │   ├── c21yrxr5tmqmkfly98blo5bif.o
-│       │           │   ├── c5iahmx8kf1x1m5evzb65agiv.o
-│       │           │   ├── cge46bnnipdkshkyed4fs5vdk.o
-│       │           │   ├── cjsob7tkrxjk3jd3st21fd6uj.o
-│       │           │   ├── d3rlitl8kpjrxygd9m2wauez9.o
-│       │           │   ├── dav3a95nplguif4ld1nq1y22p.o
+│       │       ├── build_script_build-0dx87ti8dcko5
+│       │       │   ├── s-hmfsdb0lxe-042awhv-0koktwfoxn8rgh35sdsguypcu
+│       │       │   │   ├── 0ka45xgxc339pm299pj5krqfs.o
+│       │       │   │   ├── 4ffmj5ybmeu11de54k4hlujcr.o
+│       │       │   │   ├── 6zep9t6prj3d3nwg2rfczc1cc.o
+│       │       │   │   ├── 7dvxynevwxzd4zkunifx1a364.o
+│       │       │   │   ├── cw908tqx5b04qtqjutkmiyny4.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfsdb0lxe-042awhv.lock
+│       │       ├── build_script_build-0s91tfxbqhfoe
+│       │       │   ├── s-hmfs16d2ef-16ji1nn-c2z7mzucgvoow0fe0tryucxp9
+│       │       │   │   ├── 0b0138yyasemw5nxmfi7l3vw4.o
+│       │       │   │   ├── 0s8ndlf20f532kj776yyivcd9.o
+│       │       │   │   ├── 0ta6f7jl05whj9twwntt96tlj.o
+│       │       │   │   ├── 0wuq1ibml3pbcei8mict9h5z3.o
+│       │       │   │   ├── 1adhzn2t2magnhbp6b0jvsyi4.o
+│       │       │   │   ├── 1i4t3i5ytxolwhossvo5akgh2.o
+│       │       │   │   ├── 1uxwmq82rnltg30tj7tsoxagj.o
+│       │       │   │   ├── 1xsb5wr03ojg8126sc8wk42yb.o
+│       │       │   │   ├── 27rjn3iirlu702fcooerb373k.o
+│       │       │   │   ├── 2rrcvziywi5md2yyumqguv56h.o
+│       │       │   │   ├── 2uqscade2l84y71kmfqmhewr8.o
+│       │       │   │   ├── 33w3leb59n9lufhucjr470qkg.o
+│       │       │   │   ├── 36clsap0po51esnasu40ysnoj.o
+│       │       │   │   ├── 3vm5k5gvotgv2ojocynexvz6i.o
+│       │       │   │   ├── 42c3q4vdbexyiy0lf7y9lfdkh.o
+│       │       │   │   ├── 43x8m3dxki9miqthucwv8j429.o
+│       │       │   │   ├── 471acm0nbjmuj4w38vosf4orf.o
+│       │       │   │   ├── 4k6a5aar1ubzofv2ic0ufee3o.o
+│       │       │   │   ├── 5ff0dk6eje53fdppggbjaafw2.o
+│       │       │   │   ├── 5h7izhybtqpzmzc0r0m4f6k03.o
+│       │       │   │   ├── 5pvuioc5gz5v6801isnfwql9v.o
+│       │       │   │   ├── 5u3lc8r8cu1omrsu6jdy0mspg.o
+│       │       │   │   ├── 60u6pt4058cwnoxx6cf653snw.o
+│       │       │   │   ├── 60wpbqus3qfll7cd0vpnx40jb.o
+│       │       │   │   ├── 64l2xzgdwvorlv64stfkgte1q.o
+│       │       │   │   ├── 6cep62emhdvu4k3zlpdj9976v.o
+│       │       │   │   ├── 6fecsv72fnlx8xt1o5umq46c9.o
+│       │       │   │   ├── 6gg3npq9tnrnxi2v093r82fps.o
+│       │       │   │   ├── 6kdgag0vo9pd33qan4d4zxmup.o
+│       │       │   │   ├── 6nr0gmldnmr8cm36i3r723kzv.o
+│       │       │   │   ├── 71ezw7x9x9swksu0ku6104ub5.o
+│       │       │   │   ├── 73xag0tvup780kkp1u08z52mm.o
+│       │       │   │   ├── 74l6gzj0phdv7i5gju2oiswlr.o
+│       │       │   │   ├── 74slqh3y9vqnrux67qy6w0tpf.o
+│       │       │   │   ├── 7846g2cbd9tuldvlj18r8wrs1.o
+│       │       │   │   ├── 7ctr8f8b0kgbrk2fwl97mkx47.o
+│       │       │   │   ├── 84ah2hqhauuxr78mr5z2ovsf9.o
+│       │       │   │   ├── 85kxrd7lo89rhievgnwymvdy3.o
+│       │       │   │   ├── 8dvkqzikqbj6eoctr3xo2y12k.o
+│       │       │   │   ├── 8e5ugkw18opn0m7vn230jxpbh.o
+│       │       │   │   ├── 8m3vmqyl3nnhh5g0rfcnbm3mc.o
+│       │       │   │   ├── 8qzi0tirsydopdtcsy1nm4ucp.o
+│       │       │   │   ├── 91qzcejy0bibhn6qle7qaz64d.o
+│       │       │   │   ├── 92wblw3zs7c11qd5o11vg775f.o
+│       │       │   │   ├── 9fdbfq5994vj409ywkuum3mv8.o
+│       │       │   │   ├── 9l2xdno77vj8d8v4jtaeaintk.o
+│       │       │   │   ├── 9nczw7rlhzv67nwb69zzsfsmx.o
+│       │       │   │   ├── 9o2ogzckrrke58gdsufkr2y8h.o
+│       │       │   │   ├── a8plx4tjuyt2ewka4thmmgp16.o
+│       │       │   │   ├── aaljiaelr7x2s0ohrj4rv4cjv.o
+│       │       │   │   ├── akibqgf4uv3vytfnv81j0ov9e.o
+│       │       │   │   ├── b1f3lzh6i53423gwuueylvpfx.o
+│       │       │   │   ├── b83as0jzblyf65qsqolzoc1qn.o
+│       │       │   │   ├── bi8tsuo45d83f8t4d9tz32bip.o
+│       │       │   │   ├── bsoo4miculylfwydnl5bef7vs.o
+│       │       │   │   ├── bwnuglle0qc5xbj6qlvds3f4l.o
+│       │       │   │   ├── c8bxn0noyjf7fgcgccpo040dx.o
+│       │       │   │   ├── ceim33j3tfk17vwh94cb7tt3v.o
+│       │       │   │   ├── chwfbi8maj53kjcgfw1nqy18h.o
+│       │       │   │   ├── cj0ejlx2sz053p2t1kbxykyzs.o
+│       │       │   │   ├── cl7amtkf9ykpp3ky5o84hhsyn.o
+│       │       │   │   ├── cp15n8p8ahazqwb85w9q6byul.o
+│       │       │   │   ├── cxcycq80it2dcko1335jzof24.o
+│       │       │   │   ├── cyn2ukuxe5jkotimxgcxusc0y.o
+│       │       │   │   ├── d1t3fadqmqt30iyk0eaii1gw6.o
+│       │       │   │   ├── d6htlmhjutafce4z20yv1xm9c.o
+│       │       │   │   ├── d6m2ni2ivtbuctg32yjgi01sc.o
+│       │       │   │   ├── d85vgu2nahl9uzzs9ly0mw153.o
+│       │       │   │   ├── d8c3ifrwcfqinh0r2akdwutuw.o
+│       │       │   │   ├── d8ou897nf6bjwh6mwr326j2wr.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── di434vavqwf22j5za1fdrx1nu.o
+│       │       │   │   ├── dinibpv914awyihcmt85o0kv6.o
+│       │       │   │   ├── ducnq4ksfrknr139gurpo9r8c.o
+│       │       │   │   ├── dyemnax58x3pyg3iz1vt3vu7m.o
+│       │       │   │   ├── e5820fokddsimi9wdki0i75f5.o
+│       │       │   │   ├── efnacv6tsf9c6gj336oxqb5d3.o
+│       │       │   │   ├── egqyc2tm8413jnlyccxzg6xbd.o
+│       │       │   │   ├── ew2t7sk9p6m0cdyjwa25llyco.o
+│       │       │   │   ├── eyb7w4uhkd62qx22u9mkk5zck.o
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs16d2ef-16ji1nn.lock
+│       │       ├── build_script_build-2dwf61w6p03fg
+│       │       │   ├── s-hmeo032v17-1wta7uu-5moacj03zo905bfis0xe03okr
+│       │       │   │   ├── 0cp4i8edqmadfjvbbqkzmzhse.o
+│       │       │   │   ├── 0d38rmom6czhqe4ygsrr3l2v7.o
+│       │       │   │   ├── 0ouxskk5s4a62p179xen9jbmy.o
+│       │       │   │   ├── 0xwpgdcmnt2ny9rgcu7jt60rx.o
+│       │       │   │   ├── 1bbppua24dj6cwztrjlrmtmaj.o
+│       │       │   │   ├── 1dnmmq9ej00l03ucy0lvndghu.o
+│       │       │   │   ├── 1wj1hlchj2mnb7dn7er7ibpv0.o
+│       │       │   │   ├── 1yemix3sofwm7h7nno0xi1ady.o
+│       │       │   │   ├── 23y7xu3uzoc13rdz6zbdy3nki.o
+│       │       │   │   ├── 2azgy5sq9j2ll4anmpf8oyh8n.o
+│       │       │   │   ├── 2c1d19twbk3z3xhgqqbyhnfvn.o
+│       │       │   │   ├── 2dm6ozfnqzq84tk1gp6o7vbh8.o
+│       │       │   │   ├── 2np2do75wz78yxkmycdilh9l3.o
+│       │       │   │   ├── 2nyzexok7fduddll8m9k2tap5.o
+│       │       │   │   ├── 2r31a5a5q6mhhpuflwiuxm06n.o
+│       │       │   │   ├── 2u5trwy1pkqykzb9q8i2ypqi9.o
+│       │       │   │   ├── 2vnm2abs42784vqvvbgz05hpk.o
+│       │       │   │   ├── 2xao1n7s1wstd3o1xv264otw5.o
+│       │       │   │   ├── 3044daeb9y5hirt0leovvl89u.o
+│       │       │   │   ├── 37ow23iquq7swqm0n3jxotxyd.o
+│       │       │   │   ├── 3a1gc0q3l545kux67n35dfxwu.o
+│       │       │   │   ├── 3beczrm45ggtb0fxp0xzjf655.o
+│       │       │   │   ├── 3kb5cv9nq6sqivm20v40dqwly.o
+│       │       │   │   ├── 3mx86i4x2s2bysa8i6oea6utu.o
+│       │       │   │   ├── 3p3wyfuofqcbaw7wasruzxm4o.o
+│       │       │   │   ├── 40dzdn0h6jywonwu1as8r04h3.o
+│       │       │   │   ├── 44l590mxwwuztn7d5t71t4rxl.o
+│       │       │   │   ├── 45hdg0nyk5sybvfvlsxio8yi1.o
+│       │       │   │   ├── 4eoqfpqdoeguf9v2w2jaj8y3s.o
+│       │       │   │   ├── 57wynvs3xvvg3tupsatcekuer.o
+│       │       │   │   ├── 5cpaos0oy10e503v3pwtjagak.o
+│       │       │   │   ├── 5f25r8cspu3hq7wunvrjbumnk.o
+│       │       │   │   ├── 5uosw8z1fu5hrkvlpb40axj8b.o
+│       │       │   │   ├── 65o84maxjsknhndn3pd6ys3mb.o
+│       │       │   │   ├── 66hnqjml6k3sna5pk08u43zkq.o
+│       │       │   │   ├── 687vd7xo54muk3yi1ckpijl9a.o
+│       │       │   │   ├── 6d2xemg0lvzb1elsf8raa6xsy.o
+│       │       │   │   ├── 6jj28sm8jos1eqcn6ki3q20jw.o
+│       │       │   │   ├── 728bec71a2mik2zgqymrknkgj.o
+│       │       │   │   ├── 75eth5so8soau38awadz1y2h4.o
+│       │       │   │   ├── 7g14u6zpxmkywukxw1haa7f5j.o
+│       │       │   │   ├── 7k740mjcep1j5ys14sm24rcul.o
+│       │       │   │   ├── 7qv4xixblkueznqh4hey7tyk6.o
+│       │       │   │   ├── 7t8cx6d09zpclbaneb2j9whn7.o
+│       │       │   │   ├── 814425syfmpqh5qcwoo83pcwv.o
+│       │       │   │   ├── 8bma48wilt69e7znoh7qnmbq3.o
+│       │       │   │   ├── 8rnvpj3mxzddagw9io8stzyqn.o
+│       │       │   │   ├── 8yb8fc501myncxce8fdkzmyun.o
+│       │       │   │   ├── 983p3wgaxyb21vtwrswf865gd.o
+│       │       │   │   ├── 9axzwfnjthaieurntcgx710hz.o
+│       │       │   │   ├── 9iu8vsm8wv2fg4tnco7yvkt9a.o
+│       │       │   │   ├── 9kfmv7zbxsmmf4znrvsxmtedb.o
+│       │       │   │   ├── 9mo5wegembzaz86uqn8n13r31.o
+│       │       │   │   ├── 9up4ggx9ejoho5mhso6x67d0d.o
+│       │       │   │   ├── ae6x90nppygwjg5axx2zg0lp5.o
+│       │       │   │   ├── ao6smtz672infoorkosks4y52.o
+│       │       │   │   ├── atab4lvaf9zg83k66gvg36dk0.o
+│       │       │   │   ├── ayder2ytjju8ttccze37eliuo.o
+│       │       │   │   ├── b150ty6mvob88whd2e359wj0k.o
+│       │       │   │   ├── b5lxviutq2726qc1o33ptz484.o
+│       │       │   │   ├── b6lxnx2vwxp71wu87sf1v4vf7.o
+│       │       │   │   ├── bdixbdokzsbjh2lft9m4upvwu.o
+│       │       │   │   ├── bgimsw9o3rm6hxri7nif8x6bb.o
+│       │       │   │   ├── bh1gms9igcwc2tg9zzpu3ppxz.o
+│       │       │   │   ├── bz2cm1rirodkvseshxn937vcx.o
+│       │       │   │   ├── c21yrxr5tmqmkfly98blo5bif.o
+│       │       │   │   ├── c5iahmx8kf1x1m5evzb65agiv.o
+│       │       │   │   ├── cge46bnnipdkshkyed4fs5vdk.o
+│       │       │   │   ├── cjsob7tkrxjk3jd3st21fd6uj.o
+│       │       │   │   ├── d3rlitl8kpjrxygd9m2wauez9.o
+│       │       │   │   ├── dav3a95nplguif4ld1nq1y22p.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── dg38k4arysgehxkd7oz73t0u6.o
+│       │       │   │   ├── dist3antmx0yw3cfva03zfplx.o
+│       │       │   │   ├── dowt1vu309zdj1ofpx6gufvmn.o
+│       │       │   │   ├── dqs00mozkn4uaewp1n8yxqlsu.o
+│       │       │   │   ├── dt3ikartu5a9ba9iq12ccvdhu.o
+│       │       │   │   ├── ehl5qobwuwcy64yp6rwjng0px.o
+│       │       │   │   ├── eizp3iwgr3jlnkrn5770njzt7.o
+│       │       │   │   ├── f4n86ud7cod8lky6xem1k7w12.o
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   ├── s-hmeo032v17-1wta7uu.lock
+│       │       │   ├── s-hmfse0vv6q-0zbtbsu-5moacj03zo905bfis0xe03okr
+│       │       │   │   ├── 0cp4i8edqmadfjvbbqkzmzhse.o
+│       │       │   │   ├── 0d38rmom6czhqe4ygsrr3l2v7.o
+│       │       │   │   ├── 0ouxskk5s4a62p179xen9jbmy.o
+│       │       │   │   ├── 0xwpgdcmnt2ny9rgcu7jt60rx.o
+│       │       │   │   ├── 1bbppua24dj6cwztrjlrmtmaj.o
+│       │       │   │   ├── 1dnmmq9ej00l03ucy0lvndghu.o
+│       │       │   │   ├── 1wj1hlchj2mnb7dn7er7ibpv0.o
+│       │       │   │   ├── 1yemix3sofwm7h7nno0xi1ady.o
+│       │       │   │   ├── 23y7xu3uzoc13rdz6zbdy3nki.o
+│       │       │   │   ├── 2azgy5sq9j2ll4anmpf8oyh8n.o
+│       │       │   │   ├── 2c1d19twbk3z3xhgqqbyhnfvn.o
+│       │       │   │   ├── 2dm6ozfnqzq84tk1gp6o7vbh8.o
+│       │       │   │   ├── 2np2do75wz78yxkmycdilh9l3.o
+│       │       │   │   ├── 2nyzexok7fduddll8m9k2tap5.o
+│       │       │   │   ├── 2r31a5a5q6mhhpuflwiuxm06n.o
+│       │       │   │   ├── 2u5trwy1pkqykzb9q8i2ypqi9.o
+│       │       │   │   ├── 2vnm2abs42784vqvvbgz05hpk.o
+│       │       │   │   ├── 2xao1n7s1wstd3o1xv264otw5.o
+│       │       │   │   ├── 3044daeb9y5hirt0leovvl89u.o
+│       │       │   │   ├── 37ow23iquq7swqm0n3jxotxyd.o
+│       │       │   │   ├── 3a1gc0q3l545kux67n35dfxwu.o
+│       │       │   │   ├── 3beczrm45ggtb0fxp0xzjf655.o
+│       │       │   │   ├── 3kb5cv9nq6sqivm20v40dqwly.o
+│       │       │   │   ├── 3mx86i4x2s2bysa8i6oea6utu.o
+│       │       │   │   ├── 3p3wyfuofqcbaw7wasruzxm4o.o
+│       │       │   │   ├── 40dzdn0h6jywonwu1as8r04h3.o
+│       │       │   │   ├── 44l590mxwwuztn7d5t71t4rxl.o
+│       │       │   │   ├── 45hdg0nyk5sybvfvlsxio8yi1.o
+│       │       │   │   ├── 4eoqfpqdoeguf9v2w2jaj8y3s.o
+│       │       │   │   ├── 57wynvs3xvvg3tupsatcekuer.o
+│       │       │   │   ├── 5cpaos0oy10e503v3pwtjagak.o
+│       │       │   │   ├── 5f25r8cspu3hq7wunvrjbumnk.o
+│       │       │   │   ├── 5uosw8z1fu5hrkvlpb40axj8b.o
+│       │       │   │   ├── 65o84maxjsknhndn3pd6ys3mb.o
+│       │       │   │   ├── 66hnqjml6k3sna5pk08u43zkq.o
+│       │       │   │   ├── 687vd7xo54muk3yi1ckpijl9a.o
+│       │       │   │   ├── 6d2xemg0lvzb1elsf8raa6xsy.o
+│       │       │   │   ├── 6jj28sm8jos1eqcn6ki3q20jw.o
+│       │       │   │   ├── 728bec71a2mik2zgqymrknkgj.o
+│       │       │   │   ├── 75eth5so8soau38awadz1y2h4.o
+│       │       │   │   ├── 7g14u6zpxmkywukxw1haa7f5j.o
+│       │       │   │   ├── 7k740mjcep1j5ys14sm24rcul.o
+│       │       │   │   ├── 7qv4xixblkueznqh4hey7tyk6.o
+│       │       │   │   ├── 7t8cx6d09zpclbaneb2j9whn7.o
+│       │       │   │   ├── 814425syfmpqh5qcwoo83pcwv.o
+│       │       │   │   ├── 8bma48wilt69e7znoh7qnmbq3.o
+│       │       │   │   ├── 8rnvpj3mxzddagw9io8stzyqn.o
+│       │       │   │   ├── 8yb8fc501myncxce8fdkzmyun.o
+│       │       │   │   ├── 983p3wgaxyb21vtwrswf865gd.o
+│       │       │   │   ├── 9axzwfnjthaieurntcgx710hz.o
+│       │       │   │   ├── 9iu8vsm8wv2fg4tnco7yvkt9a.o
+│       │       │   │   ├── 9kfmv7zbxsmmf4znrvsxmtedb.o
+│       │       │   │   ├── 9mo5wegembzaz86uqn8n13r31.o
+│       │       │   │   ├── 9up4ggx9ejoho5mhso6x67d0d.o
+│       │       │   │   ├── ae6x90nppygwjg5axx2zg0lp5.o
+│       │       │   │   ├── ao6smtz672infoorkosks4y52.o
+│       │       │   │   ├── atab4lvaf9zg83k66gvg36dk0.o
+│       │       │   │   ├── ayder2ytjju8ttccze37eliuo.o
+│       │       │   │   ├── b150ty6mvob88whd2e359wj0k.o
+│       │       │   │   ├── b5lxviutq2726qc1o33ptz484.o
+│       │       │   │   ├── b6lxnx2vwxp71wu87sf1v4vf7.o
+│       │       │   │   ├── bdixbdokzsbjh2lft9m4upvwu.o
+│       │       │   │   ├── bgimsw9o3rm6hxri7nif8x6bb.o
+│       │       │   │   ├── bh1gms9igcwc2tg9zzpu3ppxz.o
+│       │       │   │   ├── bz2cm1rirodkvseshxn937vcx.o
+│       │       │   │   ├── c21yrxr5tmqmkfly98blo5bif.o
+│       │       │   │   ├── c5iahmx8kf1x1m5evzb65agiv.o
+│       │       │   │   ├── cge46bnnipdkshkyed4fs5vdk.o
+│       │       │   │   ├── cjsob7tkrxjk3jd3st21fd6uj.o
+│       │       │   │   ├── d3rlitl8kpjrxygd9m2wauez9.o
+│       │       │   │   ├── dav3a95nplguif4ld1nq1y22p.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── dg38k4arysgehxkd7oz73t0u6.o
+│       │       │   │   ├── dist3antmx0yw3cfva03zfplx.o
+│       │       │   │   ├── dowt1vu309zdj1ofpx6gufvmn.o
+│       │       │   │   ├── dqs00mozkn4uaewp1n8yxqlsu.o
+│       │       │   │   ├── dt3ikartu5a9ba9iq12ccvdhu.o
+│       │       │   │   ├── ehl5qobwuwcy64yp6rwjng0px.o
+│       │       │   │   ├── eizp3iwgr3jlnkrn5770njzt7.o
+│       │       │   │   ├── f4n86ud7cod8lky6xem1k7w12.o
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfse0vv6q-0zbtbsu.lock
+│       │       ├── build_script_build-3dsq1tdp3lq1c
+│       │       │   ├── s-hmfs161fdd-1e5one9-5yqjm7i2xcgeei22devxcl7r8
+│       │       │   │   ├── 0awebtw6pduugskkkrddzj11o.o
+│       │       │   │   ├── 2m8jb86eqi3c7v09t81q6aufg.o
+│       │       │   │   ├── 3qpkljhda0xc1i0xvrfw8s369.o
+│       │       │   │   ├── 9gj7io2sf2cgc66elrhuqmv26.o
+│       │       │   │   ├── alvinai63brkjmd7uwzebvxrm.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   ├── s-hmfs161fdd-1e5one9.lock
+│       │       │   ├── s-hmfs4emu1a-1r69n0i-eh24ds8eqrlnwmn9wsz0o4896
+│       │       │   │   ├── 0awebtw6pduugskkkrddzj11o.o
+│       │       │   │   ├── 2m8jb86eqi3c7v09t81q6aufg.o
+│       │       │   │   ├── 3qpkljhda0xc1i0xvrfw8s369.o
+│       │       │   │   ├── 9gj7io2sf2cgc66elrhuqmv26.o
+│       │       │   │   ├── alvinai63brkjmd7uwzebvxrm.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs4emu1a-1r69n0i.lock
+│       │       ├── gluecore-24ggyeottvsog
+│       │       │   ├── s-hmfs2ejsry-0pddg4u.lock
+│       │       │   └── s-hmfs2ejsry-0pddg4u-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── gluecore-3fj7wycivlv32
+│       │       │   ├── s-hmfs8e7uoz-1i6pz1w-7j32jkuetq99kuq7yg2a6hglk
+│       │       │   │   ├── 0ayarai16zk39oxhjuxdvsiyu.o
+│       │       │   │   ├── 0pukfsygk8zeee3sz7x5nmd2b.o
+│       │       │   │   ├── cjz8s381nco5iwi98xcaj8jj3.o
+│       │       │   │   ├── cztrxr0f8dxskv39koftzadzw.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── e0ndstugp9qy4xk95ofb1o6s4.o
+│       │       │   │   ├── ex1luonjt9iynzrr5mkc5vo3g.o
+│       │       │   │   ├── ey6h99t1meup0h5unti1fq4k7.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs8e7uoz-1i6pz1w.lock
+│       │       ├── kernel-3b7iz0eloo3ku
+│       │       │   ├── s-hmfs8e9rd4-0koozp5-96hdhbkn7odla1iskog3ou9fw
+│       │       │   │   ├── 00sb9dkqpe3n1jv2uu5lah3wc.o
+│       │       │   │   ├── 043orllleqtq34hieobf8grwk.o
+│       │       │   │   ├── 05492dili6gdgvtjlt80f7tbs.o
+│       │       │   │   ├── 06j42f68n7vw5uw5ycobw255y.o
+│       │       │   │   ├── 0bjfmhi7ubejbgl0unc8itt22.o
+│       │       │   │   ├── 0ddpelh5uru51us4huhxqvyvg.o
+│       │       │   │   ├── 0e6bkxeuup9yseln8omv8t4bk.o
+│       │       │   │   ├── 0g1sfltch1qjyqa52zl24t8gs.o
+│       │       │   │   ├── 0go4q5eyjmff7wbncytufm1oo.o
+│       │       │   │   ├── 0h155zs3ixbj2fzs0sz4asjkh.o
+│       │       │   │   ├── 0j8873ldmpw5mqk3r08qnwzae.o
+│       │       │   │   ├── 0p78igr6lvxtvc33597w6noaj.o
+│       │       │   │   ├── 0pd60pu7b1p8jplrbygg47m2y.o
+│       │       │   │   ├── 0rylfkgx2rj6i1pcs8lqaetbu.o
+│       │       │   │   ├── 0tyuoizjqjpw1wzrfywi1p916.o
+│       │       │   │   ├── 0vrajm8mglltc00p7bg6pmdl0.o
+│       │       │   │   ├── 0xp76irpkaxymzjgkyd4cf742.o
+│       │       │   │   ├── 0y98gnmgfya3f56pynngg3489.o
+│       │       │   │   ├── 0y9z5v8xrzw1zg0bumqhtpxap.o
+│       │       │   │   ├── 10bivtpyrwzadckpbiddud23g.o
+│       │       │   │   ├── 11j4d81hnrtdajgr8yuyia9pv.o
+│       │       │   │   ├── 14ejy2hxwskrdxxsq1bat3ya2.o
+│       │       │   │   ├── 18jf3huxjxmw9pvo9mwn2ml2o.o
+│       │       │   │   ├── 1apyyvrgxkmv91oge7z0dcg9f.o
+│       │       │   │   ├── 1ayh16cl6pmv3r7pgsi5id25y.o
+│       │       │   │   ├── 1b9jwvbha4zlr3omtrk4l0ry5.o
+│       │       │   │   ├── 1doys20mt48ybe3f23ty38cyb.o
+│       │       │   │   ├── 1dytmu6r4g1wb0ypo83n079e7.o
+│       │       │   │   ├── 1iz4dsj8qdl9xch7ryqz8nnu9.o
+│       │       │   │   ├── 1luppyruozde0l1isc4slg2av.o
+│       │       │   │   ├── 1nye6xvcerrgipxyw4mk7u1u2.o
+│       │       │   │   ├── 1os8m49ev5lytvt0w2lgl3lle.o
+│       │       │   │   ├── 1p1jdsl83mu1ftp1a2ndk686q.o
+│       │       │   │   ├── 1qtrn8otuepr56cc1s77gkkbu.o
+│       │       │   │   ├── 1slcfv0f6wnw6cac4wv7n03t4.o
+│       │       │   │   ├── 1uwh5eag78ys3y3457irfb03i.o
+│       │       │   │   ├── 1xpz1dgfj1fuxpdsnnquwjj8n.o
+│       │       │   │   ├── 1zk1fprzn3f2ayqpasikj50u7.o
+│       │       │   │   ├── 23piid9sh8wnx50eh0hkyjwtm.o
+│       │       │   │   ├── 283wzxci12lycpg5druh8dqnx.o
+│       │       │   │   ├── 29p2ophd4kjmnho7ftkog5ua5.o
+│       │       │   │   ├── 2chqnh6e18w6lvi05i1mwtz2e.o
+│       │       │   │   ├── 2err3x1q3s2630szxt3axa6kd.o
+│       │       │   │   ├── 2f8ftm37su43cedfgs7umo0u5.o
+│       │       │   │   ├── 2fxige5c0yx5bfpbie4lvj5yy.o
+│       │       │   │   ├── 2ntwowg5atd2h3lhgcez5do1a.o
+│       │       │   │   ├── 2olqyunbg938e2vc3p9njgugv.o
+│       │       │   │   ├── 2zu3vzo84ds1b5j6eo2o3c1lc.o
+│       │       │   │   ├── 318gqulymqo0cse2llwuncm3s.o
+│       │       │   │   ├── 371xesktxfschg2n3qi86r46f.o
+│       │       │   │   ├── 37s77ooy7jps13w2e44smsfoq.o
+│       │       │   │   ├── 3heymrds5jbgrqirif7xrfpgf.o
+│       │       │   │   ├── 3hl16qw7xdfxcan80mukryl4y.o
+│       │       │   │   ├── 3ijw2sdsqn5hc2s2g8mdoei96.o
+│       │       │   │   ├── 3ino220q4gli9xdkws9pvqct8.o
+│       │       │   │   ├── 3jgjmspugjbem0gooh4l0ahlv.o
+│       │       │   │   ├── 3jluls2eivni2pfn9k1x58exo.o
+│       │       │   │   ├── 3jywzn9yb7zypnqotflq3uawd.o
+│       │       │   │   ├── 3kj258vrr8lm4yej3x8xzkyif.o
+│       │       │   │   ├── 3l0qguzgmfs2mjt7061uw01gg.o
+│       │       │   │   ├── 3oibv5y1df3kyj208hfmonwfj.o
+│       │       │   │   ├── 3pghlwovxd5wgcrquadiqvr8o.o
+│       │       │   │   ├── 3u7duaqi8wjhx1vb2mg6edbe3.o
+│       │       │   │   ├── 3zs1k1vlqmwo6ncofm86lpfv6.o
+│       │       │   │   ├── 418143xdzmle19cqqm1ja55qm.o
+│       │       │   │   ├── 445wjq9otfz6xypopwq0i5gxd.o
+│       │       │   │   ├── 44eoc3wb7rcchqep17t3efgcd.o
+│       │       │   │   ├── 45q00asjp4ysi6t4w1fnbrpif.o
+│       │       │   │   ├── 46pqsuuix9f0yf1x5eq0vadbw.o
+│       │       │   │   ├── 4c6y1edtqdiompnazvia0lk4k.o
+│       │       │   │   ├── 4dvmlqfaktdz16kb6hi9rgo9s.o
+│       │       │   │   ├── 4dzhtwx3xvxgruxoyx9bkhdzs.o
+│       │       │   │   ├── 4g2nu9axl1yqu8tozxxbikaht.o
+│       │       │   │   ├── 4g9p3y1bvnhlqjbj8b453hkub.o
+│       │       │   │   ├── 4inwb2wbidy6p5sctkmdi062z.o
+│       │       │   │   ├── 4jm7px2euuvkv9xdgw0g693xj.o
+│       │       │   │   ├── 4lde0d5qon9zaef67v48iopxs.o
+│       │       │   │   ├── 4lm8624zm558tw30wx6wg12xi.o
+│       │       │   │   ├── 4m5fspab4s1xp9st0s4t0k9qp.o
+│       │       │   │   ├── 4qm91ykirdr32msc68x1z779l.o
+│       │       │   │   ├── 4rcuut02624bvbmczuzeglsg8.o
+│       │       │   │   ├── 4socizbzpsbhldwncp1oywbl8.o
+│       │       │   │   ├── 4vgy78ihowdd6xtn3mbns7gzi.o
+│       │       │   │   ├── 4vpfatmxn87kz6g0fxgzvvijd.o
+│       │       │   │   ├── 4wtcn8cqg9zbk163jioh6qpbi.o
+│       │       │   │   ├── 4xyjaxhuzpg2xq8zvan1oyths.o
+│       │       │   │   ├── 4yjohs5wxa9lodjn1bl6no66g.o
+│       │       │   │   ├── 4ynupyne5jnjg60spnxel5163.o
+│       │       │   │   ├── 4zx4dsgrmbs5boybo4nuqgx9j.o
+│       │       │   │   ├── 51f7721x9xpfwafl90ponb826.o
+│       │       │   │   ├── 52xsycsea5xp00shy3qq5tn5y.o
+│       │       │   │   ├── 53g7bsxdhdbyxt1un3825j1lz.o
+│       │       │   │   ├── 54fxdk700y1ffu5ryivixlzr6.o
+│       │       │   │   ├── 57uc5rpxfxxz5tbt3z0uwiwps.o
+│       │       │   │   ├── 58630zhkfh681ed10p4h7lmtn.o
+│       │       │   │   ├── 5b9cvsgdar1b92x0uztrsl67q.o
+│       │       │   │   ├── 5d7oqji3cxvwkh8nzlg1aiqvb.o
+│       │       │   │   ├── 5gbymu2dfzfbfqjbphp33j6qt.o
+│       │       │   │   ├── 5iwf2h5df0m52lvecag4xklj6.o
+│       │       │   │   ├── 5nklvdajhc2ugrd6scc5gea27.o
+│       │       │   │   ├── 5o4w6o5plsj9kzdson25abytn.o
+│       │       │   │   ├── 5opv7p6dq9oclaso4m5he4hxf.o
+│       │       │   │   ├── 5q0hjhsvna2fnpeall37ub7l4.o
+│       │       │   │   ├── 5rwwyvfyu239ajlar2f9a9kf7.o
+│       │       │   │   ├── 5rx8frzkvb5wijgz3slm344lv.o
+│       │       │   │   ├── 5ym1kwycceua1jqlc0uuvcbk5.o
+│       │       │   │   ├── 5ytbv9v6jw4ylvkq08kpk9wbl.o
+│       │       │   │   ├── 623mem51wdbir1mm8fqegxujj.o
+│       │       │   │   ├── 631f1dd1wu4beivg3req2c8v6.o
+│       │       │   │   ├── 66aisy930dq227bj4zkin6u47.o
+│       │       │   │   ├── 69te7ngh49977jb00n0m0efps.o
+│       │       │   │   ├── 6dnhatx9b6zgfogbi8ueb73y9.o
+│       │       │   │   ├── 6e5cubsooqvykpqht8wpjxyoz.o
+│       │       │   │   ├── 6gzhl19jzsfunpp4x0la0ifhs.o
+│       │       │   │   ├── 6h7z7s8w5av3nzhao1q7rv0ij.o
+│       │       │   │   ├── 6jq3cnoqef28ylpflg4dj380s.o
+│       │       │   │   ├── 6ngephnwsjfnnnxivsb7ck6ou.o
+│       │       │   │   ├── 6qg2fsmbwaj1i996a893by8pu.o
+│       │       │   │   ├── 6sxx1c8eann867aqemv8y3665.o
+│       │       │   │   ├── 6wwu9igqw0x807ovfy57m73rv.o
+│       │       │   │   ├── 6wx6iclsv6kn3vtiy0ok5h845.o
+│       │       │   │   ├── 76xqrcag83rplkfvdbzbugq4p.o
+│       │       │   │   ├── 77zmoavommytbh4kfa1h2i4sn.o
+│       │       │   │   ├── 78ugtz8z2ldn7ootjas830ugj.o
+│       │       │   │   ├── 79o4o2ydw19xontnlpqni4zat.o
+│       │       │   │   ├── 7biq4ayp2ohoakdgind2kkihb.o
+│       │       │   │   ├── 7hcvzws89d1n4jooe7c03ksp3.o
+│       │       │   │   ├── 7kfubyqy9g22o1yxynlaoj0s6.o
+│       │       │   │   ├── 7n1in5hrseg6tn8gxgmr0fhco.o
+│       │       │   │   ├── 7p9eppgny6s2n0ris75wrd3o4.o
+│       │       │   │   ├── 7t7ee1ajuc9vbcyv82q292nv6.o
+│       │       │   │   ├── 7t7u0pjbyksko8xpyn6jqw1yn.o
+│       │       │   │   ├── 7tc4mlomsb256kvqhenn1ca9f.o
+│       │       │   │   ├── 7v6e5d9n0k652df7od7052vet.o
+│       │       │   │   ├── 7vt2cpxhw6uef5lc6c84j2os9.o
+│       │       │   │   ├── 7x1wo8oerg744prse745qqbwl.o
+│       │       │   │   ├── 82kztq3l6twv2d2igz8ccihg3.o
+│       │       │   │   ├── 873utbyu3qz0ve5l46yhq6kgp.o
+│       │       │   │   ├── 87pvxjyiwcq4tkjtoptyb0ovc.o
+│       │       │   │   ├── 8dno4cttcmxezmqf5oyd7i61i.o
+│       │       │   │   ├── 8h6indo0bp595hgosfuhrs4hw.o
+│       │       │   │   ├── 8mlghwmu26yylqfka3t9fhl5m.o
+│       │       │   │   ├── 8naukxjp9sh925vqw34m98j4d.o
+│       │       │   │   ├── 8p2sm5oshgww99l9sldxgggh5.o
+│       │       │   │   ├── 8rma8cpb8yi1jx0n7bqwxsv2d.o
+│       │       │   │   ├── 8uytz3lbmrvszg7o9k018vno2.o
+│       │       │   │   ├── 8ypxv6l5bck4vtslqi7qjnsfb.o
+│       │       │   │   ├── 8yrakfevyn1vff9ujhaoitkty.o
+│       │       │   │   ├── 90n73spojld2mqgijxejuv531.o
+│       │       │   │   ├── 91fg4cbb5cdezadqewlko7oqj.o
+│       │       │   │   ├── 97rellrabw7wqk9eg7skiecny.o
+│       │       │   │   ├── 98t5wfobldpbu8nmt8prj4bwf.o
+│       │       │   │   ├── 9ddbq5juvnw6kh0hrarvp3js8.o
+│       │       │   │   ├── 9g1bvstktg09oirrmeccyfncj.o
+│       │       │   │   ├── 9g4wn6xnjzsfjc52h8gywpsft.o
+│       │       │   │   ├── 9je7psa3fq9mvvxfitvxti2dy.o
+│       │       │   │   ├── 9juneu16tfrc4ud3ec9l4p3mz.o
+│       │       │   │   ├── 9klcr5ymtnhhx99mccbymcofh.o
+│       │       │   │   ├── 9l82e7h5pgh67lyqsg0b6jv73.o
+│       │       │   │   ├── 9lenbpd7cc8fg0y96rza5yfwn.o
+│       │       │   │   ├── 9ln71g3lkhnyus5o5988757u6.o
+│       │       │   │   ├── 9mauhkbve0qbcjgns7t049xmw.o
+│       │       │   │   ├── 9ph342zcdnxxnu7rkvoeauket.o
+│       │       │   │   ├── 9rak47nx181lvwbqde355vj0y.o
+│       │       │   │   ├── 9rgdww74u2i3mif7fhsmrglhr.o
+│       │       │   │   ├── 9uya6825k8fc374x2k9mdowqn.o
+│       │       │   │   ├── 9vqo3g99hs47495r45bbwt651.o
+│       │       │   │   ├── 9yb1fubp36gpz28s0ga5m0dx1.o
+│       │       │   │   ├── a0zk79xy7sgrcvroovmtqjrqq.o
+│       │       │   │   ├── a18m7mimm7sfs8fxwb9wheagj.o
+│       │       │   │   ├── a19lk5hmok0du5qmomi7ezm2r.o
+│       │       │   │   ├── a34m7en39wvx7od98k5dbf9m1.o
+│       │       │   │   ├── a61q5r5p5x9dye84y7hav0fj2.o
+│       │       │   │   ├── a8u8dw7ztjdp5fpa8u9l5ygmw.o
+│       │       │   │   ├── agu7qwu85lmm4ggutx8ehtwic.o
+│       │       │   │   ├── ajm0dkzo09xwepb29nq9lt0ed.o
+│       │       │   │   ├── akupkqrt4w0w43zmiwoybfx0c.o
+│       │       │   │   ├── alu4t3ngmoxmto3l5tp4t6fak.o
+│       │       │   │   ├── ao5otyaeauk9oq56wumy3b5cj.o
+│       │       │   │   ├── aqblj2xkszr4rey0cul4y2ceq.o
+│       │       │   │   ├── av2ti9r4q0efsctx9rfz6mdbs.o
+│       │       │   │   ├── awwsb53kazwjmt3om3c7li7eo.o
+│       │       │   │   ├── axmes1owe9g1hbp12lfvje9h1.o
+│       │       │   │   ├── azatgtw5jx19w28oqkpuxsgu2.o
+│       │       │   │   ├── b666l0sndtjh8tdmgtdkk0ily.o
+│       │       │   │   ├── b8ol66l9ij89o97363i8yi7fg.o
+│       │       │   │   ├── b9cvl91rr9kp9qhqg9dex3wbq.o
+│       │       │   │   ├── bdfeugtal74ogw92mg1jopcur.o
+│       │       │   │   ├── bjr4i2a37zg1il21o087hc57r.o
+│       │       │   │   ├── bln86peckjs4zk0n6hfum2d7f.o
+│       │       │   │   ├── bn1x44ba24u6ud9hhptkp3pvn.o
+│       │       │   │   ├── bn51tct5oaeaseolev8jfmawi.o
+│       │       │   │   ├── bsz1wlfef43h2gw5kxvtqui42.o
+│       │       │   │   ├── bv1jjxwp8xoc0di94t1mosj9h.o
+│       │       │   │   ├── bwnrb0t8b6g7t606opw6kcus4.o
+│       │       │   │   ├── bwq5l2qxjpf12lm4ar8yf85rf.o
+│       │       │   │   ├── bz85tjv3eg3c9vz5zhbyqq8zo.o
+│       │       │   │   ├── bzves08tkupy71p7qzqxad9kk.o
+│       │       │   │   ├── c1rc13bkng6ome9rd45gld919.o
+│       │       │   │   ├── c2mpoomq81dw9gd9u7f445cq4.o
+│       │       │   │   ├── c413wmz6hrxflzlsqmtealr7y.o
+│       │       │   │   ├── c5zbq7nm3cbbnv6pmbnh6vkbb.o
+│       │       │   │   ├── c79mb0aomkyct4rc6y7uylxfg.o
+│       │       │   │   ├── c7d3q849vk0h5091ypr198o1b.o
+│       │       │   │   ├── c81hjf2kn9o6ggnhivsdyu4uz.o
+│       │       │   │   ├── c9x6847qsunhp3gliyobu89vt.o
+│       │       │   │   ├── ccrl4e9u7tn9p9h7bsvok5990.o
+│       │       │   │   ├── cdru9u1w96s5xsbb8rip74g0b.o
+│       │       │   │   ├── ceyth94pl8mbwbckmo8984jbj.o
+│       │       │   │   ├── cf3ttwzaty5nb4wmknjd851i3.o
+│       │       │   │   ├── cf8lp02zekn0sm6fhx17jwbmq.o
+│       │       │   │   ├── cfpcgjsqifiqsj722mwuozspg.o
+│       │       │   │   ├── cfwbo0hou9z1k1l9o2pp7u48n.o
+│       │       │   │   ├── cjv345vx2fyry8nbiapxhxmsv.o
+│       │       │   │   ├── cl0idkf99syqdessjqjfhgjfs.o
+│       │       │   │   ├── cldgltr58h885p6t8jm0c8joh.o
+│       │       │   │   ├── cxr4lsqwpfsjvhjthtvn1o4nm.o
+│       │       │   │   ├── d40t8f00m7xoersf2fujmb5sx.o
+│       │       │   │   ├── d5emz96n4x3ero6szu21h8wx2.o
+│       │       │   │   ├── d5o0epf32nwjyjmgzu0p744ig.o
+│       │       │   │   ├── d5o1w0eor1ev1i0qlsi964pm7.o
+│       │       │   │   ├── d9q38egfps01fb6xdmnfylm30.o
+│       │       │   │   ├── dcnd6iwv8d583iype7nme1wda.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── dn6n5c8ruzq3euzt2oq532wen.o
+│       │       │   │   ├── dr6rbx5ris1g6uv9u5f92snui.o
+│       │       │   │   ├── dt8uakdj40tojik0jpwbx3a2d.o
+│       │       │   │   ├── dtt407wdxmk7e6o4fzef507un.o
+│       │       │   │   ├── dw6jae1mjgblywirz4s1ulz3v.o
+│       │       │   │   ├── dw6mes9f4n5xk6q4cancvuvlw.o
+│       │       │   │   ├── dxirvnxj5c1q3ha58nxyk7eql.o
+│       │       │   │   ├── e4g074ki2l8dnjgi4far65vt9.o
+│       │       │   │   ├── e9i1al505nwfltrw1h1vl52mz.o
+│       │       │   │   ├── ea9dpg9zjxav5gio0c4p7ktlb.o
+│       │       │   │   ├── eb50jo47m5i00x8vxr9arls4s.o
+│       │       │   │   ├── edhecf9o11zc9tzmv62afuht4.o
+│       │       │   │   ├── eeefv9kuuro6pz4wnvucy9m97.o
+│       │       │   │   ├── efgqvw2og2ymuow7cxvhiwmie.o
+│       │       │   │   ├── egy0crr3juec3c61xfisycl9m.o
+│       │       │   │   ├── eh1kkjnuwapy36g7gclu1l6um.o
+│       │       │   │   ├── ej3jczmgt9gvswz6c8ok46lwz.o
+│       │       │   │   ├── ekbym36shxi2zu4mdzz2i440q.o
+│       │       │   │   ├── emruzeiczqnecxtnqhq8h2eov.o
+│       │       │   │   ├── en41d7gc8049za5v63rj9irmb.o
+│       │       │   │   ├── eni2ihjndgcs4hduiy6lp8bzv.o
+│       │       │   │   ├── eoo04vz9vz4q1o2q8ot6e6yd6.o
+│       │       │   │   ├── erpw14f5iq0ofw89jtrumrwj4.o
+│       │       │   │   ├── euhu1hp62qhise53crq32wlu0.o
+│       │       │   │   ├── exz25q8eqrg14r2o0clrsf54n.o
+│       │       │   │   ├── ez1zypj0horkf7kni8hsgl34w.o
+│       │       │   │   ├── f2gyf7iza73bafonfrne54n3o.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs8e9rd4-0koozp5.lock
+│       │       ├── kernel_bin-14a4dlilp6rr4
+│       │       │   ├── s-hmfsapo76u-00pn7fn-2zfsvxzrl4s938ynfdr261xh9
+│       │       │   │   ├── 5f216vu5nhejizp1jhbas6tcf.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfsapo76u-00pn7fn.lock
+│       │       ├── kernel_bin-3ef5ahyv034ww
+│       │       │   ├── s-hmfs9p8spu-0n5iwo4.lock
+│       │       │   └── s-hmfs9p8spu-0n5iwo4-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_alloc-0el6ek1ni1f2y
+│       │       │   ├── s-hmfs4emy5j-1ll528p-1ttu3wdniwmugpehqnvpzekuj
+│       │       │   │   ├── 0ei7n859audhd70foow1lumyx.o
+│       │       │   │   ├── 2ac0tghqz80pt6rpwx8xa4fln.o
+│       │       │   │   ├── 4quijvdf02eevl6yrfd0t5wlt.o
+│       │       │   │   ├── 6osg73yklnqayw7m4blrsa6ad.o
+│       │       │   │   ├── 6xhtu6cxafrrwew8vzkqvachd.o
+│       │       │   │   ├── 8eubgb2kh1t0m7wax3zgdtg52.o
+│       │       │   │   ├── 8oe8dzi8g5wxqauovn020jkv3.o
+│       │       │   │   ├── a0njbp7ii5lpz251ze4wbbp0y.o
+│       │       │   │   ├── aqm1tbstnko4qhls46ipdy1bj.o
+│       │       │   │   ├── au2r0bbm6serdbjojqhijv0xn.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── enrzt77p8danynp3815b6ttjb.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs4emy5j-1ll528p.lock
+│       │       ├── kstd_alloc-2pzl08sffpf9d
+│       │       │   ├── s-hmfs3cz6cx-0npcagk.lock
+│       │       │   └── s-hmfs3cz6cx-0npcagk-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_base-3jxchnwpgxgkq
+│       │       │   ├── s-hmfs161fa7-08758ic-2aox6jkz5oex2qxjc0fpltjt0
+│       │       │   │   ├── 7fmox9ace2txtu1ucelt67lvw.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   ├── s-hmfs161fa7-08758ic.lock
+│       │       │   ├── s-hmfs3cz9am-1s6cc7h-6rlcyhk8g7mrvigydw3avy40z
+│       │       │   │   ├── 7fmox9ace2txtu1ucelt67lvw.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs3cz9am-1s6cc7h.lock
+│       │       ├── kstd_core-2b6dwmhsbifa6
+│       │       │   ├── s-hmfs4emosk-19svnng.lock
+│       │       │   └── s-hmfs4emosk-19svnng-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_core-3c7od7y917zdv
+│       │       │   ├── s-hmfs16b0r5-0vxfx7g.lock
+│       │       │   └── s-hmfs16b0r5-0vxfx7g-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_core-3m1dzpfyrydq7
+│       │       │   ├── s-hmfs8e62h7-0d6cmju-dpo3dfbu1w9qpq9hzr1adt6fi
+│       │       │   │   ├── 01gtvwqrl6h7y7irpshbanc5m.o
+│       │       │   │   ├── 07fofr8clcmpe08owyla5ppkh.o
+│       │       │   │   ├── 2o04vbv5esnklmfqpyvkc7861.o
+│       │       │   │   ├── 4o6dosp4e187mm3trm0y9qxj2.o
+│       │       │   │   ├── 6v3woij7hrfrixr75kbua9t4m.o
+│       │       │   │   ├── 6y9zmu5gr01kgrkkezaq9ovxa.o
+│       │       │   │   ├── 8rcw6dducm2mvb7m0v3jmy4ex.o
+│       │       │   │   ├── 8z6i8e9m064lwd5kyijxeivp7.o
+│       │       │   │   ├── 914lp7vc4gslc965s3rc3wb55.o
+│       │       │   │   ├── bvajman40fzcl3rbia4s5i7ar.o
+│       │       │   │   ├── c6sjakchuubd2coedmdqtk2u2.o
+│       │       │   │   ├── cy6tib3uxmv0zplerybwwvmyg.o
+│       │       │   │   ├── d7jp84bf213sdym4d5v64l7f6.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── dtyy99n8w6zdbu9hphqn6qd84.o
+│       │       │   │   ├── dydvp23dh1kzygqaa6u5sf105.o
+│       │       │   │   ├── e95mn9iiuxr3aufnetif4c4b0.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs8e62h7-0d6cmju.lock
+│       │       ├── kstd_data-0zn6c87xclln6
+│       │       │   ├── s-hmfs4emm02-1rcthc3.lock
+│       │       │   └── s-hmfs4emm02-1rcthc3-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_data-0zq4uq61v2er0
+│       │       │   ├── s-hmfs3cz59j-0i8tkmt.lock
+│       │       │   └── s-hmfs3cz59j-0i8tkmt-working
+│       │       │       └── dep-graph.part.bin
+│       │       ├── kstd_data-2ssmzaa3iiume
+│       │       │   ├── s-hmfs7xepk6-0inxdnb-d0yptlbrqhgs04ghjo3uhhupw
+│       │       │   │   ├── 1d5dbmu1p61ikba9ed4tv30l3.o
+│       │       │   │   ├── 1mkpwnz7lwjnhskazmqsc8ew5.o
+│       │       │   │   ├── 2f4am2jk0kf7x86vlxmkuvkh6.o
+│       │       │   │   ├── 3bbd5vq97bhi7oyjrnbwxeurf.o
+│       │       │   │   ├── 3s1680izkbi10s29nuy7g4b8z.o
+│       │       │   │   ├── 5tzrnh1ileae9l63qf6xqbdo6.o
+│       │       │   │   ├── 6ebpiwsscmicp4pe24759nf3p.o
+│       │       │   │   ├── 6yugb98l8vvgpl6at0e6s0tub.o
+│       │       │   │   ├── 714xvspx2ohjo6pedz72971lq.o
+│       │       │   │   ├── 76mvxp99b8jo4hg4zf5fnnfme.o
+│       │       │   │   ├── 7j6va71oyi1nnvdjnxgxqhscu.o
+│       │       │   │   ├── 7x0u0fkvdoyc68m6hfvo4d3lh.o
+│       │       │   │   ├── a1jl3b0u49icc8qo5z7876yi7.o
+│       │       │   │   ├── b06cf1mwgnz4z6dtrxase99ot.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── f3daf7u24l7foc0x4posvinpl.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs7xepk6-0inxdnb.lock
+│       │       ├── kstd_io-20iezx774umgl
+│       │       │   ├── s-hmfs3cz1b8-0hdd0yg-ewivg2z2dlnb8199779hfvya0
+│       │       │   │   ├── 0khqcaotftu2if3xzj4oddgxh.o
+│       │       │   │   ├── 0xpnmqjns0siqmdqa3iwkrmum.o
+│       │       │   │   ├── 2ompu6dfhzyn2ivjgfli88y6z.o
+│       │       │   │   ├── 4kowv6iv8xz4wbb3vzjap68gh.o
+│       │       │   │   ├── 67xqiw2iu1nkpnrvg7ok2pqum.o
+│       │       │   │   ├── 7ostj6ydj43nf06vjrexxduzu.o
+│       │       │   │   ├── c1mnlv8pqyhy2111pmva35w8q.o
+│       │       │   │   ├── ccfpvlmjnn6133jykzffyskbv.o
+│       │       │   │   ├── cdq2bwrcvar2mlhmoxoce0mqm.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── en0dh7plgepuvqyzgvkb5mzab.o
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs3cz1b8-0hdd0yg.lock
+│       │       ├── kstd_os_workspace-1iiw47jytfvm3
+│       │       │   ├── s-hmfs8e7yh2-0h8yabm-61pe35if14pjz6ezq5zlwby7w
+│       │       │   │   ├── atdczkomdf52kbdp32xulgoo4.o
+│       │       │   │   ├── dep-graph.bin
+│       │       │   │   ├── metadata.rmeta
+│       │       │   │   ├── query-cache.bin
+│       │       │   │   └── work-products.bin
+│       │       │   └── s-hmfs8e7yh2-0h8yabm.lock
+│       │       ├── kw_base-0tnc246671vhr
+│       │       │   ├── s-hmfs6f23ef-1gs9e2u.lock
+│       │       │   └── s-hmfs6f23ef-1gs9e2u-working
+│       │       │       └── dep-graph.part.bin
+│       │       └── kw_base-12lyjdugronqh
+│       │           ├── s-hmfs9p56l5-0h846i9-13wpff4d55ffbmrvlvj48bqvj
+│       │           │   ├── 0q6i9jkkocdco4btccyw854l5.o
+│       │           │   ├── 14oi046gqfjiyszznc533b4jn.o
+│       │           │   ├── 5pvbzb50bv3e2ffrbl4d3agg1.o
+│       │           │   ├── 8overxp4kge6s2s7eippg1d4n.o
+│       │           │   ├── b2u2l4948jm6mqzvdg4vdx7fp.o
+│       │           │   ├── cwgn8sxalmyvkq9jozsass45u.o
 │       │           │   ├── dep-graph.bin
-│       │           │   ├── dg38k4arysgehxkd7oz73t0u6.o
-│       │           │   ├── dist3antmx0yw3cfva03zfplx.o
-│       │           │   ├── dowt1vu309zdj1ofpx6gufvmn.o
-│       │           │   ├── dqs00mozkn4uaewp1n8yxqlsu.o
-│       │           │   ├── dt3ikartu5a9ba9iq12ccvdhu.o
-│       │           │   ├── ehl5qobwuwcy64yp6rwjng0px.o
-│       │           │   ├── eizp3iwgr3jlnkrn5770njzt7.o
-│       │           │   ├── f4n86ud7cod8lky6xem1k7w12.o
+│       │           │   ├── dlmp2lgtzaqjwzkwrwd8kiqyx.o
+│       │           │   ├── ef8pi770pn10jndo0o4arlhpy.o
+│       │           │   ├── metadata.rmeta
 │       │           │   ├── query-cache.bin
 │       │           │   └── work-products.bin
-│       │           └── s-hmeo032v17-1wta7uu.lock
+│       │           └── s-hmfs9p56l5-0h846i9.lock
 │       └── x86_64-kernel
 │           ├── CACHEDIR.TAG
 │           └── debug
@@ -4555,27 +5745,67 @@
 │               │   │           ├── liballoc-7e70a8389c10ef8a.rlib
 │               │   │           └── liballoc-7e70a8389c10ef8a.rmeta
 │               │   ├── bit_field
-│               │   │   └── 0c9488b802dae9f1
+│               │   │   ├── 0c9488b802dae9f1
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bit_field
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bit_field
+│               │   │   │   │   └── lib-bit_field.json
+│               │   │   │   └── out
+│               │   │   │       ├── bit_field-0c9488b802dae9f1.d
+│               │   │   │       ├── libbit_field-0c9488b802dae9f1.rlib
+│               │   │   │       └── libbit_field-0c9488b802dae9f1.rmeta
+│               │   │   ├── 9b80331b706332cc
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bit_field
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bit_field
+│               │   │   │   │   └── lib-bit_field.json
+│               │   │   │   └── out
+│               │   │   │       ├── bit_field-9b80331b706332cc.d
+│               │   │   │       ├── libbit_field-9b80331b706332cc.rlib
+│               │   │   │       └── libbit_field-9b80331b706332cc.rmeta
+│               │   │   └── bf8787c3413c0905
 │               │   │       ├── fingerprint
 │               │   │       │   ├── dep-lib-bit_field
 │               │   │       │   ├── invoked.timestamp
 │               │   │       │   ├── lib-bit_field
 │               │   │       │   └── lib-bit_field.json
 │               │   │       └── out
-│               │   │           ├── bit_field-0c9488b802dae9f1.d
-│               │   │           ├── libbit_field-0c9488b802dae9f1.rlib
-│               │   │           └── libbit_field-0c9488b802dae9f1.rmeta
+│               │   │           ├── bit_field-bf8787c3413c0905.d
+│               │   │           ├── libbit_field-bf8787c3413c0905.rlib
+│               │   │           └── libbit_field-bf8787c3413c0905.rmeta
 │               │   ├── bitflags
-│               │   │   └── 647b66337120cecc
+│               │   │   ├── 06e15caac3b0b8a4
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bitflags
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bitflags
+│               │   │   │   │   └── lib-bitflags.json
+│               │   │   │   └── out
+│               │   │   │       ├── bitflags-06e15caac3b0b8a4.d
+│               │   │   │       ├── libbitflags-06e15caac3b0b8a4.rlib
+│               │   │   │       └── libbitflags-06e15caac3b0b8a4.rmeta
+│               │   │   ├── 647b66337120cecc
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bitflags
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bitflags
+│               │   │   │   │   └── lib-bitflags.json
+│               │   │   │   └── out
+│               │   │   │       ├── bitflags-647b66337120cecc.d
+│               │   │   │       ├── libbitflags-647b66337120cecc.rlib
+│               │   │   │       └── libbitflags-647b66337120cecc.rmeta
+│               │   │   └── f32d0829f20f977a
 │               │   │       ├── fingerprint
 │               │   │       │   ├── dep-lib-bitflags
 │               │   │       │   ├── invoked.timestamp
 │               │   │       │   ├── lib-bitflags
 │               │   │       │   └── lib-bitflags.json
 │               │   │       └── out
-│               │   │           ├── bitflags-647b66337120cecc.d
-│               │   │           ├── libbitflags-647b66337120cecc.rlib
-│               │   │           └── libbitflags-647b66337120cecc.rmeta
+│               │   │           ├── bitflags-f32d0829f20f977a.d
+│               │   │           ├── libbitflags-f32d0829f20f977a.rlib
+│               │   │           └── libbitflags-f32d0829f20f977a.rmeta
 │               │   ├── bootloader
 │               │   │   ├── 2568414e7a5f8553
 │               │   │   │   ├── fingerprint
@@ -4587,6 +5817,26 @@
 │               │   │   │       ├── root-output
 │               │   │   │       ├── stderr
 │               │   │   │       └── stdout
+│               │   │   ├── 443e18520d8d60f0
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bootloader
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bootloader
+│               │   │   │   │   └── lib-bootloader.json
+│               │   │   │   └── out
+│               │   │   │       ├── bootloader-443e18520d8d60f0.d
+│               │   │   │       ├── libbootloader-443e18520d8d60f0.rlib
+│               │   │   │       └── libbootloader-443e18520d8d60f0.rmeta
+│               │   │   ├── 7c4d47b26434a9ce
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-bootloader
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-bootloader
+│               │   │   │   │   └── lib-bootloader.json
+│               │   │   │   └── out
+│               │   │   │       ├── bootloader-7c4d47b26434a9ce.d
+│               │   │   │       ├── libbootloader-7c4d47b26434a9ce.rlib
+│               │   │   │       └── libbootloader-7c4d47b26434a9ce.rmeta
 │               │   │   └── f6c18c8d47b04e83
 │               │   │       ├── fingerprint
 │               │   │       └── out
@@ -4623,29 +5873,97 @@
 │               │   │           ├── libcore-d65abb3445894465.rlib
 │               │   │           └── libcore-d65abb3445894465.rmeta
 │               │   ├── font8x8
-│               │   │   └── 6a7de2d9ddd1a833
+│               │   │   ├── 56edc64d99a51030
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-font8x8
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-font8x8
+│               │   │   │   │   └── lib-font8x8.json
+│               │   │   │   └── out
+│               │   │   │       ├── font8x8-56edc64d99a51030.d
+│               │   │   │       ├── libfont8x8-56edc64d99a51030.rlib
+│               │   │   │       └── libfont8x8-56edc64d99a51030.rmeta
+│               │   │   ├── 6a7de2d9ddd1a833
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-font8x8
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-font8x8
+│               │   │   │   │   └── lib-font8x8.json
+│               │   │   │   └── out
+│               │   │   │       ├── font8x8-6a7de2d9ddd1a833.d
+│               │   │   │       ├── libfont8x8-6a7de2d9ddd1a833.rlib
+│               │   │   │       └── libfont8x8-6a7de2d9ddd1a833.rmeta
+│               │   │   └── 7f484125f6633049
 │               │   │       ├── fingerprint
 │               │   │       │   ├── dep-lib-font8x8
 │               │   │       │   ├── invoked.timestamp
 │               │   │       │   ├── lib-font8x8
 │               │   │       │   └── lib-font8x8.json
 │               │   │       └── out
-│               │   │           ├── font8x8-6a7de2d9ddd1a833.d
-│               │   │           ├── libfont8x8-6a7de2d9ddd1a833.rlib
-│               │   │           └── libfont8x8-6a7de2d9ddd1a833.rmeta
+│               │   │           ├── font8x8-7f484125f6633049.d
+│               │   │           ├── libfont8x8-7f484125f6633049.rlib
+│               │   │           └── libfont8x8-7f484125f6633049.rmeta
 │               │   ├── gluecore
-│               │   │   └── 84b506c753e84728
+│               │   │   ├── 5bf8757e4b25bc66
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-gluecore
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-gluecore
+│               │   │   │   │   ├── lib-gluecore.json
+│               │   │   │   │   └── output-lib-gluecore
+│               │   │   │   └── out
+│               │   │   │       ├── gluecore-5bf8757e4b25bc66.d
+│               │   │   │       ├── libgluecore-5bf8757e4b25bc66.rlib
+│               │   │   │       └── libgluecore-5bf8757e4b25bc66.rmeta
+│               │   │   ├── 6a116d99f3d9d80c
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── run-build-script-build-script-build
+│               │   │   │   │   └── run-build-script-build-script-build.json
+│               │   │   │   ├── out
+│               │   │   │   └── run
+│               │   │   │       ├── invoked.timestamp
+│               │   │   │       ├── root-output
+│               │   │   │       ├── stderr
+│               │   │   │       └── stdout
+│               │   │   ├── 84b506c753e84728
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   └── output-lib-gluecore
+│               │   │   │   └── out
+│               │   │   │       └── gluecore-84b506c753e84728.d
+│               │   │   └── f1d97d3e79b74bdd
 │               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-gluecore
 │               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-gluecore
+│               │   │       │   ├── lib-gluecore.json
 │               │   │       │   └── output-lib-gluecore
 │               │   │       └── out
-│               │   │           └── gluecore-84b506c753e84728.d
+│               │   │           ├── gluecore-f1d97d3e79b74bdd.d
+│               │   │           ├── libgluecore-f1d97d3e79b74bdd.rlib
+│               │   │           └── libgluecore-f1d97d3e79b74bdd.rmeta
 │               │   ├── kernel
+│               │   │   ├── 0577c62e5d347fd5
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kernel
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kernel
+│               │   │   │   │   ├── lib-kernel.json
+│               │   │   │   │   └── output-lib-kernel
+│               │   │   │   └── out
+│               │   │   │       ├── kernel-0577c62e5d347fd5.d
+│               │   │   │       ├── libkernel-0577c62e5d347fd5.rlib
+│               │   │   │       └── libkernel-0577c62e5d347fd5.rmeta
 │               │   │   ├── 08dee94e36479130
 │               │   │   │   ├── fingerprint
 │               │   │   │   └── out
 │               │   │   ├── 0b2fbaf0809505e7
 │               │   │   │   ├── fingerprint
+│               │   │   │   └── out
+│               │   │   ├── 1fb889185c9df343
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   └── output-lib-kernel
 │               │   │   │   └── out
 │               │   │   └── 53e567d838732f39
 │               │   │       ├── fingerprint
@@ -4727,25 +6045,165 @@
 │               │   │           ├── root-output
 │               │   │           ├── stderr
 │               │   │           └── stdout
+│               │   ├── kernel-bin
+│               │   │   ├── 820d78dacce99100
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── bin-kernel-bin
+│               │   │   │   │   ├── bin-kernel-bin.json
+│               │   │   │   │   ├── dep-bin-kernel-bin
+│               │   │   │   │   └── invoked.timestamp
+│               │   │   │   └── out
+│               │   │   │       ├── kernel_bin
+│               │   │   │       └── kernel_bin.d
+│               │   │   └── f4163f98f2c68e0a
+│               │   │       ├── fingerprint
+│               │   │       └── out
+│               │   ├── kstd_alloc
+│               │   │   ├── d860a6fe1069a04f
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kstd_alloc
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kstd_alloc
+│               │   │   │   │   ├── lib-kstd_alloc.json
+│               │   │   │   │   └── output-lib-kstd_alloc
+│               │   │   │   └── out
+│               │   │   │       ├── kstd_alloc-d860a6fe1069a04f.d
+│               │   │   │       ├── libkstd_alloc-d860a6fe1069a04f.rlib
+│               │   │   │       └── libkstd_alloc-d860a6fe1069a04f.rmeta
+│               │   │   └── e3b300c95bda691c
+│               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-kstd_alloc
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-kstd_alloc
+│               │   │       │   ├── lib-kstd_alloc.json
+│               │   │       │   └── output-lib-kstd_alloc
+│               │   │       └── out
+│               │   │           ├── kstd_alloc-e3b300c95bda691c.d
+│               │   │           ├── libkstd_alloc-e3b300c95bda691c.rlib
+│               │   │           └── libkstd_alloc-e3b300c95bda691c.rmeta
 │               │   ├── kstd_base
-│               │   │   └── 5e5a8b20684fcd3c
+│               │   │   ├── 5e5a8b20684fcd3c
+│               │   │   │   ├── fingerprint
+│               │   │   │   └── out
+│               │   │   ├── 7a488ddc6b1d2bec
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kstd_base
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kstd_base
+│               │   │   │   │   └── lib-kstd_base.json
+│               │   │   │   └── out
+│               │   │   │       ├── kstd_base-7a488ddc6b1d2bec.d
+│               │   │   │       ├── libkstd_base-7a488ddc6b1d2bec.rlib
+│               │   │   │       └── libkstd_base-7a488ddc6b1d2bec.rmeta
+│               │   │   └── 8fb48a0e76e7fde7
 │               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-kstd_base
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-kstd_base
+│               │   │       │   └── lib-kstd_base.json
 │               │   │       └── out
+│               │   │           ├── kstd_base-8fb48a0e76e7fde7.d
+│               │   │           ├── libkstd_base-8fb48a0e76e7fde7.rlib
+│               │   │           └── libkstd_base-8fb48a0e76e7fde7.rmeta
 │               │   ├── kstd_core
-│               │   │   └── c094c50688116808
+│               │   │   ├── aa07787db7febdc7
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kstd_core
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kstd_core
+│               │   │   │   │   └── lib-kstd_core.json
+│               │   │   │   └── out
+│               │   │   │       ├── kstd_core-aa07787db7febdc7.d
+│               │   │   │       ├── libkstd_core-aa07787db7febdc7.rlib
+│               │   │   │       └── libkstd_core-aa07787db7febdc7.rmeta
+│               │   │   ├── c094c50688116808
+│               │   │   │   ├── fingerprint
+│               │   │   │   └── out
+│               │   │   └── cdacb496aeb73054
 │               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-kstd_core
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-kstd_core
+│               │   │       │   └── lib-kstd_core.json
 │               │   │       └── out
+│               │   │           ├── kstd_core-cdacb496aeb73054.d
+│               │   │           ├── libkstd_core-cdacb496aeb73054.rlib
+│               │   │           └── libkstd_core-cdacb496aeb73054.rmeta
+│               │   ├── kstd_data
+│               │   │   ├── c2a68d6ce95a2c5b
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kstd_data
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kstd_data
+│               │   │   │   │   ├── lib-kstd_data.json
+│               │   │   │   │   └── output-lib-kstd_data
+│               │   │   │   └── out
+│               │   │   │       ├── kstd_data-c2a68d6ce95a2c5b.d
+│               │   │   │       ├── libkstd_data-c2a68d6ce95a2c5b.rlib
+│               │   │   │       └── libkstd_data-c2a68d6ce95a2c5b.rmeta
+│               │   │   └── d7ffd33de1345a43
+│               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-kstd_data
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-kstd_data
+│               │   │       │   ├── lib-kstd_data.json
+│               │   │       │   └── output-lib-kstd_data
+│               │   │       └── out
+│               │   │           ├── kstd_data-d7ffd33de1345a43.d
+│               │   │           ├── libkstd_data-d7ffd33de1345a43.rlib
+│               │   │           └── libkstd_data-d7ffd33de1345a43.rmeta
+│               │   ├── kstd_io
+│               │   │   ├── 154ba9531f4c1b82
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-kstd_io
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-kstd_io
+│               │   │   │   │   └── lib-kstd_io.json
+│               │   │   │   └── out
+│               │   │   │       ├── kstd_io-154ba9531f4c1b82.d
+│               │   │   │       ├── libkstd_io-154ba9531f4c1b82.rlib
+│               │   │   │       └── libkstd_io-154ba9531f4c1b82.rmeta
+│               │   │   └── ef78402e10cba4ba
+│               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-kstd_io
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-kstd_io
+│               │   │       │   └── lib-kstd_io.json
+│               │   │       └── out
+│               │   │           ├── kstd_io-ef78402e10cba4ba.d
+│               │   │           ├── libkstd_io-ef78402e10cba4ba.rlib
+│               │   │           └── libkstd_io-ef78402e10cba4ba.rmeta
 │               │   ├── lazy_static
-│               │   │   └── 6d304260b7b36e4b
+│               │   │   ├── 5e4140420ad04b53
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-lazy_static
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-lazy_static
+│               │   │   │   │   └── lib-lazy_static.json
+│               │   │   │   └── out
+│               │   │   │       ├── lazy_static-5e4140420ad04b53.d
+│               │   │   │       ├── liblazy_static-5e4140420ad04b53.rlib
+│               │   │   │       └── liblazy_static-5e4140420ad04b53.rmeta
+│               │   │   ├── 6d304260b7b36e4b
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-lazy_static
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-lazy_static
+│               │   │   │   │   └── lib-lazy_static.json
+│               │   │   │   └── out
+│               │   │   │       ├── lazy_static-6d304260b7b36e4b.d
+│               │   │   │       ├── liblazy_static-6d304260b7b36e4b.rlib
+│               │   │   │       └── liblazy_static-6d304260b7b36e4b.rmeta
+│               │   │   └── aa1538c381867f28
 │               │   │       ├── fingerprint
 │               │   │       │   ├── dep-lib-lazy_static
 │               │   │       │   ├── invoked.timestamp
 │               │   │       │   ├── lib-lazy_static
 │               │   │       │   └── lib-lazy_static.json
 │               │   │       └── out
-│               │   │           ├── lazy_static-6d304260b7b36e4b.d
-│               │   │           ├── liblazy_static-6d304260b7b36e4b.rlib
-│               │   │           └── liblazy_static-6d304260b7b36e4b.rmeta
+│               │   │           ├── lazy_static-aa1538c381867f28.d
+│               │   │           ├── liblazy_static-aa1538c381867f28.rlib
+│               │   │           └── liblazy_static-aa1538c381867f28.rmeta
 │               │   ├── panic_abort
 │               │   │   └── 77962096284608d3
 │               │   │       ├── fingerprint
@@ -4758,6 +6216,26 @@
 │               │   │           ├── libpanic_abort-77962096284608d3.rmeta
 │               │   │           └── panic_abort-77962096284608d3.d
 │               │   ├── pic8259
+│               │   │   ├── 78341184cca9741e
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-pic8259
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-pic8259
+│               │   │   │   │   └── lib-pic8259.json
+│               │   │   │   └── out
+│               │   │   │       ├── libpic8259-78341184cca9741e.rlib
+│               │   │   │       ├── libpic8259-78341184cca9741e.rmeta
+│               │   │   │       └── pic8259-78341184cca9741e.d
+│               │   │   ├── 893bd0ab6b4be4e6
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-pic8259
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-pic8259
+│               │   │   │   │   └── lib-pic8259.json
+│               │   │   │   └── out
+│               │   │   │       ├── libpic8259-893bd0ab6b4be4e6.rlib
+│               │   │   │       ├── libpic8259-893bd0ab6b4be4e6.rmeta
+│               │   │   │       └── pic8259-893bd0ab6b4be4e6.d
 │               │   │   └── c79ce6ead2ed3c54
 │               │   │       ├── fingerprint
 │               │   │       └── out
@@ -4773,19 +6251,59 @@
 │               │   │           ├── librustc_std_workspace_core-fd70492670e26ac6.rmeta
 │               │   │           └── rustc_std_workspace_core-fd70492670e26ac6.d
 │               │   ├── spin
+│               │   │   ├── 1f8c6769fc87750a
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-spin
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-spin
+│               │   │   │   │   └── lib-spin.json
+│               │   │   │   └── out
+│               │   │   │       ├── libspin-1f8c6769fc87750a.rlib
+│               │   │   │       ├── libspin-1f8c6769fc87750a.rmeta
+│               │   │   │       └── spin-1f8c6769fc87750a.d
+│               │   │   ├── 983ad444a6074fbf
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-spin
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-spin
+│               │   │   │   │   └── lib-spin.json
+│               │   │   │   └── out
+│               │   │   │       ├── libspin-983ad444a6074fbf.rlib
+│               │   │   │       ├── libspin-983ad444a6074fbf.rmeta
+│               │   │   │       └── spin-983ad444a6074fbf.d
+│               │   │   ├── 9b91426b6f89610c
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-spin
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-spin
+│               │   │   │   │   └── lib-spin.json
+│               │   │   │   └── out
+│               │   │   │       ├── libspin-9b91426b6f89610c.rlib
+│               │   │   │       ├── libspin-9b91426b6f89610c.rmeta
+│               │   │   │       └── spin-9b91426b6f89610c.d
 │               │   │   ├── d84d6b2bc71bdf88
 │               │   │   │   ├── fingerprint
 │               │   │   │   └── out
-│               │   │   └── dc5780d2834f31ac
+│               │   │   ├── dc5780d2834f31ac
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-spin
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-spin
+│               │   │   │   │   └── lib-spin.json
+│               │   │   │   └── out
+│               │   │   │       ├── libspin-dc5780d2834f31ac.rlib
+│               │   │   │       ├── libspin-dc5780d2834f31ac.rmeta
+│               │   │   │       └── spin-dc5780d2834f31ac.d
+│               │   │   └── f173737eba242a96
 │               │   │       ├── fingerprint
 │               │   │       │   ├── dep-lib-spin
 │               │   │       │   ├── invoked.timestamp
 │               │   │       │   ├── lib-spin
 │               │   │       │   └── lib-spin.json
 │               │   │       └── out
-│               │   │           ├── libspin-dc5780d2834f31ac.rlib
-│               │   │           ├── libspin-dc5780d2834f31ac.rmeta
-│               │   │           └── spin-dc5780d2834f31ac.d
+│               │   │           ├── libspin-f173737eba242a96.rlib
+│               │   │           ├── libspin-f173737eba242a96.rmeta
+│               │   │           └── spin-f173737eba242a96.d
 │               │   ├── volatile
 │               │   │   ├── 208c5826d35793b4
 │               │   │   │   ├── fingerprint
@@ -4797,22 +6315,604 @@
 │               │   │   │       ├── libvolatile-208c5826d35793b4.rlib
 │               │   │   │       ├── libvolatile-208c5826d35793b4.rmeta
 │               │   │   │       └── volatile-208c5826d35793b4.d
-│               │   │   └── cf811bf371657090
+│               │   │   ├── 3d109122fc17938f
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-volatile
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-volatile
+│               │   │   │   │   └── lib-volatile.json
+│               │   │   │   └── out
+│               │   │   │       ├── libvolatile-3d109122fc17938f.rlib
+│               │   │   │       ├── libvolatile-3d109122fc17938f.rmeta
+│               │   │   │       └── volatile-3d109122fc17938f.d
+│               │   │   ├── 4f83712d9f91eaa5
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-volatile
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-volatile
+│               │   │   │   │   └── lib-volatile.json
+│               │   │   │   └── out
+│               │   │   │       ├── libvolatile-4f83712d9f91eaa5.rlib
+│               │   │   │       ├── libvolatile-4f83712d9f91eaa5.rmeta
+│               │   │   │       └── volatile-4f83712d9f91eaa5.d
+│               │   │   ├── cf811bf371657090
+│               │   │   │   ├── fingerprint
+│               │   │   │   └── out
+│               │   │   ├── f0ba1819ba8b103d
+│               │   │   │   ├── fingerprint
+│               │   │   │   │   ├── dep-lib-volatile
+│               │   │   │   │   ├── invoked.timestamp
+│               │   │   │   │   ├── lib-volatile
+│               │   │   │   │   └── lib-volatile.json
+│               │   │   │   └── out
+│               │   │   │       ├── libvolatile-f0ba1819ba8b103d.rlib
+│               │   │   │       ├── libvolatile-f0ba1819ba8b103d.rmeta
+│               │   │   │       └── volatile-f0ba1819ba8b103d.d
+│               │   │   └── fb6de6a73ca1d2c7
 │               │   │       ├── fingerprint
+│               │   │       │   ├── dep-lib-volatile
+│               │   │       │   ├── invoked.timestamp
+│               │   │       │   ├── lib-volatile
+│               │   │       │   └── lib-volatile.json
 │               │   │       └── out
+│               │   │           ├── libvolatile-fb6de6a73ca1d2c7.rlib
+│               │   │           ├── libvolatile-fb6de6a73ca1d2c7.rmeta
+│               │   │           └── volatile-fb6de6a73ca1d2c7.d
 │               │   └── x86_64
+│               │       ├── 0355e02b8c4f63ce
+│               │       │   ├── fingerprint
+│               │       │   │   ├── dep-lib-x86_64
+│               │       │   │   ├── invoked.timestamp
+│               │       │   │   ├── lib-x86_64
+│               │       │   │   └── lib-x86_64.json
+│               │       │   └── out
+│               │       │       ├── libx86_64-0355e02b8c4f63ce.rlib
+│               │       │       ├── libx86_64-0355e02b8c4f63ce.rmeta
+│               │       │       └── x86_64-0355e02b8c4f63ce.d
+│               │       ├── 1d3489df3012ea56
+│               │       │   ├── fingerprint
+│               │       │   │   ├── dep-lib-x86_64
+│               │       │   │   ├── invoked.timestamp
+│               │       │   │   ├── lib-x86_64
+│               │       │   │   └── lib-x86_64.json
+│               │       │   └── out
+│               │       │       ├── libx86_64-1d3489df3012ea56.rlib
+│               │       │       ├── libx86_64-1d3489df3012ea56.rmeta
+│               │       │       └── x86_64-1d3489df3012ea56.d
 │               │       ├── 2ba857c286728022
 │               │       │   ├── fingerprint
 │               │       │   └── out
-│               │       └── 7d43af2a0db339eb
+│               │       ├── 7d43af2a0db339eb
+│               │       │   ├── fingerprint
+│               │       │   └── out
+│               │       ├── d855f1184f263e0b
+│               │       │   ├── fingerprint
+│               │       │   │   ├── dep-lib-x86_64
+│               │       │   │   ├── invoked.timestamp
+│               │       │   │   ├── lib-x86_64
+│               │       │   │   └── lib-x86_64.json
+│               │       │   └── out
+│               │       │       ├── libx86_64-d855f1184f263e0b.rlib
+│               │       │       ├── libx86_64-d855f1184f263e0b.rmeta
+│               │       │       └── x86_64-d855f1184f263e0b.d
+│               │       └── e18491ece0ec3834
 │               │           ├── fingerprint
+│               │           │   ├── dep-lib-x86_64
+│               │           │   ├── invoked.timestamp
+│               │           │   ├── lib-x86_64
+│               │           │   └── lib-x86_64.json
 │               │           └── out
+│               │               ├── libx86_64-e18491ece0ec3834.rlib
+│               │               ├── libx86_64-e18491ece0ec3834.rmeta
+│               │               └── x86_64-e18491ece0ec3834.d
 │               ├── examples
-│               └── incremental
-│                   └── gluecore-1veam0w1l7266
-│                       ├── s-hmeo0fc4r6-0vteuck.lock
-│                       └── s-hmeo0fc4r6-0vteuck-working
-│                           └── dep-graph.part.bin
+│               ├── incremental
+│               │   ├── gluecore-1veam0w1l7266
+│               │   │   ├── s-hmeo0fc4r6-0vteuck.lock
+│               │   │   └── s-hmeo0fc4r6-0vteuck-working
+│               │   │       └── dep-graph.part.bin
+│               │   ├── gluecore-2m9ck33pe1e3n
+│               │   │   ├── s-hmfshtrbgi-0e3uuxi-0s0dzorfcbh62hmhxeja6svp2
+│               │   │   │   ├── 3tzem8l6t32hdwlf7h0zpruaq.o
+│               │   │   │   ├── 4ltyvoc73budbsculyy9w2djb.o
+│               │   │   │   ├── 92frmxah1j2jmhy7pru50rsgu.o
+│               │   │   │   ├── bjnlxtuzoma4uujwvdzwybdn0.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── di2l12lvt8pv4matimuixpc0g.o
+│               │   │   │   ├── e8d722olh5fsji5a6rhtnji96.o
+│               │   │   │   ├── eksdbh8gk3f2ie5e3n3idtmw1.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshtrbgi-0e3uuxi.lock
+│               │   ├── gluecore-34ojmqm8c7mj3
+│               │   │   ├── s-hmfse17s2w-0nzkyvl-4bo1x5s81gtyane6iswv1004r
+│               │   │   │   ├── 0k1igi0cy1d2q4w0rvegyb6eo.o
+│               │   │   │   ├── 4lcszj03uvfkj8ujkjwkmysp8.o
+│               │   │   │   ├── 5kvk3yp47h27gg1bz7rmiqdrx.o
+│               │   │   │   ├── 7puhbenxsg7yfw5cf846eu7t7.o
+│               │   │   │   ├── 8wvm095k30je29bailwm7wn89.o
+│               │   │   │   ├── bww88ee4o48chevommrk4dgz5.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── dpmhmdv5kn8w6gxapq2fp05r3.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfse17s2w-0nzkyvl.lock
+│               │   ├── kernel-0fivh14x1179b
+│               │   │   ├── s-hmfsh1528e-08jqz8t.lock
+│               │   │   └── s-hmfsh1528e-08jqz8t-working
+│               │   │       └── dep-graph.part.bin
+│               │   ├── kernel-3ayu6r6isv8nj
+│               │   │   ├── s-hmfshuwqy3-0y2f53d-71y7wsn2kj03mtay3vv07a4bq
+│               │   │   │   ├── 01p36ewrwpo9hw3zd51up8vnx.o
+│               │   │   │   ├── 03nur1kn3t6lahbu0nl98vm7s.o
+│               │   │   │   ├── 04ud3lcct68g5b5vdfkgs2iuz.o
+│               │   │   │   ├── 085sy28nqmgkhuj2eomeqdbrf.o
+│               │   │   │   ├── 08extpy825qp7i923ssvtaetj.o
+│               │   │   │   ├── 0cn6qpx8m2d7yvagpj2h3q07u.o
+│               │   │   │   ├── 0deg8pbu16gcwhdp4prn2eqey.o
+│               │   │   │   ├── 0dqhao6ru4z88kgly6z9lfvqu.o
+│               │   │   │   ├── 0gqk7wysshcuk9oj4eq8tapzq.o
+│               │   │   │   ├── 0gw388x12fvld5fylxk21lh4y.o
+│               │   │   │   ├── 0j1njfabf1avrjyup15s96u28.o
+│               │   │   │   ├── 0li9x40mh5ibjzr97fkhiulqw.o
+│               │   │   │   ├── 0ncc6b976vg2gs7m88dnjrqd3.o
+│               │   │   │   ├── 0q6wseck0zrakwowrzeza689y.o
+│               │   │   │   ├── 0stpqvy0783xzjhhxyvt8hgng.o
+│               │   │   │   ├── 0tbl58xnmdy3mztrb0sz7lozx.o
+│               │   │   │   ├── 0tu4h9khxpdqoh1d66ahz88ci.o
+│               │   │   │   ├── 0yfn1lcd0ltybk0dlvvsiuwqq.o
+│               │   │   │   ├── 0yusm5ffoofjsrxourwq4midn.o
+│               │   │   │   ├── 11lywh9187bxei9nzpuzc4t87.o
+│               │   │   │   ├── 12snov86oo9wosoyip4svko6k.o
+│               │   │   │   ├── 18v1f3o4dc4ltjpsplkuwnxd3.o
+│               │   │   │   ├── 1by1koeeq49gumextxh3es268.o
+│               │   │   │   ├── 1gf6uhh6o8ekhnb6uvzp6m8gq.o
+│               │   │   │   ├── 1i2akpfovmo8ebkbpchpfqndt.o
+│               │   │   │   ├── 1ijl3bjtr80t8q84h7fuvccqr.o
+│               │   │   │   ├── 1jhkvayav757rdo1y4wjb32ki.o
+│               │   │   │   ├── 1kxbwrtr344in9j1wdkc910q9.o
+│               │   │   │   ├── 1l27zptb7ug070ptzzxqjaiyx.o
+│               │   │   │   ├── 1lap1nlvsys25lleirbuyu8s3.o
+│               │   │   │   ├── 1mysr3aquyy2xhyqyb0q7nm7y.o
+│               │   │   │   ├── 1nb1udvreu0rr5azb48xd9ddn.o
+│               │   │   │   ├── 1p6vhk1lxzzc3gbcwx91j5usw.o
+│               │   │   │   ├── 1sg2pnwqr7hzsp6x0zzv8dcy2.o
+│               │   │   │   ├── 1twm1ciqgqm4i2byjs1zruyiy.o
+│               │   │   │   ├── 1xbkm3mim9vm81sezs6qc2t49.o
+│               │   │   │   ├── 1xrt9klpxdncagrzmd80a8k7d.o
+│               │   │   │   ├── 1zht5d6ksoi6vlxinnsdm0gii.o
+│               │   │   │   ├── 25brx7hyorfqeydxot8dcy6y0.o
+│               │   │   │   ├── 2ad4artpaunvw3zrio172mt3e.o
+│               │   │   │   ├── 2cq4kvn3q2sllz29tioz7zrs3.o
+│               │   │   │   ├── 2e27le93i3yonhdbpdux8pute.o
+│               │   │   │   ├── 2fur5yl7uhphhj8nbuhrqfqlc.o
+│               │   │   │   ├── 2gs48ei2n6i5fbje082jrs4pf.o
+│               │   │   │   ├── 2nkwkkjge468gyjdlc1l5xtd7.o
+│               │   │   │   ├── 2nu7bpmug775ohl32rwwqkpuh.o
+│               │   │   │   ├── 2oiyi4fvzj597hgpc41nxnp0j.o
+│               │   │   │   ├── 2pmo3njm8i856ve73k37wjs7h.o
+│               │   │   │   ├── 2s8yabqxbewzf6oazof9032kg.o
+│               │   │   │   ├── 2sserva0zmc2zmf2y2c4g3tpw.o
+│               │   │   │   ├── 2t1aqoi1em73mra9fawrawoy7.o
+│               │   │   │   ├── 2u5c4bynmdvvt2pw77p0s4ee6.o
+│               │   │   │   ├── 2v38dveqb07aqpr99c6wpouhy.o
+│               │   │   │   ├── 2vzawdshj6v12sd35yh4ni7gz.o
+│               │   │   │   ├── 2w0jqwfz4hcj4jop2wh6cayll.o
+│               │   │   │   ├── 2ybfoqz984465g6zhjq2g5p3r.o
+│               │   │   │   ├── 2zoyqt8xugoxl9r9yh4jm1tdp.o
+│               │   │   │   ├── 2zwiew8kr8wsnkvofavh5ilzs.o
+│               │   │   │   ├── 3etiebts46dll6zyg2wcpghth.o
+│               │   │   │   ├── 3fv3zdguf6afm96n29rucbweq.o
+│               │   │   │   ├── 3gacb4ru9s1o3om373me74v0r.o
+│               │   │   │   ├── 3jn2lg7edyzen7a42f1zfc6yb.o
+│               │   │   │   ├── 3tgcic4isp05wpog8mwia5qez.o
+│               │   │   │   ├── 3u25agfkqlbb28w550mavce4g.o
+│               │   │   │   ├── 3zcde9yl5s4k7h6wqjsy2oapr.o
+│               │   │   │   ├── 42yd7cml4re3i2p25ibvmssrb.o
+│               │   │   │   ├── 43he1lxbu54f6flbkjrbnwf4d.o
+│               │   │   │   ├── 44k1hb4eb1965v7qf2jsnv5dt.o
+│               │   │   │   ├── 49kx3tmgvzexbg8xv0talaxri.o
+│               │   │   │   ├── 4hmzenclomxkufs61as2i42f8.o
+│               │   │   │   ├── 4icdwbyuqq9fe2z8zmu82cd6d.o
+│               │   │   │   ├── 4ipvyrpgavnsr482y71eo4gdl.o
+│               │   │   │   ├── 4j9e072gbp25kxooyuy5ho3la.o
+│               │   │   │   ├── 4k03engkm4goxxe4e7z2y57kq.o
+│               │   │   │   ├── 4k0dq1kvqpavuq32qntny1jxv.o
+│               │   │   │   ├── 4no4js0bq7noqu3cxmn72lnph.o
+│               │   │   │   ├── 4o380tb41yafwshkgyhawlk0o.o
+│               │   │   │   ├── 4o3nu6ppdemhr3brymaqkxhor.o
+│               │   │   │   ├── 4rolpeu7tvmuin2owd1ytq6s0.o
+│               │   │   │   ├── 4tvl7yw5i3v91ok07ohgn1vq6.o
+│               │   │   │   ├── 4tvnw8czmbarwv33hqwb83xps.o
+│               │   │   │   ├── 4uwdivfizetto03fjlym7ty90.o
+│               │   │   │   ├── 4wun3middnkauj7h6xjs1q5bm.o
+│               │   │   │   ├── 4xt9jyo4ujsnwgq9nnh1b60u6.o
+│               │   │   │   ├── 508ilqpdcuaifwlva4slrqoaz.o
+│               │   │   │   ├── 56el252ney5k4y7a72saaavdv.o
+│               │   │   │   ├── 57bcquhuyv4rh9m9j2w0wlsyj.o
+│               │   │   │   ├── 587c685k6aqetgerouj28tdzw.o
+│               │   │   │   ├── 5bkjz82tvcjmx0uzm5t7vcg2c.o
+│               │   │   │   ├── 5bwya3vm2bi09hap0tb0jgoyy.o
+│               │   │   │   ├── 5ckddtefhh6jfo7bfvd56v041.o
+│               │   │   │   ├── 5ee3pb1hkb2r65m0yat0dohww.o
+│               │   │   │   ├── 5emtghyhuln8f8wuvhrceq80l.o
+│               │   │   │   ├── 5gfnd67hxm0qq4f6sbg4nmj1n.o
+│               │   │   │   ├── 5j8qx90o6qp3iy50aumu3yank.o
+│               │   │   │   ├── 5jvzn21mv0jrvtmi5fpvqr4kb.o
+│               │   │   │   ├── 5nrx3jqcd99hrdxjvfe49320r.o
+│               │   │   │   ├── 5o63ovjtk5qlgvaveqjztkbdr.o
+│               │   │   │   ├── 5ojs7gdl9w477yo0fcds9t0g1.o
+│               │   │   │   ├── 5prntozcny5brrvt4l8b5udob.o
+│               │   │   │   ├── 5r6hut97glkr2snzrim5ainwa.o
+│               │   │   │   ├── 5szwrssawbivg83vtf6o4iygm.o
+│               │   │   │   ├── 5yrwv973qbntmnp4uat84pnsq.o
+│               │   │   │   ├── 61bi6rqbeetmiqi64dnnenn8f.o
+│               │   │   │   ├── 64bmoylgynck7qk1eh9kv9zym.o
+│               │   │   │   ├── 67xdvp4ox07jfhaln78ukx0ik.o
+│               │   │   │   ├── 68zqmq9u81e16x0aaffmgolr7.o
+│               │   │   │   ├── 6aeab3bp0yzxs77qnox4kpon4.o
+│               │   │   │   ├── 6cm448dmte052kzfx38ki1qld.o
+│               │   │   │   ├── 6dpg07zhuu2255oxx9q3mjub2.o
+│               │   │   │   ├── 6g7qs6jtg26bf42sm2h2t2fb0.o
+│               │   │   │   ├── 6gzi9v96gt87kofu09eplo63u.o
+│               │   │   │   ├── 6hl7wrrefmgan34qclapuigc1.o
+│               │   │   │   ├── 6hy1dthdjemcao46m655k4ode.o
+│               │   │   │   ├── 6i2mmza0kdppvic44h7agb9gc.o
+│               │   │   │   ├── 6ji8hq33si6g07kfdq3vg8szo.o
+│               │   │   │   ├── 6kumgg1fpjg7rxedr0vpojcyp.o
+│               │   │   │   ├── 6m9gkoydam5tycf3a30cfrvkw.o
+│               │   │   │   ├── 6r02ldrjhg1e31519l44qx85c.o
+│               │   │   │   ├── 6r45lkr4mcpiqra9afe01ity4.o
+│               │   │   │   ├── 6tbc0bzigf3y5x201evwk3e0i.o
+│               │   │   │   ├── 6we9mrlttijjyjno3gcx5huis.o
+│               │   │   │   ├── 6zp37iibv8tre41x1ry9edofq.o
+│               │   │   │   ├── 70ezbi5q7qiaysk3u7dgli57e.o
+│               │   │   │   ├── 71hurntg5ye290ywmjwdlcxde.o
+│               │   │   │   ├── 776sycaf2qrp9795jcpu8b4dy.o
+│               │   │   │   ├── 77cichbwfcehg723zalggj9s3.o
+│               │   │   │   ├── 79nl8eow8vis75vxkn0klos9j.o
+│               │   │   │   ├── 79wwhtbeep6acf884v9hvuxkx.o
+│               │   │   │   ├── 7bhd42o5px2z4xa5pxj3wwx6p.o
+│               │   │   │   ├── 7fp2zm6jww77i4ng2j5ih9ti4.o
+│               │   │   │   ├── 7jt7l29foqrioo13f3kydkbix.o
+│               │   │   │   ├── 7l7nomvdctstot1jh23w9xpjw.o
+│               │   │   │   ├── 7lu2peiyv3rf6oako248w8bq6.o
+│               │   │   │   ├── 7n6scgnpuos6sqjbby53cc7c6.o
+│               │   │   │   ├── 7nc4dplopakkftkzevbmxj2ox.o
+│               │   │   │   ├── 7nz7l2p35c20c4kgmd0ez9hgg.o
+│               │   │   │   ├── 7qzskkiu46nef6uurztsf7goy.o
+│               │   │   │   ├── 7rkqqhgqe8aktk3ws6nmsf6ub.o
+│               │   │   │   ├── 7xpzzc4k8gr0fnnjs9nh1n5m9.o
+│               │   │   │   ├── 7xw8vstoiglrm8kwnyyaywgfu.o
+│               │   │   │   ├── 813lya8maxjq40tr7r6ad9rzi.o
+│               │   │   │   ├── 838844frd1b56upkg9zr3sq4c.o
+│               │   │   │   ├── 86vg5tk91l0lubapy24enc30i.o
+│               │   │   │   ├── 86zubx4wwvjco4tw5hu7plsrc.o
+│               │   │   │   ├── 89209oqfie7dm1buwhevp9msf.o
+│               │   │   │   ├── 892de04u9uyuzk7x60hlavl2t.o
+│               │   │   │   ├── 8dazck2n94lhptxed73r5l0gh.o
+│               │   │   │   ├── 8epoyxlx9bck83d7uia65houy.o
+│               │   │   │   ├── 8gr6s50qbwvbi1n1643a9pcme.o
+│               │   │   │   ├── 8iqphj2j41omf6w8m4yk6qv20.o
+│               │   │   │   ├── 8j815og1rlxn4fons2jner773.o
+│               │   │   │   ├── 8kltwce7rq7enuu98s6oa9a1n.o
+│               │   │   │   ├── 8kxs9ihzfbsxt6lgzv3iluvrw.o
+│               │   │   │   ├── 8mopgykzxiv6dkprpfv2o4ofx.o
+│               │   │   │   ├── 8r4g74004eckyq908f05eo0be.o
+│               │   │   │   ├── 8tv9gin2k4t6yfnxi38d4gvgl.o
+│               │   │   │   ├── 8xlbiqc9158baie7ys2of0j64.o
+│               │   │   │   ├── 8yw6loy62pd132pcfl7m1tjz5.o
+│               │   │   │   ├── 92825n2x8rk7bdxjusublztpn.o
+│               │   │   │   ├── 92k6ntsok6tzr7rigp6pjxhio.o
+│               │   │   │   ├── 92sm0poh1kt4qp1mryv6c7tev.o
+│               │   │   │   ├── 94hu8dw6edena93eo4g9b9bso.o
+│               │   │   │   ├── 95p5hvyu1ah8tkuujd31vqlnp.o
+│               │   │   │   ├── 96ewr4i3acn5mf45jxmleo3dg.o
+│               │   │   │   ├── 96vro97kpavzyqjmkw08lxy9m.o
+│               │   │   │   ├── 992z4wdp2ow7ufhm7bxlia863.o
+│               │   │   │   ├── 9fgm4ughrwy425kh07gbwrp8p.o
+│               │   │   │   ├── 9g46ac31rauocs9hwnfinezq8.o
+│               │   │   │   ├── 9gdvgcxd4waojbhe4p4ycl6ca.o
+│               │   │   │   ├── 9huc2wcm52fvoa0dkfxr5rklq.o
+│               │   │   │   ├── 9j2s312hopypmf70wdxpjl0op.o
+│               │   │   │   ├── 9jql4tezoq8pbm2qskr8u8u0x.o
+│               │   │   │   ├── 9k1fw2ie64ew38r0lv0yfjjq8.o
+│               │   │   │   ├── 9l01vh5aq00sewpzwy0hbnr3d.o
+│               │   │   │   ├── 9lpqpff77s4ktq2om9yqm02or.o
+│               │   │   │   ├── 9q9gt2y6j7ug5iyai0h7dn30s.o
+│               │   │   │   ├── 9riuv5qv42c5nza3zvzv4llm5.o
+│               │   │   │   ├── 9sf7fkym5ccud7ecn45w2ty3l.o
+│               │   │   │   ├── 9shd4ewsohq2r7rn6wo3wd4pn.o
+│               │   │   │   ├── 9t1n8utho58er27k6vau05s7n.o
+│               │   │   │   ├── a02scqth8xgtdyonhaskhn1ds.o
+│               │   │   │   ├── a5wa1uiee5dvnkwlbcr2zcbk4.o
+│               │   │   │   ├── a6yw6c61aevbs1xt1rvw2j1du.o
+│               │   │   │   ├── a87km5zq5op5g87sqs2cbi9q6.o
+│               │   │   │   ├── abbox1gwvxnyucqwub28z3xlg.o
+│               │   │   │   ├── abjfiwo1gnvyigsomg8yqijou.o
+│               │   │   │   ├── ac285747gwkv3kq3ebgmfufe9.o
+│               │   │   │   ├── ag65778zwyn7q5p4pvyvfwpjt.o
+│               │   │   │   ├── ahmynssh45m26dnscwr33xdxr.o
+│               │   │   │   ├── ajrr1jcrcgct25vny0pysz86l.o
+│               │   │   │   ├── ali1vs8rktvta6jwrd3emsfv0.o
+│               │   │   │   ├── aonq9h49d2jtgbsttmb2s3l8z.o
+│               │   │   │   ├── aqqmqequ461kanau9etofxycz.o
+│               │   │   │   ├── asjhz6zc3q55vh7cu1l19lvld.o
+│               │   │   │   ├── asjpyszgf7z9nvq0salbsm4kn.o
+│               │   │   │   ├── atz0ucc6lksehl9ddr99g3rpp.o
+│               │   │   │   ├── aucaarqbgdmk6oevfeyl8yngl.o
+│               │   │   │   ├── avfmu7vikke38qxn9di19er5u.o
+│               │   │   │   ├── avivavd4lj8mdi0rgfs1qo1tj.o
+│               │   │   │   ├── azwb2s1agcmwx33mzt0doa5xp.o
+│               │   │   │   ├── b4ijczvaahxiy7yh51pqbgpco.o
+│               │   │   │   ├── b85ua9k6g474l6in15pfdtphu.o
+│               │   │   │   ├── b8c192cewnjxymfowzwxetnoh.o
+│               │   │   │   ├── b8dz8mjg9bdgblpboxetd7c0o.o
+│               │   │   │   ├── b9t5hv1l2r25br9h186skgeft.o
+│               │   │   │   ├── bjx0fzml5qdfi24osxd8elunl.o
+│               │   │   │   ├── blwgpoaid5rcuxwtrzqa4uxot.o
+│               │   │   │   ├── bp12epxzsrviassvwwmvacuch.o
+│               │   │   │   ├── bp2zc9pfqi9h3wpx74jlsplhs.o
+│               │   │   │   ├── bumog403mhmwtyj4h6wq7xuia.o
+│               │   │   │   ├── bxt94md4oo6vrblj4yezzabky.o
+│               │   │   │   ├── c1c7hne7f3b82c32b5txahy44.o
+│               │   │   │   ├── c3hb3c7rueb95qwb2rivjfi3d.o
+│               │   │   │   ├── c4a7lof4wltnofii6z6xptfwy.o
+│               │   │   │   ├── c52d36yikkggu9u5uzsk2lxir.o
+│               │   │   │   ├── ccj7jucncruwm9eu4dm8cad27.o
+│               │   │   │   ├── cfajtf7blgggxm6fp899n5oh1.o
+│               │   │   │   ├── cfix4ytzqi6qjdftraneq1nxn.o
+│               │   │   │   ├── chobur2j36u7gazsrzedakmt6.o
+│               │   │   │   ├── cjp7osetzagceycoi31hlsuhp.o
+│               │   │   │   ├── cl7ga5pnsx5mjtu83hz602e1c.o
+│               │   │   │   ├── coedw982vy2e22tgiql52c256.o
+│               │   │   │   ├── crchmm2yqv9phtwsoe07tfzft.o
+│               │   │   │   ├── crjoku5qpo3rwmdk4vaa96w3l.o
+│               │   │   │   ├── cu6fq807471aa9dlyh08wi2tw.o
+│               │   │   │   ├── culdf828yd7nduin3k34b1hyy.o
+│               │   │   │   ├── cxjbpu7ql4dd37yco25x6xcll.o
+│               │   │   │   ├── cyk9uiq6ni44l5ap5pvy7ywaz.o
+│               │   │   │   ├── d114nlca77i448cgg8okzp0in.o
+│               │   │   │   ├── d2ijqyr1kjmgfgi033eppbyxf.o
+│               │   │   │   ├── d7o6ai7vwyfvvrx94cirxp0kn.o
+│               │   │   │   ├── d87lewh2xa0r3tbqxx3thrp8s.o
+│               │   │   │   ├── dbh1d9uzx05qhclor31nlyndx.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── dn1pxtssbvx7rrevuzhw4bazd.o
+│               │   │   │   ├── dohkp6alx8mgw3xj2nfzscur7.o
+│               │   │   │   ├── dvnmqqxa95fvz91n0p6hpu2ky.o
+│               │   │   │   ├── e0f864s3oxk9epmmfffauhktb.o
+│               │   │   │   ├── e1haiultasxbicwdor4npyzum.o
+│               │   │   │   ├── e292o12iiyk7qwa781cbhbi0b.o
+│               │   │   │   ├── e5gm5lda3uyky8i4nrox2t4hg.o
+│               │   │   │   ├── e5qjx3pdn6qru4u97b4uc64o4.o
+│               │   │   │   ├── e7cnxa8utuhru890l337xtgwf.o
+│               │   │   │   ├── e90sh4p6gcj7pww37g3b0q26k.o
+│               │   │   │   ├── e9a8qksn42j2c5vrbo9x6fl45.o
+│               │   │   │   ├── ea76iujokxv50sqmpte2ybhfb.o
+│               │   │   │   ├── ed0sdxff7yht5cqyfs1car6yu.o
+│               │   │   │   ├── ednrrknjyid6q37xjla88vlug.o
+│               │   │   │   ├── ej3xs7vyuj1ekian3dddwfol0.o
+│               │   │   │   ├── el0ffj1allsb9dvc7vawwo1hs.o
+│               │   │   │   ├── emo1guhnnwrpv27nics8epydd.o
+│               │   │   │   ├── emq3yc7lztnt6l5ygb5k751ca.o
+│               │   │   │   ├── es5skvgenbdtv53wvom99ea2j.o
+│               │   │   │   ├── es7tp4v7oski4d8aqfjf6b0uv.o
+│               │   │   │   ├── ewrhkbup9kvn87gmjsoozvms2.o
+│               │   │   │   ├── f3dxl4h8xk8asp2ojuqbunoly.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshuwqy3-0y2f53d.lock
+│               │   ├── kernel_bin-1sqtmp4pk1spu
+│               │   │   ├── s-hmfshx8aib-1wa42jr-5r28addxcec5htr0cakz46slz
+│               │   │   │   ├── crgues30sd7wz2vwys2mq1mad.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshx8aib-1wa42jr.lock
+│               │   ├── kstd_alloc-0lmhsuxb8yxnu
+│               │   │   ├── s-hmfsdazqyz-0bvgyjf-70v516e0yfvovv8885h237iai
+│               │   │   │   ├── 0biwa6jb5nxtodwjaia81r3v9.o
+│               │   │   │   ├── 2ddec16onylp6duz0cvym0vj7.o
+│               │   │   │   ├── 2m27wx07pxbjyijyszj9sgd1j.o
+│               │   │   │   ├── 3et365gayosq90xvjgao3ue3q.o
+│               │   │   │   ├── 3mi2nydy5oxxbcb5vpowys0oq.o
+│               │   │   │   ├── 4rhuyks1nhqsfnm86nrvlcd3a.o
+│               │   │   │   ├── 55ng2mmbwp012dc65r6toukjt.o
+│               │   │   │   ├── 6n5mriu63x3ecf3v65id1n0xp.o
+│               │   │   │   ├── 84fhh9391rdwsv0bton3f0ijf.o
+│               │   │   │   ├── 93wwsqvvldsj2bkid6pvzc17b.o
+│               │   │   │   ├── 98zrx0j8u8sj3xf1hax2a0xke.o
+│               │   │   │   ├── 9brcx920mc33cpoxt4g1uuk5s.o
+│               │   │   │   ├── 9dpi7abt5bzvae2lysl37uk4h.o
+│               │   │   │   ├── cm30re3jcfzunu3v0rxvk1t40.o
+│               │   │   │   ├── ctihug42b5q32hjzha723o38d.o
+│               │   │   │   ├── d5c9jrql7rvq1m2uv0c9faqre.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── enk2bw55qf57mum6cbekvqqgl.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfsdazqyz-0bvgyjf.lock
+│               │   ├── kstd_alloc-1svh7fhvy53d6
+│               │   │   ├── s-hmfshth3wj-0ejk4bp-306dwwar3bf7wderuylg75om7
+│               │   │   │   ├── 0tgky2rtes6909iw8ld3c6mka.o
+│               │   │   │   ├── 1jaopmizxxktotcai86u3oera.o
+│               │   │   │   ├── 29en9xoc5fa7c4snr8le8caqf.o
+│               │   │   │   ├── 2ikc12lwofnxog4mt3ffpe5el.o
+│               │   │   │   ├── 2nzacp11qd9bn7gk372bbzdik.o
+│               │   │   │   ├── 33111axgfw4oxcg8jn0owj58q.o
+│               │   │   │   ├── 4757ug3pz3l8q260u8z3gxc6m.o
+│               │   │   │   ├── 4gv4eulueb68zuuipl5md0vkb.o
+│               │   │   │   ├── 6altkrplb0zfcc48jbndjaotm.o
+│               │   │   │   ├── 6hdrz34ww92zldtpxpey9xgfs.o
+│               │   │   │   ├── 9af2oruliyxysjrmqfflkgyb4.o
+│               │   │   │   ├── ato2h6nifqnrhjfp9bizfzchs.o
+│               │   │   │   ├── axgersbt9byzjmcbhyxocdo3a.o
+│               │   │   │   ├── bek3wbmbam19bynat5hfq9kb7.o
+│               │   │   │   ├── ck55ord2rj2wnj2a3jlvw9zvt.o
+│               │   │   │   ├── conoheu4rytecoibzs45ji833.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── donv0vmo86xmh6jwj34oq0l3n.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshth3wj-0ejk4bp.lock
+│               │   ├── kstd_base-39n438h8kmks9
+│               │   │   ├── s-hmfsdate76-10bzq4y-bqs665gw3qxk1wdozq3dwun7h
+│               │   │   │   ├── 3uwhj5d8mfn6fkbiv0vvkfqhx.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfsdate76-10bzq4y.lock
+│               │   ├── kstd_base-3b4iq2ehwd35r
+│               │   │   ├── s-hmfshtadpv-1ctfaz0-f4dl802dfzjjt9t2163g0f7b0
+│               │   │   │   ├── 1mfpbjrcvgg29fr6478vp9755.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshtadpv-1ctfaz0.lock
+│               │   ├── kstd_core-1x3mzfyiswrtq
+│               │   │   ├── s-hmfshto7ua-0rtmvts-9mvy0bbssctdalfuz8fgb6npi
+│               │   │   │   ├── 06qydzg9vj04ai4dnfj8v5grw.o
+│               │   │   │   ├── 0apx15vxuqi46q5f0j5znag0k.o
+│               │   │   │   ├── 1ayi0u3lvmtxakzcn0ovgdtmh.o
+│               │   │   │   ├── 1ia0an5wqglxnn0e471j03f7d.o
+│               │   │   │   ├── 263nndq3oqtm7gbf91f4uxzwr.o
+│               │   │   │   ├── 4xkomwnazm2h5wtebysu6fxgo.o
+│               │   │   │   ├── 5ytw2885qukybyzezl745czd7.o
+│               │   │   │   ├── 6hqh9egzgag7dvxgzzyzqpal5.o
+│               │   │   │   ├── 7ujtckxik5eqr5nwb8yp322no.o
+│               │   │   │   ├── 87ijf0afxhwf0db15jitu8yhl.o
+│               │   │   │   ├── 8n0g9lnm1scd4jz873iqrb3o6.o
+│               │   │   │   ├── 92v8mpemxhitqa1ngulrn55sq.o
+│               │   │   │   ├── abcoqv39x15curs6mthqp3517.o
+│               │   │   │   ├── bihoaxgtdvxnorjzsab2lrjq9.o
+│               │   │   │   ├── bndyav3mko1nvhcnwtxzusz90.o
+│               │   │   │   ├── c6c5y14v9pwoaosmmutd16ffi.o
+│               │   │   │   ├── dat9lkwc9bzpt8oul44jmyah0.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── dj48dj4oazpasyqbu5w48fhui.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshto7ua-0rtmvts.lock
+│               │   ├── kstd_core-2pmaju2artga6
+│               │   │   ├── s-hmfse12u4q-1i4ek8n-579r5mob75ilpfcg1832wrnvo
+│               │   │   │   ├── 0n0geiy5bdax7l33gd20cb5rd.o
+│               │   │   │   ├── 0rl6btn6hlae2rc8752vca0rz.o
+│               │   │   │   ├── 19qqgf4wf30j3j5wkwr07at8k.o
+│               │   │   │   ├── 2m6fkgkkbjidodb173ztnbf0i.o
+│               │   │   │   ├── 33zgv3lq5fjnl18qkfrlkchgj.o
+│               │   │   │   ├── 3mip8zncicuf499fekrdydgi8.o
+│               │   │   │   ├── 49j1eq310xr2i2dacfkf1gm8j.o
+│               │   │   │   ├── 4cw6jr58ca64g65exvt1jd6lm.o
+│               │   │   │   ├── 5u5feuwarqpg8df3h49jsuiba.o
+│               │   │   │   ├── 6gp3q401zy3h39y1zpvo9unas.o
+│               │   │   │   ├── 6ud53enpgs6asxjeypsbjf1f8.o
+│               │   │   │   ├── 7cku28u2po1b3p2w1fz53u9gt.o
+│               │   │   │   ├── 8fi2twd6t7s2z0lxkel37kttr.o
+│               │   │   │   ├── 9ppgv95t2lhritxh71tp7wwgh.o
+│               │   │   │   ├── axk93cspd0w63lx6k8ioscwto.o
+│               │   │   │   ├── bo51ernuwi2wht0cizsny1lv3.o
+│               │   │   │   ├── d2yrzqfmwy959uv1fsspq93qw.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── ebz7vrbwdzwiajan8kj7gkp7d.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfse12u4q-1i4ek8n.lock
+│               │   ├── kstd_data-0gn6qcjotvwb3
+│               │   │   ├── s-hmfshtlfh5-1445ul2-bezxi8e5efx9st18r396ibvgc
+│               │   │   │   ├── 0x0fz2awskpcyondoes9mlw9t.o
+│               │   │   │   ├── 1fhr2phmrypgbzehnpjri5hf0.o
+│               │   │   │   ├── 1tp378prrs3i85fdb5865iimx.o
+│               │   │   │   ├── 26grjkr99ntw755ml2vmv1oln.o
+│               │   │   │   ├── 4dkbbk7i1zhmoqx99qw88kwcv.o
+│               │   │   │   ├── 4p8j5xvk3yghbbfuonoa8mios.o
+│               │   │   │   ├── 528i1z93xytcfxx5jej0hj3uo.o
+│               │   │   │   ├── 5s1ezw1miux0wrdlahgcbk7fv.o
+│               │   │   │   ├── 656pv1xxgbl1di07nb3u6p62o.o
+│               │   │   │   ├── 6b455m8woavt0nv1c7vxhjxnt.o
+│               │   │   │   ├── 8i2y3uocy81b6lc727zt0mnwz.o
+│               │   │   │   ├── 8s4q7e7ptiir1hyp8lqg6c818.o
+│               │   │   │   ├── 95zmz8yy26uf0vneyvljaw16p.o
+│               │   │   │   ├── bibwugng21tvu8lm9s9w6ocqy.o
+│               │   │   │   ├── c8qk6sku5uyqqmqwh8xgn4fdd.o
+│               │   │   │   ├── d28bz6i7jzec38ppwqo0wwut7.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── e7cdj6qc02ffam6hw0xe8ppre.o
+│               │   │   │   ├── efmn4c03g8indccgws0jnm60v.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfshtlfh5-1445ul2.lock
+│               │   ├── kstd_data-2uu4fne08kinp
+│               │   │   ├── s-hmfse0vbi7-1wd9aog-061hmbmr1v765aforbii73j2l
+│               │   │   │   ├── 2djae1day0qhcevea7p955nij.o
+│               │   │   │   ├── 2fzs1ecapy9rae1ejcsu3ych0.o
+│               │   │   │   ├── 44nfff4ke3i5jya5akjeip7t3.o
+│               │   │   │   ├── 4t383mb66rsuab8vnap21bitq.o
+│               │   │   │   ├── 4vvrzlhgpu20kuxl3cworyek1.o
+│               │   │   │   ├── 5xmqzqiq3roeodgeb0bm2l8sx.o
+│               │   │   │   ├── 6p3pkom1ksnji3fd8felmjc3q.o
+│               │   │   │   ├── 6quajxp96nlrxkex7c0y7knmi.o
+│               │   │   │   ├── 6xir4fqcxhwaqbt1990mmdufv.o
+│               │   │   │   ├── 8ohbnbz8v5waetr1vt6docwp6.o
+│               │   │   │   ├── a4rrx04q6y8ve1pztq39yyg83.o
+│               │   │   │   ├── ai0oiyfl098mg6m3kszyxsdkw.o
+│               │   │   │   ├── b9q0pij1z5kyqegu8t6trafw4.o
+│               │   │   │   ├── bkifagv07852ij7etrriexee4.o
+│               │   │   │   ├── c114n3krrycfmgbh1hvr6z73d.o
+│               │   │   │   ├── clzfk324znefpdo9wclj9m49w.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── dhszarauevcfkue0zlonqv7os.o
+│               │   │   │   ├── drf3xxdxlgdbsjwcbgx413sf6.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfse0vbi7-1wd9aog.lock
+│               │   ├── kstd_io-0kir2z9712xga
+│               │   │   ├── s-hmfsht9ht1-19zjzbo-e023opuinsb71j70gdffm9k1m
+│               │   │   │   ├── 5waqt4s1zk0oqz58fa9q0sq7f.o
+│               │   │   │   ├── 708i8a37m87r3eq23qa0rew8g.o
+│               │   │   │   ├── 8qiwal7wiipobwuz8uo6zq0l2.o
+│               │   │   │   ├── 9j2o17laoh28jfds7wq10uywb.o
+│               │   │   │   ├── a709pv7yc4qxzb81h82hf8ios.o
+│               │   │   │   ├── aihyjzel8l8hnydko9qc7zo5b.o
+│               │   │   │   ├── d3yz1la0dakkm8a9a614vxijg.o
+│               │   │   │   ├── dep-graph.bin
+│               │   │   │   ├── ej3y0ypgkojrysu1y7sigyzit.o
+│               │   │   │   ├── f0ummis1m11c5dghvatyxn4ny.o
+│               │   │   │   ├── f42um2r8rx2969ih5hv81eke6.o
+│               │   │   │   ├── metadata.rmeta
+│               │   │   │   ├── query-cache.bin
+│               │   │   │   └── work-products.bin
+│               │   │   └── s-hmfsht9ht1-19zjzbo.lock
+│               │   └── kstd_io-2yophpvzr7dso
+│               │       ├── s-hmfsdb0cxg-1ncihka-6wot1ro27tliyh8b8tlxykoqt
+│               │       │   ├── 1p53dzd2in23akp7twxhgebur.o
+│               │       │   ├── 3gkddot3r94c8h7ggjer55xuf.o
+│               │       │   ├── 3v8jx3fkr5lc1dnuxt31ye8aq.o
+│               │       │   ├── 4clwdn77mdajipsd8mk8qcnbv.o
+│               │       │   ├── 5ls1dyl2jwbmmpq5d580lk12s.o
+│               │       │   ├── 6gpvk6mc52u6829rsojj7ck8e.o
+│               │       │   ├── 8jjl3lv7uzawmwyx9il5g7y84.o
+│               │       │   ├── 9z31vl9ehjd35goql1kuzoiep.o
+│               │       │   ├── cw7txetn9cxbzfvi02ew6rpx1.o
+│               │       │   ├── dep-graph.bin
+│               │       │   ├── dyh2uvafetlb8uk3gyluugdsu.o
+│               │       │   ├── metadata.rmeta
+│               │       │   ├── query-cache.bin
+│               │       │   └── work-products.bin
+│               │       └── s-hmfsdb0cxg-1ncihka.lock
+│               ├── kernel-bin
+│               └── kernel-bin.d
 ├── kstd
 │   ├── include
 │   │   ├── kstd_audio.h
@@ -5403,6 +7503,11 @@
 ├── TrangorgeOS — Architecture Documentation.markdown
 ├── TrangorgeOS — dokumentacja architektury.markdown
 ├── TrangorgeOS — TODO.md
+├── TrangorgeOS_docs.00-summary.pdf
+├── TrangorgeOS_docs.01-public-api.pdf
+├── TrangorgeOS_docs.02-internal.pdf
+├── TrangorgeOS_docs.03-code-fragments.pdf
+├── TrangorgeOS_docs.04-md-files.pdf
 ├── tree.txt
 ├── triang-lang
 │   ├── calltest
@@ -5894,4 +7999,4 @@
     ├── Cargo.toml
     └── crates
 
-1452 directories, 4443 files
+1848 directories, 6152 files
