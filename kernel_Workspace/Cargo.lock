@@ -30,6 +30,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413d67b29ef1021b4d60f4aa1e925ca031751e213832b4b1d588fae623c05c60"
 
 [[package]]
+name = "ds-ipc"
+version = "0.1.0"
+dependencies = [
+ "ds-log",
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
+name = "ds-log"
+version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
+name = "ds-mem"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "ds-log",
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
 name = "font8x8"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -44,6 +71,20 @@ dependencies = [
  "kstd_core",
  "kstd_data",
  "kstd_io",
+]
+
+[[package]]
+name = "kapi-abi"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
+name = "kapi-syscall"
+version = "0.1.0"
+dependencies = [
+ "kapi-abi",
 ]
 
 [[package]]
@@ -79,7 +120,17 @@ name = "kernel-bin"
 version = "0.1.0"
 dependencies = [
  "bootloader",
+ "ds-ipc",
+ "ds-log",
+ "ds-mem",
+ "gluecore",
+ "kapi-abi",
+ "kapi-syscall",
  "kernel",
+ "kstd_alloc",
+ "kstd_base",
+ "kstd_core",
+ "kstd_io",
 ]
 
 [[package]]

@@ -1,0 +1,7 @@
+[package]
+name = "gfx-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gfx-protocol = { path = "../../lib/gfx-protocol" }

@@ -1,4 +1,3 @@
-use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
 #[cfg(not(test))]
@@ -37,10 +36,9 @@ pub fn now() -> u64 {
     unsafe { core::arch::x86_64::_rdtsc() }
 }
 
-#[cfg(all(target_arch = "x86_64", not(test)))]
-entry_point!(x86_boot);
-
-#[cfg(all(target_arch = "x86_64", not(test)))]
-fn x86_boot(boot_info: &'static BootInfo) -> ! {
-    crate::kernel_main(boot_info)
-}
+// NOTE: the bootloader entry point (`_start`) is defined by the *binary* crate
+// (`kernel-bin/src/main.rs` via `bootloader::entry_point!`), which then calls
+// `crate::kernel_main`. A library must not define `_start` as well, otherwise
+// rustc fails with "symbol `_start` is already defined" (two `entry_point!`
+// expansions in the same crate) or the linker reports a duplicate symbol when
+// both the library and the binary end up in the same image.

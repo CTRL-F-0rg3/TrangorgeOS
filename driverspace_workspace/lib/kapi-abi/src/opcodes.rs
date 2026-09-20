@@ -1,66 +1,173 @@
-//! IPC 消息操作码定义。
-//! Manager 根据 Opcode 决定将消息转发给哪个子系统或驱动。
+#![no_std]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
-pub enum Opcode {
-    // === 系统与控制 (0x0000 - 0x00FF) ===
-    /// 驱动向 Manager 注册自己
-    DriverRegister      = 0x0001,
-    /// 驱动请求退出/注销
-    DriverUnregister    = 0x0002,
-    /// 心跳/保活消息
-    Heartbeat           = 0x0003,
+pub enum DsCmd {
+    None = 0,
 
-    // === 设备管理 (0x0100 - 0x01FF) ===
-    /// 内核通知 Manager：检测到新设备
-    DevAttach           = 0x0100,
-    /// 内核通知 Manager：设备移除
-    DevDetach           = 0x0101,
-    /// Manager 通知驱动：接管该设备
-    DevBind             = 0x0102,
-    /// 驱动向 Manager 报告设备状态变化
-    DevStatusChange     = 0x0103,
+    SysLog = 0x0001,
+    SysAlloc = 0x0002,
+    SysFree = 0x0003,
+    SysMapMmio = 0x0004,
+    SysUnmapMmio = 0x0005,
+    SysPagePhys = 0x0006,
+    SysAllocDma = 0x0007,
+    SysFreeDma = 0x0008,
+    SysYield = 0x0009,
+    SysInfo = 0x000A,
+    SysShutdown = 0x000B,
 
-    // === 资源请求 (0x0200 - 0x02FF) ===
-    /// 驱动请求映射 MMIO 内存
-    MemMapMmio          = 0x0200,
-    /// 驱动请求分配 DMA 缓冲区
-    MemAllocDma         = 0x0201,
-    /// 驱动请求绑定 IRQ 中断线
-    IrqBind             = 0x0210,
-    /// 驱动请求解除 IRQ 绑定
-    IrqUnbind           = 0x0211,
+    IpcCreate = 0x0100,
+    IpcDestroy = 0x0101,
+    IpcSend = 0x0102,
+    IpcRecv = 0x0103,
+    IpcReply = 0x0104,
+    IpcShareMem = 0x0105,
+    IpcGrant = 0x0106,
+    IpcRevoke = 0x0107,
 
-    // === IPC 与同步 (0x0300 - 0x03FF) ===
-    /// 请求创建新的 IPC 通道
-    IpcCreateChannel    = 0x0300,
-    /// 请求连接到某个 Port
-    IpcConnectPort      = 0x0301,
+    DevRegister = 0x0200,
+    DevUnregister = 0x0201,
+    DevAttach = 0x0202,
+    DevDetach = 0x0203,
+    DevSuspend = 0x0204,
+    DevResume = 0x0205,
+    DevIrqBind = 0x0206,
+    DevIrqUnbind = 0x0207,
+    DevMmioGrant = 0x0208,
+    DevMmioRevoke = 0x0209,
+    DevDmaGrant = 0x020A,
+    DevDmaRevoke = 0x020B,
 
-    // === 日志 (0x0004) ===
-    /// 驱动通过 Manager 转发日志消息
-    SysLog              = 0x0004,
+    GfxFbInfo = 0x0300,
+    GfxFbTakeover = 0x0301,
+    GfxFbRelease = 0x0302,
+    GfxModeSet = 0x0303,
+    GfxModeGet = 0x0304,
+    GfxSurfaceCreate = 0x0305,
+    GfxSurfaceDestroy = 0x0306,
+    GfxSurfaceCommit = 0x0307,
+    GfxCmdSubmit = 0x0308,
+    GfxCmdWait = 0x0309,
+
+    AudPlay = 0x0400,
+    AudStop = 0x0401,
+    AudCapture = 0x0402,
+    AudJackQuery = 0x0403,
+    AudAmpSet = 0x0404,
+    AudStreamCreate = 0x0405,
+    AudStreamDestroy = 0x0406,
+
+    BlkRead = 0x0500,
+    BlkWrite = 0x0501,
+    BlkFlush = 0x0502,
+    BlkInfo = 0x0503,
+    BlkTrim = 0x0504,
+
+    InputPoll = 0x0600,
+    InputSubscribe = 0x0601,
+    InputUnsubscribe = 0x0602,
+
+    NetSend = 0x0700,
+    NetRecv = 0x0701,
+    NetBind = 0x0702,
+    NetUnbind = 0x0703,
+
+    CapQuery = 0x0800,
+    CapGrant = 0x0801,
+    CapRevoke = 0x0802,
+    CapDelegate = 0x0803,
+
+    GfxViseCreateCtx = 0x0900,
+    GfxViseDestroyCtx = 0x0901,
+    GfxViseSwapBuffers = 0x0902,
+    GfxViseUploadTex = 0x0903,
+    GfxViseDrawCall = 0x0904,
+    GfxViseSetPipeline = 0x0905,
+    GfxViseSetUniform = 0x0906,
 }
 
-impl Opcode {
-    pub fn from_u32(val: u32) -> Option<Self> {
-        // 在实际生产中，这里可以使用宏或 match 来安全转换
-        match val {
-            0x0001 => Some(Self::DriverRegister),
-            0x0002 => Some(Self::DriverUnregister),
-            0x0003 => Some(Self::Heartbeat),
-            0x0100 => Some(Self::DevAttach),
-            0x0101 => Some(Self::DevDetach),
-            0x0102 => Some(Self::DevBind),
-            0x0103 => Some(Self::DevStatusChange),
-            0x0200 => Some(Self::MemMapMmio),
-            0x0201 => Some(Self::MemAllocDma),
-            0x0210 => Some(Self::IrqBind),
-            0x0211 => Some(Self::IrqUnbind),
-            0x0300 => Some(Self::IpcCreateChannel),
-            0x0301 => Some(Self::IpcConnectPort),
-            0x0004 => Some(Self::SysLog),
+impl DsCmd {
+    #[inline]
+    pub const fn category(self) -> u8 {
+        ((self as u32) >> 8) as u8
+    }
+
+    #[inline]
+    pub const fn from_u32(v: u32) -> Option<Self> {
+        match v {
+            0x0000 => Some(Self::None),
+            0x0001 => Some(Self::SysLog),
+            0x0002 => Some(Self::SysAlloc),
+            0x0003 => Some(Self::SysFree),
+            0x0004 => Some(Self::SysMapMmio),
+            0x0005 => Some(Self::SysUnmapMmio),
+            0x0006 => Some(Self::SysPagePhys),
+            0x0007 => Some(Self::SysAllocDma),
+            0x0008 => Some(Self::SysFreeDma),
+            0x0009 => Some(Self::SysYield),
+            0x000A => Some(Self::SysInfo),
+            0x000B => Some(Self::SysShutdown),
+            0x0100 => Some(Self::IpcCreate),
+            0x0101 => Some(Self::IpcDestroy),
+            0x0102 => Some(Self::IpcSend),
+            0x0103 => Some(Self::IpcRecv),
+            0x0104 => Some(Self::IpcReply),
+            0x0105 => Some(Self::IpcShareMem),
+            0x0106 => Some(Self::IpcGrant),
+            0x0107 => Some(Self::IpcRevoke),
+            0x0200 => Some(Self::DevRegister),
+            0x0201 => Some(Self::DevUnregister),
+            0x0202 => Some(Self::DevAttach),
+            0x0203 => Some(Self::DevDetach),
+            0x0204 => Some(Self::DevSuspend),
+            0x0205 => Some(Self::DevResume),
+            0x0206 => Some(Self::DevIrqBind),
+            0x0207 => Some(Self::DevIrqUnbind),
+            0x0208 => Some(Self::DevMmioGrant),
+            0x0209 => Some(Self::DevMmioRevoke),
+            0x020A => Some(Self::DevDmaGrant),
+            0x020B => Some(Self::DevDmaRevoke),
+            0x0300 => Some(Self::GfxFbInfo),
+            0x0301 => Some(Self::GfxFbTakeover),
+            0x0302 => Some(Self::GfxFbRelease),
+            0x0303 => Some(Self::GfxModeSet),
+            0x0304 => Some(Self::GfxModeGet),
+            0x0305 => Some(Self::GfxSurfaceCreate),
+            0x0306 => Some(Self::GfxSurfaceDestroy),
+            0x0307 => Some(Self::GfxSurfaceCommit),
+            0x0308 => Some(Self::GfxCmdSubmit),
+            0x0309 => Some(Self::GfxCmdWait),
+            0x0400 => Some(Self::AudPlay),
+            0x0401 => Some(Self::AudStop),
+            0x0402 => Some(Self::AudCapture),
+            0x0403 => Some(Self::AudJackQuery),
+            0x0404 => Some(Self::AudAmpSet),
+            0x0405 => Some(Self::AudStreamCreate),
+            0x0406 => Some(Self::AudStreamDestroy),
+            0x0500 => Some(Self::BlkRead),
+            0x0501 => Some(Self::BlkWrite),
+            0x0502 => Some(Self::BlkFlush),
+            0x0503 => Some(Self::BlkInfo),
+            0x0504 => Some(Self::BlkTrim),
+            0x0600 => Some(Self::InputPoll),
+            0x0601 => Some(Self::InputSubscribe),
+            0x0602 => Some(Self::InputUnsubscribe),
+            0x0700 => Some(Self::NetSend),
+            0x0701 => Some(Self::NetRecv),
+            0x0702 => Some(Self::NetBind),
+            0x0703 => Some(Self::NetUnbind),
+            0x0800 => Some(Self::CapQuery),
+            0x0801 => Some(Self::CapGrant),
+            0x0802 => Some(Self::CapRevoke),
+            0x0803 => Some(Self::CapDelegate),
+            0x0900 => Some(Self::GfxViseCreateCtx),
+            0x0901 => Some(Self::GfxViseDestroyCtx),
+            0x0902 => Some(Self::GfxViseSwapBuffers),
+            0x0903 => Some(Self::GfxViseUploadTex),
+            0x0904 => Some(Self::GfxViseDrawCall),
+            0x0905 => Some(Self::GfxViseSetPipeline),
+            0x0906 => Some(Self::GfxViseSetUniform),
             _ => None,
         }
     }

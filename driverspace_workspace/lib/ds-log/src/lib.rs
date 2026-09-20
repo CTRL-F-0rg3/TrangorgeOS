@@ -6,6 +6,7 @@ pub mod transport;
 #[macro_use]
 pub mod macros;
 
+pub use levels::LogLevel;
 use kapi_abi::primitives::Handle;
 use core::sync::atomic::{AtomicU32, Ordering};
 

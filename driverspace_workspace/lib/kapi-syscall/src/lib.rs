@@ -1,61 +1,53 @@
-//! Kernel API syscall gateway (`kapi-syscall`).
-//!
-//! Cienka warstwa pomiędzy driver space a jądrem. Podobnie jak inne sterowniki
-//! w tym repozytorium, funkcje tutaj wołają symbole `extern "C"` eksportowane
-//! przez jądro (bridge ABI), zamiast wbudowywać konkretne ABI w kod sterownika.
-//! Dzięki temu zmiana ABI jądra wymaga zmian tylko po stronie jądra.
-
 #![no_std]
 
-use kapi_abi::errors::DsError;
+pub mod channel;
 
-// (edycja 2024 wymaga `unsafe extern` dla bloków z deklaracjami FFI)
-unsafe extern "C" {
-    /// Wysyła jednokierunkową wiadomość IPC do `target`.
-    /// Zwraca 0 przy sukcesie albo kod `DsError`.
-    fn kapi_ipc_send(target: u32, opcode: u32, payload: *const u8, payload_len: u32) -> i32;
+use kapi_abi::{DsCmd, DsMsg};
+use channel::RingBuffer;
+use core::sync::atomic::{AtomicBool, Ordering};
 
-    /// Wysyła żądanie IPC i czeka na odpowiedź do bufora `reply`.
-    /// Zwraca 0 przy sukcesie albo kod `DsError`.
-    fn kapi_ipc_call(
-        target: u32,
-        opcode: u32,
-        payload: *const u8,
-        payload_len: u32,
-        reply: *mut u8,
-        reply_len: u32,
-    ) -> i32;
+static mut K2D_RING: *mut RingBuffer = core::ptr::null_mut();
+static mut D2K_RING: *mut RingBuffer = core::ptr::null_mut();
+static INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+pub unsafe fn init(k2d_va: *mut u8, d2k_va: *mut u8) {
+    unsafe {
+        K2D_RING = RingBuffer::from_ptr(k2d_va);
+        D2K_RING = RingBuffer::from_ptr(d2k_va);
+    }
+    INITIALIZED.store(true, Ordering::Release);
 }
 
-#[inline]
-fn status(rc: i32) -> Result<(), DsError> {
-    if rc == 0 {
-        Ok(())
-    } else {
-        Err(DsError::from_u32(rc as u32))
+pub fn sys_ipc_call(cmd: DsCmd, arg0: u64, arg1: u64, arg2: u64) -> DsMsg {
+    let mut msg = DsMsg::new(cmd as u32);
+    msg.arg0 = arg0;
+    msg.arg1 = arg1;
+    msg.arg2 = arg2;
+
+    unsafe {
+        while !(*K2D_RING).push(&msg) {
+            sys_yield();
+        }
+    }
+
+    sys_poll();
+    
+    unsafe {
+        (*D2K_RING).pop().unwrap_or_default()
     }
 }
 
-/// Wysyła wiadomość IPC (bez oczekiwania na odpowiedź).
-pub fn sys_ipc_send(
-    target: u32,
-    opcode: u32,
-    payload: *const u8,
-    payload_len: u32,
-) -> Result<(), DsError> {
-    status(unsafe { kapi_ipc_send(target, opcode, payload, payload_len) })
+pub fn sys_poll() {
+    unsafe {
+        while (*D2K_RING).pop().is_none() {
+            sys_yield();
+        }
+    }
 }
 
-/// Wysyła żądanie IPC i odbiera odpowiedź.
-pub fn sys_ipc_call(
-    target: u32,
-    opcode: u32,
-    payload: *const u8,
-    payload_len: u32,
-    reply: *mut u8,
-    reply_len: u32,
-) -> Result<(), DsError> {
-    status(unsafe {
-        kapi_ipc_call(target, opcode, payload, payload_len, reply, reply_len)
-    })
+pub fn sys_yield() {
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        core::arch::asm!("pause", options(nomem, nostack, preserves_flags));
+    }
 }

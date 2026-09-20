@@ -1,8 +1,7 @@
-//! IPC Client for drivers to communicate with ds-manager.
+#![no_std]
 
-use kapi_abi::opcodes::Opcode;
-use kapi_abi::errors::DsError;
-use kapi_abi::primitives::Handle;
+use kapi_abi::{DsCmd, DsError, Handle};
+use kapi_syscall::sys_ipc_call;
 
 pub struct ManagerClient {
     manager_ep: Handle,
@@ -14,42 +13,27 @@ impl ManagerClient {
     }
 
     pub fn request_mmio(&self, phys_base: u64, size: u64) -> Result<u64, DsError> {
-        let mut payload = kapi_abi::payloads::mem::MmioMapPayload {
-            phys_addr: kapi_abi::primitives::PhysAddr(phys_base),
-            size,
-            flags: 0,
-            _pad: 0,
-        };
-
-        let mut reply_buf = [0u64; 2];
-        
-        let res = kapi_syscall::sys_ipc_call(
-            self.manager_ep.0,
-            Opcode::MemMapMmio as u32,
-            &mut payload as *mut _ as *mut u8,
-            core::mem::size_of_val(&payload) as u32,
-            reply_buf.as_mut_ptr() as *mut u8,
-            core::mem::size_of_val(&reply_buf) as u32,
-        );
-
-        match res {
-            Ok(_) => Ok(reply_buf[0]), // Returns virtual address
-            Err(e) => Err(e),
-        }
+        let reply = sys_ipc_call(DsCmd::MemMapMmio, phys_base, size, 0);
+        if reply.is_ok() { Ok(reply.arg0) } else { Err(reply.error_status()) }
     }
 
     pub fn bind_irq(&self, irq_num: u32) -> Result<(), DsError> {
-        let payload = kapi_abi::payloads::irq::IrqBindPayload {
-            irq_number: irq_num,
-            flags: 0,
-            _pad: 0,
-        };
+        let reply = sys_ipc_call(DsCmd::BindIrq, irq_num as u64, 0, 0);
+        if reply.is_ok() { Ok(()) } else { Err(reply.error_status()) }
+    }
 
-        kapi_syscall::sys_ipc_send(
-            self.manager_ep.0,
-            Opcode::IrqBind as u32,
-            &payload as *const _ as *const u8,
-            core::mem::size_of_val(&payload) as u32,
-        )
+    pub fn alloc_dma(&self, size: u64, flags: u32) -> Result<(u64, u64), DsError> {
+        let reply = sys_ipc_call(DsCmd::MemAllocDma, size, flags as u64, 0);
+        if reply.is_ok() { Ok((reply.arg0, reply.arg1)) } else { Err(reply.error_status()) }
+    }
+
+    pub fn pci_find(&self, class_code: u32) -> Result<u64, DsError> {
+        let reply = sys_ipc_call(DsCmd::PciFind, class_code as u64, 0, 0);
+        if reply.is_ok() { Ok(reply.arg0) } else { Err(reply.error_status()) }
+    }
+    
+    pub fn get_page_phys(&self, virt_addr: u64) -> Result<u64, DsError> {
+        let reply = sys_ipc_call(DsCmd::PagePhys, virt_addr, 0, 0);
+        if reply.is_ok() { Ok(reply.arg0) } else { Err(reply.error_status()) }
     }
 }

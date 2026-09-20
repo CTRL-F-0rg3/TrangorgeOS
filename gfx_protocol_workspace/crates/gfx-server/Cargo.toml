@@ -1,0 +1,18 @@
+[package]
+name = "gfx-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gfx-protocol = { path = "../../lib/gfx-protocol" }
+
+# Kernel primitives (IPC rings, memory, capabilities)
+kernel = { workspace = true }
+
+# DriverSpace libraries (communication with vgpu)
+kapi-abi = { workspace = true }
+kapi-syscall = { workspace = true }
+ds-ipc = { workspace = true }
+ds-log = { workspace = true }
+ds-mem = { workspace = true }
+ds-fw-gpu = { workspace = true }
