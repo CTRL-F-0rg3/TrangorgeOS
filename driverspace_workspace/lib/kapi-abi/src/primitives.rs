@@ -34,3 +34,12 @@ impl From<i32> for Status {
         }
     }
 }
+// ... istniejący kod ...
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct PhysAddr(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct VirtAddr(pub u64);

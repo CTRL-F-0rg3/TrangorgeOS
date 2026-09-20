@@ -2,8 +2,11 @@
 
 pub mod primitives;
 pub mod opcodes;
+pub mod errors;
+pub mod payloads;
 pub mod wire;
 
-pub use primitives::{Handle, CapId, Status};
-pub use opcodes::DsCmd;
-pub use wire::DsMsg;
+pub use primitives::*;
+pub use opcodes::*;
+pub use errors::*;
+pub use wire::*;

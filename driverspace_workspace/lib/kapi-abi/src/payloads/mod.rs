@@ -1,4 +1,7 @@
+#![no_std]
+
+pub mod mem;
 pub mod dev;
 pub mod irq;
-pub mod mem;
+pub mod ipc;
 pub mod sys;

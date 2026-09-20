@@ -1,7 +1,5 @@
-#![no_std]
-
-use kapi_abi::DsMsg;
 use core::sync::atomic::{AtomicU64, Ordering};
+use kapi_abi::DsMsg;
 
 #[repr(C)]
 pub struct RingBuffer {
@@ -13,12 +11,13 @@ pub struct RingBuffer {
 
 impl RingBuffer {
     pub unsafe fn from_ptr(ptr: *mut u8) -> &'static mut Self {
-        &mut *(ptr as *mut Self)
+        unsafe { &mut *(ptr as *mut Self) }
     }
 
     fn slot_ptr(&self, index: u64) -> *mut DsMsg {
         let base = self as *const _ as *const u8;
-        let offset = core::mem::size_of::<Self>() + (index as usize % self.capacity as usize) * core::mem::size_of::<DsMsg>();
+        let offset = core::mem::size_of::<Self>() 
+            + (index as usize % self.capacity as usize) * core::mem::size_of::<DsMsg>();
         unsafe { base.add(offset) as *mut DsMsg }
     }
 

@@ -2,7 +2,7 @@
 
 pub mod channel;
 
-use kapi_abi::{DsMsg, DsCmd};
+use kapi_abi::{DsCmd, DsMsg};
 use channel::RingBuffer;
 use core::sync::atomic::{AtomicBool, Ordering};
 
@@ -11,8 +11,10 @@ static mut D2K_RING: *mut RingBuffer = core::ptr::null_mut();
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn init(k2d_va: *mut u8, d2k_va: *mut u8) {
-    K2D_RING = RingBuffer::from_ptr(k2d_va);
-    D2K_RING = RingBuffer::from_ptr(d2k_va);
+    unsafe {
+        K2D_RING = RingBuffer::from_ptr(k2d_va);
+        D2K_RING = RingBuffer::from_ptr(d2k_va);
+    }
     INITIALIZED.store(true, Ordering::Release);
 }
 
