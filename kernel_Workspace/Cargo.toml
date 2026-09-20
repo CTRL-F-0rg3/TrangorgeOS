@@ -8,7 +8,7 @@ members = [
     "kernel-bin",
     "Odin_base/odin-abi",
     "Odin_base/odin-abi-bridge",
-    "Odin_base/odin-bin-loader",
+    "Odin_base/odin-bin-loader", "inits",
 
     #"net/lib/net-types",
     #"net/lib/net-core",
