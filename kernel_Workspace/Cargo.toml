@@ -8,7 +8,7 @@ members = [
     "kernel-bin",
     "Odin_base/odin-abi",
     "Odin_base/odin-abi-bridge",
-    "Odin_base/odin-bin-loader", "inits",
+    "Odin_base/odin-bin-loader", "inits", "lib/tg-ipc-abi", "lib/tg-cap-core", "lib/tg-cap-table", "lib/tg-ipc-ring", "lib/tg-ipc-channel", "lib/tg-shemm", "lib/tg-ipc-dispatch", "lib/tg-std-pal", "lib/tg-linux-shim",
 
     #"net/lib/net-types",
     #"net/lib/net-core",
