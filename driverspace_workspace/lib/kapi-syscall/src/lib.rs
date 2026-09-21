@@ -39,7 +39,7 @@ pub fn sys_ipc_call(cmd: DsCmd, arg0: u64, arg1: u64, arg2: u64) -> DsMsg {
 
 pub fn sys_poll() {
     unsafe {
-        while (*D2K_RING).pop().is_none() {
+        while (*D2K_RING).is_empty() {
             sys_yield();
         }
     }

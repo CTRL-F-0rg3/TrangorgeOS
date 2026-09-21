@@ -49,4 +49,10 @@ impl RingBuffer {
         self.tail.store(tail + 1, Ordering::Release);
         Some(msg)
     }
+
+    pub fn is_empty(&self) -> bool {
+        let head = self.head.load(Ordering::Acquire);
+        let tail = self.tail.load(Ordering::Acquire);
+        tail >= head
+    }
 }

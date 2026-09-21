@@ -24,12 +24,18 @@ pub struct DsMsg {
     pub arg2: u64,
 }
 
+impl Default for DsMsg {
+    fn default() -> Self {
+        Self::new(0)
+    }
+}
+
 impl DsMsg {
-    pub const fn new(cmd: u16) -> Self {
+    pub const fn new(cmd: u32) -> Self {
         Self {
             magic: DS_MAGIC,
             version: DS_VERSION as u16,
-            cmd,
+            cmd: cmd as u16,
             id: 0,
             flags: 0,
             status: 0,
@@ -52,6 +58,13 @@ impl DsMsg {
     #[inline]
     pub fn error(&self) -> super::Status {
         super::Status::from_i32(self.status)
+    }
+
+    #[inline]
+    pub fn error_status(&self) -> crate::DsError {
+        // status is i32-based; map negative/unknown codes to DsError::Unknown
+        // via truncation. Success (0) maps to DsError::Success.
+        crate::DsError::from_u32(self.status as u32)
     }
 }
 
