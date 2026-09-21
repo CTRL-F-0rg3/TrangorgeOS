@@ -1,0 +1,7 @@
+[package]
+name = "tg-cap-table"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tg-cap-core = { path = "../tg-cap-core" }

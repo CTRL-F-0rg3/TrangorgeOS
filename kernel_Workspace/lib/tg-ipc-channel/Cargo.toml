@@ -1,0 +1,9 @@
+[package]
+name = "tg-ipc-channel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tg-ipc-abi = { path = "../tg-ipc-abi" }
+tg-ipc-ring = { path = "../tg-ipc-ring" }
+tg-cap-core = { path = "../tg-cap-core" }
