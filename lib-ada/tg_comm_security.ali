@@ -1,0 +1,143 @@
+V "GNAT Lib v16"
+A -gnat2022
+A -gnatwa
+P ZX
+
+RN
+RV NO_DIRECT_BOOLEAN_OPERATORS
+RV NO_IMPLICIT_CONDITIONALS
+RV NO_DYNAMIC_SIZED_OBJECTS
+RV NO_IMPLEMENTATION_ASPECT_SPECIFICATIONS
+RV NO_IMPLEMENTATION_PRAGMAS
+RV NO_IMPLICIT_LOOPS
+
+U tg_comm_security%b	tg_comm_security.adb	c9b05819 NE OO PK
+
+U tg_comm_security%s	tg_comm_security.ads	0cf19053 EE NE OO PK
+
+D system.ads		20260810200446 e2b7c99d system%s
+D tg_comm_security.ads	20260925121740 0cf19053 tg_comm_security%s
+D tg_comm_security.adb	20260925121740 c541c84a tg_comm_security%b
+G a e
+G c Z s s [contains tg_comm_security 38 13 none]
+G c Z s b [route_allowed tg_comm_security 44 13 none]
+G c Z s s [matches tg_comm_security 53 13 none]
+G c Z s b [required_right tg_comm_security 73 13 none]
+G c Z s b [required_type tg_comm_security 74 13 none]
+G c Z s s [empty_table tg_comm_security 97 13 none]
+G c Z s s [has_cap tg_comm_security 100 13 none]
+G c Z s b [rights_of tg_comm_security 103 13 none]
+G c Z s b [type_of tg_comm_security 106 13 none]
+G c Z s s [authorized tg_comm_security 110 13 none]
+G c Z s b [authorize tg_comm_security 121 13 none]
+G c Z s s [revokes tg_comm_security 125 13 none]
+G c Z s b [lemma_empty_table_denies_all tg_comm_security 130 14 none]
+G c Z s b [lemma_revocation_monotonic tg_comm_security 135 14 none]
+G c Z s s [opcodeIP tg_comm_security 68 9 none]
+G c Z s s [msgIP tg_comm_security 77 9 none]
+G c Z s s [cap_entryIP tg_comm_security 89 9 none]
+G c Z s s [Tcap_tableBIP tg_comm_security 95 4 none]
+X 2 tg_comm_security.ads
+23K9*Tg_Comm_Security 141l5 141e21 3|10b14 112l5 112t21
+26M9*Rights_Mask 27r30 28r30 29r30 30r30 31r30 32r30 33r30 34r30 35r30 36r30
+. 38r37 73r48 92r18 103r59 3|23r48 60r59
+27m4*Right_Read{26M9}
+28m4*Right_Write{26M9} 3|29r53
+29m4*Right_Exec{26M9}
+30m4*Right_Map{26M9} 3|29r40 30r55 41r25
+31m4*Right_Grant{26M9} 3|30r40
+32m4*Right_Transfer{26M9}
+33m4*Right_Send{26M9} 3|35r52 37r25
+34m4*Right_Recv{26M9} 3|36r52 37r39
+35m4*Right_Call{26M9} 3|26r29 31r25 44r20
+36m4*Right_Manage{26M9} 3|28r40 33r29 40r37
+38V13*Contains{boolean} 38b13 38>23 38>28 114s16 3|79s17
+38m23 Set{26M9} 39r8
+38m28 Subset{26M9} 39r16 39r26
+42E9*Layer 42e78 44r39 78r22 79r22 3|12r39
+42n19*Kernel{42E9} 3|15r15 15r38 16r42 17r42 19r48
+42n27*Driverspace{42E9} 3|16r15
+42n40*Userspace{42E9} 3|17r15
+42n51*Manager{42E9} 3|16r57 17r57 18r15 18r43 19r63
+42n60*User_Driver_Space{42E9} 3|19r15
+44V13*Route_Allowed{boolean} 44>28 44>34 112s16 3|12b13 21l8 21t21 75s17
+44e28 From{42E9} 3|12b28 14r12
+44e34 To{42E9} 3|12b34 15r32 16r37 16r52 17r37 17r52 18r37 19r43 19r58
+47E9*Object_Type 48e51 53r47 91r18 106r57 3|65r57
+47n25*Memory{47E9} 56r40 98r47
+47n33*Endpoint{47E9} 57r40
+47n43*Notification{47E9} 58r40
+47n57*Channel{47E9} 59r40
+48n25*Shmem_Region{47E9} 60r40
+48n39*Device{47E9} 61r40
+48n47*Irq{47E9} 62r40
+50E9*Type_Req 51e48 53r28 74r47 3|48r47
+50n22*Any_Type{50E9} 55r15 3|51r35
+50n32*Memory{50E9} 56r15 3|52r36
+50n40*Endpoint{50E9} 57r15 3|53r36
+50n50*Notification{50E9} 58r15
+50n64*Channel{50E9} 59r15
+51n22*Shmem_Region{50E9} 60r15 3|54r36
+51n36*Device{50E9} 61r15 3|56r20
+51n44*Irq{50E9} 62r15
+53V13*Matches{boolean} 53b13 53>22 53>38 115s16 3|81s17
+53e22 Req{50E9} 54r12
+53e38 Actual{47E9} 56r31 57r31 58r31 59r31 60r31 61r31 62r31
+65E9*Op_Class 66e48 69r15
+65n22*Sys{65E9} 3|26r15 51r15
+65n27*Mem{65E9} 3|27r15 52r15
+65n32*Cap{65E9} 3|33r15 51r21
+65n37*Ipc{65E9} 3|34r15 53r15
+65n42*Shmem{65E9} 3|39r15 54r15
+65n49*Video{65E9} 3|43r15 55r15
+65n56*Audio{65E9} 3|43r23 55r23
+65n63*Input{65E9} 3|43r31 55r31
+66n22*Block{65E9} 3|43r39 55r39
+66n29*Net{65E9} 3|43r47 55r47
+66n34*Pci{65E9} 3|43r53 55r53
+66n39*Vgpu{65E9} 3|43r59 55r59
+66n45*Fs{65E9} 3|43r66 55r66
+68R9*Opcode 71e14 73r33 74r32 80r22 3|23r33 48r32
+69e7*Class{65E9} 3|25r14 50r14
+70i7*Op{natural} 3|28r21 29r21 30r21 35r21 35r33 36r21 36r33 40r18
+73V13*Required_Right{26M9} 73>29 114s48 3|23b13 46l8 46t22 79s49
+73r29 O{68R9} 3|23b29 25r12 28r19 29r19 30r19 35r19 35r31 36r19 36r31 40r16
+74V13*Required_Type{50E9} 74>28 115s25 3|48b13 58l8 58t21 81s26
+74r28 O{68R9} 3|48b28 50r12
+77R9*Msg 83e14 110r44 121r43 130r48 136r41 3|70r43 88r48 97r41
+78e7*Src_Layer{42E9} 112r33 3|75r34
+79e7*Dst_Layer{42E9} 112r46 3|75r47
+80r7*Opcode_Value{68R9} 114r66 115r42 3|79r67 81r43
+81i7*Cap{natural} 113r30 114r42 115r71 3|77r31 79r43 81r72
+82b7*Well_Formed{boolean} 111r9 3|73r16
+86N4*Max_Cap 87r41
+87I12*Cap_Id{natural} 95r29 101r15 101r30 125r44 126r21 136r29 3|62r17 67r17
+. 97r29
+89R9*Cap_Entry 93e14 95r40
+90b7*Valid{boolean} 98m19 101r42 127r35
+91e7*Obj_Type{47E9} 98m35 3|67r29
+92m7*Rights{26M9} 98m55 3|62r29
+95A9*Cap_Table(89R9)<integer> 97r32 100r26 103r28 106r26 110r29 121r28 125r29
+. 136r14 3|60r28 65r26 70r28 97r14
+97V13*Empty_Table{95A9} 97b13 132s30
+100V13*Has_Cap{boolean} 100b13 100>22 100>37 104s13 107s13 113s16 3|77s17
+100a22 T{95A9} 101r27
+100i37 C{natural} 101r10 101r38
+103V13*Rights_Of{26M9} 103>24 103>39 114s26 3|60b13 63l8 63t17 79s27
+103a24 T{95A9} 104r22 3|60b24 62r14
+103i39 C{natural} 104r25 3|60b39 62r25
+106V13*Type_Of{47E9} 106>22 106>37 115s57 3|65b13 68l8 68t15 81s58
+106a22 T{95A9} 107r22 3|65b22 67r14
+106i37 C{natural} 107r25 3|65b37 67r25
+119E9*Verdict 119e39 121r55 3|70r55
+119n21*Forwarded{119E9} 122r34 3|84r17
+119n32*Denied{119E9} 3|74r17 76r17 78r17 80r17 82r17
+121V13*Authorize{119E9} 121>24 121>39 122r15 3|70b13 86l8 86t17
+121a24 T{95A9} 122r59 3|70b24 77r26 79r38 81r67
+121r39 M{77R9} 122r62 3|70b39 73r14 75r32 75r45 77r29 79r41 79r65 81r41 81r70
+125V13*Revokes{boolean} 125b13 125>22 125>25 125>40 138s14
+125a22 T{95A9} 127r54
+125a25 U{95A9} 127r29 127r46
+125i40 C{87I12} 127r18
+126i16 I{87I12} 127r14 127r32 127r49 127r57
+
