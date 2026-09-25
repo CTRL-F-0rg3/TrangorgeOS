@@ -1,0 +1,7 @@
+[package]
+name = "tg-ipc-ring"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tg-ipc-abi = { path = "../tg-ipc-abi" }

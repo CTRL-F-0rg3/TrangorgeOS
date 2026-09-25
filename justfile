@@ -34,6 +34,28 @@ kernel: drivers
 run: kernel
     cd kernel_Workspace/kernel-bin && ./run.sh
 
+# Build the bootable demo ISO -> dist/TrangorgeOS-<version>-x86_64-demo.iso
+# Flags are forwarded to tools/mkiso.sh, e.g. `just iso --release --no-build`.
+# Invoked through `bash` so the scripts do not need the executable bit.
+iso *ARGS:
+    bash ./tools/mkiso.sh {{ARGS}}
+
+# Boot the newest demo ISO in QEMU (graphical window, serial on stdout).
+iso-run *ARGS: iso
+    bash ./tools/run-iso.sh {{ARGS}}
+
+# Automated ISO smoke test: no window, serial log captured, PASS/FAIL report.
+iso-test: iso
+    bash ./tools/run-iso.sh --headless
+
+# Verify the ISO build dependencies (xorriso, syslinux, cargo-bootimage, ...).
+iso-deps:
+    bash ./tools/mkiso.sh --check-deps
+
+# Remove all ISO build artefacts (dist/).
+iso-clean:
+    rm -rf dist
+
 # Quick check without linking (verifies all workspaces).
 check:
     cargo check --manifest-path kernel-drivers/Cargo.toml

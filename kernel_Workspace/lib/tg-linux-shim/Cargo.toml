@@ -1,0 +1,8 @@
+[package]
+name = "tg-linux-shim"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tg-ipc-abi = { path = "../tg-ipc-abi" }
+tg-std-pal = { path = "../tg-std-pal" }

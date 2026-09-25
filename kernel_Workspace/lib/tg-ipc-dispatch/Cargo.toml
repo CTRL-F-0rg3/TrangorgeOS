@@ -1,0 +1,9 @@
+[package]
+name = "tg-ipc-dispatch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tg-ipc-abi = { path = "../tg-ipc-abi" }
+tg-cap-core = { path = "../tg-cap-core" }
+tg-cap-table = { path = "../tg-cap-table" }

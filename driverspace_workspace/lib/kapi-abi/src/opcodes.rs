@@ -39,6 +39,10 @@ pub enum DsCmd {
     DevDmaGrant = 0x020A,
     DevDmaRevoke = 0x020B,
 
+    PciFind = 0x0210,
+    PciRead = 0x0211,
+    PciWrite = 0x0212,
+
     GfxFbInfo = 0x0300,
     GfxFbTakeover = 0x0301,
     GfxFbRelease = 0x0302,
@@ -88,6 +92,18 @@ pub enum DsCmd {
 }
 
 impl DsCmd {
+    // --- Legacy aliases (old caller names -> canonical opcodes) ---
+    // Allows existing ds-* / driver code to keep compiling.
+    pub const Log: Self = Self::SysLog;
+    pub const MemMapMmio: Self = Self::SysMapMmio;
+    pub const MemUnmapMmio: Self = Self::SysUnmapMmio;
+    pub const MemAllocDma: Self = Self::SysAllocDma;
+    pub const MemFreeDma: Self = Self::SysFreeDma;
+    pub const BindIrq: Self = Self::DevIrqBind;
+    pub const PagePhys: Self = Self::SysPagePhys;
+    pub const VideoFbInfo: Self = Self::GfxFbInfo;
+    pub const ReqMmio: Self = Self::SysMapMmio;
+
     #[inline]
     pub const fn category(self) -> u8 {
         ((self as u32) >> 8) as u8
@@ -128,6 +144,9 @@ impl DsCmd {
             0x0209 => Some(Self::DevMmioRevoke),
             0x020A => Some(Self::DevDmaGrant),
             0x020B => Some(Self::DevDmaRevoke),
+            0x0210 => Some(Self::PciFind),
+            0x0211 => Some(Self::PciRead),
+            0x0212 => Some(Self::PciWrite),
             0x0300 => Some(Self::GfxFbInfo),
             0x0301 => Some(Self::GfxFbTakeover),
             0x0302 => Some(Self::GfxFbRelease),
@@ -172,3 +191,6 @@ impl DsCmd {
         }
     }
 }
+
+/// Legacy name used by ds-ipc dispatcher.
+pub type Opcode = DsCmd;

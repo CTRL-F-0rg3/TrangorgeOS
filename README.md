@@ -120,9 +120,44 @@ just drivers    # build the driver libraries only
 just kernel     # build the kernel bootimage
 just run        # build + run the kernel in QEMU
 just check      # cargo check (no linking)
+just iso        # build a bootable demo .iso (see "Demo ISO" below)
+just iso-run    # boot the newest demo .iso in QEMU
 ```
 
 > **Note:** the experimental `ctrlfile` build tool was **excluded from the repository** for now — it is not mature enough yet — and has been replaced by the `justfile` above.
+
+### Demo ISO
+
+A bootable, publishable demo image is produced from the exact same kernel build:
+
+```sh
+just iso        # -> dist/TrangorgeOS-<version>-x86_64-demo.iso
+just iso-run    # boot the newest ISO in QEMU (window + serial on stdout)
+just iso-test   # headless ISO smoke test (serial log + PASS/FAIL report)
+```
+
+The ISO boots via El Torito in *no-emulation* mode: **ISOLINUX** starts, and
+**MEMDISK** then boots the unmodified `bootimage-kernel-bin.bin` from RAM. This
+is currently the only supported path: `bootloader 0.9` produces a raw
+512-byte-sector BIOS disk image, while the `comgrub` (multiboot2) and
+`comlimine` (Limine) entry points are still stubs — they do not export the
+`kernel_main` ABI the kernel expects (see `TrangorgeOS — TODO.md`, section 2.6).
+
+Extra packages required (on top of the toolchain above):
+
+```sh
+sudo apt-get install -y xorriso syslinux-common    # Debian/Ubuntu
+```
+
+`tools/mkiso.sh` also writes the releases artefacts next to the ISO:
+`*.iso.sha256` and `dist/RELEASE.txt` (version, git commit, kernel hash,
+toolchain). The image carries a hybrid MBR, so the very same file can be `dd`-ed
+to a USB stick and booted in legacy/CSM mode.
+
+> **Current limitation:** legacy BIOS only — there is no UEFI hand-off yet.
+> Full recipe, publication checklist and limitations: [`tools/iso/README.md`](tools/iso/README.md).
+> Verified on 2026-09-25: the demo ISO boots in QEMU to the in-kernel terminal
+> with `SYSTEM STATUS: 19/19 OK`.
 
 ---
 

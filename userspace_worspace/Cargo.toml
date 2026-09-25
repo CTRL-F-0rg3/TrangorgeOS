@@ -1,0 +1,41 @@
+# userspace_workspace/Cargo.toml
+[workspace]
+resolver = "2"
+members = [
+    # Build tools
+    "build_tools/os_build_utils",
+
+    # Core crates
+    "crates/kernel_abi", "crates/hal_types", "crates/error_codes", 
+    "crates/logging", "crates/sync", "crates/memory",
+
+    # IPC
+    "ipc/ipc_core", "ipc/ipc_channel", "ipc/ipc_router", "ipc/ipc_serde",
+
+    # Protocols
+    "protocols/gfx_protocol", "protocols/vfs_protocol", "protocols/input_protocol",
+    "protocols/audio_protocol", "protocols/net_protocol",
+
+    # Libs (Rust wrappers)
+    "libs/vise_lg_sys", "libs/odin_runtime_shim",
+
+    # Services
+    "services/init", "services/session_manager", "services/vfs_server",
+    "services/display_server", "services/compositor", "services/input_server",
+    "services/audio_server", "services/network_manager", "services/logger_daemon",
+
+    # Base Apps (Rust ones)
+    "base_apps/shell", "base_apps/text_editor", "base_apps/system_monitor", "base_apps/settings_app", "libs/vise_lg", "libs/c_shim", "base_apps/terminal", "base_apps/file_manager", "base_apps/text_edditor",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPR_V3"
+
+[workspace.dependencies]
+# Wspólne zależności, żeby utrzymać porządek
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+bitflags = "2.4"
+log = "0.4"
+spin = "0.9"
