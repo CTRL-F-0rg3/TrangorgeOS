@@ -1,0 +1,21 @@
+[package]
+name = "tg-comm-ffi"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS tg-comm C ABI (staticlib/cdylib) for C, Odin and Ada consumers."
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+# Isolate this crate from any parent workspace.
+[workspace]
+
+[dependencies]
+tg-comm = { path = "../lib" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 2

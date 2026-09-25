@@ -51,7 +51,7 @@ pub mod region;
 pub mod filter;
 pub mod channel;
 pub mod manager;
-pub mod ffi;
+pub mod client;
 
 pub use consts::*;
 pub use layer::Layer;
@@ -65,17 +65,7 @@ pub use region::{ShmemMapping, ShmemRegion};
 pub use filter::{authorize, AuthorizeResult, Gate, KernelHandler};
 pub use channel::LayerChannel;
 pub use manager::Manager;
+pub use client::Client;
 
 #[cfg(test)]
 mod tests;
-
-// A panic handler for the `staticlib`/`cdylib` variants. The library itself is
-// panic-free, but the handler makes the archive self-contained for C/Ada/Odin
-// final links. Excluded when compiling the test harness (std provides its own).
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo<'_>) -> ! {
-    loop {
-        core::hint::spin_loop();
-    }
-}

@@ -1,0 +1,21 @@
+[package]
+name = "uspace-comm"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS userspace (ring 3) client for the tg-comm shared-memory protocol."
+
+[lib]
+crate-type = ["rlib"]
+
+# Isolate this crate from any parent workspace.
+[workspace]
+
+[dependencies]
+tg-comm = { path = "../lib" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 2

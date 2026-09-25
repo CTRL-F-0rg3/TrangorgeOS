@@ -5,9 +5,6 @@
 # model and the authorization gate used to talk between layers (driverspace,
 # userspace, manager, kernel). The C / Odin / Ada libraries in lib-C, lib-odin
 # and lib-ada are thin FFI clients that call into this Rust core.
-#
-# The `[workspace]` key below makes this directory its own isolated workspace
-# root, so `cargo` never attaches it to a parent workspace.
 
 [package]
 name = "tg-comm"
@@ -18,14 +15,16 @@ description = "TrangorgeOS strict shared-memory communication protocol: wire for
 license = "MIT"
 
 [lib]
-crate-type = ["rlib", "staticlib", "cdylib"]
+crate-type = ["rlib"]
 # The crate is `#![cfg_attr(not(test), no_std)]`: in non-test builds it is a
 # bare-metal `no_std` library; under `cargo test` the test module runs with
 # `std` available. Doc-tests are disabled (they would re-link the no_std lib).
+#
+# NOTE: only `rlib` here. The C-ABI staticlib/cdylib (which needs its own
+# `#[panic_handler]`) lives in the sibling `lib-c-ffi` crate, so this core can
+# be linked into the kernel/driver-space/user-space without a panic-handler
+# conflict.
 doctest = false
-
-[workspace]
-resolver = "2"
 
 [profile.dev]
 panic = "abort"
