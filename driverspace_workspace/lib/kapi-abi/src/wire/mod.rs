@@ -4,6 +4,11 @@ pub mod encode;
 pub mod decode;
 pub mod endian;
 
+// 编解码器是线路层的公共入口：驱动与框架都直接用它们，
+// 因此在这里做一层再导出，避免到处写 `wire::encode::Encoder`。
+pub use decode::Decoder;
+pub use encode::Encoder;
+
 pub const DS_MAGIC: u32 = 0x4453_4D53;
 pub const DS_VERSION: u32 = 1;
 pub const MSG_SIZE: usize = 64;

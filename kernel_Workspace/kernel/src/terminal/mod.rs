@@ -459,10 +459,15 @@ fn execute(line: &str) {
             crate::cpu::reboot();
         }
         "format" => match dev() {
-            Some(d) => match crate::fs::tfs::format(d) {
-                Ok(()) => crate::println!("disk formatted (TFS)"),
-                Err(e) => crate::println!("format failed: {:?}", e),
-            },
+            Some(d) => {
+                if let Err(e) = crate::fs::tfs::format(d) {
+                    crate::println!("format failed: {:?}", e);
+                } else if let Err(e) = crate::fs::seed_defaults(d) {
+                    crate::println!("format ok, but seeding defaults failed: {:?}", e);
+                } else {
+                    crate::println!("disk formatted (TFS) + defaults seeded");
+                }
+            }
             None => crate::println!("no disk"),
         },
         "write" => {

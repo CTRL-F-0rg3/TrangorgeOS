@@ -60,6 +60,17 @@ pub fn self_test() -> TestResult {
         return Err("tfs format failed");
     }
 
+    // Ensure the base configuration files exist, whether this is a fresh
+    // install or an already-formatted disk.
+    if seed_defaults(data).is_err() {
+        return Err("seeding base config failed");
+    }
+
+    // The base configuration files must be present after a fresh install.
+    if tfs::read_file(data, tfs::ROOT_DIR, "config.tcfg").is_err() {
+        return Err("missing base config (config.tcfg)");
+    }
+
     if tfs::write_file(data, tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {
         return Err("tfs write failed");
     }
@@ -112,6 +123,50 @@ pub fn root_device() -> Option<&'static dyn driver::block::BlockDevice> {
     } else {
         driver::registry::first()
     }
+}
+
+/// File extension used by TrangorgeOS system configuration files. These files
+/// describe "how the system should work" and are always present on a fresh
+/// install, persisted on the data disk.
+pub const CFG_EXT: &str = "tcfg";
+
+/// Base configuration files seeded onto a freshly formatted disk.
+const DEFAULT_CONFIGS: &[(&str, &str)] = &[
+    (
+        "autostart.tcfg",
+        "# TrangorgeOS autostart configuration\n\
+         # One command per line; lines starting with '#' are comments.\n\
+         allde\n",
+    ),
+    (
+        "config.tcfg",
+        "# TrangorgeOS system configuration\n\
+         hostname=TrangorgeOS\n\
+         timezone=UTC\n\
+         keyboard=us\n\
+         resolution=1920x1080\n",
+    ),
+    (
+        "drivers.tcfg",
+        "# TrangorgeOS driver autoload list\n\
+         # One driver name per line.\n\
+         ata\n\
+         xhci\n\
+         virtio_net\n",
+    ),
+];
+
+/// Writes the base system configuration files (`autostart.tcfg`, `config.tcfg`,
+/// `drivers.tcfg`) to the root of the data disk. Only missing files are
+/// created, so this is safe to run on every boot: it neither overwrites user
+/// edits nor leaks data blocks on an already-populated disk.
+pub fn seed_defaults(dev: &dyn BlockDevice) -> Result<()> {
+    for (name, contents) in DEFAULT_CONFIGS {
+        if tfs::read_file(dev, tfs::ROOT_DIR, name).is_err() {
+            tfs::write_file(dev, tfs::ROOT_DIR, name, contents.as_bytes())?;
+        }
+    }
+    Ok(())
 }
 
 /// Makes sure the given block device carries a valid TFS superblock,

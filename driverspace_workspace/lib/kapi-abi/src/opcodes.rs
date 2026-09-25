@@ -16,6 +16,10 @@ pub enum DsCmd {
     SysYield = 0x0009,
     SysInfo = 0x000A,
     SysShutdown = 0x000B,
+    /// 按四字符签名索取一张 ACPI SDT 表。
+    /// 请求载荷为 `payloads::sys::AcpiTableRequest`；回复 `arg0` 为虚拟基址、
+    /// `arg1` 为表长度。
+    SysAcpiTable = 0x000C,
 
     IpcCreate = 0x0100,
     IpcDestroy = 0x0101,
@@ -89,6 +93,32 @@ pub enum DsCmd {
     GfxViseDrawCall = 0x0904,
     GfxViseSetPipeline = 0x0905,
     GfxViseSetUniform = 0x0906,
+
+    // ── IOMMU (0x0Axx) ──────────────────────────────────────────────
+    // 控制器发现：arg0 = 控制器索引，回复 arg0 = 控制器总数。
+    IommuEnumerate = 0x0A00,
+    /// arg0 = 控制器索引，回复载荷为 `IommuControllerInfo`。
+    IommuQueryController = 0x0A01,
+    /// arg0 = 控制器索引，回复 arg0 = 新建的域 id。
+    IommuDomainCreate = 0x0A02,
+    /// arg0 = 域 id。
+    IommuDomainDestroy = 0x0A03,
+    /// 载荷为 `IommuBindPayload`。
+    IommuBind = 0x0A04,
+    /// arg0 = 控制器索引，arg1 = 打包后的 requester id。
+    IommuUnbind = 0x0A05,
+    /// 载荷为 `IommuMapPayload`；未置 `FIXED` 时回复 arg0 = 分配的物理基址。
+    IommuMap = 0x0A06,
+    /// 载荷为 `IommuUnmapPayload`。
+    IommuUnmap = 0x0A07,
+    /// 载荷为 `IommuInvalidatePayload`；回复 arg0 = 实际完成的 `InvalidateScope`。
+    IommuInvalidate = 0x0A08,
+    /// arg0 = 保留区索引，回复 arg0 = 保留区总数，回复载荷为
+    /// `IommuReservedRegionPayload`。
+    IommuReservedRegions = 0x0A09,
+    /// arg0 = 故障索引，回复 arg0 = 待处理故障总数，回复载荷为
+    /// `IommuFaultPayload`。
+    IommuFaultRead = 0x0A0A,
 }
 
 impl DsCmd {
@@ -103,6 +133,13 @@ impl DsCmd {
     pub const PagePhys: Self = Self::SysPagePhys;
     pub const VideoFbInfo: Self = Self::GfxFbInfo;
     pub const ReqMmio: Self = Self::SysMapMmio;
+    pub const ReqAcpiTable: Self = Self::SysAcpiTable;
+    // IOMMU aliases used by the driver/manager vocabulary.
+    pub const MapDma: Self = Self::IommuMap;
+    pub const UnmapDma: Self = Self::IommuUnmap;
+    pub const CreateIommuDomain: Self = Self::IommuDomainCreate;
+    pub const DestroyIommuDomain: Self = Self::IommuDomainDestroy;
+    pub const BindIommuRequester: Self = Self::IommuBind;
 
     #[inline]
     pub const fn category(self) -> u8 {
@@ -124,6 +161,7 @@ impl DsCmd {
             0x0009 => Some(Self::SysYield),
             0x000A => Some(Self::SysInfo),
             0x000B => Some(Self::SysShutdown),
+            0x000C => Some(Self::SysAcpiTable),
             0x0100 => Some(Self::IpcCreate),
             0x0101 => Some(Self::IpcDestroy),
             0x0102 => Some(Self::IpcSend),
@@ -187,6 +225,17 @@ impl DsCmd {
             0x0904 => Some(Self::GfxViseDrawCall),
             0x0905 => Some(Self::GfxViseSetPipeline),
             0x0906 => Some(Self::GfxViseSetUniform),
+            0x0A00 => Some(Self::IommuEnumerate),
+            0x0A01 => Some(Self::IommuQueryController),
+            0x0A02 => Some(Self::IommuDomainCreate),
+            0x0A03 => Some(Self::IommuDomainDestroy),
+            0x0A04 => Some(Self::IommuBind),
+            0x0A05 => Some(Self::IommuUnbind),
+            0x0A06 => Some(Self::IommuMap),
+            0x0A07 => Some(Self::IommuUnmap),
+            0x0A08 => Some(Self::IommuInvalidate),
+            0x0A09 => Some(Self::IommuReservedRegions),
+            0x0A0A => Some(Self::IommuFaultRead),
             _ => None,
         }
     }

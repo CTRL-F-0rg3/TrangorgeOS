@@ -37,6 +37,14 @@ name = "ds-fw-input"
 version = "0.1.0"
 
 [[package]]
+name = "ds-fw-iommu"
+version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
 name = "ds-ipc"
 version = "0.1.0"
 dependencies = [

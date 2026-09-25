@@ -14,6 +14,7 @@ members = [
     "lib/ds-fw-block",
     "lib/ds-fw-gpu",
     "lib/ds-fw-input",
+    "lib/ds-fw-iommu",
     "lib/ds-ipc",
     "lib/ds-log",
     "lib/ds-mem",
