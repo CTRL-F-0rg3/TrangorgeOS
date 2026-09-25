@@ -21,6 +21,7 @@ The project operates under an intensive development cycle aimed at producing a s
 | ![Kernel Loading](kernelloading.png) | ![Kernel Base Res](kernel_loader_base_res.png) | ![Kernel 1080p](kernelin1920x1080.png) |
 
 ---
+.
 
 ## Architectural Model: Separated Tri-Partition Architecture
 
