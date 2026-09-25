@@ -36,6 +36,7 @@ end record;
      ((for all I => (for all J =>
         (if State(I)=Used and State(J)=Used and I /= J
          then not Overlap(I, Order(I), J, Order(J))))));
+         
    ```
 
 3. **No double-free** — `Free` has precondition `State(I) = Used`; after one
