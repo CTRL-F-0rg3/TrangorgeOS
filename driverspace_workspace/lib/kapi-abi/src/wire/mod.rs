@@ -71,6 +71,20 @@ impl DsMsg {
         // via truncation. Success (0) maps to DsError::Success.
         crate::DsError::from_u32(self.status as u32)
     }
+
+    /// 按下标读取回复寄存器。
+    ///
+    /// 供“按位置约定返回值”的 opcode 使用（例如 `SysAcpiTable` 用
+    /// `arg0` = 虚拟基址、`arg1` = 长度）。越界下标返回 0。
+    #[inline]
+    pub const fn arg(&self, index: usize) -> u64 {
+        match index {
+            0 => self.arg0,
+            1 => self.arg1,
+            2 => self.arg2,
+            _ => 0,
+        }
+    }
 }
 
 #[repr(C)]

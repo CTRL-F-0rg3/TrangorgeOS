@@ -129,7 +129,7 @@ bitflags! {
 }
 
 /// 一个已发现的 IOMMU 控制器的不可变描述。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuControllerInfo {
     /// 驱动私有的控制器索引，`0..controller_count`。
@@ -145,7 +145,7 @@ pub struct IommuControllerInfo {
 }
 
 /// 建立 IOVA -> PA 映射的请求。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuMapPayload {
     /// 目标地址空间域，由 `IommuDomainCreate` 返回。
@@ -162,7 +162,7 @@ pub struct IommuMapPayload {
 }
 
 /// 撤销 IOVA 映射的请求。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuUnmapPayload {
     pub domain: u32,
@@ -172,7 +172,7 @@ pub struct IommuUnmapPayload {
 }
 
 /// 把一个 PCI requester 绑定到地址空间域的请求。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuBindPayload {
     pub controller: u32,
@@ -185,7 +185,7 @@ pub struct IommuBindPayload {
 }
 
 /// 显式失效请求。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuInvalidatePayload {
     pub scope: IommuInvalidateScope,
@@ -202,7 +202,7 @@ pub struct IommuInvalidatePayload {
 }
 
 /// 固件声明、必须原样保留的 DMA 保留区。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuReservedRegionPayload {
     pub base: u64,
@@ -214,7 +214,7 @@ pub struct IommuReservedRegionPayload {
 }
 
 /// 一次已上报的 IOMMU 故障。
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuFaultPayload {
     pub controller: u32,

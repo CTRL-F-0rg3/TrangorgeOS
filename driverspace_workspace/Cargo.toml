@@ -6,6 +6,7 @@ members = [
     "drivers/amdgpu-driver",
     "drivers/audiodriver",
     "drivers/intelgpu-driver",
+    "drivers/iommu-TrangorgeOS",
     "drivers/netcam_driver",
     "drivers/vgpu",
     "drivers/wacomgraphic_driver",
