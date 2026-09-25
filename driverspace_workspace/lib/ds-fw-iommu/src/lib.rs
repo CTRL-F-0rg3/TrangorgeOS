@@ -1,19 +1,21 @@
-//! IOMMU 设备类框架（`ds-fw-iommu`）。
+//! The IOMMU device-class framework (`ds-fw-iommu`).
 //!
-//! 与 `ds-fw-gpu` / `ds-fw-audio` 同级：这里只放**设备类的契约与线路词汇**，
-//! 不放任何硬件寄存器逻辑。硬件部分留在 `drivers/iommu-driver`，管理部分留在
-//! `crates/ds-manager`——两者都只依赖本 crate，从而满足工作区的
-//! “零重复” 与 “`drivers/` 不得依赖 `crates/`” 规则。
+//! A sibling of `ds-fw-gpu` / `ds-fw-audio`: it holds only the **device-class
+//! contract and the wire vocabulary**, never hardware register logic. The
+//! hardware lives in `drivers/iommu-driver` and the management logic in
+//! `crates/ds-manager` - both depend on this crate only, which satisfies the
+//! workspace rules on zero duplication and on `drivers/` never depending on
+//! `crates/`.
 //!
-//! 分成三块：
+//! It is split into three pieces:
 //!
-//! * [`traits::IommuDevice`] —— 驱动侧要实现的契约。
-//! * [`service::IommuService`] —— 服务侧分发器：把 `DsMsg` 翻译成
-//!   [`traits::IommuDevice`] 调用，并强制做能力检查。
-//! * [`client::IommuClient`] —— 客户端：把调用编码成 `DsCmd` IPC。
+//! * [`traits::IommuDevice`] - the contract a driver implements.
+//! * [`service::IommuService`] - the server-side dispatcher: turns a `DsMsg`
+//!   into a [`traits::IommuDevice`] call and enforces capability checks.
+//! * [`client::IommuClient`] - the client: encodes calls as `DsCmd` IPC.
 //!
-//! 线缆格式（`#[repr(C)]` 载荷 + opcode）全部来自 `kapi-abi`，本 crate
-//! 不新增任何 ABI 表面。
+//! The wire format (`#[repr(C)]` payloads plus opcodes) comes entirely from
+//! `kapi-abi`; this crate adds no ABI surface of its own.
 
 #![no_std]
 

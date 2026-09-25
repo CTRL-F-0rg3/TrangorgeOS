@@ -4,8 +4,9 @@ pub mod encode;
 pub mod decode;
 pub mod endian;
 
-// 编解码器是线路层的公共入口：驱动与框架都直接用它们，
-// 因此在这里做一层再导出，避免到处写 `wire::encode::Encoder`。
+// The codecs are the public entry points of the wire layer: both drivers and
+// frameworks use them directly, so re-export them here instead of forcing
+// every caller to spell out `wire::encode::Encoder`.
 pub use decode::Decoder;
 pub use encode::Encoder;
 
@@ -72,10 +73,10 @@ impl DsMsg {
         crate::DsError::from_u32(self.status as u32)
     }
 
-    /// 按下标读取回复寄存器。
+    /// Read a reply register by index.
     ///
-    /// 供“按位置约定返回值”的 opcode 使用（例如 `SysAcpiTable` 用
-    /// `arg0` = 虚拟基址、`arg1` = 长度）。越界下标返回 0。
+    /// For opcodes that return values positionally (e.g. `SysAcpiTable` uses
+    /// `arg0` = virtual base, `arg1` = length). Out-of-range indices give 0.
     #[inline]
     pub const fn arg(&self, index: usize) -> u64 {
         match index {

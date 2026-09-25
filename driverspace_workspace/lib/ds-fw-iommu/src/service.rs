@@ -1,14 +1,16 @@
-//! IOMMU 服务侧分发器。
+//! The IOMMU server-side dispatcher.
 //!
-//! [`IommuService`] 把一条 `DsMsg` 请求翻译成一次 [`IommuDevice`] 调用，并把
-//! 结果编码成 [`Reply`]。能力检查集中在这里——驱动实现体里不需要、也不应该
-//! 重复做权限判断。
+//! [`IommuService`] turns one `DsMsg` request into one [`IommuDevice`] call and
+//! encodes the outcome as a [`Reply`]. Capability checks live here, so driver
+//! implementations neither need to nor should repeat permission logic.
 //!
-//! ## 载荷传递约定
+//! ## Payload passing convention
 //!
-//! 传输层负责把请求载荷从 `msg.arg0`（长度 `msg.arg1`）拷进调用方提供的
-//! `Request::payload` 切片；服务把回复载荷写进 `dispatch` 的 `out` 缓冲。
-//! 这样框架内部不含裸指针，单元测试可以直接喂字节切片。
+//! The transport copies the request payload from `msg.arg0` (length
+//! `msg.arg1`) into the caller-provided `Request::payload` slice; the service
+//! writes its reply payload into the `out` buffer passed to `dispatch`. That
+//! keeps raw pointers out of the framework and lets unit tests feed plain byte
+//! slices.
 
 use kapi_abi::{
     CapId, DsCmd, DsError, DsMsg, Handle,
@@ -24,7 +26,7 @@ use crate::{
     types::{ControllerId, DomainId, RequesterId},
 };
 
-/// 一个 IOMMU 请求：消息头 + 已解包到本地的载荷字节。
+/// One IOMMU request: the message header plus its payload, already unpacked locally.
 #[derive(Clone, Copy)]
 pub struct Request<'a> {
     pub msg: DsMsg,
@@ -37,29 +39,29 @@ impl<'a> Request<'a> {
         Self { msg, payload }
     }
 
-    /// 消息头声明的命令。
+    /// The command declared by the message header.
     #[inline]
     pub fn command(&self) -> Option<DsCmd> {
         DsCmd::from_u32(self.msg.cmd as u32)
     }
 
-    /// 发起请求的端点。
+    /// The endpoint that issued the request.
     #[inline]
     pub const fn sender(&self) -> Handle {
         Handle(self.msg.id as u32)
     }
 }
 
-/// 一个 IOMMU 回复。
+/// One IOMMU reply.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Reply {
-    /// `0` 表示成功，否则是错误码。
+    /// `0` means success; anything else is an error code.
     pub status: i32,
-    /// 标量结果（域 id、物理基址、作用域……）。
+    /// Scalar result (domain id, physical base, scope, ...).
     pub arg0: u64,
-    /// 集合总数（控制器数、保留区数、故障数……）。
+    /// Collection total (controller count, reservation count, fault count, ...).
     pub arg1: u64,
-    /// 回复载荷字节数。
+    /// Reply payload length in bytes.
     pub arg2: u64,
 }
 
@@ -86,7 +88,7 @@ impl Reply {
         self
     }
 
-    /// 记录回复载荷长度。
+    /// Record the reply payload length.
     #[inline]
     pub const fn payload_len(mut self, len: usize) -> Self {
         self.arg2 = len as u64;
@@ -98,7 +100,7 @@ impl Reply {
         self.status == 0
     }
 
-    /// 把回复包成一条回送给请求方的 `DsMsg`（回显 `id` 与 `cmd`）。
+    /// Package a reply into the `DsMsg` sent back to the requester (echoing `id` and `cmd`).
     pub fn into_message(self, request: &DsMsg) -> DsMsg {
         let mut msg = *request;
         msg.status = self.status;
@@ -109,10 +111,11 @@ impl Reply {
     }
 }
 
-/// 把一个 `DsCmd` 映射到它所需的能力位。
+/// Map a `DsCmd` to the capability bit it requires.
 ///
-/// 读类操作只需要 `IOMMU_ENUMERATE`；改动硬件状态的操作各自需要对应能力。
-/// `None` 表示该 opcode 不属于 IOMMU 设备类。
+/// Read-only operations need only `IOMMU_ENUMERATE`; each operation that
+/// mutates hardware state needs its own capability. `None` means the opcode does
+/// not belong to the IOMMU device class.
 pub fn required_capability(cmd: DsCmd) -> Option<CapId> {
     let cap = match cmd {
         DsCmd::IommuEnumerate
@@ -127,26 +130,26 @@ pub fn required_capability(cmd: DsCmd) -> Option<CapId> {
     Some(cap)
 }
 
-/// IOMMU 服务：持有一个设备实现，对外提供 IPC 分发。
+/// The IOMMU service: owns a device implementation and dispatches IPC to it.
 pub struct IommuService<D> {
     device: D,
     capabilities: CapId,
 }
 
 impl<D: IommuDevice> IommuService<D> {
-    /// 以“尚未授予任何能力”创建服务。
+    /// Create a service with no capabilities granted yet.
     #[inline]
     pub const fn new(device: D) -> Self {
         Self { device, capabilities: CapId::NONE }
     }
 
-    /// 授予调用方一组能力。通常由 `ds-manager` 在设备注册时设置。
+    /// Grant a set of capabilities, typically at device-registration time by `ds-manager`.
     #[inline]
     pub fn grant(&mut self, capabilities: CapId) {
         self.capabilities = self.capabilities.union(capabilities);
     }
 
-    /// 撤销一组能力。
+    /// Revoke a set of capabilities.
     #[inline]
     pub fn revoke(&mut self, capabilities: CapId) {
         self.capabilities = self.capabilities.remove(capabilities);
@@ -169,11 +172,12 @@ impl<D: IommuDevice> IommuService<D> {
 }
 
 impl<D: IommuDevice> IommuService<D> {
-    /// 处理一条请求。
+    /// Handle one request.
     ///
-    /// 回复载荷（若非空）被写入 `out` 的开头，长度记录在 [`Reply::arg2`]。
-    /// `out` 太小会被报告为 `DsError::BufferTooSmall`，因此调用方总能通过
-    /// 状态码判断是否写入成功。
+    /// A non-empty reply payload is written to the start of `out` and its length
+    /// recorded in [`Reply::arg2`]. If `out` is too small the status becomes
+    /// `DsError::BufferTooSmall`, so the caller can always tell from the status
+    /// whether the write succeeded.
     pub fn dispatch(&mut self, request: &Request<'_>, out: &mut [u8]) -> Reply {
         let Some(cmd) = request.command() else {
             return Reply::err(DsError::InvalidMessage);
@@ -272,7 +276,7 @@ impl<D: IommuDevice> IommuService<D> {
     fn reserved_region(&mut self, request: &Request<'_>, out: &mut [u8]) -> Reply {
         let total = self.device.reserved_region_count();
         let index = request.msg.arg0 as usize;
-        // 索引越界不是错误：调用方靠 arg0 的总数自行收敛。
+        // An out-of-range index is not an error: the caller converges using the total in arg0.
         if index >= total {
             return Reply::ok().arg0(total as u64);
         }
@@ -309,14 +313,14 @@ impl<D: IommuDevice> IommuService<D> {
     }
 }
 
-/// 解码请求载荷；格式错误时返回 `None`，由调用方转成
-/// `DsError::InvalidMessage`。
+/// Decode a request payload, returning `None` on malformed input so the caller
+/// can turn it into `DsError::InvalidMessage`.
 fn decode<T>(payload: &[u8], read: fn(&mut Decoder<'_>) -> Option<T>) -> Option<T> {
     let mut decoder = Decoder::new(payload);
     read(&mut decoder)
 }
 
-/// 把载荷写进 `out`，把写入长度记进 `arg2`。
+/// Write a payload into `out` and record the byte count in `arg2`.
 fn encode(out: &mut [u8], write: impl FnOnce(&mut Encoder<'_>) -> bool) -> Reply {
     if out.is_empty() {
         return Reply::err(DsError::BufferTooSmall);
@@ -339,12 +343,12 @@ mod tests {
         },
     };
 
-    /// 一个完全在内存里的假设备，用来验证分发器而不碰硬件。
+    /// A purely in-memory fake device, used to exercise the dispatcher without hardware.
     struct FakeDevice {
         controllers: usize,
         domains: u32,
         last_bind: Option<RequesterId>,
-        /// 已建立映射的条数（测试用计数器；真实驱动持有页表）。
+        /// Number of established mappings (a test counter; the real driver holds page tables).
         mapped: u32,
     }
 
@@ -445,7 +449,7 @@ mod tests {
 
     fn request(cmd: DsCmd) -> DsMsg {
         let mut msg = DsMsg::new(cmd as u32);
-        msg.id = 7; // 发起者 handle
+        msg.id = 7; // the sender handle
         msg
     }
 
@@ -454,12 +458,12 @@ mod tests {
         let mut service = IommuService::new(FakeDevice::new(1));
         let mut out = [0u8; crate::MAX_PAYLOAD_LEN];
 
-        // 未授权 -> 拒绝
+        // Not granted -> denied
         let reply =
             service.dispatch(&Request::new(request(DsCmd::IommuDomainCreate), &[]), &mut out);
         assert_eq!(reply.status, DsError::PermissionDenied as i32);
 
-        // 授权后 -> 成功，并分配出新域
+        // Granted -> succeeds and allocates a new domain
         service.grant(CapId::IOMMU_DOMAIN);
         let reply =
             service.dispatch(&Request::new(request(DsCmd::IommuDomainCreate), &[]), &mut out);
@@ -488,7 +492,7 @@ mod tests {
         assert_eq!(info.controller, 1);
         assert_eq!(info.mmio_base, 0xfed0_0000);
 
-        // 越界
+        // Out of range
         let mut msg = request(DsCmd::IommuQueryController);
         msg.arg0 = 9;
         let reply = service.dispatch(&Request::new(msg, &[]), &mut out);
@@ -517,7 +521,7 @@ mod tests {
         };
         let encoded = &encoded[..len];
 
-        // 载荷齐全但没能力
+        // Well-formed payload, but no capability
         let reply = service.dispatch(&Request::new(request(DsCmd::IommuMap), encoded), &mut out);
         assert_eq!(reply.status, DsError::PermissionDenied as i32);
 
@@ -526,7 +530,7 @@ mod tests {
         assert!(reply.is_ok());
         assert_eq!(reply.arg0, 0x8000_0000);
 
-        // 载荷被截断
+        // Truncated payload
         let reply =
             service.dispatch(&Request::new(request(DsCmd::IommuMap), &encoded[..3]), &mut out);
         assert_eq!(reply.status, DsError::InvalidMessage as i32);
@@ -558,7 +562,7 @@ mod tests {
         assert!(reply.is_ok());
         assert_eq!(service.device().last_bind, Some(requester));
 
-        // 解绑走寄存器约定（controller 在 arg0、requester 在 arg1）
+        // Unbind uses the register convention (controller in arg0, requester in arg1)
         let mut msg = request(DsCmd::IommuUnbind);
         msg.arg0 = 0;
         msg.arg1 = requester.raw() as u64;

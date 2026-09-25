@@ -1,12 +1,15 @@
-//! IOMMU 客户端：把框架调用编码成 `DsCmd` IPC。
+//! The IOMMU client: encodes framework calls as `DsCmd` IPC.
 //!
-//! 与 `ds-ipc::ManagerClient` 同构——它只负责“把请求送出去、把回复读回来”，
-//! 不持有任何设备状态。调用方拿到的是 [`DsError`]，可以直接冒泡。
+//! Modelled on `ds-ipc::ManagerClient`: it only ships a request out and reads the
+//! reply back, and holds no device state. Callers get a [`DsError`] they can
+//! propagate directly.
 //!
-//! ## 载荷生命周期
+//! ## Payload lifetime
 //!
-//! 带载荷的请求把栈上结构体的地址放进 `arg0`，长度放进 `arg1`。这依赖
-//! `kapi-syscall::sys_ipc_call` 的同步语义：回复到达前内核已经读走载荷。
+//! Requests with a payload put the address of a stack struct in `arg0` and its
+//! length in `arg1`. That relies on the synchronous semantics of
+//! `kapi-syscall::sys_ipc_call`: the kernel has already read the payload by the
+//! time the reply arrives.
 
 use kapi_abi::{
     DsCmd, DsError, Handle,
@@ -20,7 +23,7 @@ use kapi_syscall::sys_ipc_call;
 
 use crate::{codec, types::*, MAX_PAYLOAD_LEN};
 
-/// IOMMU 服务端点的句柄。
+/// Handle of the IOMMU service endpoint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct IommuClient {
     service: Handle,
@@ -37,15 +40,15 @@ impl IommuClient {
         self.service
     }
 
-    // ── 发现 ──────────────────────────────────────────────────────────
+    // ── discovery ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    /// 控制器总数。
+    /// Total number of controllers.
     pub fn controller_count(&self) -> Result<u32, DsError> {
         let reply = sys_ipc_call(DsCmd::IommuEnumerate, 0, 0, 0);
         check(reply.status).map(|_| reply.arg0 as u32)
     }
 
-    /// 读取第 `index` 号控制器的描述。
+    /// Read the descriptor of controller `index`.
     pub fn controller_info(&self, index: u32) -> Result<IommuControllerInfo, DsError> {
         let buf = [0u8; MAX_PAYLOAD_LEN];
         let reply = sys_ipc_call(DsCmd::IommuQueryController, index as u64, 0, 0);
@@ -55,14 +58,14 @@ impl IommuClient {
         codec::decode_controller_info(&mut decoder).ok_or(DsError::BufferTooSmall)
     }
 
-    // ── 域 ────────────────────────────────────────────────────────────
+    // ── domains ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    /// 在 `controller` 上创建域；域号由驱动分配。
+    /// Create a domain on `controller`; the driver picks the domain number.
     pub fn create_domain(&self, controller: ControllerId) -> Result<DomainId, DsError> {
         self.create_domain_hinted(controller, 0)
     }
 
-    /// 带偏好域号的 [`Self::create_domain`]。
+    /// [`Self::create_domain`] with a preferred domain number.
     pub fn create_domain_hinted(
         &self,
         controller: ControllerId,
@@ -77,7 +80,7 @@ impl IommuClient {
         Ok(domain)
     }
 
-    /// 销毁域。
+    /// Destroy a domain.
     pub fn destroy_domain(&self, domain: DomainId) -> Result<(), DsError> {
         if !domain.is_valid() {
             return Err(DsError::InvalidMessage);
@@ -86,9 +89,9 @@ impl IommuClient {
         check(reply.status)
     }
 
-    // ── 绑定 ──────────────────────────────────────────────────────────
+    // ── binding ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    /// 把 `requester` 绑定到 `domain`。
+    /// Bind `requester` to `domain`.
     pub fn bind(
         &self,
         controller: ControllerId,
@@ -113,7 +116,7 @@ impl IommuClient {
         check(reply.status)
     }
 
-    /// 解绑 requester。
+    /// Unbind a requester.
     pub fn unbind(&self, controller: ControllerId, requester: RequesterId) -> Result<(), DsError> {
         if !requester.is_valid() {
             return Err(DsError::InvalidMessage);
@@ -129,9 +132,9 @@ impl IommuClient {
 }
 
 impl IommuClient {
-    // ── 映射 ──────────────────────────────────────────────────────────
+    // ── mapping ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    /// 建立 IOVA 映射，返回实际使用的物理基址。
+    /// Establish an IOVA mapping, returning the physical base actually used.
     pub fn map(&self, request: &IommuMapPayload) -> Result<u64, DsError> {
         if request.size == 0 || request.size & 0xFFF != 0 {
             return Err(DsError::InvalidMessage);
@@ -145,7 +148,7 @@ impl IommuClient {
         check(reply.status).map(|_| reply.arg0)
     }
 
-    /// 撤销 IOVA 映射。
+    /// Tear down an IOVA mapping.
     pub fn unmap(&self, request: &IommuUnmapPayload) -> Result<(), DsError> {
         if request.size == 0 || request.size & 0xFFF != 0 {
             return Err(DsError::InvalidMessage);
@@ -159,7 +162,7 @@ impl IommuClient {
         check(reply.status)
     }
 
-    /// 显式失效，返回硬件实际完成的作用域。
+    /// Explicit invalidation, returning the scope the hardware completed.
     pub fn invalidate(
         &self,
         request: &IommuInvalidatePayload,
@@ -173,15 +176,15 @@ impl IommuClient {
         check(reply.status).map(|_| IommuInvalidateScope::from_u32(reply.arg0 as u32))
     }
 
-    // ── 固件保留区 ────────────────────────────────────────────────────
+    // ── firmware reservations ──────────────────────────────────────────────────────────────────────────────────────
 
-    /// 保留区总数。
+    /// Total number of reserved regions.
     pub fn reserved_region_count(&self) -> Result<u32, DsError> {
         let reply = sys_ipc_call(DsCmd::IommuReservedRegions, u32::MAX as u64, 0, 0);
         check(reply.status).map(|_| reply.arg0 as u32)
     }
 
-    /// 读取第 `index` 个保留区。
+    /// Read reserved region `index`.
     pub fn reserved_region(&self, index: u32) -> Result<IommuReservedRegionPayload, DsError> {
         let buf = [0u8; MAX_PAYLOAD_LEN];
         let reply = sys_ipc_call(DsCmd::IommuReservedRegions, index as u64, 0, 0);
@@ -193,15 +196,15 @@ impl IommuClient {
         codec::decode_reserved_region(&mut decoder).ok_or(DsError::BufferTooSmall)
     }
 
-    // ── 故障 ──────────────────────────────────────────────────────────
+    // ── faults ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    /// 待处理故障数。
+    /// Number of pending faults.
     pub fn pending_faults(&self) -> Result<u32, DsError> {
         let reply = sys_ipc_call(DsCmd::IommuFaultRead, u32::MAX as u64, 0, 0);
         check(reply.status).map(|_| reply.arg0 as u32)
     }
 
-    /// 读取第 `index` 个故障。
+    /// Read fault `index`.
     pub fn read_fault(&self, index: u32) -> Result<IommuFaultPayload, DsError> {
         let buf = [0u8; MAX_PAYLOAD_LEN];
         let reply = sys_ipc_call(DsCmd::IommuFaultRead, index as u64, 0, 0);
@@ -214,7 +217,7 @@ impl IommuClient {
     }
 }
 
-/// 回复状态码为 0 时返回 `Ok`，否则翻译成 `DsError`。
+/// `Ok` when the reply status is 0, otherwise translated into a [`DsError`].
 #[inline]
 fn check(status: i32) -> Result<(), DsError> {
     if status == 0 {
@@ -224,7 +227,7 @@ fn check(status: i32) -> Result<(), DsError> {
     }
 }
 
-/// 从回复里取出载荷长度，并夹到本地缓冲区内。
+/// Extract the payload length from a reply, clamped to the local buffer size.
 #[inline]
 fn payload_len(reply: &kapi_abi::DsMsg) -> usize {
     let len = reply.arg2 as usize;
@@ -271,7 +274,7 @@ mod tests {
             _pad: 0,
             iova: 0x1000,
             phys_base: 0,
-            size: 0x1800, // 非页对齐
+            size: 0x1800, // not page-aligned
         };
         assert_eq!(client.map(&request).unwrap_err(), DsError::InvalidMessage);
     }
