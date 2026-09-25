@@ -10,6 +10,8 @@ crate-type = ["rlib"]
 test = false
 
 [dependencies]
+# Strict shared-memory communication protocol (independent library).
+tg-comm = { path = "../lib" }
 
 [profile.release]
 panic = "abort"

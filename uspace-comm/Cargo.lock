@@ -3,12 +3,12 @@
 version = 4
 
 [[package]]
-name = "driverspacelib"
+name = "tg-comm"
+version = "0.1.0"
+
+[[package]]
+name = "uspace-comm"
 version = "0.1.0"
 dependencies = [
  "tg-comm",
 ]
-
-[[package]]
-name = "tg-comm"
-version = "0.1.0"

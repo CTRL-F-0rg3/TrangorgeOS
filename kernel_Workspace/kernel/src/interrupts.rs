@@ -113,6 +113,12 @@ extern "x86-interrupt" fn double_fault_handler(
 // Interrupt handlers
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     TIMER_TICKS.fetch_add(1, Ordering::Relaxed);
+
+    // Drain the shared-memory (tg_comm) communication rings for both the
+    // driver space and the user space (ring 3).
+    crate::tgcomm::driverspace::poll();
+    crate::tgcomm::userspace::poll();
+
     unsafe {
         let _ = crate::cpu::scheduler::tick(0, 1_000_000);
         PICS.lock()

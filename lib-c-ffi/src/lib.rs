@@ -1,15 +1,22 @@
-//! Stable C ABI: the boundary every other language (C, Odin, Ada) calls.
+//! Stable C ABI for `tg-comm`: the boundary every other language (C, Odin,
+//! Ada) calls.
 //!
-//! Consumers build [`CommMsg`] values (the protocol is public), but the
-//! capability table, rings and the authorization gate stay opaque — they are
-//! always manipulated through these functions, never re-implemented.
+//! This crate is the `staticlib`/`cdylib` wrapper around the `tg-comm` core.
+//! Consumers build [`tg_comm::CommMsg`] values (the protocol is public), but
+//! the capability table, rings and the authorization gate stay opaque — they
+//! are always manipulated through these functions, never re-implemented.
+//!
+//! It lives in a separate crate (rather than inside `tg-comm`) because the
+//! `staticlib`/`cdylib` crate types need their own `#[panic_handler]`, which
+//! would otherwise conflict with the kernel's handler when `tg-comm` is linked
+//! as an `rlib` into `no_std` consumers.
 
-use crate::caps::{CapEntry, CapId, CapTable, ObjectType};
-use crate::consts::{COMM_MSG_SIZE, COMM_VERSION, RING_CONTROL_SIZE};
-use crate::filter::authorize;
-use crate::rights::Rights;
-use crate::ring::SpscRing;
-use crate::wire::CommMsg;
+#![no_std]
+
+use tg_comm::{
+    authorize, CapEntry, CapId, CapTable, CommMsg, ObjectType, Rights, SpscRing,
+    COMM_MSG_SIZE, COMM_VERSION, RING_CONTROL_SIZE,
+};
 
 /// Total byte size of a ring with `slots` message slots.
 #[no_mangle]
@@ -197,5 +204,15 @@ pub unsafe extern "C" fn tgcomm_cap_remove(table: *mut CapTable, cap: u32) -> i3
     match table.as_mut() {
         Some(t) => i32::from(t.remove(CapId(cap)).is_some()),
         None => 0,
+    }
+}
+
+/// Panic handler for the standalone staticlib/cdylib build. The core library
+/// is panic-free, but the handler makes this archive self-contained for
+/// C / Ada / Odin final links.
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo<'_>) -> ! {
+    loop {
+        core::hint::spin_loop();
     }
 }

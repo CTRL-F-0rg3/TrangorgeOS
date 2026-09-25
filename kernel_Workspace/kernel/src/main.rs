@@ -36,6 +36,9 @@ mod pci;
 #[cfg(target_arch = "x86_64")]
 mod terminal;
 
+#[cfg(target_arch = "x86_64")]
+mod tgcomm;
+
 mod caps;
 mod policy;
 mod serial;
@@ -215,6 +218,19 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
     cpu::init(boot_info);
     testing::run_all(TESTS);
     println!("Welcome in my Galaxy!");
+
+    // Shared-memory communication (`tg_comm`) for driver space and user space.
+    println!("[boot-dbg] step: tgcomm::prepare()...");
+    if tgcomm::driverspace::prepare() {
+        println!("[tgcomm] driverspace shared-memory bridge OK");
+    } else {
+        println!("[tgcomm] driverspace shared-memory bridge FAILED");
+    }
+    if tgcomm::userspace::prepare() {
+        println!("[tgcomm] userspace (ring 3) shared-memory bridge OK");
+    } else {
+        println!("[tgcomm] userspace (ring 3) shared-memory bridge FAILED");
+    }
 
     gfx::refresh();
 

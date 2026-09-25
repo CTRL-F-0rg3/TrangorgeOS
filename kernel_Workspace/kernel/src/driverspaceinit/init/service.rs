@@ -268,7 +268,7 @@ pub fn video_call(op: u32, m: &DsMsg, r: &mut DsMsg) -> i32 {
     }
 }
 
-fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
+pub fn handle(m: &DsMsg, r: &mut DsMsg) -> i32 {
     let class = m.cmd >> 8;
     let op = m.cmd & 0xFF;
 

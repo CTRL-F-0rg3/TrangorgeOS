@@ -17,6 +17,9 @@ spin = "0.5.2"
 bitflags = "2.4"
 lazy_static = { version = "1.0", features = ["spin_no_std"] }
 
+# Strict shared-memory communication protocol (independent library).
+tg-comm = { path = "../../lib" }
+
 # Zależności z core (jeśli kernel z nich korzysta):
 kstd_core = { path = "../core/kstd_core" }
 kstd_base = { path = "../core/kstd_base" }
