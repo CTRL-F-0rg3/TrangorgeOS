@@ -4,6 +4,11 @@ pub mod encode;
 pub mod decode;
 pub mod endian;
 
+// 编解码器是线路层的公共入口：驱动与框架都直接用它们，
+// 因此在这里做一层再导出，避免到处写 `wire::encode::Encoder`。
+pub use decode::Decoder;
+pub use encode::Encoder;
+
 pub const DS_MAGIC: u32 = 0x4453_4D53;
 pub const DS_VERSION: u32 = 1;
 pub const MSG_SIZE: usize = 64;
@@ -65,6 +70,20 @@ impl DsMsg {
         // status is i32-based; map negative/unknown codes to DsError::Unknown
         // via truncation. Success (0) maps to DsError::Success.
         crate::DsError::from_u32(self.status as u32)
+    }
+
+    /// 按下标读取回复寄存器。
+    ///
+    /// 供“按位置约定返回值”的 opcode 使用（例如 `SysAcpiTable` 用
+    /// `arg0` = 虚拟基址、`arg1` = 长度）。越界下标返回 0。
+    #[inline]
+    pub const fn arg(&self, index: usize) -> u64 {
+        match index {
+            0 => self.arg0,
+            1 => self.arg1,
+            2 => self.arg2,
+            _ => 0,
+        }
     }
 }
 
