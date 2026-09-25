@@ -1,0 +1,41 @@
+# TrangorgeOS — strict shared-memory communication protocol (core).
+#
+# This crate is intentionally INDEPENDENT: it is NOT a member of any Cargo
+# workspace. It defines, once and for all, the wire protocol, the capability
+# model and the authorization gate used to talk between layers (driverspace,
+# userspace, manager, kernel). The C / Odin / Ada libraries in lib-C, lib-odin
+# and lib-ada are thin FFI clients that call into this Rust core.
+#
+# The `[workspace]` key below makes this directory its own isolated workspace
+# root, so `cargo` never attaches it to a parent workspace.
+
+[package]
+name = "tg-comm"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "TrangorgeOS strict shared-memory communication protocol: wire format, capability table and the authorization gate."
+license = "MIT"
+
+[lib]
+crate-type = ["rlib", "staticlib", "cdylib"]
+# The crate is `#![cfg_attr(not(test), no_std)]`: in non-test builds it is a
+# bare-metal `no_std` library; under `cargo test` the test module runs with
+# `std` available. Doc-tests are disabled (they would re-link the no_std lib).
+doctest = false
+
+[workspace]
+resolver = "2"
+
+[profile.dev]
+panic = "abort"
+opt-level = 1
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+lto = true
+codegen-units = 1
+
+[dependencies]
+# Zero dependencies: fully `no_std`, fully independent of every workspace.

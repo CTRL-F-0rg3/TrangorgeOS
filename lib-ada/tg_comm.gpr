@@ -1,0 +1,22 @@
+-- tg_comm.gpr — GNAT project file for the TrangorgeOS communication library.
+--
+-- Used with GNATprove for the SPARK proof:
+--     gnatprove -P tg_comm.gpr --mode=prove
+-- and with gprbuild (when available) for the plain build:
+--     gprbuild -P tg_comm.gpr
+
+project Tg_Comm is
+
+   for Source_Dirs use (".");
+   for Object_Dir use "build";
+   for Exec_Dir use "build";
+
+   package Compiler is
+      for Default_Switches ("Ada") use ("-gnat2022", "-gnatwa");
+   end Compiler;
+
+   package Prove is
+      for Proof_Switches ("Ada") use ("--level=2", "--checks-as-errors");
+   end Prove;
+
+end Tg_Comm;
