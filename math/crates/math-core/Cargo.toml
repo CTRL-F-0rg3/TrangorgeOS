@@ -1,0 +1,14 @@
+[package]
+name = "math-core"
+version = "0.1.0"
+edition = "2024"
+description = "Shared substrate for the TrangorgeOS math stack: float bit utilities, constants, approximate comparison, feature detection and error vocabulary"
+license = "MIT"
+
+[lints]
+workspace = true
+
+[dependencies]
+# The math stack speaks the system's error vocabulary rather than inventing one.
+# `math-core` is a sibling component of `driverspace_workspace` at the repo root.
+kapi-abi = { path = "../../../driverspace_workspace/lib/kapi-abi" }

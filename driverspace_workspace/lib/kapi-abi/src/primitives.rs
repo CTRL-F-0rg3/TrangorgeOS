@@ -85,12 +85,22 @@ pub enum Status {
     RingFull = -13,
     StaleId = -14,
     Throttled = -15,
+    /// A computed result is finite but outside the representable range.
+    Overflow = -16,
+    /// A divisor was zero where a non-zero value is required.
+    DivideByZero = -17,
 }
 
 impl Status {
     #[inline]
     pub const fn is_ok(self) -> bool {
         matches!(self, Self::Ok)
+    }
+
+    /// The numeric code as carried on the wire.
+    #[inline]
+    pub const fn code(self) -> i32 {
+        self as i32
     }
 
     #[inline]
@@ -112,6 +122,8 @@ impl Status {
             -13 => Self::RingFull,
             -14 => Self::StaleId,
             -15 => Self::Throttled,
+            -16 => Self::Overflow,
+            -17 => Self::DivideByZero,
             _ => Self::Unknown,
         }
     }
