@@ -1,0 +1,15 @@
+[package]
+name = "uspace"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS userspace: nested capability system, IPC and the graphical environment."
+
+# Userspace runs on top of the kernel, so it uses the standard library for the
+# demonstration/compositor convenience; the protocol itself (`tg-comm`) is no_std.
+
+[dependencies]
+tg-comm = { path = "../lib" }
+uspace-comm = { path = "../uspace-comm" }
+
+[profile.release]
+opt-level = 2

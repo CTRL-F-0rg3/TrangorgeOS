@@ -144,7 +144,11 @@ fn scancode_to_keycode(code: u8) -> Option<u32> {
         0x53 => Some(0x109), 
         0x0F => Some(0x10A), 
         0x3F => Some(0x110), 
-        0x42 => Some(0x111), 
+        0x42 => Some(0x111),
+         0x3B => Some(0x112), // F1
+         0x3C => Some(0x113), // F2
+         0x3D => Some(0x114), // F3
+         0x3E => Some(0x115), // F4 
         _ => scancode_to_char(code).map(|c| c as u32),
     }
 }
@@ -321,7 +325,7 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm edit res poweroff reboot");
+            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm edit res demouserspace poweroff reboot");
             crate::println!("  write <name> <text...>  write a text file to disk");
             crate::println!("  read  <name>            read a file from disk");
             crate::println!("  rm    <name>            remove a file or empty folder");
@@ -331,6 +335,8 @@ fn execute(line: &str) {
             crate::println!("  cd    <name|/>          change folder ( / = root )");
             crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
             crate::println!("  ping  <IPv4>            send one ICMP Echo Request");
+            crate::println!("  demouserspace           draw a sample graphical window (userspace demo)");
+            crate::println!("  allde                   launch the all-de desktop (tiled windows)");
             crate::println!("  poweroff                power off the machine");
             crate::println!("  reboot                  reboot the machine");
             crate::println!("  format                  format the disk (TFS)");
@@ -430,6 +436,23 @@ fn execute(line: &str) {
             if !crate::cpu::poweroff() {
                 crate::println!("poweroff failed (ACPI not available)");
             }
+        }
+        "demouserspace" => {
+            match crate::gfx::demo::draw_demo_window() {
+                true => {
+                    crate::serial::write_str("[demouserspace] okno graficzne - wcisnij klawisz aby wrocic\n");
+                    // Keep the window visible until the user presses a key.
+                    while kbuf_pop().is_none() {
+                        x86_64::instructions::hlt();
+                    }
+                }
+                false => crate::println!("demouserspace: brak framebuffera (gfx nieaktywne)"),
+            }
+        }
+        "allde" => {
+            // Launch the interactive desktop; it takes over input and returns
+            // control to the terminal when the user presses ESC.
+            crate::allde::run();
         }
         "reboot" => {
             crate::println!("rebooting...");

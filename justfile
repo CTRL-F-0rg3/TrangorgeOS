@@ -30,9 +30,22 @@ vise-libs:
 kernel: drivers
     cd kernel_Workspace/kernel-bin && cargo bootimage
 
-# Run the kernel in QEMU (graphical window, serial on stdout).
-run: kernel
+# Run the kernel in QEMU (graphical window, serial on stdout). Also builds the
+# userspace workspace so the whole system compiles together.
+run: kernel uspace-libs
     cd kernel_Workspace/kernel-bin && ./run.sh
+
+# Build the userspace workspace (nested system + graphical-window demo).
+uspace-libs:
+    cargo build -p demo-gfx --manifest-path userspace_worspace/Cargo.toml
+
+# Run the userspace graphical-window demo -> writes demo_window.ppm.
+demouserspace: uspace-libs
+    cargo run -p demo-gfx --manifest-path userspace_worspace/Cargo.toml
+
+# Run the userspace all-de desktop environment demo -> writes allde_frame.ppm.
+allde:
+    cargo run --manifest-path allde/Cargo.toml
 
 # Build the bootable demo ISO -> dist/TrangorgeOS-<version>-x86_64-demo.iso
 # Flags are forwarded to tools/mkiso.sh, e.g. `just iso --release --no-build`.
