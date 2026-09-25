@@ -1,0 +1,126 @@
+V "GNAT Lib v16"
+A -gnat2022
+A -gnatwa
+P ZX
+
+RN
+RV NO_IMPLICIT_CONDITIONALS
+RV NO_IMPLEMENTATION_ASPECT_SPECIFICATIONS
+RV NO_IMPLEMENTATION_PRAGMAS
+
+U tg_alloc_buddy%b	tg_alloc_buddy.adb	896bd858 NE OO PK
+
+U tg_alloc_buddy%s	tg_alloc_buddy.ads	decd050b EE NE OO PK
+
+D system.ads		20260810200446 e2b7c99d system%s
+D tg_alloc_buddy.ads	20260925122417 decd050b tg_alloc_buddy%s
+D tg_alloc_buddy.adb	20260925122510 57a6dd53 tg_alloc_buddy%b
+G a e
+G c Z s s [order_size tg_alloc_buddy 48 13 none]
+G c Z s s [aligned tg_alloc_buddy 51 13 none]
+G c Z s s [in_bounds tg_alloc_buddy 55 13 none]
+G c Z s s [in_block tg_alloc_buddy 59 13 none]
+G c Z s s [overlap tg_alloc_buddy 64 13 none]
+G c Z s b [valid tg_alloc_buddy 73 13 none]
+G c Z s s [used_disjoint tg_alloc_buddy 76 13 none]
+G c Z s b [used_pages tg_alloc_buddy 84 13 none]
+G c Z s b [free_pages tg_alloc_buddy 85 13 none]
+G c Z s s [pages_conserved tg_alloc_buddy 87 13 none]
+G c Z s b [allocate tg_alloc_buddy 91 14 none]
+G c Z s b [free tg_alloc_buddy 110 14 none]
+G c Z s b [lemma_alloc_disjoint tg_alloc_buddy 117 14 none]
+G c Z s b [lemma_no_double_free tg_alloc_buddy 126 14 none]
+G c Z s s [Tstate_arrayBIP tg_alloc_buddy 31 4 none]
+G c Z s s [Torder_arrayBIP tg_alloc_buddy 32 4 none]
+G c Z s s [Theads_arrayBIP tg_alloc_buddy 33 4 none]
+G c Z s s [Tnext_arrayBIP tg_alloc_buddy 34 4 none]
+G c Z s s [buddy_allocatorIP tg_alloc_buddy 36 9 none]
+X 2 tg_alloc_buddy.ads
+21K9*Tg_Alloc_Buddy 132l5 132e19 3|11b14 158l5 158t19
+23N4*Max_Order 24r31 26r45 3|68r20 74r19 114r19
+24N4*Max_Pages 27r45 56r29 88r41
+26I12*Order_Type{natural} 32r46 33r31 48r29 51r42 55r44 59r43 64r44 65r44
+. 95r15 118r48 3|52r15 55r14 56r14 108r13 141r48
+27I12*Page_Index{natural} 31r31 32r31 34r31 51r26 55r28 59r27 59r59 64r27
+. 65r27 77r21 78r24 94r15 105r43 110r52 118r32 121r28 127r32 3|19r23 29r16
+. 40r16 51r15 57r14 82r14 90r30 107r52 109r13 116r30 117r15 141r32 150r32
+29E9*Block_State 29e42 31r46
+29n25*Free{29E9} 113r31 3|20r57 41r27 92r32 111r24 119r35 137r24
+29n31*Used{29E9} 79r31 79r59 101r34 106r42 111r47 120r47 122r35 129r47 3|20r30
+. 30r27 99r24
+29n37*Tail{29E9} 3|123r32
+31A9*State_Array(29E9)<integer> 37r15
+32A9*Order_Array(26I12)<integer> 38r15
+33A9*Heads_Array(integer)<integer> 41r15
+34A9*Next_Array(integer)<integer> 42r15
+36R9*Buddy_Allocator 43e14 73r24 76r32 84r29 85r29 87r34 92r18 110r31 118r11
+. 127r11 3|16r24 26r29 37r29 49r18 107r31 141r11 150r11
+37a7*State{31A9} 79r19 79r47 101r22 106r30 111r35 113r19 120r35 122r23 129r35
+. 3|20r18 20r45 30r15 41r15 92m15 99m9 111m9 119r18 123m15 137m9
+38a7*Order{32A9} 81r37 81r53 107r51 123r44 3|21r29 21r65 31r44 42r44 93m15
+. 100m9 108r29 119r50 129m15 136m9
+41a7*Heads{33A9} 3|74r40 78r12 82r28 83m9 94r33 95m15 134r25 135m9
+42a7*Next{34A9} 3|83r26 94m15 134m9
+45i4*No_Block{integer} 3|74r54 78r26
+48V13*Order_Size{natural} 48b13 48>25 52s13 56s11 61s31 66s36 67s44 102s29
+. 3|31s30 42s30 68s39 90s50 117s58
+48i25 O{26I12} 48r63
+51V13*Aligned{boolean} 51b13 51>22 51>38 104s29 3|21s15
+51i22 I{27I12} 52r7
+51i38 O{26I12} 52r25
+55V13*In_Bounds{boolean} 55b13 55>24 55>40 103s29 3|21s49
+55i24 I{27I12} 56r7
+55i40 O{26I12} 56r23
+59V13*In_Block{boolean} 59b13 59>23 59>39 59>55
+59i23 I{27I12} 61r12 61r27
+59i39 O{26I12} 61r43
+59i55 P{27I12} 61r7 61r23
+64V13*Overlap{boolean} 64b13 64>22 64>39 65>22 65>39 81s23 107s31 123s24
+64i22 I1{27I12} 66r8 66r31 67r22 67r34
+64i39 O1{26I12} 66r48
+65i22 I2{27I12} 66r14 66r26 67r16 67r39
+65i39 O2{26I12} 67r56
+73V13*Valid{boolean} 73>20 97s14 98s14 111s14 112s14 120s14 129s14 3|16b13
+. 24l8 24t13
+73r20 A{36R9} 3|16b20 20r16 20r43 21r27 21r63 22r33 23r35
+76V13*Used_Disjoint{boolean} 76b13 76>28 3|22s18
+76r28 A{36R9} 79r17 79r45 81r35 81r51
+77i16 I{27I12} 79r26 80r25 81r32 81r44
+78i19 J{27I12} 79r54 80r30 81r48 81r60
+84V13*Used_Pages{natural} 84>25 88s7 3|26b13 35l8 35t18
+84r25 A{36R9} 3|26b25 30r13 31r42
+85V13*Free_Pages{natural} 85>25 88s24 3|37b13 46l8 46t18
+85r25 A{36R9} 3|37b25 41r13 42r42
+87V13*Pages_Conserved{boolean} 87b13 87>30 99s17 114s17 3|23s18
+87r30 A{36R9} 88r19 88r36
+91U14*Allocate 92=7 93>7 94<7 95<7 96<7 3|48b14 105l8 105t16
+92r7 A{36R9} 97r21 98r21 99r34 101r20 106r28 107r49 3|49b7 74r38 78r10 82r26
+. 83m7 83r24 92m13 93m13 94m13 94r31 95m13 99m7 100m7
+93i7 Size{natural} 102r47 3|50b7 63r10 68r59
+94i7 I{27I12} 101r29 103r40 104r38 106r61 107r40 3|51b7 59m7 102m7
+95i7 O{26I12} 102r41 103r43 104r41 107r43 3|52b7 60m7 103m7
+96b7 Ok{boolean} 100r21 3|53b7 61m7 104m7
+105i38 J{27I12} 106r37 106r56 107r46 107r58
+110U14*Free 110=20 110>48 3|107b14 138l8 138t12
+110r20 A{36R9} 111r21 111r33 112r21 113r17 114r34 3|107b20 108r27 111m7 119r16
+. 119r48 123m13 129m13 134m7 134r23 135m7 136m7 137m7
+110i48 I{27I12} 111r42 113r26 3|107b48 108r36 109r27
+121i23 J{27I12} 122r30 122r49 123r39 123r51
+X 3 tg_alloc_buddy.adb
+14M9 Page_Word 117r27 117r47
+19i18 I{2|27I12} 20r25 20r52 21r24 21r36 21r60 21r72
+27i7 Total{natural} 31m13 31r22 34r14
+29i11 I{2|27I12} 30r22 31r51
+38i7 Total{natural} 42m13 42r22 45r14
+40i11 I{2|27I12} 41r22 42r51
+55i7 Need{2|26I12} 68r13 68r51 69m10 69r18 73r14 87r19 100r24 103r12
+56i7 Cur{2|26I12} 73m7 74r13 74r47 75m10 75r17 78r19 82r35 83r16 87r13 88m10
+. 88r17 90r62 93r32 94r40 95r22
+57i7 Idx{2|27I12} 82m7 83r32 90r44 99r16 100r16 102r12
+90i13 Buddy{2|27I12} 92r22 93r22 94r21 95r39
+108i7 Cur{2|26I12} 114r13 117r70 119r67 128m13 128r20 129r30 134r32 135r16
+. 136r24
+109i7 Idx{2|27I12} 111r16 117r38 124r24 125m16 129r22 134r15 135r33 136r16
+. 137r16
+116i13 Buddy{2|27I12} 119r25 119r57 123r22 124r16 125r23
+

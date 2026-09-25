@@ -1,0 +1,166 @@
+V "GNAT Lib v16"
+A -gnat2022
+A -gnatwa
+P ZX
+
+RN
+RV NO_DYNAMIC_SIZED_OBJECTS
+RV NO_IMPLICIT_LOOPS
+
+U tg_comm%s		tg_comm.ads		2c259e10 NE OO PR PK
+W interfaces%s		interfac.ads		interfac.ali
+W system%s		system.ads		system.ali
+
+D interfac.ads		20260810200446 9111f9c1 interfaces%s
+D system.ads		20260810200446 e2b7c99d system%s
+D tg_comm.ads		20260925121740 5f83ae4c tg_comm%s
+G a e
+G c Z s s [contains tg_comm 57 13 none]
+G c Z s s [opcode tg_comm 68 13 none]
+G c Z s s [tgcomm_version tg_comm 119 13 none]
+G c Z s s [tgcomm_msg_size tg_comm 122 13 none]
+G c Z s s [tgcomm_ring_size tg_comm 125 13 none]
+G c Z s s [tgcomm_msg_init tg_comm 129 14 none]
+G c Z s s [tgcomm_authorize tg_comm 132 13 none]
+G c Z s s [tgcomm_ring_init tg_comm 136 14 none]
+G c Z s s [tgcomm_ring_push tg_comm 140 13 none]
+G c Z s s [tgcomm_ring_pop tg_comm 144 13 none]
+G c Z s s [tgcomm_ring_available tg_comm 148 13 none]
+G c Z s s [tgcomm_cap_table_init tg_comm 152 14 none]
+G c Z s s [tgcomm_cap_insert tg_comm 155 13 none]
+G c Z s s [tgcomm_cap_check tg_comm 163 13 none]
+G c Z s s [tgcomm_cap_remove tg_comm 169 13 none]
+G c Z s s [comm_msgIP tg_comm 82 9 none]
+X 1 interfac.ads
+47K9*Interfaces 247e15 3|9w6 15r13 16r13 19r23 20r23 68r42 69r28 70r7 71r10
+. 83r18 84r18 85r18 86r20 87r18 88r18 89r18 90r18 91r18 92r18 93r18 94r18
+. 95r18 96r18 119r35 122r36 125r39 126r38 133r38 137r40 141r38 145r37 149r43
+. 156r38 157r41 158r43 159r46 160r39 164r37 165r49 166r38 170r38 171r39
+65I9*Integer_32<integer> 3|91r29 133r49 141r49 145r48 160r50 166r49 171r50
+81M9*Unsigned_8 3|20r34 84r29 85r29 86r31 87r29 158r54
+84M9*Unsigned_16 3|16r24 68r53
+92M9*Unsigned_32 3|15r24 19r34 69r39 70r18 71r21 83r29 88r29 89r29 90r29
+. 119r46 122r47 125r50 137r51 149r54 156r49 159r57 164r48 165r60 170r49
+95M9*Unsigned_64 3|92r29 93r29 94r29 95r29 96r29 126r49 157r52
+X 2 system.ads
+37K9*System 155e11 3|10w6 132r39 132r61 136r39 140r38 140r60 144r37 144r63
+. 148r43 152r45 155r40 163r39 169r40
+67M9*Address 3|132r46 132r68 136r46 140r45 140r67 144r44 144r70 148r50 152r52
+. 155r47 163r46 169r47
+X 3 tg_comm.ads
+12K9*Tg_Comm 174l5 174e12
+19m4*Magic{1|92M9}
+20m4*Version{1|81M9}
+21N4*Msg_Size
+22N4*Ring_Ctrl
+23N4*Cap_Table_Size_Entries
+26E9*Msg_Kind 26e72 27r8 29r8
+26n22*Request{26E9} 27r22
+26n31*Reply{26E9} 27r36
+26n38*Event{26E9} 27r48
+26n45*Notification{26E9} 28r22
+26n59*Cap_Transfer{26E9} 28r41
+32E9*Layer 32e78 33r8 35r8
+32n19*Kernel{32E9} 33r19
+32n27*Driverspace{32E9} 33r32
+32n40*Userspace{32E9} 33r50
+32n51*Manager{32E9} 34r19
+32n60*User_Driver_Space{32E9} 34r33
+38E9*Object_Type 39e51 40r8 42r8
+38n25*Memory{38E9} 40r25
+38n33*Endpoint{38E9} 40r38
+38n43*Notification{38E9} 40r53
+38n57*Channel{38E9} 41r25
+39n25*Shmem_Region{38E9} 41r39
+39n39*Device{38E9} 41r58
+39n47*Irq{38E9} 41r71
+45M9*Rights 46r30 47r30 48r30 49r30 50r30 51r30 52r30 53r30 54r30 55r30 57r37
+46m4*Right_Read{45M9}
+47m4*Right_Write{45M9}
+48m4*Right_Exec{45M9}
+49m4*Right_Map{45M9}
+50m4*Right_Grant{45M9}
+51m4*Right_Transfer{45M9}
+52m4*Right_Send{45M9}
+53m4*Right_Recv{45M9}
+54m4*Right_Call{45M9}
+55m4*Right_Manage{45M9}
+57V13*Contains{boolean} 57b13 57>23 57>28
+57m23 Set{45M9} 58r8
+57m28 Subset{45M9} 58r16 58r26
+61E9*Op_Class 62e48 63r8 66r8 68r27 70r31
+61n22*Sys{61E9} 63r22
+61n27*Mem{61E9} 63r32
+61n32*Cap{61E9} 63r42
+61n37*Ipc{61E9} 63r52
+61n42*Shmem{61E9} 63r62
+61n49*Video{61E9} 64r22
+61n56*Audio{61E9} 64r34
+61n63*Input{61E9} 64r46
+62n22*Block{61E9} 64r58
+62n29*Net{61E9} 65r22
+62n34*Pci{61E9} 65r32
+62n39*Vgpu{61E9} 65r43
+62n45*Fs{61E9} 65r55
+68V13*Opcode{1|92M9} 68b13 68>21 68>37
+68e21 Cls{61E9} 70r45
+68m37 Op{1|84M9} 71r34
+74E9*Result 75e70 76r8 79r8
+74n20*Forwarded{74E9} 76r20
+74n31*Malformed{74E9} 76r36
+74n42*Unknown_Op{74E9} 76r52
+74n54*Route_Denied{74E9} 77r20
+75n20*No_Capability{74E9} 77r39
+75n35*Rights_Insufficient{74E9} 78r20
+75n56*Type_Mismatch{74E9} 78r46
+82R9*Comm_Msg 97e15 99r8 115r8 116r8 129r44
+83m7*Magic{1|92M9} 100r7
+84m7*Version{1|81M9} 101r7
+85m7*Kind{1|81M9} 102r7
+86m7*Layer_Byte{1|81M9} 103r7
+87m7*Target{1|81M9} 104r7
+88m7*Opcode{1|92M9} 105r7
+89m7*Cap{1|92M9} 106r7
+90m7*Seq{1|92M9} 107r7
+91i7*Status{1|65I9} 108r7
+92m7*A0{1|95M9} 109r7
+93m7*A1{1|95M9} 110r7
+94m7*A2{1|95M9} 111r7
+95m7*A3{1|95M9} 112r7
+96m7*Reserved{1|95M9} 113r7
+119V13*Tgcomm_Version{1|92M9} 120b<c,tgcomm_version>22
+122V13*Tgcomm_Msg_Size{1|92M9} 123b<c,tgcomm_msg_size>22
+125V13*Tgcomm_Ring_Size{1|95M9} 125>31 127b<c,tgcomm_ring_size>22
+125m31 Slots{1|92M9}
+129U14*Tgcomm_Msg_Init 129=31 130b<c,tgcomm_msg_init>22
+129r31 Msg{82R9}
+132V13*Tgcomm_Authorize{1|65I9} 132>31 132>55 134b<c,tgcomm_authorize>22
+132m31 Table{2|67M9}
+132m55 Msg{2|67M9}
+136U14*Tgcomm_Ring_Init 136>32 137>32 138b<c,tgcomm_ring_init>22
+136m32 Ring{2|67M9}
+137m32 Slots{1|92M9}
+140V13*Tgcomm_Ring_Push{1|65I9} 140>31 140>54 142b<c,tgcomm_ring_push>22
+140m31 Ring{2|67M9}
+140m54 Msg{2|67M9}
+144V13*Tgcomm_Ring_Pop{1|65I9} 144>30 144>53 146b<c,tgcomm_ring_pop>22
+144m30 Ring{2|67M9}
+144m53 Out_Msg{2|67M9}
+148V13*Tgcomm_Ring_Available{1|92M9} 148>36 150b<c,tgcomm_ring_available>22
+148m36 Ring{2|67M9}
+152U14*Tgcomm_Cap_Table_Init 152>37 153b<c,tgcomm_cap_table_init>22
+152m37 Table{2|67M9}
+155V13*Tgcomm_Cap_Insert{1|65I9} 155>32 156>32 157>32 158>32 159>32 161b<c,tgcomm_cap_insert>22
+155m32 Table{2|67M9}
+156m32 Cap{1|92M9}
+157m32 Obj_Id{1|95M9}
+158m32 Obj_Type{1|81M9}
+159m32 Rights_Mask{1|92M9}
+163V13*Tgcomm_Cap_Check{1|65I9} 163>31 164>31 165>31 167b<c,tgcomm_cap_check>22
+163m31 Table{2|67M9}
+164m31 Cap{1|92M9}
+165m31 Required_Rights{1|92M9}
+169V13*Tgcomm_Cap_Remove{1|65I9} 169>32 170>32 172b<c,tgcomm_cap_remove>22
+169m32 Table{2|67M9}
+170m32 Cap{1|92M9}
+

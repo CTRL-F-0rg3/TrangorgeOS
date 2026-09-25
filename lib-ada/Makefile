@@ -13,6 +13,7 @@ all: check
 check:
 	$(GNATMAKE) $(FLAGS) tg_comm.ads
 	$(GNATMAKE) $(FLAGS) tg_comm_security.adb
+	$(GNATMAKE) $(FLAGS) tg_alloc_buddy.adb
 	@echo "[lib-ada] compile-check OK"
 
 clean:
