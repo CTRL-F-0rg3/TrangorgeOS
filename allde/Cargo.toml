@@ -1,0 +1,15 @@
+[package]
+name = "allde"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS all-de: a niri-like tiling desktop environment for userspace."
+
+[[bin]]
+name = "allde"
+path = "src/bin/allde.rs"
+
+[dependencies]
+uspace = { path = "../uspace" }
+
+[profile.release]
+opt-level = 2

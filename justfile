@@ -43,6 +43,10 @@ uspace-libs:
 demouserspace: uspace-libs
     cargo run -p demo-gfx --manifest-path userspace_worspace/Cargo.toml
 
+# Run the userspace all-de desktop environment demo -> writes allde_frame.ppm.
+allde:
+    cargo run --manifest-path allde/Cargo.toml
+
 # Build the bootable demo ISO -> dist/TrangorgeOS-<version>-x86_64-demo.iso
 # Flags are forwarded to tools/mkiso.sh, e.g. `just iso --release --no-build`.
 # Invoked through `bash` so the scripts do not need the executable bit.

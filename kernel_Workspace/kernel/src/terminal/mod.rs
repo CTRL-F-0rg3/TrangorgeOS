@@ -144,7 +144,11 @@ fn scancode_to_keycode(code: u8) -> Option<u32> {
         0x53 => Some(0x109), 
         0x0F => Some(0x10A), 
         0x3F => Some(0x110), 
-        0x42 => Some(0x111), 
+        0x42 => Some(0x111),
+         0x3B => Some(0x112), // F1
+         0x3C => Some(0x113), // F2
+         0x3D => Some(0x114), // F3
+         0x3E => Some(0x115), // F4 
         _ => scancode_to_char(code).map(|c| c as u32),
     }
 }
@@ -332,6 +336,7 @@ fn execute(line: &str) {
             crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
             crate::println!("  ping  <IPv4>            send one ICMP Echo Request");
             crate::println!("  demouserspace           draw a sample graphical window (userspace demo)");
+            crate::println!("  allde                   launch the all-de desktop (tiled windows)");
             crate::println!("  poweroff                power off the machine");
             crate::println!("  reboot                  reboot the machine");
             crate::println!("  format                  format the disk (TFS)");
@@ -443,6 +448,11 @@ fn execute(line: &str) {
                 }
                 false => crate::println!("demouserspace: brak framebuffera (gfx nieaktywne)"),
             }
+        }
+        "allde" => {
+            // Launch the interactive desktop; it takes over input and returns
+            // control to the terminal when the user presses ESC.
+            crate::allde::run();
         }
         "reboot" => {
             crate::println!("rebooting...");

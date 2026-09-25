@@ -39,6 +39,9 @@ mod terminal;
 #[cfg(target_arch = "x86_64")]
 mod tgcomm;
 
+#[cfg(target_arch = "x86_64")]
+mod allde;
+
 mod caps;
 mod policy;
 mod serial;

@@ -73,3 +73,33 @@ pub fn draw_demo_window() -> bool {
 
     true
 }
+
+/// Draw a desktop-like frame (two tiled windows + a cursor) — the in-system
+/// preview of the `all-de` desktop. The full interactive environment lives in
+/// the userspace `allde` crate.
+pub fn draw_desktop() -> bool {
+    let fb: &mut Framebuffer = match try_fb() {
+        Some(f) => f,
+        None => return false,
+    };
+
+    let w = fb.width;
+    let h = fb.height;
+
+    fill_rect(&mut *fb, 0, 0, w, h, rgb(0x10, 0x12, 0x18));
+
+    let col_w = w / 2;
+    for (i, title) in ["terminal 1", "terminal 2"].iter().enumerate() {
+        let x = i * col_w;
+        fill_rect(&mut *fb, x, 0, col_w - 2, h, rgb(0x1E, 0x22, 0x2C));
+        draw_rect(&mut *fb, x, 0, col_w - 2, h, rgb(0x3A, 0x44, 0x5A));
+        fill_rect(&mut *fb, x + 1, 1, col_w - 4, 20, rgb(0x2A, 0x35, 0x4A));
+        draw_text(&mut *fb, x + 6, 4, title, rgb(0xD0, 0xD8, 0xE0));
+        draw_text(&mut *fb, x + 6, 28, "user@allde:~$", rgb(0x7C, 0xF0, 0x9C));
+    }
+
+    // Cursor.
+    fill_rect(&mut *fb, col_w, h / 2, 8, 8, rgb(0xFF, 0xFF, 0xFF));
+
+    true
+}
