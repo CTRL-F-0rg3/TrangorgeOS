@@ -267,6 +267,71 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
 
 [[package]]
+name = "tg-cap-core"
+version = "0.1.0"
+dependencies = [
+ "tg-ipc-abi",
+]
+
+[[package]]
+name = "tg-cap-table"
+version = "0.1.0"
+dependencies = [
+ "tg-cap-core",
+]
+
+[[package]]
+name = "tg-ipc-abi"
+version = "0.1.0"
+
+[[package]]
+name = "tg-ipc-channel"
+version = "0.1.0"
+dependencies = [
+ "tg-cap-core",
+ "tg-ipc-abi",
+ "tg-ipc-ring",
+]
+
+[[package]]
+name = "tg-ipc-dispatch"
+version = "0.1.0"
+dependencies = [
+ "tg-cap-core",
+ "tg-cap-table",
+ "tg-ipc-abi",
+]
+
+[[package]]
+name = "tg-ipc-ring"
+version = "0.1.0"
+dependencies = [
+ "tg-ipc-abi",
+]
+
+[[package]]
+name = "tg-linux-shim"
+version = "0.1.0"
+dependencies = [
+ "tg-ipc-abi",
+ "tg-std-pal",
+]
+
+[[package]]
+name = "tg-shmem"
+version = "0.1.0"
+dependencies = [
+ "tg-cap-core",
+]
+
+[[package]]
+name = "tg-std-pal"
+version = "0.1.0"
+dependencies = [
+ "tg-ipc-abi",
+]
+
+[[package]]
 name = "volatile"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

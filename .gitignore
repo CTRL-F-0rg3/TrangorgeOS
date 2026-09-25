@@ -13,3 +13,7 @@ kernel_Workspace/kernel-bin/data.img
 *.kate-swp
 target/
 tmp/
+
+# ISO / demo image build output (tools/mkiso.sh, tools/run-iso.sh)
+/dist/
+
