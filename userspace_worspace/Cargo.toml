@@ -25,7 +25,7 @@ members = [
     "services/audio_server", "services/network_manager", "services/logger_daemon",
 
     # Base Apps (Rust ones)
-    "base_apps/shell", "base_apps/text_editor", "base_apps/system_monitor", "base_apps/settings_app", "libs/vise_lg", "libs/c_shim", "base_apps/terminal", "base_apps/file_manager", "base_apps/text_edditor",
+    "base_apps/shell", "base_apps/text_edditor", "base_apps/system_monitor", "base_apps/settings_app", "libs/vise_lg", "libs/c_shim", "base_apps/terminal", "base_apps/file_manager", "base_apps/demo_gfx",
 ]
 
 [workspace.package]

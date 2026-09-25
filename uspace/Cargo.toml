@@ -6,7 +6,6 @@ description = "TrangorgeOS userspace: nested capability system, IPC and the grap
 
 # Userspace runs on top of the kernel, so it uses the standard library for the
 # demonstration/compositor convenience; the protocol itself (`tg-comm`) is no_std.
-[workspace]
 
 [dependencies]
 tg-comm = { path = "../lib" }

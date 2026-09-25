@@ -1,0 +1,12 @@
+[package]
+name = "demo-gfx"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS userspace graphical-window demo (draws a window + terminal)."
+
+[[bin]]
+name = "demo-gfx"
+path = "src/main.rs"
+
+[dependencies]
+uspace = { path = "../../../uspace" }

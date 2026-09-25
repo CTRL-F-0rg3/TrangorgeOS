@@ -29,6 +29,10 @@ fn fb() -> &'static mut Framebuffer {
     unsafe { FB.as_mut().unwrap() }
 }
 
+pub(crate) fn try_fb() -> Option<&'static mut Framebuffer> {
+    unsafe { FB.as_mut() }
+}
+
 pub fn cols() -> usize {
     unsafe { COLS }
 }

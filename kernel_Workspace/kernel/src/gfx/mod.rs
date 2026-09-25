@@ -1,4 +1,5 @@
 pub mod console;
+pub mod demo;
 pub mod font;
 pub mod framebuffer;
 pub mod galaxy;

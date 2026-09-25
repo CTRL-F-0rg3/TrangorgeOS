@@ -321,7 +321,7 @@ fn execute(line: &str) {
 
     match cmd {
         "help" => {
-            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm edit res poweroff reboot");
+            crate::println!("commands: help clear echo info ping ls cd mkdir format write read rm edit res demouserspace poweroff reboot");
             crate::println!("  write <name> <text...>  write a text file to disk");
             crate::println!("  read  <name>            read a file from disk");
             crate::println!("  rm    <name>            remove a file or empty folder");
@@ -331,6 +331,7 @@ fn execute(line: &str) {
             crate::println!("  cd    <name|/>          change folder ( / = root )");
             crate::println!("  res   <WxH|W:H>         change resolution (e.g. res 1920:1080)");
             crate::println!("  ping  <IPv4>            send one ICMP Echo Request");
+            crate::println!("  demouserspace           draw a sample graphical window (userspace demo)");
             crate::println!("  poweroff                power off the machine");
             crate::println!("  reboot                  reboot the machine");
             crate::println!("  format                  format the disk (TFS)");
@@ -429,6 +430,18 @@ fn execute(line: &str) {
             crate::println!("powering off...");
             if !crate::cpu::poweroff() {
                 crate::println!("poweroff failed (ACPI not available)");
+            }
+        }
+        "demouserspace" => {
+            match crate::gfx::demo::draw_demo_window() {
+                true => {
+                    crate::serial::write_str("[demouserspace] okno graficzne - wcisnij klawisz aby wrocic\n");
+                    // Keep the window visible until the user presses a key.
+                    while kbuf_pop().is_none() {
+                        x86_64::instructions::hlt();
+                    }
+                }
+                false => crate::println!("demouserspace: brak framebuffera (gfx nieaktywne)"),
             }
         }
         "reboot" => {

@@ -7,9 +7,6 @@ description = "TrangorgeOS userspace (ring 3) client for the tg-comm shared-memo
 [lib]
 crate-type = ["rlib"]
 
-# Isolate this crate from any parent workspace.
-[workspace]
-
 [dependencies]
 tg-comm = { path = "../lib" }
 
