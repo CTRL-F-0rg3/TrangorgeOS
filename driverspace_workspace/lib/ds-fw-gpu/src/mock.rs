@@ -24,7 +24,7 @@ use kapi_abi::{
 
 use crate::{
     traits::{GpuDevice, Vendor},
-    types::{BufferHandle, ContextHandle, FenceValue, GpuIndex, ShaderHandle},
+    types::{BufferHandle, ContextHandle, FenceValue, GpuIndex, Scanout, ShaderHandle, SurfaceHandle},
 };
 
 /// One recorded call, so a test can assert the framework routed correctly.
@@ -57,6 +57,10 @@ pub struct MockGpu {
     pub fail_context: bool,
     /// Make `reset` fail.
     pub fail_reset: bool,
+    /// The surface the display engine is currently showing.
+    pub presented: SurfaceHandle,
+    /// Whether a flip is in flight and has not landed yet.
+    pub flip_pending: bool,
 }
 
 impl MockGpu {
@@ -70,6 +74,8 @@ impl MockGpu {
             fail_submit: false,
             fail_context: false,
             fail_reset: false,
+            presented: SurfaceHandle::INVALID,
+            flip_pending: false,
         }
     }
 
@@ -283,5 +289,45 @@ impl GpuDevice for MockGpu {
 
     fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
         self
+    }
+
+    // ── presentation ───────────────────────────────────────────────────────────────────────────
+
+    fn scanout(&self, index: GpuIndex) -> Result<Scanout, DsError> {
+        if index.index() as usize >= self.devices {
+            return Err(DsError::DeviceNotFound);
+        }
+        Ok(Scanout::SharedBuffer {
+            phys: 0xF000_0000,
+            width: 1920,
+            height: 1080,
+            stride: 1920 * 4,
+        })
+    }
+
+    fn present(
+        &mut self,
+        index: GpuIndex,
+        surface: SurfaceHandle,
+        _wait: bool,
+    ) -> Result<FenceValue, DsError> {
+        if index.index() as usize >= self.devices {
+            return Err(DsError::DeviceNotFound);
+        }
+        // A second flip before the first lands is refused, exactly as a real
+        // display engine would have to: the two race for the scanout register
+        // and the screen shows whichever won.
+        if self.flip_pending {
+            return Err(DsError::DeviceBusy);
+        }
+        self.presented = surface;
+        self.flip_pending = true;
+        let fence = self.next_fence;
+        self.next_fence += 1;
+        Ok(FenceValue::new(fence))
+    }
+
+    fn is_presented(&self, _index: GpuIndex) -> Result<bool, DsError> {
+        Ok(self.flip_pending)
     }
 }

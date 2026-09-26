@@ -32,6 +32,9 @@ checksum = "413d67b29ef1021b4d60f4aa1e925ca031751e213832b4b1d588fae623c05c60"
 [[package]]
 name = "ds-fw-gpu"
 version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+]
 
 [[package]]
 name = "ds-ipc"
@@ -128,6 +131,7 @@ dependencies = [
  "lazy_static",
  "pic8259",
  "spin 0.5.2",
+ "tg-comm",
  "volatile 0.2.7",
  "x86_64 0.15.5",
 ]
@@ -200,6 +204,10 @@ name = "spin"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
+
+[[package]]
+name = "tg-comm"
+version = "0.1.0"
 
 [[package]]
 name = "volatile"

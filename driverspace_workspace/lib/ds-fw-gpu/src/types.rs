@@ -269,6 +269,122 @@ pub const fn check_shader(handle: ShaderHandle) -> Result<(), DsError> {
     }
 }
 
+/// A GPU surface, as the framework sees it.
+///
+/// This is the compositor's handle on something the driver can scan out. It is
+/// separate from [`BufferHandle`] because a surface is a drawable - possibly
+/// two buffers, front and back - where a buffer is one allocation. A display
+/// engine scans out of a surface; it cannot scan out of a buffer.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+pub struct SurfaceHandle(pub u32);
+
+impl SurfaceHandle {
+    pub const INVALID: Self = Self(u32::MAX);
+
+    #[inline]
+    pub const fn new(id: u32) -> Self {
+        Self(id)
+    }
+
+    #[inline]
+    pub const fn raw(self) -> u32 {
+        self.0
+    }
+
+    #[inline]
+    pub const fn is_valid(self) -> bool {
+        self.0 != u32::MAX
+    }
+}
+
+/// Where the display engine reads pixels from.
+///
+/// # Why this is a question and not a constant
+///
+/// An integrated part scans out of system memory; a discrete card scans out of
+/// local memory. The compositor needs to know which before it composites,
+/// because on a discrete part a surface destined for scanout has to be
+/// allocated in local memory or every frame crosses the interconnect twice.
+///
+/// A driver that cannot answer leaves the compositor unable to place its
+/// surfaces correctly, which is worse than not presenting at all.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Scanout {
+    /// Scans out of a buffer the GPU writes, in its own local memory.
+    ///
+    /// A discrete card. Nothing crosses the interconnect on its way to the
+    /// display.
+    LocalBuffer {
+        /// The physical address the display engine reads.
+        phys: u64,
+        width: u32,
+        height: u32,
+        /// Bytes per scanline, which the driver knows and a client would guess.
+        stride: u32,
+    },
+
+    /// Scans out of a buffer in system memory.
+    ///
+    /// An integrated part, or a discrete card presenting a shared framebuffer
+    /// the CPU also has to read.
+    SharedBuffer {
+        phys: u64,
+        width: u32,
+        height: u32,
+        stride: u32,
+    },
+}
+
+impl Scanout {
+    /// Whether the pixels live in the device's own memory.
+    pub const fn is_local(self) -> bool {
+        matches!(self, Self::LocalBuffer { .. })
+    }
+
+    /// The address the display engine reads.
+    pub const fn phys(self) -> u64 {
+        match self {
+            Self::LocalBuffer { phys, .. } | Self::SharedBuffer { phys, .. } => phys,
+        }
+    }
+
+    /// The mode this scanout is configured for, as `(width, height, stride)`.
+    pub const fn mode(self) -> (u32, u32, u32) {
+        match self {
+            Self::LocalBuffer { width, height, stride, .. }
+            | Self::SharedBuffer { width, height, stride, .. } => (width, height, stride),
+        }
+    }
+}
+
+/// Reject an invalid surface handle before any driver call happens.
+#[inline]
+pub const fn check_surface(handle: SurfaceHandle) -> Result<(), DsError> {
+    if handle.is_valid() {
+        Ok(())
+    } else {
+        Err(DsError::InvalidHandle)
+    }
+}
+
+/// What the display engine is currently showing.
+///
+/// Held by the driver, not the client: two clients both believing they own the
+/// screen is how a display ends up flickering between two buffers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PresentedSurface {
+    pub surface: SurfaceHandle,
+    pub scanout: Option<Scanout>,
+}
+
+impl PresentedSurface {
+    /// Whether anything is currently being presented.
+    pub const fn is_presenting(&self) -> bool {
+        self.surface.is_valid()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
