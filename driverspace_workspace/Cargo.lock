@@ -56,6 +56,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "amd-gpu-trangorgeos"
+version = "0.1.0"
+dependencies = [
+ "ds-fw-gpu",
+ "kapi-abi",
+]
+
+[[package]]
 name = "amdgpu-driver"
 version = "0.1.0"
 
