@@ -1,0 +1,54 @@
+# ustd — the Rust standard-library platform layer for TrangorgeOS userspace.
+#
+# This workspace is what makes it possible to write a *real* `std` program
+# (`Vec`, `String`, `HashMap`, `println!`, `std::fs`, `std::time`, ...) and
+# have it run in ring 3 on TrangorgeOS, instead of the `no_std` +
+# `-Zbuild-std=core,alloc` situation every other crate in this repository is
+# in.
+#
+# Layering (bottom to top):
+#
+#   tgs-hal   syscall ABI: number table, the `int 0x80` gate, errno decoding,
+#             the file-descriptor table, the mmap/brk heap, the dirent codec.
+#             Every piece is written against a `Syscall` trait so it can be
+#             unit-tested on the host against a mock kernel.
+#   tgs-libc  the `#[no_mangle] extern "C"` symbols upstream `std` links
+#             against, plus the malloc family std's allocator sits on.
+#   tgs-rt    `_start` (the ELF entry point), the argc/argv/envp bootstrap,
+#             the panic hook, and the `tgs` prelude.
+#   tgs-init  a binary that exercises the whole `std` surface.
+#
+# See README.md for the build command and SYSCALLS.md for the kernel contract.
+
+[workspace]
+resolver = "2"
+members = [
+    "libc",
+    "rt",
+    "init",
+    "hal",
+]
+# Added as they are written: "libc", "rt", "init".
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[workspace.dependencies]
+tgs-hal = { path = "hal" }
+tgs-libc = { path = "libc" }
+tgs-rt = { path = "rt" }
+
+# Only the host test profile ever builds these; the sysroot build is driven by
+# `build.sh`, which passes `--features sysroot`.
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+lto = true
+codegen-units = 1
+overflow-checks = true
