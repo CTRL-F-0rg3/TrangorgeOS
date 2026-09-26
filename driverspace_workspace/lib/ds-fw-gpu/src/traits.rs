@@ -30,7 +30,9 @@ use kapi_abi::{
     },
 };
 
-use crate::types::{BufferHandle, ContextHandle, FenceValue, GpuIndex, ShaderHandle};
+use crate::types::{
+    BufferHandle, ContextHandle, FenceValue, GpuIndex, Scanout, ShaderHandle, SurfaceHandle,
+};
 
 /// Which vendor's hardware a driver drives.
 ///
@@ -150,6 +152,34 @@ pub trait GpuDevice: Any {
     /// Refuses while a context is live unless `force`, because a reset that
     /// throws away a live ring leaves every context pointing at nothing.
     fn reset(&mut self, index: GpuIndex, force: bool) -> Result<(), DsError>;
+
+    // ── presentation ───────────────────────────────────────────────────────────────────────────
+
+    /// The hardware a presented surface lands on.
+    ///
+    /// A compositor has to know this before it composites, because it decides
+    /// where a surface's pixels have to to be scanned out from.
+    fn scanout(&self, index: GpuIndex) -> Result<Scanout, DsError>;
+
+    /// Give the display engine a surface to scan out, and program a flip.
+    ///
+    /// This is the operation that makes the GPU part of the display path. A
+    /// client that has been copying its framebuffer into a mapped register
+    /// window has been doing this by hand, on the CPU, which is exactly what
+    /// this replaces.
+    ///
+    /// Refused while a previous flip is in flight: two flips racing leave the
+    /// display engine reading whichever buffer it liked, which is a torn frame
+    /// rather than an error.
+    fn present(
+        &mut self,
+        index: GpuIndex,
+        surface: SurfaceHandle,
+        wait: bool,
+    ) -> Result<FenceValue, DsError>;
+
+    /// Whether the last `present` has reached the screen.
+    fn is_presented(&self, index: GpuIndex) -> Result<bool, DsError>;
 
     // ── the vendor escape hatch ───────────────────────────────────────────────────────────────────
 
