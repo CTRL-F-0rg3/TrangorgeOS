@@ -19,8 +19,8 @@
   "target-family": [
     "unix"
   ],
-  "target-pointer-width": "64",
+  "target-pointer-width": 64,
   "vendor": "trangorge",
-  "crt-static": true,
+  "crt-static-default": true,
   "crt-static-respected": true
 }

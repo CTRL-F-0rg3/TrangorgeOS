@@ -165,7 +165,7 @@ impl StackImage {
         // `char **`; the strings live in `.rodata` and outlive everything.
         static mut ARGV: [*const c_char; 2] = [ptr::null(), ptr::null()];
         static mut ENVP: [*const c_char; 3] = [ptr::null(), ptr::null(), ptr::null()];
-        static PATH: [u8; 8] = *b"PATH=\0\0\0\0";
+        static PATH: [u8; 9] = *b"PATH=\0\0\0\0";
 
         // SAFETY: written exactly once, from `_start`, before `main` and before a
         // second task could exist. Nothing reads them before that.
@@ -236,7 +236,7 @@ pub const THREADS_UNAVAILABLE: &str =
      second task would corrupt the allocator";
 
 // The C `main` that `rustc` generates for a binary that links `std`.
-///
+//
 // It is the shim around the program's own `main`: it sets up the argument
 // vector, the thread-local state and the panic hook, and then calls
 // `std::rt::lang_start`. It is declared rather than defined because `rustc`
@@ -273,13 +273,11 @@ pub extern "C" fn tgs_rt_start() -> ! {
     // `std::process::exit` — so the loop is only the "your `main` returned" case,
     // where a program with no runtime to return into has nothing left to do.
     //
-    // SAFETY: `image` holds the `argc`/`argv` pair just recorded, which is
-    // exactly what `main`'s contract wants.
-    unsafe {
-        main(image.argc as isize, image.argv.cast());
-        loop {
-            core::hint::spin_loop();
-        }
+    // `main` is declared `safe` because the C ABI hands it two plain words and
+    // a pointer the caller built; there is nothing for it to misuse.
+    main(image.argc as isize, image.argv.cast());
+    loop {
+        core::hint::spin_loop();
     }
 }
 

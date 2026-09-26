@@ -47,6 +47,22 @@ demouserspace: uspace-libs
 allde:
     cargo run --manifest-path allde/Cargo.toml
 
+# Build the userspace standard library (ustd) — a real Rust `std` for ring 3.
+# The syscall layer, the C ABI and `_start` come from ustd/; the `std` itself is
+# upstream, built by the script because there is no prebuilt one for the target.
+uspace-std:
+    bash ./ustd/build.sh
+
+# Type-check the userspace target without linking, for CI.
+uspace-std-check:
+    bash ./ustd/build.sh --check
+
+# The host tests for tgs-hal: the allocator, the descriptor table and the
+# dirent codec, all driven against a mock kernel. Needs no target and no
+# `-Zbuild-std`, so it is fast enough for a pre-commit hook.
+uspace-std-test:
+    cargo test --manifest-path ustd/Cargo.toml -p tgs-hal
+
 # Build the bootable demo ISO -> dist/TrangorgeOS-<version>-x86_64-demo.iso
 # Flags are forwarded to tools/mkiso.sh, e.g. `just iso --release --no-build`.
 # Invoked through `bash` so the scripts do not need the executable bit.
