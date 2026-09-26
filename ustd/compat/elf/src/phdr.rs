@@ -2,11 +2,17 @@
 
 use super::header::Ehdr;
 use super::{Error, Result};
+use alloc::vec::Vec;
 
 /// Size of `Elf64_Phdr`.
 pub const PHDR_SIZE: usize = 56;
 
-/// `p_type`.
+/// `p_type` values.
+///
+/// Not every one is used yet, and that is the point: they are the vocabulary the
+/// loader needs before it can act. The `dead_code` allowance is for the ones the
+/// kernel-side work will need, so their presence is not mistaken for dead code.
+#[allow(dead_code)]
 pub mod p_type {
     /// `PT_NULL`.
     pub const NULL: u32 = 0;

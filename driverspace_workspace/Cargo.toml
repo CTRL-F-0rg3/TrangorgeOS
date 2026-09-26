@@ -22,6 +22,8 @@ members = [
     "lib/ds-fw-gpu",
     "lib/ds-fw-input",
     "lib/ds-fw-iommu",
+    "lib/ds-fw-power",
+    "lib/ds-fw-video",
     "lib/ds-ipc",
     "lib/ds-log",
     "lib/ds-mem",

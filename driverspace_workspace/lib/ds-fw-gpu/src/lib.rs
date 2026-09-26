@@ -34,6 +34,14 @@
 //! ```
 //!
 //! Each driver binary is built alone; none of them links the others.
+//!
+//! ## What also lives here: link-agnostic display plumbing
+//!
+//! [`edid`] and [`modeset`] hold the parts of display bring-up that are *not*
+//! specific to a transport. EDID is EDID whether it arrives over I²C/DDC on HDMI
+//! or AUX on DisplayPort, and a mode's refresh rate is arithmetic on its own
+//! timings. Putting them here is what stops the two output drivers from shipping
+//! two parsers that disagree about the same monitor.
 
 #![no_std]
 #![forbid(unsafe_code)]
@@ -41,11 +49,14 @@
 extern crate alloc;
 
 pub mod codec;
+pub mod edid;
 pub mod mock;
+pub mod modeset;
 pub mod service;
 pub mod traits;
 pub mod types;
 
+pub use edid::{DisplayMode, Edid, EdidError, EdidInfo};
 pub use service::{GpuService, Reply, Request};
 pub use traits::{GpuDevice, Vendor};
 pub use types::{

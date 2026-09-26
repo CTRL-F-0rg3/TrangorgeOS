@@ -64,6 +64,42 @@ impl CapId {
     /// that can be *moved* needs this; merely enumerating it does not.
     pub const ALSA_STREAM: Self = Self(1 << 31);
 
+    /// Video: list the video engines and read their capabilities and limits.
+    /// Read-only, and the only thing a client gets before anything else.
+    pub const VIDEO_ENUMERATE: Self = Self(1 << 32);
+    /// Video: create a session, submit compressed frames, and read decoded
+    /// frames back. This is the capability that makes a video driver
+    /// privileged - it is the one that can make the DMA engine do work.
+    pub const VIDEO_DECODE: Self = Self(1 << 33);
+    /// Video: drive an encoder, if the engine has one.
+    ///
+    /// Separate from `VIDEO_DECODE` on purpose. Decoding and encoding are
+    /// different hardware with different failure modes, and a machine that has
+    /// only a decoder (very common: QuickSync and NVDEC exist far more widely
+    /// than their encoder counterparts) should be able to grant one and
+    /// withhold the other. A client that needs both asks for both.
+    pub const VIDEO_ENCODE: Self = Self(1 << 34);
+    /// Video: register a frame sink, so decoded frames are pushed to this
+    /// client instead of being copied out by polling.
+    ///
+    /// Kept apart from `VIDEO_DECODE` because it is the *consuming* privilege:
+    /// a capture writer needs it to receive frames, and a NPU wants it, while a
+    /// client that only encodes a file and reads nothing grants it to nobody.
+    pub const VIDEO_SINK: Self = Self(1 << 35);
+
+    /// Power: change how the machine charges. The only *writing* power
+    /// capability, and the only one with a plausible way to damage hardware.
+    ///
+    /// A charge threshold that is set below the manufacturer's minimum, or a
+    /// charge rate the cell was not validated for, is a way to start a fire. The
+    /// driver clamps, and this capability is what makes setting a policy an
+    /// explicit act rather than a side effect of a client starting up.
+    ///
+    /// Everything else about power - enumerating sources, reading a percentage,
+    /// asking whether the battery is low - needs **no** capability. A user who
+    /// cannot see the battery level cannot use the machine.
+    pub const POWER_POLICY: Self = Self(1 << 36);
+
     #[inline]
     pub const fn has(self, other: Self) -> bool {
         (self.0 & other.0) == other.0

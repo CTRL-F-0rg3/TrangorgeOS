@@ -1,3 +1,0 @@
-    Blocking waiting for file lock on package cache
-warning: comlimine v0.1.0 (/home/ctrl/TrangorgeOS/comlimine) ignoring invalid dependency `kernel` which is missing a lib target
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.51s

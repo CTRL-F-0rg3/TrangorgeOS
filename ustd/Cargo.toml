@@ -18,7 +18,13 @@
 #             the panic hook, and the `tgs` prelude.
 #   tgs-init  a binary that exercises the whole `std` surface.
 #
-# See README.md for the build command and SYSCALLS.md for the kernel contract.
+# And, for running binaries that were *not* built here at all:
+#
+#   compat/elf      ELF64 parsing, tested against real Linux binaries.
+#   compat/loader   segment mapping, symbol resolution, relocation — our ld.so.
+#
+# See README.md for the build command, SYSCALLS.md for the kernel contract, and
+# compat/README.md for the Linux ABI compatibility layer.
 
 [workspace]
 resolver = "2"
@@ -27,8 +33,9 @@ members = [
     "rt",
     "init",
     "hal",
+    "compat/elf",
 ]
-# Added as they are written: "libc", "rt", "init".
+# Added as they are written: "compat/loader", "compat/vdso".
 
 [workspace.package]
 version = "0.1.0"

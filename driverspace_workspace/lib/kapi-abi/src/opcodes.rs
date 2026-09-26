@@ -207,6 +207,79 @@ pub enum DsCmd {
     /// arg0 = fault index; reply arg0 = pending total, reply payload is
     /// `IommuFaultPayload`.
     IommuFaultRead = 0x0A0A,
+
+    // ── Video / Video-TrangorgeOS (0x0Cxx) ──────────────────────────
+    // The device-class contract in `ds-fw-video` is built on these. They follow
+    // the ALSA decomposition on purpose: enumerate the engines, then create a
+    // session, then move frames. The split matters because the three stages
+    // have very different privilege - listing an engine is harmless, feeding
+    // it bytes and reading frames back is not.
+    //
+    // arg0 = engine index; reply arg0 = total, reply payload is `EngineInfo`.
+    VideoEngineEnumerate = 0x0C00,
+    /// arg0 = engine index; reply payload is `EngineInfo`.
+    VideoEngineQuery = 0x0C01,
+    /// Payload is `SessionRequest`; reply arg0 = the new stream handle.
+    VideoSessionCreate = 0x0C02,
+    /// arg0 = stream handle.
+    VideoSessionDestroy = 0x0C03,
+    /// arg0 = stream handle; reply payload is `SessionState`.
+    VideoSessionState = 0x0C04,
+    /// Payload is `SubmitRequest` plus the compressed bytes; reply arg0 is the
+    /// ticket the caller uses to poll for the decoded result.
+    ///
+    /// The bitstream itself goes through shared memory, not through the message
+    /// registers: an I-frame is megabytes and `DsMsg` is 64 bytes.
+    VideoSubmit = 0x0C05,
+    /// arg0 = stream handle; arg1 = ticket; reply payload is `FrameInfo`, or
+    /// `FrameInfo::absent()` when the frame is not ready yet.
+    ///
+    /// "Not ready yet" is a success with a flag, not an error. A decode is
+    /// asynchronous by construction, and modelling that as `Timeout` would make
+    /// every client spin on an error code.
+    VideoAcquire = 0x0C06,
+    /// arg0 = buffer handle; releases a frame the caller was holding.
+    VideoRelease = 0x0C07,
+    /// arg0 = stream handle; reply arg0 is the number of frames dropped by the
+    /// driver because a consumer was too slow.
+    VideoDropCount = 0x0C08,
+    /// Payload is `SinkRequest`; reply arg0 = the new sink id. Registers a
+    /// frame consumer - a graphics server, an NPU, or a capture writer.
+    VideoSinkRegister = 0x0C09,
+    /// arg0 = sink id.
+    VideoSinkUnregister = 0x0C0A,
+
+    // ── Power / Power-TrangorgeOS (0x0Dxx) ───────────────────────────
+    // Power is the odd one out among the device classes: it is *safety*
+    // relevant and almost entirely read-mostly. Charging a battery is the only
+    // operation here that can damage hardware or start a fire, which is why
+    // `PowerSetPolicy` is behind its own capability and why the read opcodes
+    // need none at all.
+    //
+    // The read opcodes need no capability: a machine with no policy grant still
+    // has to be able to show "17%, charging" to a user, and a battery gauge
+    // leaks nothing that is not already on the lid.
+    /// arg0 = source index; reply arg0 = total, reply payload is `PowerInfo`.
+    PowerEnumerate = 0x0D00,
+    /// arg0 = source index; reply payload is `PowerInfo`.
+    PowerQuery = 0x0D01,
+    /// arg0 = source index; reply payload is the current `PowerStatus`.
+    ///
+    /// Separate from `PowerQuery` because the descriptor is static and the
+    /// status is sampled. A caller that polls should not re-read the name.
+    PowerStatus = 0x0D02,
+    /// Payload is `PowerPolicy`; sets charge thresholds. Needs
+    /// `CapId::POWER_POLICY`.
+    PowerSetPolicy = 0x0D03,
+    /// arg0 = source index; reply arg0 = the low-battery flag, 0 or 1.
+    PowerLowPending = 0x0D04,
+    /// arg0 = source index; reply arg0 = seconds of runtime left at the current
+    /// rate, or `u64::MAX` when the rate is too low to extrapolate.
+    ///
+    /// A "time remaining" that is computed from a battery sitting idle is
+    /// fiction, so the driver answers `u64::MAX` rather than a confident wrong
+    /// number. See `PowerStatus::runtime_seconds`.
+    PowerTimeRemaining = 0x0D05,
 }
 
 impl DsCmd {
@@ -355,6 +428,23 @@ impl DsCmd {
             0x0A08 => Some(Self::IommuInvalidate),
             0x0A09 => Some(Self::IommuReservedRegions),
             0x0A0A => Some(Self::IommuFaultRead),
+            0x0C00 => Some(Self::VideoEngineEnumerate),
+            0x0C01 => Some(Self::VideoEngineQuery),
+            0x0C02 => Some(Self::VideoSessionCreate),
+            0x0C03 => Some(Self::VideoSessionDestroy),
+            0x0C04 => Some(Self::VideoSessionState),
+            0x0C05 => Some(Self::VideoSubmit),
+            0x0C06 => Some(Self::VideoAcquire),
+            0x0C07 => Some(Self::VideoRelease),
+            0x0C08 => Some(Self::VideoDropCount),
+            0x0C09 => Some(Self::VideoSinkRegister),
+            0x0C0A => Some(Self::VideoSinkUnregister),
+            0x0D00 => Some(Self::PowerEnumerate),
+            0x0D01 => Some(Self::PowerQuery),
+            0x0D02 => Some(Self::PowerStatus),
+            0x0D03 => Some(Self::PowerSetPolicy),
+            0x0D04 => Some(Self::PowerLowPending),
+            0x0D05 => Some(Self::PowerTimeRemaining),
             _ => None,
         }
     }

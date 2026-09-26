@@ -24,6 +24,13 @@
 #![no_std]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+// `Phdrs::loadables` and `Dynamic::needed` return `Vec`. That is not laziness: a
+// loader that cannot hold its own segment list has to allocate before it has an
+// allocator, so the dependency is declared and explicit rather than smuggled in
+// through `std`. Each module imports what it uses rather than the root
+// re-exporting it, so `use tgs_elf::*` does not drag `alloc` into every caller.
+extern crate alloc;
+
 use core::fmt;
 
 pub mod dynamic;
@@ -33,11 +40,13 @@ mod header;
 mod phdr;
 mod symbol;
 
-pub use dynamic::{Dynamic, Needed, Tag};
-pub use header::{Class, Ehdr, Endian, Ident, Machine, Type};
-pub use phdr::{Flags, Phdr, Phdrs};
-pub use reloc::{Rela, RelaIter, RelocType};
-pub use symbol::{Section, Sym, SymIter, StBind, StType, Visibility};
+pub use dynamic::{Dynamic, DynamicIter, Entry, Needed, Tag};
+pub use header::{Class, Ehdr, Endian, Ident, Machine, Type, EI_NIDENT, EM_X86_64};
+pub use phdr::{Flags, Phdr, Phdrs, PHDR_SIZE};
+pub use reloc::{
+    relr_decode, relr_table, Rela, RelaIter, RelocType, RELA_SIZE, RELR_BITMAP,
+};
+pub use symbol::{Section, StBind, StType, Sym, SymTable, Visibility, SHN_ABS, SHN_UNDEF, SYM_SIZE};
 
 /// Everything that can be wrong with an image.
 ///
@@ -68,13 +77,33 @@ pub enum Error {
     /// A `PT_LOAD`'s `p_filesz` exceeds its `p_memsz`, which would mean the
     /// loader has to invent the tail.
     BadSegmentSize,
-    /// Two segments overlap in the address space. Valid images do not do this,
+    /// Two `PT_LOAD`s overlap in the address space. Valid images do not do this,
     /// and an overlap means the load order decides the winner.
     OverlappingSegments,
-    /// A dynamic entry with a tag the parser does not know how to size.
+    /// A dynamic table that is not a whole number of `Elf64_Dyn`, or one that
+    /// ends without a `DT_NULL`.
     BadDynamicEntry,
-    /// A symbol or string offset outside the image.
+    /// A symbol, string or relocation offset outside the image.
     BadOffset,
+    /// A relocation that needs an input the caller did not supply — a symbol for
+    /// `GlobDat`, or `fs_base` for a TLS relocation.
+    MissingInput(RelocKindHint),
+}
+
+/// Which input a [`Error::MissingInput`] relocation wanted.
+///
+/// The loader turns this into a message, so it is worth distinguishing "you did
+/// not resolve this symbol" from "TLS is not set up yet": the first is a bug in
+/// the symbol search order, the second is a missing kernel feature, and they lead
+/// to completely different fixes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelocKindHint {
+    /// The relocation named a symbol and none was given.
+    UnresolvedSymbol,
+    /// The relocation is a thread-local one and needs `fs_base`.
+    NeedsTls,
+    /// The relocation type is not implemented.
+    Unsupported,
 }
 
 impl fmt::Display for Error {
@@ -91,8 +120,15 @@ impl fmt::Display for Error {
             Error::NoLoadableSegment => f.write_str("no PT_LOAD segment"),
             Error::BadSegmentSize => f.write_str("p_filesz exceeds p_memsz"),
             Error::OverlappingSegments => f.write_str("two PT_LOAD segments overlap"),
-            Error::BadDynamicEntry => f.write_str("a PT_DYNAMIC entry is misaligned"),
+            Error::BadDynamicEntry => f.write_str("the dynamic table is malformed"),
             Error::BadOffset => f.write_str("an offset points outside the image"),
+            Error::MissingInput(h) => match h {
+                RelocKindHint::UnresolvedSymbol => f.write_str("relocation symbol unresolved"),
+                RelocKindHint::NeedsTls => {
+                    f.write_str("thread-local relocation needs fs_base, which is unset")
+                }
+                RelocKindHint::Unsupported => f.write_str("relocation type not implemented"),
+            },
         }
     }
 }
