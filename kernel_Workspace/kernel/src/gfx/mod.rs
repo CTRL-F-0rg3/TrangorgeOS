@@ -127,3 +127,96 @@ pub extern "C" fn gfx_fb_info_raw(w: *mut u32,
         }
     }
 }
+
+// ── the `hw-sys` FFI surface ──────────────────────────────────────────────────
+//
+// `kernel-drivers/{gfx,hdmi,displayport}` are standalone `no_std` crates that
+// reach the runtime through the thin `extern "C"` block in `hw-sys`. Those
+// symbols had no definitions on this side, so those libraries could not link;
+// they are provided here, which is what makes the exported driver libraries
+// usable rather than merely buildable.
+
+/// The framebuffer, in the `hw-sys` calling convention.
+///
+/// # Why this is not `console::fb_info`
+///
+/// `hw-sys` declares the stride in *bytes* and asks for a *physical* address,
+/// and `console::fb_info` returns pixels and a mapped pointer. Two different
+/// answers to the same question is the drift `FramebufferDesc` exists to
+/// remove, so this answers in the descriptor's units.
+///
+/// # Why it reports any format
+///
+/// The old path returned false for anything that was not `Rgb888`, which meant
+/// that on a `Mode13h` console it reported "no framebuffer" for a framebuffer
+/// that plainly existed. A driver asking what is on screen deserves the truth
+/// about the console frame too, especially the format.
+#[no_mangle]
+pub extern "C" fn fb_info(
+    out_w: *mut u32,
+    out_h: *mut u32,
+    out_stride: *mut u32,
+    out_phys: *mut u64,
+) -> bool {
+    if out_w.is_null() || out_h.is_null() || out_stride.is_null() || out_phys.is_null() {
+        return false;
+    }
+
+    let desc = console::fb_desc();
+    if !desc.is_usable() {
+        return false;
+    }
+
+    // SAFETY: all four pointers were checked non-null above, and each is
+    // written exactly once.
+    unsafe {
+        *out_w = desc.width;
+        *out_h = desc.height;
+        *out_stride = desc.stride_px;
+        *out_phys = desc.phys;
+    }
+    true
+}
+
+/// Map `len` bytes of device memory and return the virtual address.
+///
+/// The mapping is device memory: a driver that read a register back
+/// immediately after writing it would otherwise read its own write sitting in
+/// a cache, and MMIO to a display engine is precisely the case where the
+/// device never signals that the write landed.
+#[no_mangle]
+pub extern "C" fn mmio_map(phys: u64, len: usize, out_virt: *mut u64) -> bool {
+    if out_virt.is_null() || len == 0 {
+        return false;
+    }
+    // Mapping address zero maps whatever physical page is there, which is never
+    // what a caller meant.
+    if phys == 0 {
+        return false;
+    }
+
+    let mut virt: u64 = 0;
+    if !unsafe { crate::mm::ffi::vmm_map_device(phys, len, &mut virt as *mut u64) } {
+        return false;
+    }
+
+    // SAFETY: `out_virt` was checked non-null above and written once.
+    unsafe { *out_virt = virt };
+    true
+}
+
+/// Undo a mapping made by [`mmio_map`].
+///
+/// The length must match the one the mapping was made with: a shorter unmap
+/// leaves the tail mapped and still writable, and a longer one tears down pages
+/// that belong to something else.
+#[no_mangle]
+pub extern "C" fn mmio_unmap(virt: u64, len: usize) {
+    if virt == 0 || len == 0 {
+        return;
+    }
+    unsafe {
+        crate::mm::ffi::vmm_unmap_device(virt, len);
+    }
+}
+

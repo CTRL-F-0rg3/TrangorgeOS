@@ -6,10 +6,13 @@ edition.workspace = true
 [dependencies]
 gfx-protocol = { path = "../../lib/gfx-protocol" }
 
-# Kernel primitives (IPC rings, memory, capabilities)
-kernel = { workspace = true }
-
-# DriverSpace libraries (communication with vgpu)
+# DriverSpace libraries: the transport to the GPU driver, and the DMA
+# allocations the compositor stages frames in.
+#
+# There is deliberately no dependency on `kernel` here. This is server side:
+# it reaches hardware only through `ds-manager` over IPC, and linking the
+# kernel in would grant it a path around exactly the checks that are supposed
+# to stand between it and the device.
 kapi-abi = { workspace = true }
 kapi-syscall = { workspace = true }
 ds-ipc = { workspace = true }

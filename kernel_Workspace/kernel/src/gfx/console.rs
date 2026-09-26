@@ -2,6 +2,7 @@ use super::font::FONT8X8;
 use super::framebuffer::{Framebuffer, PixelFormat, PALETTE16, rgb};
 use super::galaxy;
 use crate::mm::ffi;
+use kapi_abi::payloads::gpu::{FramebufferDesc, GpuFormat};
 
 const GLYPH_W: usize = 8;
 const GLYPH_H: usize = 8;
@@ -51,6 +52,46 @@ pub fn fb_info() -> (u32, u32, u32, u64) {
                 FB_PHYS,
             ),
             _ => (0, 0, 0, 0),
+        }
+    }
+}
+
+/// The framebuffer the system is drawing on, in the units the ABI uses.
+///
+/// # Why this is not `console::fb_info`
+///
+/// `fb_info` returns a stride in *pixels* and a *virtual* address, and it
+/// answers `(0, 0, 0, 0)` for anything that is not `Rgb888`. Neither is
+/// something a driver can use: a device needs a physical address, and a display
+/// on a palettised console frame is a real thing this system does. This
+/// reports the same framebuffer in the form `kapi_abi::FramebufferDesc`
+/// describes, and says so for any pixel format.
+///
+/// The stride is in bytes, matching the descriptor: dividing by four here is
+/// where the two unit conventions drifted apart in the first place.
+pub fn fb_desc() -> FramebufferDesc {
+    unsafe {
+        let Some(fb) = FB.as_ref() else {
+            return FramebufferDesc::default();
+        };
+
+        if FB_PHYS == 0 || fb.ptr.is_null() || fb.width == 0 || fb.height == 0 {
+            return FramebufferDesc::default();
+        }
+
+        FramebufferDesc {
+            // The *physical* base, not the mapped pointer: this is the value a
+            // device's scanout engine or a DMA mapping is programmed with.
+            phys: FB_PHYS,
+            width: fb.width as u32,
+            height: fb.height as u32,
+            stride_px: fb.stride as u32,
+            format: match fb.format {
+                PixelFormat::Rgb888 => GpuFormat::XRGB8888,
+                PixelFormat::Indexed8 => GpuFormat::Indexed8,
+                PixelFormat::Planar4 => GpuFormat::Indexed8,
+            },
+            flipped: if super::framebuffer::FLIP { 1 } else { 0 },
         }
     }
 }

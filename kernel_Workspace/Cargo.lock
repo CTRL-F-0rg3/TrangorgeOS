@@ -110,6 +110,7 @@ dependencies = [
  "bitflags",
  "bootloader",
  "gluecore",
+ "kapi-abi",
  "kstd_base",
  "kstd_core",
  "lazy_static",

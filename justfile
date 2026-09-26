@@ -20,7 +20,7 @@ ds-libs:
 
 # Build the Graphics workspace (protocols, server, API).
 gfx-libs:
-    cargo build --manifest-path gfx_workspace/Cargo.toml
+    cargo build --manifest-path gfx_protocol_workspace/Cargo.toml
 
 # Build the Vise LG language workspace (compiler, runtime, IR).
 vise-libs:
@@ -104,7 +104,7 @@ check:
     cargo check --manifest-path kernel-drivers/Cargo.toml
     cargo check --manifest-path kernel_Workspace/Cargo.toml
     cargo check --manifest-path driverspace_workspace/Cargo.toml
-    cargo check --manifest-path gfx_workspace/Cargo.toml
+    cargo check --manifest-path gfx_protocol_workspace/Cargo.toml
     cargo check --manifest-path vise_lg_workspace/Cargo.toml
 
 # Clean all build artifacts across all workspaces.
@@ -112,6 +112,6 @@ clean:
     cargo clean --manifest-path kernel-drivers/Cargo.toml
     cargo clean --manifest-path kernel_Workspace/Cargo.toml
     cargo clean --manifest-path driverspace_workspace/Cargo.toml
-    cargo clean --manifest-path gfx_workspace/Cargo.toml
+    cargo clean --manifest-path gfx_protocol_workspace/Cargo.toml
     cargo clean --manifest-path vise_lg_workspace/Cargo.toml
     @echo "[just] all workspaces cleaned"

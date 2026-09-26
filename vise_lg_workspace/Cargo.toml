@@ -17,5 +17,9 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-gfx-protocol = { path = "../gfx_workspace/lib/gfx-protocol" }
-gfx-api = { path = "../gfx_workspace/crates/gfx-api" }
+# The graphics crates live in `gfx_protocol_workspace`; this is where the
+# renamed path is corrected. Nothing in the workspace declares these yet, so
+# cargo does not currently resolve them - they are here for the crates that
+# will consume the display protocol.
+gfx-protocol = { path = "../gfx_protocol_workspace/lib/gfx-protocol" }
+gfx-api = { path = "../gfx_protocol_workspace/crates/gfx-api" }

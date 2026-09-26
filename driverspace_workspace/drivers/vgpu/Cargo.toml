@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# `src/main.rs` declares these with `extern crate`, which under edition 2024
+# still needs them to be real dependencies rather than implicit sysroot crates.
+# `lib/` only - a driver must never depend on `crates/` (Workspace.md rule 1).
+kapi-abi = { path = "../../lib/kapi-abi" }
+kapi-syscall = { path = "../../lib/kapi-syscall" }
+ds-ipc = { path = "../../lib/ds-ipc" }
+ds-log = { path = "../../lib/ds-log" }
+ds-mem = { path = "../../lib/ds-mem" }

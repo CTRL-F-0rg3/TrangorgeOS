@@ -20,6 +20,12 @@ lazy_static = { version = "1.0", features = ["spin_no_std"] }
 # Strict shared-memory communication protocol (independent library).
 tg-comm = { path = "../../lib" }
 
+# The driver-space ABI. The kernel is the kernel-side end of the graphics
+# chain, so it has to speak the same `FramebufferDesc` the drivers and the
+# display server do - otherwise the three layers each invent their own packing,
+# which is exactly the drift this dependency removes.
+kapi-abi = { path = "../../driverspace_workspace/lib/kapi-abi" }
+
 # Zależności z core (jeśli kernel z nich korzysta):
 kstd_core = { path = "../core/kstd_core" }
 kstd_base = { path = "../core/kstd_base" }
