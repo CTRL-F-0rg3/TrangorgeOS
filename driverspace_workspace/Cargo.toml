@@ -8,6 +8,8 @@ members = [
     "drivers/amdgpu-driver",
     "drivers/audiodriver",
     "drivers/intelgpu-driver",
+    "drivers/IntelGpu-TrangorgeOS",
+    "drivers/AmdGpu-TrangorgeOS",
     "drivers/iommu-TrangorgeOS",
     "drivers/netcam_driver",
     "drivers/vgpu",

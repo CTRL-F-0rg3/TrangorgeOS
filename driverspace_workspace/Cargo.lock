@@ -56,6 +56,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "amd-gpu-trangorgeos"
+version = "0.1.0"
+dependencies = [
+ "ds-fw-gpu",
+ "kapi-abi",
+]
+
+[[package]]
 name = "amdgpu-driver"
 version = "0.1.0"
 
@@ -157,6 +165,11 @@ dependencies = [
 [[package]]
 name = "ds-manager"
 version = "0.1.0"
+dependencies = [
+ "ds-detect",
+ "heapless",
+ "kapi-abi",
+]
 
 [[package]]
 name = "ds-mem"
@@ -195,6 +208,14 @@ checksum = "25ba4bd83f9415b58b4ed8dc5714c76e626a105be4646c02630ad730ad3b5aa4"
 dependencies = [
  "hash32",
  "stable_deref_trait",
+]
+
+[[package]]
+name = "intel-gpu-trangorgeos"
+version = "0.1.0"
+dependencies = [
+ "ds-fw-gpu",
+ "kapi-abi",
 ]
 
 [[package]]

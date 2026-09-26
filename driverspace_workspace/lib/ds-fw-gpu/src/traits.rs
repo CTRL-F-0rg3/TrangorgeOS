@@ -20,6 +20,8 @@
 //! decides what that means. Encoding a vendor command is the driver's job, and
 //! duplicating it here would put a second, divergent copy in the framework.
 
+use core::any::Any;
+
 use kapi_abi::{
     DsError,
     payloads::gpu::{
@@ -39,7 +41,11 @@ pub use kapi_abi::payloads::gpu::GpuVendor as Vendor;
 ///
 /// The trait is object-safe: a service owns `Box<dyn GpuDevice>` and never
 /// needs to know the driver's concrete type.
-pub trait GpuDevice {
+///
+/// `Any` is a supertrait only so the framework can `downcast` to a concrete
+/// driver in its own tests. A driver gains nothing from it, and no production
+/// path downcasts - which is why it carries no methods.
+pub trait GpuDevice: Any {
     // ── discovery ───────────────────────────────────────────────────────────────────────────────────
 
     /// Which vendor this driver speaks for.
@@ -158,4 +164,12 @@ pub trait GpuDevice {
         code: u32,
         arg: u64,
     ) -> Result<u64, DsError>;
+
+    /// This driver as `Any`, for the framework's own tests.
+    ///
+    /// `downcast_mut` lives on `dyn Any` rather than on every trait, so a
+    /// trait object of `GpuDevice` has to hand one over. A default body is not
+    /// possible - it would need `Self: Sized`, which would make the trait not
+    /// object-safe - so this is a one-line method a driver writes once.
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }

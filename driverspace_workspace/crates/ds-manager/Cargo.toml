@@ -3,4 +3,14 @@ name = "ds-manager"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "ds_manager"
+path = "src/lib.rs"
+
 [dependencies]
+# `crates/` may only depend on `lib/` (Workspace.md, rule 1).
+ds-detect = { path = "../ds-detect" }
+kapi-abi = { path = "../../lib/kapi-abi" }
+
+# Fixed-capacity collections: this runs before any allocator exists.
+heapless = { version = "0.9.2", default-features = false }

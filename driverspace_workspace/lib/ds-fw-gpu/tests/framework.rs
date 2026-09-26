@@ -35,6 +35,22 @@ fn intel_service() -> GpuService {
     GpuService::new(Box::new(MockGpu::intel()))
 }
 
+/// A service wrapping a mock the test will then configure.
+///
+/// The mock has to outlive the `Box` it is moved into, so it is created here
+/// and borrowed, rather than being built inline at the call site.
+fn service_from(mock: MockGpu) -> GpuService {
+    GpuService::new(Box::new(mock))
+}
+
+/// Make the service's mock refuse the next submission.
+fn make_submit_fail(service: &mut GpuService) {
+    let mock = service
+        .device_as_mut::<MockGpu>()
+        .expect("the service wraps a MockGpu");
+    mock.fail_submit = true;
+}
+
 /// The payload for `GpuContextCreate` on device 0.
 fn context_payload() -> Vec<u8> {
     let mut p = Vec::new();
@@ -60,7 +76,9 @@ fn submit_payload(context: u32) -> Vec<u8> {
 /// Create a context and return its handle, asserting it worked.
 fn make_context(service: &mut GpuService) -> u32 {
     let mut reply = Vec::new();
-    let request = Request::new(msg(DsCmd::GpuContextCreate), &context_payload());
+    // The payload has to outlive the `Request` that borrows it.
+    let payload = context_payload();
+    let request = Request::new(msg(DsCmd::GpuContextCreate), &payload);
     let out = service.dispatch(&request, PRIVILEGED, &mut reply);
     assert!(out.is_ok(), "create failed with status {}", out.status);
     out.arg0 as u32
@@ -120,7 +138,8 @@ fn a_client_that_may_look_may_not_drive() {
     // `GPU_ENUMERATE` alone must not be enough to create a context.
     let mut service = amd_service();
     let mut reply = Vec::new();
-    let request = Request::new(msg(DsCmd::GpuContextCreate), &context_payload());
+    let payload = context_payload();
+    let request = Request::new(msg(DsCmd::GpuContextCreate), &payload);
     let out = service.dispatch(&request, CapId::GPU_ENUMERATE, &mut reply);
     assert_eq!(out.status, DsError::PermissionDenied as i32);
     assert_eq!(service.live_contexts(), 0, "the driver was never asked");
@@ -193,7 +212,8 @@ fn the_context_lifecycle_works_end_to_end() {
     let mut service = amd_service();
     let mut reply = Vec::new();
 
-    let request = Request::new(msg(DsCmd::GpuContextCreate), &context_payload());
+    let payload = context_payload();
+    let request = Request::new(msg(DsCmd::GpuContextCreate), &payload);
     let out = service.dispatch(&request, PRIVILEGED, &mut reply);
     assert!(out.is_ok(), "create failed with status {}", out.status);
     let context = out.arg0 as u32;
@@ -372,11 +392,11 @@ fn a_truncated_submission_is_refused() {
 #[test]
 fn a_driver_refusal_reaches_the_client_unchanged() {
     // The framework must not report its own success when the driver refused.
-    let mut service = amd_service();
+    let mut service = service_from(MockGpu::amd());
     let mut reply = Vec::new();
     let context = make_context(&mut service);
     let payload = submit_payload(context);
-    service.device_mut().fail_submit = true;
+    make_submit_fail(&mut service);
 
     let submit = Request::new(msg_args(DsCmd::GpuSubmit, context as u64, 0), &payload);
     let out = service.dispatch(&submit, PRIVILEGED, &mut reply);
