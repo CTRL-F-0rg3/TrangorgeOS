@@ -158,7 +158,7 @@ pub struct GpuService {
     vendor: Vendor,
     /// Live contexts, so the framework can enforce lifetime and, eventually,
     /// hold work off a busy device.
-    contexts: crate::types::HandleTable<ContextInfo, crate::MAX_CONTEXTS>,
+    contexts: crate::types::HandleTable<ContextInfo, { crate::MAX_CONTEXTS }>,
 }
 
 impl GpuService {
@@ -198,6 +198,15 @@ impl GpuService {
     #[inline]
     pub fn device_mut(&mut self) -> &mut dyn GpuDevice {
         self.device.as_mut()
+    }
+
+    /// Reach a concrete driver, for the framework's own tests.
+    ///
+    /// This goes through `as_any_mut` because `downcast_mut` belongs to `Any`,
+    /// not to every trait. Production code has no use for it, which is why it
+    /// is a separate method rather than part of the contract.
+    pub fn device_as_mut<T: GpuDevice + 'static>(&mut self) -> Option<&mut T> {
+        self.device.as_mut().as_any_mut().downcast_mut::<T>()
     }
 
     /// How many contexts are live.

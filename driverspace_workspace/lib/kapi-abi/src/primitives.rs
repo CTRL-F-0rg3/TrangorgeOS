@@ -78,6 +78,44 @@ impl CapId {
     pub const fn remove(self, other: Self) -> Self {
         Self(self.0 & !other.0)
     }
+
+    /// The bits present in both sets.
+    ///
+    /// This is what a grant is: what a driver asked for, intersected with what
+    /// the manager is willing to hand out. The bits that do not survive are
+    /// *withheld* rather than refused, so the driver still starts and can
+    /// report what it is missing.
+    #[inline]
+    pub const fn intersection(self, other: Self) -> Self {
+        Self(self.0 & other.0)
+    }
+
+    /// The bits in `self` that are not in `other`.
+    ///
+    /// The complement of [`CapId::intersection`], and what a boot log prints as
+    /// "asked for, not granted".
+    #[inline]
+    pub const fn difference(self, other: Self) -> Self {
+        Self(self.0 & !other.0)
+    }
+
+    /// Whether no bit is set.
+    #[inline]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+}
+
+impl Default for CapId {
+    /// The empty set: a driver that has been granted nothing may do nothing.
+    ///
+    /// `Default` means *no capabilities*, not *all of them*. A driver that
+    /// forgot to ask should get nothing, because the failure that matters is a
+    /// driver reaching hardware it was never given.
+    #[inline]
+    fn default() -> Self {
+        Self::NONE
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

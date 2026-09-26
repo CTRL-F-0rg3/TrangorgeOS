@@ -1,0 +1,9 @@
+[package]
+name = "intel-gpu-trangorgeos"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# The framework, for the `GpuDevice` contract this driver implements.
+ds-fw-gpu = { path = "../../lib/ds-fw-gpu" }
+kapi-abi = { path = "../../lib/kapi-abi" }

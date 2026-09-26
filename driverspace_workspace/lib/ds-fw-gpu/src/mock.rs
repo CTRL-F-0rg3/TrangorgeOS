@@ -12,7 +12,7 @@
 //! covers the contract that `AmdGpu-TrangorgeOS` and `IntelGpu-TrangorgeOS`
 //! both have to satisfy.
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::vec::Vec;
 
 use kapi_abi::{
     DsError,
@@ -121,7 +121,7 @@ impl GpuDevice for MockGpu {
                 _ => 0xFFFF,
             },
             device_id: 0x1234,
-            caps: GpuCaps::RING_SUBMIT | GpuCaps::HW_FENCE,
+            caps: (GpuCaps::RING_SUBMIT | GpuCaps::HW_FENCE).bits(),
             vram_size: 8 << 30,
             mmio_size: 16 << 20,
             clock_mhz: 1200,
@@ -279,5 +279,9 @@ impl GpuDevice for MockGpu {
     ) -> Result<u64, DsError> {
         self.calls.push(Call::VendorSpecific(index.index(), code, arg));
         Ok(arg.wrapping_add(1))
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
+        self
     }
 }
