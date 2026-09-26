@@ -58,6 +58,43 @@ pub enum DsCmd {
     GfxCmdSubmit = 0x0308,
     GfxCmdWait = 0x0309,
 
+    // ── GPU driver (0x0Bxx) ─────────────────────────────────────────────
+    // The opcodes above describe the *display* side: a framebuffer, a mode and
+    // a surface. A real GPU driver needs more than that, and these are what
+    // the device-class contract in `ds-fw-gpu` is built on.
+    //
+    // They are read-only: enumerate the GPUs, read one descriptor, and read a
+    // mode back. Everything that allocates or drives the device needs
+    // `CapId::GPU_ENUMERATE` (read) or `CapId::GPU_DEVICE` (allocate, submit).
+    //
+    // arg0 = GPU index; reply arg0 = the total count, reply payload is
+    // `GpuInfo`.
+    GpuEnumerate = 0x0B00,
+    /// arg0 = GPU index; reply payload is `GpuInfo`.
+    GpuInfo = 0x0B01,
+    /// Payload is `GpuContextRequest`; reply payload is `GpuContextInfo`.
+    GpuContextCreate = 0x0B02,
+    /// arg0 = context handle.
+    GpuContextDestroy = 0x0B03,
+    /// Payload is `GpuBufferRequest`; reply payload is `GpuBuffer`.
+    GpuBufferAlloc = 0x0B04,
+    /// arg0 = buffer handle.
+    GpuBufferFree = 0x0B05,
+    /// arg0 = buffer handle; reply arg0 is the fence it has reached.
+    GpuBufferWait = 0x0B06,
+    /// Payload is `GpuSubmit`; reply arg0 is the fence value it will signal.
+    GpuSubmit = 0x0B07,
+    /// arg0 = context handle; reply payload is `GpuFence`.
+    GpuFenceQuery = 0x0B08,
+    /// Payload is `GpuShaderRequest` plus its source; reply is `GpuShader`.
+    GpuShaderCompile = 0x0B09,
+    /// arg0 = shader handle.
+    GpuShaderFree = 0x0B0A,
+    /// Payload is `GpuResetRequest`.
+    GpuReset = 0x0B0B,
+    /// arg0 = `GpuFormat` as a number; reply arg0 is the stride in bytes.
+    GpuFormatStride = 0x0B0C,
+
     AudPlay = 0x0400,
     AudStop = 0x0401,
     AudCapture = 0x0402,
@@ -246,6 +283,19 @@ impl DsCmd {
             0x0307 => Some(Self::GfxSurfaceCommit),
             0x0308 => Some(Self::GfxCmdSubmit),
             0x0309 => Some(Self::GfxCmdWait),
+            0x0B00 => Some(Self::GpuEnumerate),
+            0x0B01 => Some(Self::GpuInfo),
+            0x0B02 => Some(Self::GpuContextCreate),
+            0x0B03 => Some(Self::GpuContextDestroy),
+            0x0B04 => Some(Self::GpuBufferAlloc),
+            0x0B05 => Some(Self::GpuBufferFree),
+            0x0B06 => Some(Self::GpuBufferWait),
+            0x0B07 => Some(Self::GpuSubmit),
+            0x0B08 => Some(Self::GpuFenceQuery),
+            0x0B09 => Some(Self::GpuShaderCompile),
+            0x0B0A => Some(Self::GpuShaderFree),
+            0x0B0B => Some(Self::GpuReset),
+            0x0B0C => Some(Self::GpuFormatStride),
             0x0400 => Some(Self::AudPlay),
             0x0401 => Some(Self::AudStop),
             0x0402 => Some(Self::AudCapture),
