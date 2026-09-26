@@ -206,9 +206,24 @@ impl<'a> SymTable<'a> {
     /// object's reference — a lookup that returns a local symbol yields a loader
     /// that works until two objects happen to share a name.
     pub fn lookup(&self, name: &[u8]) -> Option<Sym> {
-        self.iter().find(|(_, s)| {
-            s.is_defined() && s.bind != StBind::Local && self.string(s.name_off) == Some(name)
-        })
+        self.iter()
+            .find(|(_, s)| {
+                s.is_defined() && s.bind != StBind::Local && self.string(s.name_off) == Some(name)
+            })
+            .map(|(_, s)| s)
+    }
+
+    /// The index of the first defined symbol with this name.
+    ///
+    /// The loader needs the index, not the symbol: `r_info` addresses symbols by
+    /// position, and a relocator that looks a symbol up by name to find its
+    /// index has already thrown away the only thing that was unambiguous.
+    pub fn lookup_index(&self, name: &[u8]) -> Option<usize> {
+        self.iter()
+            .find(|(_, s)| {
+                s.is_defined() && s.bind != StBind::Local && self.string(s.name_off) == Some(name)
+            })
+            .map(|(i, _)| i)
     }
 }
 

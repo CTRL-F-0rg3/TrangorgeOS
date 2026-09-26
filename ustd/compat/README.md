@@ -86,14 +86,51 @@ recurse into the loader's copy.
 
 | Piece | State |
 |-------|-------|
-| `tgs-elf` — ELF64 parsing | **this directory, with host tests against real binaries** |
-| `tgs-loader` — segment mapping, `DT_*` walk, symbol resolution, relocation | **this directory, with host tests that relocate a real PIE** |
+| `tgs-elf` — ELF64 parsing | **done**, host-tested against `/bin/ls` and `libc.so.6` |
+| `tgs-loader` — segment mapping, `DT_*` walk, symbol resolution, relocation | not started |
 | The `0x2000` syscall block (`SYSCALLS.md`) | numbers reserved, kernel unimplemented |
 | `tgs-libc` — the glibc ABI, static part | `malloc` family, `stdin`/`stdout`, `open`/`read`/`write`, `clock_gettime`, `getrandom`, `exit_group`, `__errno_location`, `__cxa_*` |
 | `tgs-rt` — `_start`, auxv | exists, but does not yet build a process image |
 | Threads | **blocked on the kernel**: no `fs_base` |
 | vDSO | not started |
 | `dlopen`/`dlsym` | not started |
+
+### `-z relr`: the thing that would have bitten us
+
+The first version of the relocation test asserted the textbook layout: every
+`DT_JMPREL` entry is an `R_X86_64_JUMP_SLOT`. **It failed on this host's
+`/bin/ls`**, which has no `DT_JMPREL` at all. The real tag list is:
+
+```
+Needed=0x595 Init=0x3000 Fini=0x1cb94 InitArray=0x26d10 GnuHash=0x3c8
+StrTab=0x10c8 SymTab=0x468 Rela=0x18d8 RelaSz=0xb70 Flags=0x8 Flags1=0x8000001
+VerNeed=0x1808 VerSym=0x16fe Relr=0x58 RelrSz=0x2448 RelrEnt=0x8
+```
+
+Two things follow. The binary is linked **`-z now`** (`DF_1_PIE` in `DT_FLAGS_1`),
+so there is no lazy PLT binding at all. And its `R_X86_64_RELATIVE` relocations
+are **run-length encoded in `DT_RELR`**, which arrived in glibc 2.36.
+
+A loader written against the textbook description would parse this binary without
+complaint, find no PLT relocations, relocate nothing, and crash on the first
+access to a global — with nothing in the parser to point at the cause. So the
+`RELR` tags are named in `Tag` rather than left as `Other`, and a decoder exists
+in `reloc.rs`.
+
+**The decoder is not finished, and its documentation says so.** Only two RELR
+properties are confirmed by tests: the base is folded into every emitted address,
+and an all-zero bitmap is not mistaken for an address.
+
+Getting there took two failed versions of the test, both worth recording. The
+first assumed the textbook `DT_JMPREL` layout and failed, because a current
+`/bin/ls` is linked `-z now` and has none. The second asserted a hardcoded
+address list for the first RELR group — written from memory rather than read out
+of the diagnostic — and failed too, revealing that the first entry of a real
+table does **not** carry bit 63, contrary to the specification's wording. The
+fabricated constants were deleted rather than nudged until they passed. Whether
+a whole table decodes correctly is still unknown, because `DT_RELRSZ` runs past
+the end of `.rela.dyn` on this host; dump a real table with the `#[ignore]`d
+diagnostic before relying on `relr_decode`.
 
 ## The honest cost
 

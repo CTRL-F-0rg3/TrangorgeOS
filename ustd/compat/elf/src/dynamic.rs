@@ -10,6 +10,7 @@
 
 use super::phdr::{p_type, Phdrs};
 use super::{Error, Result};
+use alloc::vec::Vec;
 
 /// Size of `Elf64_Dyn`.
 pub const DYN_SIZE: usize = 16;
@@ -92,6 +93,19 @@ pub enum Tag {
     VerNeed,
     /// `DT_VERNEEDNUM`.
     VerNeedNum,
+    /// `DT_RELR`: the packed relative-relocation table, which replaced
+    /// run-length-encoded `R_X86_64_RELATIVE` entries in glibc 2.36.
+    Relr,
+    /// `DT_RELRSZ`.
+    RelrSz,
+    /// `DT_RELRENT`: the size of one `DT_RELR` entry, always 8.
+    RelrEnt,
+    /// `DT_FLAGS_1`.
+    Flags1,
+    /// `DT_VERDEF`: the version definitions this object provides.
+    VerDef,
+    /// `DT_VERDEFNUM`.
+    VerDefNum,
     /// A tag the loader does not know. Kept rather than dropped, because a
     /// dynamic table full of `Unknown` is itself a useful diagnostic.
     Other(i64),
@@ -130,6 +144,30 @@ impl Tag {
             26 => FiniArray,
             27 => InitArraySz,
             28 => FiniArraySz,
+            29 => RunPath,
+            30 => Flags,
+            32 => PreInitArray,
+            33 => PreInitArraySz,
+            0x6fff_fef5 => GnuHash,
+            0x6fff_fff0 => VerSym,
+            0x6fff_fffe => VerNeed,
+            0x6fff_ffff => VerNeedNum,
+            // The RELR tags, which arrived in glibc 2.36 and are present in
+            // every current `/bin/ls`. A loader that predates them and rejects
+            // unknown tags will fail to load anything modern, so they are
+            // named rather than left as `Other`.
+            35 => Relr,
+            36 => RelrSz,
+            37 => RelrEnt,
+            // 0x6fff_fffb is `DT_FLAGS_1`, and the value observed in a PIE is
+            // `DF_1_PIE`.
+            0x6fff_fffb => Flags1,
+            0x6fff_fffc => VerDef,
+            0x6fff_fffd => VerDefNum,
+            other => Other(other),
+        }
+    }
+}
 
 /// One `Elf64_Dyn`.
 #[derive(Debug, Clone, Copy)]
@@ -258,17 +296,4 @@ fn rd_u64(d: &[u8], o: usize) -> u64 {
     let mut b = [0u8; 8];
     b.copy_from_slice(&d[o..o + 8]);
     u64::from_le_bytes(b)
-}
-
-            29 => RunPath,
-            30 => Flags,
-            32 => PreInitArray,
-            33 => PreInitArraySz,
-            0x6fff_fef5 => GnuHash,
-            0x6fff_fff0 => VerSym,
-            0x6fff_fffe => VerNeed,
-            0x6fff_ffff => VerNeedNum,
-            other => Other(other),
-        }
-    }
 }

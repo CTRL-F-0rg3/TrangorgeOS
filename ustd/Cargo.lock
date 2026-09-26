@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "tgs-elf"
+version = "0.1.0"
+
+[[package]]
 name = "tgs-hal"
 version = "0.1.0"
 

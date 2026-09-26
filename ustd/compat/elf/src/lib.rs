@@ -24,6 +24,13 @@
 #![no_std]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+// `Phdrs::loadables` and `Dynamic::needed` return `Vec`. That is not laziness: a
+// loader that cannot hold its own segment list has to allocate before it has an
+// allocator, so the dependency is declared and explicit rather than smuggled in
+// through `std`. Each module imports what it uses rather than the root
+// re-exporting it, so `use tgs_elf::*` does not drag `alloc` into every caller.
+extern crate alloc;
+
 use core::fmt;
 
 pub mod dynamic;
@@ -36,7 +43,9 @@ mod symbol;
 pub use dynamic::{Dynamic, DynamicIter, Entry, Needed, Tag};
 pub use header::{Class, Ehdr, Endian, Ident, Machine, Type, EI_NIDENT, EM_X86_64};
 pub use phdr::{Flags, Phdr, Phdrs, PHDR_SIZE};
-pub use reloc::{Rela, RelaIter, RelocType, RELA_SIZE};
+pub use reloc::{
+    relr_decode, relr_table, Rela, RelaIter, RelocType, RELA_SIZE, RELR_BITMAP,
+};
 pub use symbol::{Section, StBind, StType, Sym, SymTable, Visibility, SHN_ABS, SHN_UNDEF, SYM_SIZE};
 
 /// Everything that can be wrong with an image.
