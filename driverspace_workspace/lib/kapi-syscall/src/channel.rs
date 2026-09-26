@@ -56,7 +56,7 @@ impl RingBuffer {
         tail >= head
     }
 
-    /// 队列中待读取的消息条数。
+    /// Number of messages still waiting to be read from the queue.
     pub fn len(&self) -> usize {
         let head = self.head.load(Ordering::Acquire);
         let tail = self.tail.load(Ordering::Acquire);

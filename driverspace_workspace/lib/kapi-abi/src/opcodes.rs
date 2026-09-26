@@ -16,9 +16,9 @@ pub enum DsCmd {
     SysYield = 0x0009,
     SysInfo = 0x000A,
     SysShutdown = 0x000B,
-    /// 按四字符签名索取一张 ACPI SDT 表。
-    /// 请求载荷为 `payloads::sys::AcpiTableRequest`；回复 `arg0` 为虚拟基址、
-    /// `arg1` 为表长度。
+    /// Fetch one ACPI SDT by its four-character signature.
+    /// The request payload is `payloads::sys::AcpiTableRequest`; the reply
+    /// carries the virtual base in `arg0` and the length in `arg1`.
     SysAcpiTable = 0x000C,
 
     IpcCreate = 0x0100,
@@ -66,6 +66,55 @@ pub enum DsCmd {
     AudStreamCreate = 0x0405,
     AudStreamDestroy = 0x0406,
 
+    // ── ALSA / Alsa-TrangorgeOS (0x04xx) ─────────────────────────────
+    // The opcodes above are the legacy whole-buffer API used by the old
+    // `audiodriver`. The ones below are the ALSA-shaped vocabulary that
+    // `Alsa-TrangorgeOS` speaks: a card owns several PCM endpoints, each
+    // with its own handle, and hardware parameters are negotiated field by
+    // field before a stream can be prepared.
+    //
+    // arg0 = PCM index; reply arg0 = total endpoint count, reply payload is
+    // `PcmInfo`.
+    AlsaPcmEnumerate = 0x0410,
+    /// arg0 = index into the enumeration; reply payload is `PcmInfo`.
+    AlsaPcmInfo = 0x0411,
+    /// Payload is `PcmOpenPayload`; reply arg0 = the new PCM handle.
+    AlsaPcmOpen = 0x0412,
+    /// arg0 = PCM handle.
+    AlsaPcmClose = 0x0413,
+    /// arg0 = PCM handle; reply arg0 = the current `PcmState`.
+    AlsaPcmState = 0x0414,
+    /// Payload is `HwParamsQuery`; reply payload is `HwParamsResult`.
+    AlsaPcmHwParams = 0x0415,
+    /// arg0 = PCM handle; reply payload is the negotiated `PcmParams`.
+    AlsaPcmParams = 0x0416,
+    /// arg0 = PCM handle; the stream must be `Prepared`.
+    AlsaPcmPrepare = 0x0417,
+    /// arg0 = PCM handle; transitions `Prepared` -> `Running`.
+    AlsaPcmStart = 0x0418,
+    /// arg0 = PCM handle; arg1 = `DROP` or `DRAIN`.
+    AlsaPcmDrop = 0x0419,
+    /// arg0 = PCM handle; `Prepare` + `Start` in one step, as ALSA's
+    /// `snd_pcm_prepare` / `snd_pcm_start` pair.
+    AlsaPcmRecover = 0x041A,
+    /// arg0 = PCM handle; arg1 = frame count. The sample payload is
+    /// transferred through shared memory, not through the message registers,
+    /// because a period is far larger than `DsMsg` is.
+    AlsaPcmWrite = 0x041B,
+    /// arg0 = PCM handle; arg1 = frame count.
+    AlsaPcmRead = 0x041C,
+    /// arg0 = index; reply arg0 = total, reply payload is `MixerSelem`.
+    AlsaMixerEnumerate = 0x041D,
+    /// arg0 = element index; reply payload is `MixerValue`.
+    AlsaMixerRead = 0x041E,
+    /// arg0 = element index; reply payload is `MixerValue` with the new
+    /// value. The element must advertise `CtlAccess::WRITE`.
+    AlsaMixerWrite = 0x041F,
+    /// arg0 = jack index; reply payload is `JackState`.
+    AlsaJackState = 0x0420,
+    /// arg0 = index; reply arg0 = total, reply payload is `HwdepInfo`.
+    AlsaHwdepEnumerate = 0x0421,
+
     BlkRead = 0x0500,
     BlkWrite = 0x0501,
     BlkFlush = 0x0502,
@@ -95,29 +144,31 @@ pub enum DsCmd {
     GfxViseSetUniform = 0x0906,
 
     // ── IOMMU (0x0Axx) ──────────────────────────────────────────────
-    // 控制器发现：arg0 = 控制器索引，回复 arg0 = 控制器总数。
+    // Controller discovery: arg0 = controller index, reply arg0 = count.
     IommuEnumerate = 0x0A00,
-    /// arg0 = 控制器索引，回复载荷为 `IommuControllerInfo`。
+    /// arg0 = controller index; reply payload is `IommuControllerInfo`.
     IommuQueryController = 0x0A01,
-    /// arg0 = 控制器索引，回复 arg0 = 新建的域 id。
+    /// arg0 = controller index; reply arg0 = the new domain id.
     IommuDomainCreate = 0x0A02,
-    /// arg0 = 域 id。
+    /// arg0 = domain id.
     IommuDomainDestroy = 0x0A03,
-    /// 载荷为 `IommuBindPayload`。
+    /// Payload is `IommuBindPayload`.
     IommuBind = 0x0A04,
-    /// arg0 = 控制器索引，arg1 = 打包后的 requester id。
+    /// arg0 = controller index, arg1 = packed requester id.
     IommuUnbind = 0x0A05,
-    /// 载荷为 `IommuMapPayload`；未置 `FIXED` 时回复 arg0 = 分配的物理基址。
+    /// Payload is `IommuMapPayload`; without `FIXED` the reply arg0 is the
+    /// allocated physical base.
     IommuMap = 0x0A06,
-    /// 载荷为 `IommuUnmapPayload`。
+    /// Payload is `IommuUnmapPayload`.
     IommuUnmap = 0x0A07,
-    /// 载荷为 `IommuInvalidatePayload`；回复 arg0 = 实际完成的 `InvalidateScope`。
+    /// Payload is `IommuInvalidatePayload`; reply arg0 is the `InvalidateScope`
+    /// actually completed.
     IommuInvalidate = 0x0A08,
-    /// arg0 = 保留区索引，回复 arg0 = 保留区总数，回复载荷为
-    /// `IommuReservedRegionPayload`。
+    /// arg0 = reservation index; reply arg0 = total, reply payload is
+    /// `IommuReservedRegionPayload`.
     IommuReservedRegions = 0x0A09,
-    /// arg0 = 故障索引，回复 arg0 = 待处理故障总数，回复载荷为
-    /// `IommuFaultPayload`。
+    /// arg0 = fault index; reply arg0 = pending total, reply payload is
+    /// `IommuFaultPayload`.
     IommuFaultRead = 0x0A0A,
 }
 
@@ -202,6 +253,24 @@ impl DsCmd {
             0x0404 => Some(Self::AudAmpSet),
             0x0405 => Some(Self::AudStreamCreate),
             0x0406 => Some(Self::AudStreamDestroy),
+            0x0410 => Some(Self::AlsaPcmEnumerate),
+            0x0411 => Some(Self::AlsaPcmInfo),
+            0x0412 => Some(Self::AlsaPcmOpen),
+            0x0413 => Some(Self::AlsaPcmClose),
+            0x0414 => Some(Self::AlsaPcmState),
+            0x0415 => Some(Self::AlsaPcmHwParams),
+            0x0416 => Some(Self::AlsaPcmParams),
+            0x0417 => Some(Self::AlsaPcmPrepare),
+            0x0418 => Some(Self::AlsaPcmStart),
+            0x0419 => Some(Self::AlsaPcmDrop),
+            0x041A => Some(Self::AlsaPcmRecover),
+            0x041B => Some(Self::AlsaPcmWrite),
+            0x041C => Some(Self::AlsaPcmRead),
+            0x041D => Some(Self::AlsaMixerEnumerate),
+            0x041E => Some(Self::AlsaMixerRead),
+            0x041F => Some(Self::AlsaMixerWrite),
+            0x0420 => Some(Self::AlsaJackState),
+            0x0421 => Some(Self::AlsaHwdepEnumerate),
             0x0500 => Some(Self::BlkRead),
             0x0501 => Some(Self::BlkWrite),
             0x0502 => Some(Self::BlkFlush),

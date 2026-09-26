@@ -17,3 +17,4 @@ tmp/
 # ISO / demo image build output (tools/mkiso.sh, tools/run-iso.sh)
 /dist/
 
+dirtycode/

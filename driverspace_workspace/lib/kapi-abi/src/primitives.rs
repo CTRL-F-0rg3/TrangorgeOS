@@ -37,18 +37,25 @@ impl CapId {
     pub const DEV_MMIO: Self = Self(1 << 17);
     pub const DEV_IRQ: Self = Self(1 << 18);
 
-    /// IOMMU: 枚举控制器 / 查询描述符。
+    /// IOMMU: enumerate controllers / query descriptors.
     pub const IOMMU_ENUMERATE: Self = Self(1 << 20);
-    /// IOMMU: 创建与销毁地址空间域。
+    /// IOMMU: create and destroy address-space domains.
     pub const IOMMU_DOMAIN: Self = Self(1 << 21);
-    /// IOMMU: 绑定 / 解绑 PCI requester。
+    /// IOMMU: bind / unbind a PCI requester.
     pub const IOMMU_BIND: Self = Self(1 << 22);
-    /// IOMMU: 建立 / 撤销 IOVA 映射。
+    /// IOMMU: establish / tear down IOVA mappings.
     pub const IOMMU_MAP: Self = Self(1 << 23);
     pub const GFX_FRAMEBUFFER: Self = Self(1 << 24);
     pub const GFX_COMMAND: Self = Self(1 << 25);
     pub const AUDIO_PLAY: Self = Self(1 << 28);
     pub const AUDIO_CAPTURE: Self = Self(1 << 29);
+
+    /// ALSA: enumerate cards, PCM endpoints, mixer elements and hwdep nodes.
+    /// Every read-only ALSA opcode needs only this one.
+    pub const ALSA_ENUMERATE: Self = Self(1 << 30);
+    /// ALSA: open, close, prepare, start, drop and recover a PCM. A stream
+    /// that can be *moved* needs this; merely enumerating it does not.
+    pub const ALSA_STREAM: Self = Self(1 << 31);
 
     #[inline]
     pub const fn has(self, other: Self) -> bool {
@@ -85,12 +92,22 @@ pub enum Status {
     RingFull = -13,
     StaleId = -14,
     Throttled = -15,
+    /// A computed result is finite but outside the representable range.
+    Overflow = -16,
+    /// A divisor was zero where a non-zero value is required.
+    DivideByZero = -17,
 }
 
 impl Status {
     #[inline]
     pub const fn is_ok(self) -> bool {
         matches!(self, Self::Ok)
+    }
+
+    /// The numeric code as carried on the wire.
+    #[inline]
+    pub const fn code(self) -> i32 {
+        self as i32
     }
 
     #[inline]
@@ -112,6 +129,8 @@ impl Status {
             -13 => Self::RingFull,
             -14 => Self::StaleId,
             -15 => Self::Throttled,
+            -16 => Self::Overflow,
+            -17 => Self::DivideByZero,
             _ => Self::Unknown,
         }
     }

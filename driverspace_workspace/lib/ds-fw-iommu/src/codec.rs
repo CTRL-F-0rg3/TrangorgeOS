@@ -1,10 +1,12 @@
-//! IOMMU 载荷的线缆编解码。
+//! Wire encoding and decoding for IOMMU payloads.
 //!
-//! 所有 IOMMU 请求/回复都走同一个约定（与 `kapi-abi::payloads::sys::LogPayload`
-//! 一致）：`DsMsg::arg0` 携带载荷指针，`DsMsg::arg1` 携带长度。
+//! Every IOMMU request and reply uses one convention (the same one as
+//! `kapi-abi::payloads::sys::LogPayload`): `DsMsg::arg0` carries the payload
+//! pointer and `DsMsg::arg1` the length.
 //!
-//! 本模块用 `kapi-abi::wire` 提供的 `Encoder` / `Decoder` 做序列化，因此
-//! 字节序与边界检查都与系统其余部分保持一致——框架与驱动不会各写一套。
+//! Serialization goes through the `Encoder` / `Decoder` provided by
+//! `kapi-abi::wire`, so byte order and bounds checking match the rest of the
+//! system and the framework and the driver never grow a second implementation.
 
 use kapi_abi::{
     payloads::iommu::{
@@ -14,15 +16,15 @@ use kapi_abi::{
     wire::{Decoder, Encoder},
 };
 
-/// 单个 IOMMU 载荷编码后的最坏长度（字节）。
+/// Worst-case encoded length of a single IOMMU payload, in bytes.
 ///
-/// 取自最大载荷 `IommuInvalidatePayload` 的字段和并向上对齐，用于驱动侧
-/// 分配栈上缓冲。
+/// Derived from the field sum of the largest payload, `IommuInvalidatePayload`,
+/// rounded up; used by the driver to size stack scratch buffers.
 pub const MAX_PAYLOAD_LEN: usize = 48;
 
 // ── encode ──────────────────────────────────────────────────────────
 
-/// 编码 `IommuControllerInfo`。
+/// Encode an `IommuControllerInfo`.
 pub fn encode_controller_info(enc: &mut Encoder<'_>, value: &IommuControllerInfo) -> bool {
     enc.write_u32(value.controller)
         && enc.write_u32(value.kind as u32)
@@ -32,7 +34,7 @@ pub fn encode_controller_info(enc: &mut Encoder<'_>, value: &IommuControllerInfo
         && enc.write_u64(value.mmio_base)
         && enc.write_u64(value.mmio_size)
 }
-/// 编码 `IommuMapPayload`。
+/// Encode an `IommuMapPayload`.
 pub fn encode_map(enc: &mut Encoder<'_>, value: &IommuMapPayload) -> bool {
     enc.write_u32(value.domain)
         && enc.write_u32(value.flags.bits())
@@ -42,21 +44,21 @@ pub fn encode_map(enc: &mut Encoder<'_>, value: &IommuMapPayload) -> bool {
         && enc.write_u64(value.phys_base)
         && enc.write_u64(value.size)
 }
-/// 编码 `IommuUnmapPayload`。
+/// Encode an `IommuUnmapPayload`.
 pub fn encode_unmap(enc: &mut Encoder<'_>, value: &IommuUnmapPayload) -> bool {
     enc.write_u32(value.domain)
         && enc.write_u32(0)
         && enc.write_u64(value.iova)
         && enc.write_u64(value.size)
 }
-/// 编码 `IommuBindPayload`。
+/// Encode an `IommuBindPayload`.
 pub fn encode_bind(enc: &mut Encoder<'_>, value: &IommuBindPayload) -> bool {
     enc.write_u32(value.controller)
         && enc.write_u32(value.requester)
         && enc.write_u32(value.domain)
         && enc.write_u32(value.selector)
 }
-/// 编码 `IommuInvalidatePayload`。
+/// Encode an `IommuInvalidatePayload`.
 pub fn encode_invalidate(enc: &mut Encoder<'_>, value: &IommuInvalidatePayload) -> bool {
     enc.write_u32(value.scope as u32)
         && enc.write_u32(value.controller)
@@ -67,14 +69,14 @@ pub fn encode_invalidate(enc: &mut Encoder<'_>, value: &IommuInvalidatePayload) 
         && enc.write_u32(0)
         && enc.write_u64(value.iova)
 }
-/// 编码 `IommuReservedRegionPayload`。
+/// Encode an `IommuReservedRegionPayload`.
 pub fn encode_reserved_region(enc: &mut Encoder<'_>, value: &IommuReservedRegionPayload) -> bool {
     enc.write_u64(value.base)
         && enc.write_u64(value.limit)
         && enc.write_u32(value.requester)
         && enc.write_u32(0)
 }
-/// 编码 `IommuFaultPayload`。
+/// Encode an `IommuFaultPayload`.
 pub fn encode_fault(enc: &mut Encoder<'_>, value: &IommuFaultPayload) -> bool {
     enc.write_u32(value.controller)
         && enc.write_u32(value.reason)
@@ -86,7 +88,7 @@ pub fn encode_fault(enc: &mut Encoder<'_>, value: &IommuFaultPayload) -> bool {
 
 // ── decode ──────────────────────────────────────────────────────────
 
-/// 解码 `IommuControllerInfo`。
+/// Decode an `IommuControllerInfo`.
 pub fn decode_controller_info(dec: &mut Decoder<'_>) -> Option<IommuControllerInfo> {
     use kapi_abi::payloads::iommu::{IommuKind, IommuStage};
     Some(IommuControllerInfo {
@@ -99,7 +101,7 @@ pub fn decode_controller_info(dec: &mut Decoder<'_>) -> Option<IommuControllerIn
         mmio_size: dec.read_u64()?,
     })
 }
-/// 解码 `IommuMapPayload`。
+/// Decode an `IommuMapPayload`.
 pub fn decode_map(dec: &mut Decoder<'_>) -> Option<IommuMapPayload> {
     use kapi_abi::payloads::iommu::{IommuMapFlags, IommuPermission};
     Some(IommuMapPayload {
@@ -112,7 +114,7 @@ pub fn decode_map(dec: &mut Decoder<'_>) -> Option<IommuMapPayload> {
         size: dec.read_u64()?,
     })
 }
-/// 解码 `IommuUnmapPayload`。
+/// Decode an `IommuUnmapPayload`.
 pub fn decode_unmap(dec: &mut Decoder<'_>) -> Option<IommuUnmapPayload> {
     Some(IommuUnmapPayload {
         domain: dec.read_u32()?,
@@ -121,7 +123,7 @@ pub fn decode_unmap(dec: &mut Decoder<'_>) -> Option<IommuUnmapPayload> {
         size: dec.read_u64()?,
     })
 }
-/// 解码 `IommuBindPayload`。
+/// Decode an `IommuBindPayload`.
 pub fn decode_bind(dec: &mut Decoder<'_>) -> Option<IommuBindPayload> {
     Some(IommuBindPayload {
         controller: dec.read_u32()?,
@@ -130,7 +132,7 @@ pub fn decode_bind(dec: &mut Decoder<'_>) -> Option<IommuBindPayload> {
         selector: dec.read_u32()?,
     })
 }
-/// 解码 `IommuInvalidatePayload`。
+/// Decode an `IommuInvalidatePayload`.
 pub fn decode_invalidate(dec: &mut Decoder<'_>) -> Option<IommuInvalidatePayload> {
     use kapi_abi::payloads::iommu::IommuInvalidateScope;
     Some(IommuInvalidatePayload {
@@ -144,7 +146,7 @@ pub fn decode_invalidate(dec: &mut Decoder<'_>) -> Option<IommuInvalidatePayload
         iova: dec.read_u64()?,
     })
 }
-/// 解码 `IommuReservedRegionPayload`。
+/// Decode an `IommuReservedRegionPayload`.
 pub fn decode_reserved_region(dec: &mut Decoder<'_>) -> Option<IommuReservedRegionPayload> {
     Some(IommuReservedRegionPayload {
         base: dec.read_u64()?,
@@ -153,7 +155,7 @@ pub fn decode_reserved_region(dec: &mut Decoder<'_>) -> Option<IommuReservedRegi
         _pad: dec.read_u32()?,
     })
 }
-/// 解码 `IommuFaultPayload`。
+/// Decode an `IommuFaultPayload`.
 pub fn decode_fault(dec: &mut Decoder<'_>) -> Option<IommuFaultPayload> {
     Some(IommuFaultPayload {
         controller: dec.read_u32()?,

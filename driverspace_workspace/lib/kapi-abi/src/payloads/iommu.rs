@@ -1,18 +1,19 @@
-//! IOMMU 相关的 IPC 消息载荷。
+//! IOMMU IPC message payloads.
 //!
-//! IOMMU 驱动与 `ds-manager` 之间通过这些结构交换控制器描述符、地址空间域、
-//! 绑定关系与映射请求。所有结构体严格 `#[repr(C)]`，因为它们会在共享内存中
-//! 被 Rust / C / Odin 共同解释。
+//! The IOMMU driver and `ds-manager` exchange controller descriptors,
+//! address-space domains, requester bindings and mapping requests through
+//! these structures. Every struct is strictly `#[repr(C)]`, because they are
+//! interpreted by Rust, C and Odin alike in shared memory.
 //!
-//! 所有请求都遵循与 `LogPayload` 相同的约定：`DsMsg::arg0` 携带载荷指针，
-//! `DsMsg::arg1` 携带长度（字节）。
+//! All requests follow the same convention as `LogPayload`: `DsMsg::arg0`
+//! carries the payload pointer and `DsMsg::arg1` the length in bytes.
 
 use bitflags::bitflags;
 
-/// IOMMU 实现族。
+/// IOMMU implementation family.
 ///
-/// 与 `drivers/iommu-driver` 的 `ControllerKind` 一一对应；新增架构时两边
-/// 必须同步扩展。
+/// Mirrors `ControllerKind` in `drivers/iommu-driver`; both sides must be
+/// extended together when a new architecture is added.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum IommuKind {
@@ -50,7 +51,8 @@ impl IommuKind {
     }
 }
 
-/// 翻译阶段：单元级直通、阶段二（嵌套虚拟化）或嵌套域。
+/// Translation stage: unit-level pass-through, stage 2 (nested
+/// virtualization) or a nested domain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum IommuStage {
@@ -71,7 +73,7 @@ impl IommuStage {
     }
 }
 
-/// 失效（cache/TLB invalidation）作用域。
+/// Invalidation (cache/TLB flush) scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum IommuInvalidateScope {
@@ -97,10 +99,10 @@ impl IommuInvalidateScope {
 }
 
 bitflags! {
-    /// IOVA -> PA 叶子映射的访问权限。
+    /// Access permissions of an IOVA -> PA leaf mapping.
     ///
-    /// 这是 wire 层的权限词汇；驱动负责把它翻译成具体 IOMMU 的
-    /// 第二级 PTE 位域。
+    /// This is the wire-level permission vocabulary; the driver translates it
+    /// into the second-level PTE bitfields of the concrete IOMMU.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(C)]
     pub struct IommuPermission: u32 {
@@ -115,53 +117,54 @@ bitflags! {
 }
 
 bitflags! {
-    /// 映射请求的行为修饰位。
+    /// Behaviour modifiers for a mapping request.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(C)]
     pub struct IommuMapFlags: u32 {
         const NONE = 0;
-        /// 把 `IommuMapPayload::phys_base` 视为调用方已拥有的物理页
-        /// （`remap` 语义）；未设置时由驱动分配物理页并在 `arg0` 返回基址。
+        /// Treat `IommuMapPayload::phys_base` as a physical page the caller
+        /// already owns (`remap` semantics); when unset the driver allocates
+        /// the page and returns its base in `arg0`.
         const FIXED = 1 << 0;
         const COHERENT = 1 << 1;
         const PINNED = 1 << 2;
     }
 }
 
-/// 一个已发现的 IOMMU 控制器的不可变描述。
+/// Immutable description of one discovered IOMMU controller.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuControllerInfo {
-    /// 驱动私有的控制器索引，`0..controller_count`。
+    /// Driver-private controller index, `0..controller_count`.
     pub controller: u32,
     pub kind: IommuKind,
-    /// 与驱动 `CapabilityFlags` 的位定义一致。
+    /// Bit layout matches the driver's `CapabilityFlags`.
     pub capabilities: u64,
     pub stage: IommuStage,
-    /// PCI segment；`0xFFFF` 表示该单元不属于某个 segment。
+    /// PCI segment; `0xFFFF` means the unit is not tied to a segment.
     pub segment: u32,
     pub mmio_base: u64,
     pub mmio_size: u64,
 }
 
-/// 建立 IOVA -> PA 映射的请求。
+/// Request to establish an IOVA -> PA mapping.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuMapPayload {
-    /// 目标地址空间域，由 `IommuDomainCreate` 返回。
+    /// Target address-space domain, as returned by `IommuDomainCreate`.
     pub domain: u32,
     pub flags: IommuMapFlags,
     pub permission: IommuPermission,
     pub _pad: u32,
-    /// 设备可见地址（IOVA）区间起点。
+    /// Start of the device-visible address (IOVA) range.
     pub iova: u64,
-    /// `FIXED` 时为物理基址，否则驱动忽略该字段。
+    /// Physical base when `FIXED` is set; ignored otherwise.
     pub phys_base: u64,
-    /// 区间长度（字节），必须是设备支持的粒度的整数倍。
+    /// Range length in bytes; must be a multiple of a granule the device supports.
     pub size: u64,
 }
 
-/// 撤销 IOVA 映射的请求。
+/// Request to tear down an IOVA mapping.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuUnmapPayload {
@@ -171,58 +174,58 @@ pub struct IommuUnmapPayload {
     pub size: u64,
 }
 
-/// 把一个 PCI requester 绑定到地址空间域的请求。
+/// Request to bind a PCI requester to an address-space domain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuBindPayload {
     pub controller: u32,
-    /// 打包后的 requester id：`(segment << 16) | bdf`，与驱动
-    /// `PciDevice` 的表示一致。
+    /// Packed requester id: `(segment << 16) | bdf`, matching the driver's
+    /// `PciDevice` representation.
     pub requester: u32,
     pub domain: u32,
-    /// `BindingSelector` 的线缆化表示：0 = Default，1 = AddrSpace(id)。
+    /// Wire form of `BindingSelector`: 0 = Default, 1 = AddrSpace(id).
     pub selector: u32,
 }
 
-/// 显式失效请求。
+/// Explicit invalidation request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuInvalidatePayload {
     pub scope: IommuInvalidateScope,
     pub controller: u32,
     pub domain: u32,
-    /// `Device` / `DeviceLeaf` 作用域下有效。
+    /// Only meaningful for the `Device` / `DeviceLeaf` scopes.
     pub requester: u32,
-    /// 失效粒度（字节），`Leaf` / `DeviceLeaf` 作用域下有效。
+    /// Invalidation granule in bytes; only for `Leaf` / `DeviceLeaf`.
     pub granule_bytes: u32,
     pub count_pages: u32,
     pub _pad: u32,
-    /// `Leaf` / `DeviceLeaf` 作用域下有效。
+    /// Only meaningful for the `Leaf` / `DeviceLeaf` scopes.
     pub iova: u64,
 }
 
-/// 固件声明、必须原样保留的 DMA 保留区。
+/// A DMA reservation declared by firmware that the OS must preserve.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuReservedRegionPayload {
     pub base: u64,
-    /// 闭区间上界。
+    /// Inclusive upper bound.
     pub limit: u64,
-    /// 拥有该保留区的 requester；`0xFFFFFFFF` 表示无归属。
+    /// Requester owning this reservation; `0xFFFFFFFF` means unowned.
     pub requester: u32,
     pub _pad: u32,
 }
 
-/// 一次已上报的 IOMMU 故障。
+/// One reported IOMMU fault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct IommuFaultPayload {
     pub controller: u32,
-    /// 硬件原因码（VT-d `FSTS` / IVRS `IOTL` 等的原始位域）。
+    /// Hardware reason code (raw bits of VT-d `FSTS` / IVRS `IOTL`, ...).
     pub reason: u32,
     pub requester: u32,
     pub _pad: u32,
     pub iova: u64,
-    /// 触发故障的物理地址，硬件不提供时为 0。
+    /// Faulting physical address; 0 when the hardware does not report it.
     pub faulting_phys: u64,
 }

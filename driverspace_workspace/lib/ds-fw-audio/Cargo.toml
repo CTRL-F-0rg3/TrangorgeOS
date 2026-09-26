@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Wire vocabulary and IPC transport only. The framework holds no hardware
+# knowledge, so it needs nothing else - see Workspace.md on the one-way
+# dependency rules.
+kapi-abi = { path = "../kapi-abi" }
+kapi-syscall = { path = "../kapi-syscall" }

@@ -45,6 +45,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "alsa-trangorgeos"
+version = "0.1.0"
+dependencies = [
+ "ds-fw-audio",
+ "ds-log",
+ "heapless",
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
 name = "amdgpu-driver"
 version = "0.1.0"
 
@@ -89,6 +100,10 @@ version = "0.1.0"
 [[package]]
 name = "ds-fw-audio"
 version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+ "kapi-syscall",
+]
 
 [[package]]
 name = "ds-fw-block"

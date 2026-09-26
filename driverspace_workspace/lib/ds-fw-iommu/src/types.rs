@@ -1,11 +1,12 @@
-//! IOMMU 框架使用的类型化标识与区间。
+//! Typed identifiers and ranges used across the IOMMU framework.
 //!
-//! 线缆上这些值都是朴素的 `u32` / `u64`；这里只做**编译期约束**，让驱动和
-//! 调用方不会把控制器索引、域 id 与 requester id 互相搞混。
+//! On the wire these values are plain `u32` / `u64`; the newtypes exist purely
+//! to give the compiler a way to stop drivers and callers from confusing a
+//! controller index with a domain id or a requester id.
 
 use core::fmt;
 
-/// 一个 IOMMU 控制器（DMAR 中的一个 remapping unit、IVRS 中的一个 IVHD……）。
+/// One IOMMU controller (a remapping unit in DMAR, an IVHD in IVRS, ...).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct ControllerId(pub u32);
@@ -31,7 +32,7 @@ impl From<u32> for ControllerId {
     }
 }
 
-/// 一个 IOMMU 地址空间域（ASID / VMID / domain id）。
+/// One IOMMU address-space domain (ASID / VMID / domain id).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct DomainId(pub u32);
@@ -62,15 +63,16 @@ impl From<u32> for DomainId {
     }
 }
 
-/// 一个 PCI requester 的线缆表示：`(segment << 16) | bdf`。
+/// Wire representation of a PCI requester: `(segment << 16) | bdf`.
 ///
-/// 与驱动内部 `firm::pcie::PciDevice` 的内存表示一致，所以两边转换是零成本的。
+/// This matches the in-memory representation of the driver's
+/// `firm::pcie::PciDevice`, so converting between the two is free.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct RequesterId(pub u32);
 
 impl RequesterId {
-    /// “不属于任何 requester”，固件保留区与故障记录里使用。
+    /// "Belongs to no requester", used by firmware reservations and fault records.
     pub const NONE: Self = Self(u32::MAX);
 
     #[inline]
@@ -137,7 +139,7 @@ impl fmt::Display for RequesterId {
     }
 }
 
-/// 一段设备可见地址（IOVA）区间。
+/// A device-visible address (IOVA) range.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(C)]
 pub struct IoRange {
@@ -153,15 +155,15 @@ impl IoRange {
         Self { iova, size }
     }
 
-    /// 非空且不溢出的区间。
+    /// A non-empty range that does not overflow.
     #[inline]
     pub const fn is_valid(self) -> bool {
         self.size != 0 && self.iova.checked_add(self.size).is_some()
     }
 
-    /// 区间是否按给定粒度对齐。
+    /// Whether the range is aligned to the given granule.
     ///
-    /// `granule` 必须是 2 的幂，否则一律视为不对齐。
+    /// `granule` must be a power of two, otherwise this is always false.
     #[inline]
     pub const fn is_aligned(self, granule: u64) -> bool {
         if granule == 0 || !granule.is_power_of_two() {
@@ -170,7 +172,7 @@ impl IoRange {
         self.iova & (granule - 1) == 0 && self.size & (granule - 1) == 0
     }
 
-    /// 区间包含的页数。
+    /// Number of granules covered by the range.
     #[inline]
     pub const fn pages(self, granule: u64) -> Option<u64> {
         if granule == 0 || !granule.is_power_of_two() || !self.is_aligned(granule) {
