@@ -11,4 +11,10 @@ name = "tgs_elf"
 crate-type = ["rlib"]
 doctest = false
 
+# Tests read real binaries from the host, so the test profile is std and not
+# `no_std`. The library itself never is — that is the point of it.
 [dependencies]
+
+[[test]]
+name = "real_binaries"
+path = "tests/real_binaries.rs"
