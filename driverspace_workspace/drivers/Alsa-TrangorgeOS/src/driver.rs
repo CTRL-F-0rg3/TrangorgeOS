@@ -580,7 +580,12 @@ mod tests {
     }
 
     impl Platform for MockPlatform {
-        fn map_mmio(&self, _phys: u64, _size: u64) -> Result<u64, DsError> {
+        fn map_mmio(&self, _phys: u64, size: u64) -> Result<u64, DsError> {
+            // Mirror the production platform: a zero-sized mapping is a
+            // caller bug, not something to answer with a null base.
+            if size == 0 {
+                return Err(DsError::InvalidMessage);
+            }
             // A plausible-looking base; nothing here is ever dereferenced.
             Ok(0xFFFF_8000_0000_0000)
         }
@@ -588,6 +593,9 @@ mod tests {
             Ok(())
         }
         fn alloc_dma(&self, size: u64) -> Result<(u64, u64), DsError> {
+            if size == 0 {
+                return Err(DsError::InvalidMessage);
+            }
             Ok((0x0010_0000, 0xFFFF_9000_0000_0000 + size))
         }
         fn free_dma(&self, _phys: u64, _size: u64) -> Result<(), DsError> {

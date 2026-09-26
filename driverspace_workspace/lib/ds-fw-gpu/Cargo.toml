@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Only the ABI. The framework has no flag types of its own: `GpuCaps`,
+# `GpuBufferFlags` and the rest are defined once, in `kapi-abi`, so a driver
+# and a client cannot drift apart on what a bit means.
+kapi-abi = { path = "../kapi-abi" }

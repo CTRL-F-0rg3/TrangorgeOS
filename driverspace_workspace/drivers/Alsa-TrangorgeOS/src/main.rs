@@ -22,7 +22,7 @@ extern crate kapi_abi;
 extern crate kapi_syscall;
 
 use alsa_trangorgeos::{DRIVER_NAME, driver::AlsaDriver, host::SyscallPlatform};
-use ds_fw_audio::{AudioService, MAX_PAYLOAD_LEN};
+use ds_fw_audio::{AudioDevice, AudioService, MAX_PAYLOAD_LEN};
 use ds_log::{ds_error, ds_info};
 use kapi_abi::CapId;
 
@@ -86,7 +86,7 @@ fn handle(msg: kapi_abi::DsMsg) {
         let request = ds_fw_audio::Request::new(msg, request_buf);
 
         let reply_buf = &mut *(&raw mut REPLY_BUF);
-        let reply = runtime.service.dispatch(&request, reply_buf);
+        let reply = runtime.dispatch(&request, reply_buf);
         let len = reply.arg2 as usize;
         let len = len.min(reply_buf.len());
 

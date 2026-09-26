@@ -45,4 +45,25 @@ pub static DEFAULT_REGISTRY: Registry = Registry::new(&[
         driver_id: 3,
         driver_name: "intel-hda",
     },
+    // Intel 82801 (AC97 / ICH4), 82801EB (ICH5) and the AMD Hudson family 10h
+    // controller: the audio function of the southbridge, which is what
+    // `Alsa-TrangorgeOS` drives through its AC97 backend.
+    RegistryEntry {
+        vendor_id: 0x8086,
+        device_id: 0x2415,
+        driver_id: 4,
+        driver_name: "Alsa-TrangorgeOS",
+    },
+    RegistryEntry {
+        vendor_id: 0x8086,
+        device_id: 0x2425,
+        driver_id: 4,
+        driver_name: "Alsa-TrangorgeOS",
+    },
+    RegistryEntry {
+        vendor_id: 0x1022,
+        device_id: 0x7807,
+        driver_id: 4,
+        driver_name: "Alsa-TrangorgeOS",
+    },
 ]);

@@ -47,6 +47,13 @@ impl CapId {
     pub const IOMMU_MAP: Self = Self(1 << 23);
     pub const GFX_FRAMEBUFFER: Self = Self(1 << 24);
     pub const GFX_COMMAND: Self = Self(1 << 25);
+
+    /// GPU: list the devices and read their descriptors, modes and strides.
+    /// Read-only, and what a client gets before anything else is granted.
+    pub const GPU_ENUMERATE: Self = Self(1 << 26);
+    /// GPU: create and destroy contexts, allocate and free buffers, reset the
+    /// device. This is the capability that makes a driver privileged.
+    pub const GPU_DEVICE: Self = Self(1 << 27);
     pub const AUDIO_PLAY: Self = Self(1 << 28);
     pub const AUDIO_CAPTURE: Self = Self(1 << 29);
 

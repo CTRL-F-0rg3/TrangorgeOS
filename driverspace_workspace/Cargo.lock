@@ -94,6 +94,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
 
 [[package]]
+name = "ds-detect"
+version = "0.1.0"
+dependencies = [
+ "ds-registry",
+ "heapless",
+ "kapi-abi",
+]
+
+[[package]]
 name = "ds-formal-ffi"
 version = "0.1.0"
 
@@ -112,6 +121,9 @@ version = "0.1.0"
 [[package]]
 name = "ds-fw-gpu"
 version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+]
 
 [[package]]
 name = "ds-fw-input"
