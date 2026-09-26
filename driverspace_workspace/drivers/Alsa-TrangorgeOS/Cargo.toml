@@ -1,0 +1,45 @@
+[package]
+name = "alsa-trangorgeos"
+version = "0.1.0"
+edition = "2024"
+license = "LGPL-2.1-or-later"
+description = "ALSA-compatible audio stack for TrangorgeOS: card/PCM/mixer model, AC97 backend, and the aplay/amixer tools"
+
+[lib]
+name = "alsa_trangorgeos"
+path = "src/lib.rs"
+
+[[bin]]
+name = "alsa-trangorgeos"
+path = "src/main.rs"
+# The driver binary is `no_main` and provides its own `#[panic_handler]`, so
+# Cargo must not try to build a test harness for it. Unit tests live in the
+# library target instead.
+test = false
+bench = false
+
+[[bin]]
+name = "aplay"
+path = "src/bin/aplay.rs"
+# The user-space tools run under the OS runtime; the driver test harness is not
+# applicable to them either.
+test = false
+bench = false
+
+[[bin]]
+name = "amixer"
+path = "src/bin/amixer.rs"
+test = false
+bench = false
+
+[dependencies]
+# ── TrangorgeOS driver-space infrastructure (lib/) ──────────────────
+# `lib/` only - a driver must never depend on `crates/` (the one-way
+# dependency rule from Workspace.md).
+kapi-abi = { path = "../../lib/kapi-abi" }
+kapi-syscall = { path = "../../lib/kapi-syscall" }
+ds-log = { path = "../../lib/ds-log" }
+ds-fw-audio = { path = "../../lib/ds-fw-audio" }
+
+# Fixed-capacity collections: the driver is `no_std` with no allocator.
+heapless = { version = "0.9.2", default-features = false }

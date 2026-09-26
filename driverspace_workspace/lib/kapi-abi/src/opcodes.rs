@@ -66,6 +66,55 @@ pub enum DsCmd {
     AudStreamCreate = 0x0405,
     AudStreamDestroy = 0x0406,
 
+    // ── ALSA / Alsa-TrangorgeOS (0x04xx) ─────────────────────────────
+    // The opcodes above are the legacy whole-buffer API used by the old
+    // `audiodriver`. The ones below are the ALSA-shaped vocabulary that
+    // `Alsa-TrangorgeOS` speaks: a card owns several PCM endpoints, each
+    // with its own handle, and hardware parameters are negotiated field by
+    // field before a stream can be prepared.
+    //
+    // arg0 = PCM index; reply arg0 = total endpoint count, reply payload is
+    // `PcmInfo`.
+    AlsaPcmEnumerate = 0x0410,
+    /// arg0 = index into the enumeration; reply payload is `PcmInfo`.
+    AlsaPcmInfo = 0x0411,
+    /// Payload is `PcmOpenPayload`; reply arg0 = the new PCM handle.
+    AlsaPcmOpen = 0x0412,
+    /// arg0 = PCM handle.
+    AlsaPcmClose = 0x0413,
+    /// arg0 = PCM handle; reply arg0 = the current `PcmState`.
+    AlsaPcmState = 0x0414,
+    /// Payload is `HwParamsQuery`; reply payload is `HwParamsResult`.
+    AlsaPcmHwParams = 0x0415,
+    /// arg0 = PCM handle; reply payload is the negotiated `PcmParams`.
+    AlsaPcmParams = 0x0416,
+    /// arg0 = PCM handle; the stream must be `Prepared`.
+    AlsaPcmPrepare = 0x0417,
+    /// arg0 = PCM handle; transitions `Prepared` -> `Running`.
+    AlsaPcmStart = 0x0418,
+    /// arg0 = PCM handle; arg1 = `DROP` or `DRAIN`.
+    AlsaPcmDrop = 0x0419,
+    /// arg0 = PCM handle; `Prepare` + `Start` in one step, as ALSA's
+    /// `snd_pcm_prepare` / `snd_pcm_start` pair.
+    AlsaPcmRecover = 0x041A,
+    /// arg0 = PCM handle; arg1 = frame count. The sample payload is
+    /// transferred through shared memory, not through the message registers,
+    /// because a period is far larger than `DsMsg` is.
+    AlsaPcmWrite = 0x041B,
+    /// arg0 = PCM handle; arg1 = frame count.
+    AlsaPcmRead = 0x041C,
+    /// arg0 = index; reply arg0 = total, reply payload is `MixerSelem`.
+    AlsaMixerEnumerate = 0x041D,
+    /// arg0 = element index; reply payload is `MixerValue`.
+    AlsaMixerRead = 0x041E,
+    /// arg0 = element index; reply payload is `MixerValue` with the new
+    /// value. The element must advertise `CtlAccess::WRITE`.
+    AlsaMixerWrite = 0x041F,
+    /// arg0 = jack index; reply payload is `JackState`.
+    AlsaJackState = 0x0420,
+    /// arg0 = index; reply arg0 = total, reply payload is `HwdepInfo`.
+    AlsaHwdepEnumerate = 0x0421,
+
     BlkRead = 0x0500,
     BlkWrite = 0x0501,
     BlkFlush = 0x0502,
@@ -204,6 +253,24 @@ impl DsCmd {
             0x0404 => Some(Self::AudAmpSet),
             0x0405 => Some(Self::AudStreamCreate),
             0x0406 => Some(Self::AudStreamDestroy),
+            0x0410 => Some(Self::AlsaPcmEnumerate),
+            0x0411 => Some(Self::AlsaPcmInfo),
+            0x0412 => Some(Self::AlsaPcmOpen),
+            0x0413 => Some(Self::AlsaPcmClose),
+            0x0414 => Some(Self::AlsaPcmState),
+            0x0415 => Some(Self::AlsaPcmHwParams),
+            0x0416 => Some(Self::AlsaPcmParams),
+            0x0417 => Some(Self::AlsaPcmPrepare),
+            0x0418 => Some(Self::AlsaPcmStart),
+            0x0419 => Some(Self::AlsaPcmDrop),
+            0x041A => Some(Self::AlsaPcmRecover),
+            0x041B => Some(Self::AlsaPcmWrite),
+            0x041C => Some(Self::AlsaPcmRead),
+            0x041D => Some(Self::AlsaMixerEnumerate),
+            0x041E => Some(Self::AlsaMixerRead),
+            0x041F => Some(Self::AlsaMixerWrite),
+            0x0420 => Some(Self::AlsaJackState),
+            0x0421 => Some(Self::AlsaHwdepEnumerate),
             0x0500 => Some(Self::BlkRead),
             0x0501 => Some(Self::BlkWrite),
             0x0502 => Some(Self::BlkFlush),

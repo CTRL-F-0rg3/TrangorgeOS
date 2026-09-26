@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/ds-manager",
     "crates/ds-registry",
+    "drivers/Alsa-TrangorgeOS",
     "drivers/amdgpu-driver",
     "drivers/audiodriver",
     "drivers/intelgpu-driver",

@@ -50,6 +50,13 @@ impl CapId {
     pub const AUDIO_PLAY: Self = Self(1 << 28);
     pub const AUDIO_CAPTURE: Self = Self(1 << 29);
 
+    /// ALSA: enumerate cards, PCM endpoints, mixer elements and hwdep nodes.
+    /// Every read-only ALSA opcode needs only this one.
+    pub const ALSA_ENUMERATE: Self = Self(1 << 30);
+    /// ALSA: open, close, prepare, start, drop and recover a PCM. A stream
+    /// that can be *moved* needs this; merely enumerating it does not.
+    pub const ALSA_STREAM: Self = Self(1 << 31);
+
     #[inline]
     pub const fn has(self, other: Self) -> bool {
         (self.0 & other.0) == other.0
