@@ -1,0 +1,13 @@
+[package]
+name = "ds-detect"
+version = "0.1.0"
+edition = "2024"
+description = "Detection layer: scan the buses, match the image manifest, and start only the drivers the machine needs"
+
+[dependencies]
+# `crates/` may only depend on `lib/` (Workspace.md, rule 1).
+kapi-abi = { path = "../../lib/kapi-abi" }
+ds-registry = { path = "../ds-registry" }
+
+# Fixed-capacity collections: the layer runs before any allocator exists.
+heapless = { version = "0.9.2", default-features = false }

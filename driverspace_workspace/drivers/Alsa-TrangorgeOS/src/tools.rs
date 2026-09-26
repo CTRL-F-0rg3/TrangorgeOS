@@ -301,37 +301,39 @@ pub fn parse_aplay(args: &[ArgRef<'_>]) -> AplayAction {
         let arg = args[index];
         index += 1;
 
-        if let Some(value) = option_value(arg, "-D") {
+        // `aplay` accepts `-D hw:0,0`, `-Dhw:0,0` and `-D=hw:0,0`. `read_value`
+        // resolves all three, consuming the following argument when needed.
+        if let Some(value) = read_value(args, &mut index, arg, "-D") {
             match DeviceName::parse(value) {
                 Some(device) => request.device = device,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-d") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-d") {
             match parse_u32(value) {
                 Some(device) => request.device.device = device,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-f") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-f") {
             match parse_format(value) {
                 Some(format) => request.format = format,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-r") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-r") {
             match parse_u32(value) {
                 Some(rate) => request.rate = rate,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-c") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-c") {
             match parse_u32(value) {
                 Some(channels) => request.channels = channels as u16,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-p") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-p") {
             match parse_u32(value) {
                 Some(period) => request.period_size = period as u16,
                 None => return invalid(arg),
             }
-        } else if let Some(value) = option_value(arg, "-b") {
+        } else if let Some(value) = read_value(args, &mut index, arg, "-b") {
             match parse_u32(value) {
                 Some(buffer) => request.buffer_size = Some(buffer),
                 None => return invalid(arg),
@@ -376,20 +378,31 @@ fn invalid(option: &str) -> AplayAction {
     AplayAction::Invalid { option: field }
 }
 
-/// The value of `-X value`, `-X=value` or `-Xvalue`, if `arg` is that option.
+/// Read the value of option `name` from `arg`, in any spelling `aplay` accepts.
 ///
-/// The `Some("")` guard matters: for a bare flag like `-l`, `strip_prefix`
-/// succeeds with an empty remainder, and treating that as "value follows"
-/// would swallow the next argument.
-fn option_value<'a>(arg: &'a str, name: &str) -> Option<&'a str> {
+/// Three forms work, and the C tool accepts all three:
+///
+/// * `-Dvalue`   - value attached
+/// * `-D=value`  - value after an equals sign
+/// * `-D value`  - value in the next argument, which this consumes
+///
+/// A bare flag (`-l`) yields `None` and consumes nothing, so the next
+/// argument is left for the loop. `index` is advanced only when an argument
+/// is actually taken.
+fn read_value<'a>(
+    args: &[ArgRef<'a>],
+    index: &mut usize,
+    arg: &'a str,
+    name: &str,
+) -> Option<&'a str> {
     let rest = arg.strip_prefix(name)?;
-    if rest.is_empty() {
-        None
-    } else if let Some(after_equals) = rest.strip_prefix('=') {
-        Some(after_equals)
-    } else {
-        Some(rest)
+    if !rest.is_empty() {
+        return Some(rest.strip_prefix('=').unwrap_or(rest));
     }
+    // Bare option: the value, if any, is the next argument.
+    let next = args.get(*index)?;
+    *index += 1;
+    Some(*next)
 }
 
 /// Parse a decimal `u32`, rejecting anything else.
@@ -405,6 +418,85 @@ fn parse_u32(value: &str) -> Option<u32> {
         result = result.checked_mul(10)?.checked_add((byte - b'0') as u32)?;
     }
     Some(result)
+}
+
+/// What `amixer` should do once its subcommand is parsed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AmixerAction {
+    /// Print the usage text and exit successfully.
+    Help,
+    /// List every simple element.
+    List,
+    /// Read one element by index.
+    Get { index: u32 },
+    /// Set one element to a level, already clamped to 0..=100.
+    Set { index: u32, percent: i32 },
+    /// The command was not understood.
+    Invalid { message: [u8; 48] },
+}
+
+/// Parse `amixer`'s arguments into an [`AmixerAction`].
+///
+/// Accepted forms, matching the C tool:
+///
+/// ```text
+/// amixer
+/// amixer get <element>
+/// amixer set <element> <percent>%
+/// amixer set <element> mute|unmute
+/// ```
+///
+/// Elements are addressed by their index in enumeration order, which is what
+/// the driver reports; the C tool's name lookup is a convenience layer on top
+/// of the same index and is not part of the wire contract.
+pub fn parse_amixer(args: &[ArgRef<'_>]) -> AmixerAction {
+    let Some(first) = args.first() else {
+        return AmixerAction::List;
+    };
+    let first: &str = first;
+    if first == "-h" || first == "--help" {
+        return AmixerAction::Help;
+    }
+    if first != "get" && first != "set" {
+        return amixer_invalid(first);
+    }
+
+    // `get <index>` or `set <index> <value>`.
+    let Some(index_text) = args.get(1) else {
+        return amixer_invalid(first);
+    };
+    let Some(index) = parse_u32(index_text) else {
+        return amixer_invalid(index_text);
+    };
+
+    if first == "get" {
+        return AmixerAction::Get { index };
+    }
+
+    let Some(value_text) = args.get(2) else {
+        return amixer_invalid(index_text);
+    };
+    // `80%` and a bare `80` mean the same, as in the C tool.
+    let numeric: &str = value_text.strip_suffix('%').unwrap_or(value_text);
+    match parse_u32(numeric) {
+        Some(percent) => {
+            AmixerAction::Set { index, percent: clamp_percent(percent as i32) }
+        }
+        // `mute` / `unmute` map onto the ends of the range, which is what the
+        // hardware switch does.
+        None if numeric == "mute" => AmixerAction::Set { index, percent: 0 },
+        None if numeric == "unmute" => AmixerAction::Set { index, percent: 100 },
+        None => amixer_invalid(value_text),
+    }
+}
+
+/// Build the rejection action with a message.
+fn amixer_invalid(text: &str) -> AmixerAction {
+    let mut field = [0u8; 48];
+    let bytes = text.as_bytes();
+    let len = bytes.len().min(48);
+    field[..len].copy_from_slice(&bytes[..len]);
+    AmixerAction::Invalid { message: field }
 }
 
 /// Parse an ALSA sample-format name such as `S16_LE`.
@@ -538,7 +630,6 @@ mod tests {
         match parse_aplay(&args) {
             AplayAction::Play(request) => {
                 assert_eq!(request.device.card, 0);
-                assert_eq!(request.device.device, 0);
                 // `-d 1` overrides the device from the name, as the C tool does.
                 assert_eq!(request.device.device, 1);
                 assert_eq!(request.format, SampleFormat::S32_LE);
@@ -589,5 +680,50 @@ mod tests {
             AplayAction::DumpParams(request) => assert_eq!(request.rate, 48000),
             other => panic!("expected DumpParams, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn amixer_with_no_arguments_lists() {
+        assert_eq!(parse_amixer(&[]), AmixerAction::List);
+    }
+
+    #[test]
+    fn amixer_get_and_set_parse() {
+        assert_eq!(parse_amixer(&["get", "0"]), AmixerAction::Get { index: 0 });
+        assert_eq!(
+            parse_amixer(&["set", "1", "80%"]),
+            AmixerAction::Set { index: 1, percent: 80 }
+        );
+        // A bare number means the same as one with a percent sign.
+        assert_eq!(
+            parse_amixer(&["set", "1", "80"]),
+            AmixerAction::Set { index: 1, percent: 80 }
+        );
+    }
+
+    #[test]
+    fn amixer_mute_maps_onto_the_range_ends() {
+        assert_eq!(
+            parse_amixer(&["set", "0", "mute"]),
+            AmixerAction::Set { index: 0, percent: 0 }
+        );
+        assert_eq!(
+            parse_amixer(&["set", "0", "unmute"]),
+            AmixerAction::Set { index: 0, percent: 100 }
+        );
+    }
+
+    #[test]
+    fn amixer_clamps_and_rejects() {
+        // Out-of-range levels clamp rather than wrap.
+        assert_eq!(
+            parse_amixer(&["set", "0", "250"]),
+            AmixerAction::Set { index: 0, percent: 100 }
+        );
+        assert!(matches!(parse_amixer(&["frobnicate"]), AmixerAction::Invalid { .. }));
+        assert!(matches!(parse_amixer(&["get"]), AmixerAction::Invalid { .. }));
+        assert!(matches!(parse_amixer(&["set", "0"]), AmixerAction::Invalid { .. }));
+        assert!(matches!(parse_amixer(&["set", "x", "10"]), AmixerAction::Invalid { .. }));
+        assert_eq!(parse_amixer(&["--help"]), AmixerAction::Help);
     }
 }

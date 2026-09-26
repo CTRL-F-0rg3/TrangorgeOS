@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/ds-detect",
     "crates/ds-manager",
     "crates/ds-registry",
     "drivers/Alsa-TrangorgeOS",

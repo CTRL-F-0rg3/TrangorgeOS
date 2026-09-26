@@ -53,6 +53,20 @@ allde:
 iso *ARGS:
     bash ./tools/mkiso.sh {{ARGS}}
 
+# Build the driver image: every driver plus a manifest saying what each claims
+# to handle, so boot can start only the ones the machine actually needs.
+# Flags are forwarded to tools/mkdriverimg.sh.
+driverimg *ARGS:
+    bash ./tools/mkdriverimg.sh {{ARGS}}
+
+# Print the driver catalogue the image would carry, without building it.
+driverimg-list:
+    bash ./tools/mkdriverimg.sh --list
+
+# Run the detection layer's tests (scan, match, plan, calibrate).
+detect-test:
+    cargo test --manifest-path driverspace_workspace/Cargo.toml -p ds-detect
+
 # Boot the newest demo ISO in QEMU (graphical window, serial on stdout).
 iso-run *ARGS: iso
     bash ./tools/run-iso.sh {{ARGS}}
