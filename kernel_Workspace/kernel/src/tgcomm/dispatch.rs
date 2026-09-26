@@ -16,6 +16,9 @@ extern "C" {
 const CLS_SYS: u32 = 0;
 const CLS_VIDEO: u32 = 5;
 
+/// Framebuffer info, within the video class.
+const VIDEO_FB_INFO: u32 = 0;
+
 /// Dispatch an authorized request, filling `reply` with the result.
 pub fn handle(msg: &CommMsg, reply: &mut CommMsg) {
     let cls = (msg.opcode >> 8) as u32;
@@ -39,14 +42,42 @@ pub fn handle(msg: &CommMsg, reply: &mut CommMsg) {
                 reply.status = -1;
             }
         },
-        CLS_VIDEO => {
-            // Framebuffer info: (width<<16 | height, stride, physical base).
-            let (w, h, stride, phys) = crate::gfx::console::fb_info();
-            reply.status = 0;
-            reply.a0 = ((w as u64) << 16) | h as u64;
-            reply.a1 = stride as u64;
-            reply.a2 = phys;
-        }
+        CLS_VIDEO => match op {
+            // Framebuffer info. The reply carries the whole
+            // `FramebufferDesc`, in the packing below.
+            VIDEO_FB_INFO => {
+                let desc = crate::gfx::console::fb_desc();
+
+                if !desc.is_usable() {
+                    // There is no framebuffer to describe. A success reply here
+                    // would let a client map physical address zero, which is the
+                    // configuration space at best and an arbitrary device at
+                    // worst, so this is a failure rather than zeros.
+                    reply.status = -1;
+                } else {
+                    // `GfxFbInfo` in `kapi-abi` is 0x0300, while `tg_comm` puts
+                    // the class in the high byte, so the two numberings cannot
+                    // both be right. `tg_comm` is the transport actually in use
+                    // and `OpClass::Video` is 5, so that is what travels here;
+                    // `ds-fw-gpu` maps 0x0300 onto the same descriptor.
+                    reply.status = 0;
+                    reply.a0 = ((desc.width as u64) << 16) | desc.height as u64;
+                    // The stride in *bytes*, as the descriptor defines it. The
+                    // old reply divided by four, which described the same
+                    // framebuffer in different units on each side.
+                    reply.a1 = desc.stride_px as u64;
+                    reply.a2 = desc.phys;
+                    // `CommMsg` has a fourth argument register, so the format and
+                    // the flip do not have to be packed into the others: `a3`
+                    // carries the format in its low 32 bits and the flip flag in
+                    // its high 32. One field, one place.
+                    reply.a3 = (desc.format as u64) | ((desc.flipped as u64) << 32);
+                }
+            }
+            _ => {
+                reply.status = -1;
+            }
+        },
         _ => {
             reply.status = -1;
         }

@@ -10,8 +10,22 @@ members = [
 version = "0.1.0"
 edition = "2021"
 
+# The graphics workspace is `no_std` throughout: `gfx-server` is a
+# `no_main` bare-metal server and `gfx-protocol` / `gfx-api` are linked into
+# both kernel-adjacent and user-space code. Unwinding is unavailable in that
+# setting, so a panic has to abort - a server that tried to unwind through a
+# ring-buffer IPC boundary would be unwinding across a kernel it does not own.
+[profile.release]
+panic = "abort"
+opt-level = 2
+
+[profile.dev]
+panic = "abort"
+
 # External dependencies from other workspaces.
-# gfx_workspace is independent but links kernel and driverspace as libraries.
+# `gfx_protocol_workspace` reaches hardware only through the driver space
+# (`kapi-syscall` / `ds-*`); it does not link the kernel, so a display server
+# cannot reach a device except through the manager's grants.
 [workspace.dependencies]
 kernel = { path = "../kernel_Workspace/kernel" }
 kapi-abi = { path = "../driverspace_workspace/lib/kapi-abi" }

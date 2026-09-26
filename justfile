@@ -20,7 +20,7 @@ ds-libs:
 
 # Build the Graphics workspace (protocols, server, API).
 gfx-libs:
-    cargo build --manifest-path gfx_workspace/Cargo.toml
+    cargo build --manifest-path gfx_protocol_workspace/Cargo.toml
 
 # Build the Vise LG language workspace (compiler, runtime, IR).
 vise-libs:
@@ -46,6 +46,22 @@ demouserspace: uspace-libs
 # Run the userspace all-de desktop environment demo -> writes allde_frame.ppm.
 allde:
     cargo run --manifest-path allde/Cargo.toml
+
+# Build the userspace standard library (ustd) — a real Rust `std` for ring 3.
+# The syscall layer, the C ABI and `_start` come from ustd/; the `std` itself is
+# upstream, built by the script because there is no prebuilt one for the target.
+uspace-std:
+    bash ./ustd/build.sh
+
+# Type-check the userspace target without linking, for CI.
+uspace-std-check:
+    bash ./ustd/build.sh --check
+
+# The host tests for tgs-hal: the allocator, the descriptor table and the
+# dirent codec, all driven against a mock kernel. Needs no target and no
+# `-Zbuild-std`, so it is fast enough for a pre-commit hook.
+uspace-std-test:
+    cargo test --manifest-path ustd/Cargo.toml -p tgs-hal
 
 # Build the bootable demo ISO -> dist/TrangorgeOS-<version>-x86_64-demo.iso
 # Flags are forwarded to tools/mkiso.sh, e.g. `just iso --release --no-build`.
@@ -88,7 +104,7 @@ check:
     cargo check --manifest-path kernel-drivers/Cargo.toml
     cargo check --manifest-path kernel_Workspace/Cargo.toml
     cargo check --manifest-path driverspace_workspace/Cargo.toml
-    cargo check --manifest-path gfx_workspace/Cargo.toml
+    cargo check --manifest-path gfx_protocol_workspace/Cargo.toml
     cargo check --manifest-path vise_lg_workspace/Cargo.toml
 
 # Clean all build artifacts across all workspaces.
@@ -96,6 +112,6 @@ clean:
     cargo clean --manifest-path kernel-drivers/Cargo.toml
     cargo clean --manifest-path kernel_Workspace/Cargo.toml
     cargo clean --manifest-path driverspace_workspace/Cargo.toml
-    cargo clean --manifest-path gfx_workspace/Cargo.toml
+    cargo clean --manifest-path gfx_protocol_workspace/Cargo.toml
     cargo clean --manifest-path vise_lg_workspace/Cargo.toml
     @echo "[just] all workspaces cleaned"

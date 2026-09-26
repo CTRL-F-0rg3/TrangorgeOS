@@ -1,0 +1,20 @@
+[package]
+name = "tgs-hal"
+description = "TrangorgeOS userspace syscall ABI: gate, errno, fd table, heap, dirents."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tgs_hal"
+crate-type = ["rlib"]
+doctest = false
+
+[features]
+# Exposes `gate::Mock`, a scriptable fake kernel. On by default for the host test
+# build via `cfg(test)`; a sysroot crate that wants to test against a fake kernel
+# of its own turns it on explicitly.
+mock = []
+
+[dependencies]

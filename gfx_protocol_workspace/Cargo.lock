@@ -3,31 +3,10 @@
 version = 4
 
 [[package]]
-name = "bit_field"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e4b40c7323adcfc0a41c4b88143ed58346ff65a288fc144329c5c45e05d70c6"
-
-[[package]]
 name = "bitflags"
 version = "2.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
-
-[[package]]
-name = "bootloader"
-version = "0.9.35"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e22d5a0b9e11dd5bee9d24a68885de6dc7ed367f897323b1c1286150fd469374"
-dependencies = [
- "font8x8",
-]
-
-[[package]]
-name = "const_fn"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "413d67b29ef1021b4d60f4aa1e925ca031751e213832b4b1d588fae623c05c60"
 
 [[package]]
 name = "ds-fw-gpu"
@@ -64,12 +43,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "font8x8"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
-
-[[package]]
 name = "gfx-api"
 version = "0.1.0"
 dependencies = [
@@ -91,18 +64,6 @@ dependencies = [
  "gfx-protocol",
  "kapi-abi",
  "kapi-syscall",
- "kernel",
-]
-
-[[package]]
-name = "gluecore"
-version = "0.1.0"
-dependencies = [
- "kstd_alloc",
- "kstd_base",
- "kstd_core",
- "kstd_data",
- "kstd_io",
 ]
 
 [[package]]
@@ -117,131 +78,4 @@ name = "kapi-syscall"
 version = "0.1.0"
 dependencies = [
  "kapi-abi",
-]
-
-[[package]]
-name = "kernel"
-version = "0.1.0"
-dependencies = [
- "bitflags",
- "bootloader",
- "gluecore",
- "kstd_base",
- "kstd_core",
- "lazy_static",
- "pic8259",
- "spin 0.5.2",
- "tg-comm",
- "volatile 0.2.7",
- "x86_64 0.15.5",
-]
-
-[[package]]
-name = "kstd_alloc"
-version = "0.1.0"
-dependencies = [
- "kstd_base",
-]
-
-[[package]]
-name = "kstd_base"
-version = "0.1.0"
-
-[[package]]
-name = "kstd_core"
-version = "0.1.0"
-dependencies = [
- "kstd_base",
- "kstd_data",
- "kstd_io",
-]
-
-[[package]]
-name = "kstd_data"
-version = "0.1.0"
-dependencies = [
- "kstd_alloc",
- "kstd_base",
- "kstd_io",
-]
-
-[[package]]
-name = "kstd_io"
-version = "0.1.0"
-
-[[package]]
-name = "lazy_static"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
-dependencies = [
- "spin 0.9.9",
-]
-
-[[package]]
-name = "pic8259"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb844b5b01db1e0b17938685738f113bfc903846f18932b378bc0eabfa40e194"
-dependencies = [
- "x86_64 0.14.13",
-]
-
-[[package]]
-name = "rustversion"
-version = "1.0.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
-
-[[package]]
-name = "spin"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-
-[[package]]
-name = "spin"
-version = "0.9.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
-
-[[package]]
-name = "tg-comm"
-version = "0.1.0"
-
-[[package]]
-name = "volatile"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6b06ad3ed06fef1713569d547cdbdb439eafed76341820fb0e0344f29a41945"
-
-[[package]]
-name = "volatile"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "442887c63f2c839b346c192d047a7c87e73d0689c9157b00b53dcc27dd5ea793"
-
-[[package]]
-name = "x86_64"
-version = "0.14.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c101112411baafbb4bf8d33e4c4a80ab5b02d74d2612331c61e8192fc9710491"
-dependencies = [
- "bit_field",
- "bitflags",
- "rustversion",
- "volatile 0.4.6",
-]
-
-[[package]]
-name = "x86_64"
-version = "0.15.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be4ec631e1a81d50e46c35a4a00322bd076c47491b64c2fb10a7ffa89002c697"
-dependencies = [
- "bit_field",
- "bitflags",
- "const_fn",
- "rustversion",
- "volatile 0.4.6",
 ]

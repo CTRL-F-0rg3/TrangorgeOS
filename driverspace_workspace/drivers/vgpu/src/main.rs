@@ -47,16 +47,16 @@ struct VgpuInfo {
     stride: u32,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn driver_main() {
-    ds_info!("VGPU", "Virtual GPU driver starting...");
+    ds_info!("VGPU: virtual GPU driver starting...");
 
     if !vgpu_init(1024, 768) {
-        ds_error!("VGPU", "Failed to initialize VGPU");
+        ds_error!("VGPU: failed to initialize VGPU");
         return;
     }
 
-    ds_info!("VGPU", "VGPU initialized successfully");
+    ds_info!("VGPU: VGPU initialized successfully");
     vgpu_clear(0xFF101020);
 
     loop {
@@ -71,33 +71,33 @@ fn vgpu_init(w: u32, h: u32) -> bool {
         }
     }
 
-    ds_info!("VGPU", "Searching for VGA device...");
-    
+    ds_info!("VGPU: searching for VGA device...");
+
     let bdf = match find_vga_device() {
         Some(bdf) => bdf,
         None => {
-            ds_error!("VGPU", "VGA device not found");
+            ds_error!("VGPU: VGA device not found");
             return false;
         }
     };
 
-    ds_info!("VGPU", "Found VGA device at BDF: {}", bdf);
+    ds_info!("VGPU: found VGA device at BDF: {}", bdf);
 
     let vendor_device = read_pci_config(bdf, 0);
     let expected = (VENDOR_ID as u32) | ((DEVICE_ID as u32) << 16);
-    
+
     if vendor_device != expected {
-        ds_error!("VGPU", "Vendor/Device ID mismatch: expected 0x{:x}, got 0x{:x}", expected, vendor_device);
+        ds_error!("VGPU: vendor/device ID mismatch: expected 0x{:x}, got 0x{:x}", expected, vendor_device);
         return false;
     }
 
     let fb_phys = read_pci_bar(bdf, 0);
     if fb_phys == 0 {
-        ds_error!("VGPU", "Failed to read BAR0");
+        ds_error!("VGPU: failed to read BAR0");
         return false;
     }
 
-    ds_info!("VGPU", "Framebuffer physical address: 0x{:x}", fb_phys);
+    ds_info!("VGPU: framebuffer physical address 0x{:x}", fb_phys);
 
     enable_pci_device(bdf);
 
@@ -111,20 +111,20 @@ fn vgpu_init(w: u32, h: u32) -> bool {
     let fb_size = (w * h * 4) as u64;
     let va_hint = 0x45000000u64;
 
-    ds_info!("VGPU", "Requesting MMIO mapping for framebuffer...");
-    
+    ds_info!("VGPU: requesting MMIO mapping for framebuffer...");
+
     let region = match MmioRegion::map(Handle(0), fb_phys, fb_size) {
         Ok(r) => r,
         Err(e) => {
-            ds_error!("VGPU", "Failed to map MMIO: {:?}", e);
+            ds_error!("VGPU: failed to map MMIO: {:?}", e);
             return false;
         }
     };
 
-    ds_info!("VGPU", "Framebuffer mapped at virtual address: 0x{:x}", region.virt_addr());
+    ds_info!("VGPU: framebuffer mapped at virtual address 0x{:x}", region.virt_base);
 
     unsafe {
-        G_INFO.fb = region.virt_addr() as *mut u32;
+        G_INFO.fb = region.virt_base as *mut u32;
         G_INFO.width = w;
         G_INFO.height = h;
         G_INFO.bpp = 32;
@@ -217,7 +217,7 @@ fn vgpu_pixel(x: u32, y: u32, color: u32) {
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    ds_error!("VGPU", "PANIC!");
+    ds_error!("VGPU: PANIC!");
     loop {
         kapi_syscall::sys_yield();
     }

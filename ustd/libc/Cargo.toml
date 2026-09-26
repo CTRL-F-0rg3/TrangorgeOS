@@ -1,0 +1,25 @@
+[package]
+name = "tgs-libc"
+description = "The C ABI that upstream Rust `std` links against on TrangorgeOS."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tgs_libc"
+crate-type = ["rlib"]
+# Doc-tests would need a TrangorgeOS kernel to link against; the doc examples in
+# this crate are all `no_run` anyway, so there is nothing a host test could
+# execute.
+doctest = false
+
+[features]
+default = []
+# Defines the `#[no_mangle] extern "C"` symbols — `malloc`, `write`, `__errno_location`
+# and the rest. Off by default so that `cargo test` on the host does not
+# clobber the host's own libc symbols; `build.sh` turns it on.
+sysroot = []
+
+[dependencies]
+tgs-hal = { workspace = true, features = ["mock"] }

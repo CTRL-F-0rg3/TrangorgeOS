@@ -23,14 +23,29 @@ extern "C" {
     pub fn dma_free_coherent(phys: u64, virt: *mut u8, bytes: usize);
 
     /// Map device MMIO into the higher half; returns a virtual address.
+    ///
+    /// Implemented by the kernel in `gfx::mod`, over `vmm_map_device`. The
+    /// mapping is device memory rather than cached normal memory: a register
+    /// read back after a write must see what the write left, not the copy the
+    /// CPU kept.
+    ///
+    /// Refuses `phys == 0` and `len == 0`, because both produce a mapping that
+    /// looks valid and is not.
     pub fn mmio_map(phys: u64, len: usize, out_virt: *mut u64) -> bool;
 
+    /// Undo an [`mmio_map`]. `len` must match the mapping.
     pub fn mmio_unmap(virt: u64, len: usize);
 
     /// Is `virt` actually present in the current page table?
     pub fn paging_is_mapped(virt: u64) -> bool;
 
     /// Query the primary framebuffer (used by `hdmi`/`gfx`).
+    ///
+    /// Implemented by the kernel in `gfx::mod`. The stride is in **bytes** and
+    /// the address is **physical**, both matching
+    /// `kapi_abi::payloads::gpu::FramebufferDesc`. It answers `false` when there
+    /// is no framebuffer at all - notably physical address zero, which must
+    /// never be mapped.
     pub fn fb_info(out_w: *mut u32, out_h: *mut u32, out_stride: *mut u32, out_phys: *mut u64) -> bool;
 }
 

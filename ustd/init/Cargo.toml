@@ -1,0 +1,17 @@
+[package]
+name = "tgs-init"
+description = "A TrangorgeOS userspace program that uses the whole Rust standard library."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "tgs-init"
+path = "src/main.rs"
+
+[dependencies]
+# `tgs-rt` is the dependency, not a source file copied into the binary: it is what
+# defines `_start` and the `#[global_allocator]`'s C runtime, and a program that
+# forgets to link it gets a link error rather than a runtime surprise.
+tgs-rt = { workspace = true }

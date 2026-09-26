@@ -17,27 +17,8 @@ Before beginning driver implementation, the foundational libraries located in `l
 ## 2. Driver Implementation Checklist
 The following drivers require migration from the legacy codebase or complete reimplementation using the new framework traits.
 
-### 2.1. Graphics and Display
-- [ ] **`amdgpu_driver`**
-  - [ ] Implement MMIO register read/write wrappers.
-  - [ ] Implement ring buffer management for command submission.
-  - [ ] Implement Display PHY initialization.
-  - [ ] Implement the `DisplayDevice` and `GpuDevice` traits from `ds-fw-gpu`.
-- [ ] **`intelgpu_driver`**
-  - [ ] Implement Graphics Technology (GT) and Display Engine (DE) initialization.
-  - [ ] Implement GuC (Graphics Microcontroller) firmware loading.
-  - [ ] Implement the `DisplayDevice` trait from `ds-fw-gpu`.
-- [ ] **`vgpu` (Virtual GPU)**
-  - [ ] Set up the Rust-to-C FFI bridge (`build.rs` and `ffi.rs`).
-  - [ ] Implement virtual framebuffer memory management.
-  - [ ] Ensure the C implementation strictly uses the `kapi-abi` headers.
 
-### 2.2. Audio
-- [ ] **`audiodriver`**
-  - [ ] Implement DMA stream management for audio buffers.
-  - [ ] Implement codec communication protocols (I2C / Intel HDA).
-  - [ ] Integrate the Odin/C DSP components via the defined FFI boundaries.
-  - [ ] Implement the `AudioDevice` trait from `ds-fw-audio`.
+
 
 ### 2.3. Input and HID
 - [ ] **`wacomgraphic_driver`**

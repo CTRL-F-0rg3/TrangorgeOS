@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# The framework's vocabulary is `kapi-abi`'s: `DsError` is the only type it
+# borrows, and borrowing it from one place is what stops a driver and a client
+# from disagreeing on what a failure means.
+kapi-abi = { path = "../kapi-abi" }

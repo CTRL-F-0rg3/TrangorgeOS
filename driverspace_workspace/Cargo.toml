@@ -5,12 +5,14 @@ members = [
     "crates/ds-manager",
     "crates/ds-registry",
     "drivers/Alsa-TrangorgeOS",
-    "drivers/amdgpu-driver",
     "drivers/audiodriver",
-    "drivers/intelgpu-driver",
     "drivers/IntelGpu-TrangorgeOS",
     "drivers/AmdGpu-TrangorgeOS",
-    "drivers/iommu-TrangorgeOS",
+    # `drivers/iommu-TrangorgeOS` is an empty directory: the crate was never
+    # committed, so it is not a member. `tools/mkdriverimg.sh` still tries to
+    # build `iommu-driver` and has to stop doing that too. Unrelated to the
+    # graphics chain, so it is recorded here rather than invented.
+    # "drivers/iommu-TrangorgeOS",
     "drivers/netcam_driver",
     "drivers/vgpu",
     "drivers/wacomgraphic_driver",

@@ -1,0 +1,16 @@
+[package]
+name = "tgs-rt"
+description = "Process start-up for TrangorgeOS userspace: _start, the stack walk, and the panic hook."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tgs_rt"
+crate-type = ["rlib"]
+doctest = false
+
+[dependencies]
+tgs-hal = { workspace = true }
+tgs-libc = { workspace = true, features = ["sysroot"] }

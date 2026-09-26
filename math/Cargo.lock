@@ -16,6 +16,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "math-cloc"
+version = "0.1.0"
+
+[[package]]
 name = "math-core"
 version = "0.1.0"
 dependencies = [
