@@ -85,6 +85,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ds-fw-power"
+version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
+name = "ds-fw-video"
+version = "0.1.0"
+dependencies = [
+ "kapi-abi",
+ "kapi-syscall",
+]
+
+[[package]]
 name = "ds-ipc"
 version = "0.1.0"
 dependencies = [

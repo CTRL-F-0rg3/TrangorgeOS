@@ -8,3 +8,5 @@ pub mod irq;
 pub mod ipc;
 pub mod iommu;
 pub mod sys;
+pub mod video;
+pub mod power;

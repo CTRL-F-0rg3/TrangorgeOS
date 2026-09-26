@@ -41,6 +41,10 @@ name = "hw-sys"
 version = "0.1.0"
 
 [[package]]
+name = "net"
+version = "0.1.0"
+
+[[package]]
 name = "pcie"
 version = "0.1.0"
 

@@ -11,6 +11,7 @@ members = [
     "displayport",
     "hdmi",
     "gfx",
+    "net",
 ]
 
 [profile.dev]
