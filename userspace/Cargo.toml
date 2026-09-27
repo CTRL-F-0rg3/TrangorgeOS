@@ -20,8 +20,12 @@ description = "TrangorgeOS userspace: the on-disk hierarchy, login, and replacea
 # putting a different program in `user/root/shell/`.
 [dependencies]
 tg-comm = { path = "../lib" }
-uspace-comm = { path = "../uspace-comm" }
-uspace = { path = "../uspace" }
+# NOTE: `uspace` (the graphical/compositor crate) and `uspace-comm` used to be
+# listed here. Nothing in this crate referenced them, and both are `std`
+# crates: keeping them made `cargo build --target x86_64-unknown-none` fail with
+# "can't find crate for `std`", which is what stopped the kernel from linking
+# the shell. The shell needs no compositor, and a dependency nothing imports is
+# a constraint with no benefit.
 
 [profile.release]
 opt-level = 2

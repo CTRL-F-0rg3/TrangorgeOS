@@ -20,7 +20,10 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x0040_0000;
+    /* NOTE: no digit separators. `lld` parses this file with its own number
+     * reader, not the C preprocessor, and it rejects Rust's `0x0040_0000`
+     * spelling with "malformed number". Hex digits only. */
+    . = 0x00400000;
     _image_start = .;
 
     .text : ALIGN(4K)

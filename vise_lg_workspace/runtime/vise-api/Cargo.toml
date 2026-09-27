@@ -4,3 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# The front end is a pipeline over the language crates: lex, parse, lower to IR.
+# Those three are real libraries.
+#
+# `vise-codegen` and `vise-optimizer` are NOT dependencies, and that is not an
+# oversight: both are `cargo new` stubs (a `main()` that prints "Hello, world!"),
+# and a binary crate cannot be imported as a library. `compile_shader` below
+# therefore stops after the IR and says so, rather than calling into code that
+# does not exist. Wiring the real code generators in is a separate piece of work
+# and is left for whoever writes them.
+vise-lexer = { path = "../../lang/vise-lexer" }
+vise-parser = { path = "../../lang/vise-parser" }
+vise-sema = { path = "../../lang/vise-sema" }
+vise-ir = { path = "../../lang/vise-ir" }

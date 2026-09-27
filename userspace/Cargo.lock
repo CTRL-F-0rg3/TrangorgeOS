@@ -11,21 +11,4 @@ name = "tgs-userspace"
 version = "0.1.0"
 dependencies = [
  "tg-comm",
- "uspace",
- "uspace-comm",
-]
-
-[[package]]
-name = "uspace"
-version = "0.1.0"
-dependencies = [
- "tg-comm",
- "uspace-comm",
-]
-
-[[package]]
-name = "uspace-comm"
-version = "0.1.0"
-dependencies = [
- "tg-comm",
 ]

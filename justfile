@@ -15,12 +15,53 @@ drivers:
     cargo build --manifest-path kernel-drivers/Cargo.toml
 
 # Build the Driver Space workspace (ABI, IPC, manager, drivers).
-ds-libs:
-    cargo build --manifest-path driverspace_workspace/Cargo.toml
+#
+# Three different build shapes live in this workspace, and one `cargo build`
+# cannot express all three — that is why this is three recipes and not one line.
+#
+# 1. `lib/*` — host-side crates (tests, tooling). Built for the host.
+# 2. `drivers/*` that are `#![no_std] #![no_main]` — real bare-metal drivers,
+#    loaded by the Driver Space manager. They must be cross-compiled: linking one
+#    against the host fails with `undefined symbol: main`, which is a missing
+#    `--target` rather than a fault in the driver.
+# 3. `drivers/*` that are ordinary `std` programs (tools, prototypes) — built
+#    for the host, and they would *also* fail under `--target x86_64-unknown-none`
+#    because there is no `std` for a bare-metal target.
+ds-libs: ds-host ds-drivers ds-tools
 
-# Build the Graphics workspace (protocols, server, API).
-gfx-libs:
-    cargo build --manifest-path gfx_protocol_workspace/Cargo.toml
+# (1) The ABI/IPC/manager crates.
+ds-host:
+    cargo build --manifest-path driverspace_workspace/Cargo.toml -p ds-detect -p ds-manager -p ds-registry
+
+# (2) The bare-metal drivers, cross-compiled. Only the crates that are actually
+# `#![no_std] #![no_main]` belong here; adding a `std` one makes this recipe fail
+# with `can't find crate for 'std'`.
+#
+# The package names come from each `Cargo.toml` and are not always the directory
+# names (`IntelGpu-TrangorgeOS` -> `intel-gpu-trangorgeos`).
+ds-drivers:
+    cargo build --manifest-path driverspace_workspace/Cargo.toml \
+        -p vgpu -p alsa-trangorgeos \
+        --target x86_64-unknown-none
+
+# (3) The host-side driver tools: prototypes and harness programs, not firmware.
+ds-tools:
+    cargo build --manifest-path driverspace_workspace/Cargo.toml \
+        -p audiodriver -p intel-gpu-trangorgeos -p amd-gpu-trangorgeos \
+        -p netcam_driver -p wacomgraphic_driver
+
+# Build the Graphics workspace.
+#
+# Split for the same reason as `ds-libs`: `gfx-server` is `#![no_std] #![no_main]`
+# firmware, while the protocol and API crates are host-side. One `cargo build`
+# links the server against the host and fails on `undefined symbol: main`.
+gfx-libs: gfx-host gfx-server
+
+gfx-host:
+    cargo build --manifest-path gfx_protocol_workspace/Cargo.toml -p gfx-protocol -p gfx-api
+
+gfx-server:
+    cargo build --manifest-path gfx_protocol_workspace/Cargo.toml -p gfx-server --target x86_64-unknown-none
 
 # Build the Vise LG language workspace (compiler, runtime, IR).
 vise-libs:

@@ -78,13 +78,62 @@ STD_FLAGS=(
 # argument list to rustc, and `RUSTFLAGS` is the supported way to say the same
 # thing; it also means the flags reach every crate in the graph, which is what a
 # link argument needs.
+
+# `std` is built for a Linux-flavoured target, so it asks the linker for
+# `-lutil -lrt -lpthread -lm -ldl -lc -lgcc_eh -lgcc` regardless of what this
+# platform actually has. Those symbols are already provided by `tgs-libc` and
+# `compiler_builtins`; the `-l` flags are the *linker* being asked to search a
+# library path, and a search that fails is a hard error even when every symbol
+# it was looking for is already defined.
+#
+# So: give it somewhere to search, containing empty archives. Each `-l` is
+# satisfied by finding a file of that name, and the archive contributes no
+# members, so it cannot define or override a symbol. This is the standard way to
+# satisfy `libc`-shaped link lines on a freestanding target.
+STUB_DIR="$HERE/target/stub-libs"
+mkdir -p "$STUB_DIR"
+for lib in util rt pthread m dl c gcc gcc_eh; do
+    archive="$STUB_DIR/lib$lib.a"
+    if [[ ! -f "$archive" ]]; then
+        # An empty archive: a valid `ar` file with no members. `ar` refuses to
+        # create one from nothing, hence the empty object file it is built from.
+        echo 'int tgs_stub_library_not_used;' > "$STUB_DIR/stub.c"
+        (cc -c "$STUB_DIR/stub.c" -o "$STUB_DIR/stub.o" 2>/dev/null \
+            || clang -c "$STUB_DIR/stub.c" -o "$STUB_DIR/stub.o" 2>/dev/null)
+        ar rcs "$archive" "$STUB_DIR/stub.o"
+    fi
+done
+
+# `-Zbuild-std` places this workspace's own rlibs *before* the freshly built
+# `std`. That is backwards for an archive: a linker only pulls a member out of an
+# `.a` when that member resolves a symbol that is undefined at the point the
+# archive is seen. Nothing in `tgs_libc` is referenced yet when lld reaches it,
+# so it discards the whole thing — and then, 140 archives later, `std` asks for
+# `malloc` and finds nothing.
+#
+# `--undefined=<sym>` declares a symbol undefined *before* the link starts, so
+# the members defining it are loaded whatever order the archives arrive in. This
+# is the standard way to keep a side-loaded runtime alive, and it is a no-op for
+# symbols that resolve normally.
+FORCE_SYMS=()
+for sym in malloc calloc realloc free posix_memalign abort \
+           write writev read close syscall getcwd \
+           clock_gettime __errno_location __xpg_strerror_r \
+           pthread_key_create pthread_key_delete \
+           pthread_getspecific pthread_setspecific \
+           _Unwind_Backtrace _Unwind_GetIP; do
+    FORCE_SYMS+=("-C" "link-arg=--undefined=$sym")
+done
+
 export RUSTFLAGS="\
 -C link-arg=-nostdlib \
 -C link-arg=-static \
 -C link-arg=-znoexecstack \
 -C link-arg=-T$LINKER_LD \
+-C link-arg=-L$STUB_DIR \
 -C relocation-model=static \
--C link-arg=--gc-sections"
+-C link-arg=--gc-sections \
+${FORCE_SYMS[@]}"
 
 # `-Z` flags belong to *cargo* rather than rustc, so they go on the cargo command
 # line and nowhere else. Cargo rejects one after a `--` outright.

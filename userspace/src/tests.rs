@@ -261,7 +261,8 @@ mod tests {
         assert!(sh.prompt().contains("@r1:"), "{}", sh.prompt());
 
         // A rung above 1 gets a `!` so it cannot be mistaken for rung 1.
-        let mut elevated = *sh.session();
+        // `Session` is cloned rather than copied: it owns its paths.
+        let mut elevated = sh.session().clone();
         elevated.rung = 7;
         let style = PromptStyle::for_rung(7);
         assert!(
@@ -277,9 +278,19 @@ mod tests {
         let mut fs = MemoryFs::new();
         let mut sys = MockSys::default();
         let mut accounts = Accounts::with_root();
-        let mut sh = shell_over(&mut fs, &mut sys, &mut accounts);
+        for d in crate::layout::required_dirs() {
+            fs.mkdir(&d);
+        }
+        let root = accounts.login("root", "root").unwrap();
+        let mut sh = Shell::new(root, &mut fs, &mut sys, &mut accounts);
 
         sh.run("useradd -r 3 alice hunter2");
+
+        // The shell borrows `accounts` for as long as it lives, so the store is
+        // inspected after dropping it. Doing it the other way round would not
+        // compile, which is the borrow checker saying the ownership is exclusive.
+        let sh_session = sh.session().clone();
+        drop(sh);
         assert!(
             accounts.get("alice").is_some(),
             "useradd should have created the account"
@@ -287,11 +298,15 @@ mod tests {
         assert!(accounts.login("alice", "hunter2").is_ok());
 
         // A non-root session is refused.
-        let mut guest = sh.session().clone();
+        let mut guest = sh_session;
         guest.user = "guest".to_string();
         let mut sh2 = Shell::new(guest, &mut fs, &mut sys, &mut accounts);
         sh2.run("useradd mallory pw");
-        assert!(accounts.get("mallory").is_none(), "a guest must not add accounts");
+        drop(sh2);
+        assert!(
+            accounts.get("mallory").is_none(),
+            "a guest must not add accounts"
+        );
     }
 
     /// `passwd` changes the password, and the old one stops working.
@@ -300,10 +315,18 @@ mod tests {
         let mut fs = MemoryFs::new();
         let mut sys = MockSys::default();
         let mut accounts = Accounts::with_root();
-        let mut sh = shell_over(&mut fs, &mut sys, &mut accounts);
+        for d in crate::layout::required_dirs() {
+            fs.mkdir(&d);
+        }
+        let root = accounts.login("root", "root").unwrap();
+        let mut sh = Shell::new(root, &mut fs, &mut sys, &mut accounts);
 
         sh.run("passwd newsecret");
+        drop(sh);
         assert!(accounts.login("root", "newsecret").is_ok());
-        assert!(accounts.login("root", "root").is_err(), "the old password must stop working");
+        assert!(
+            accounts.login("root", "root").is_err(),
+            "the old password must stop working"
+        );
     }
 }

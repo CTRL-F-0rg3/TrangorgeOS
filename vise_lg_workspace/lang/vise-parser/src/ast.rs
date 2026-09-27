@@ -3,6 +3,7 @@
 extern crate alloc;
 use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::boxed::Box;
 
 #[derive(Debug, Clone)]
 pub struct Span {

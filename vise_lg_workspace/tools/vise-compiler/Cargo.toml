@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# `main.rs` lexes and parses directly, so it needs those two crates in its own
+# manifest — a dependency of a dependency is not importable here. `vise-api` is
+# the same front end and is depended on for the shader half; it does not replace
+# the two direct uses in `main.rs`, it just means the pipeline is not written
+# twice.
+vise-lexer = { path = "../../lang/vise-lexer" }
+vise-parser = { path = "../../lang/vise-parser" }
+vise-api = { path = "../../runtime/vise-api" }
