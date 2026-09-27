@@ -237,10 +237,9 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 
     gfx::refresh();
 
-    // Handoff into userspace: build the system tree, then announce the crossing.
-    // The tree has to exist before anything is drawn, and the medium has to be
-    // formatted first — a fresh data.img has no superblock to create a
-    // directory against.
+    // Hand off to userspace. The tree has to exist before the shell can list
+    // anything, and the medium has to be formatted first — a fresh data.img has
+    // no superblock to create a directory against.
     println!("[boot-dbg] step: fs::uspace::enter()...");
     match fs::root_device() {
         Some(d) => {
@@ -260,10 +259,38 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
                     );
                 }
             }
+
+            // Pre-login display menu, the way Redox's boot chooser works: pick
+            // the mode first, so the login prompt below is drawn once at the
+            // size it will keep rather than being re-laid-out afterwards.
+            //
+            // Input is switched to keycode mode first, because the menu needs the
+            // arrow keys and the driver's default character mode has no case for
+            // them. Escape passes, so an unattended machine is not left sitting
+            // on a menu forever.
+            println!("[boot-dbg] step: fs::bootmenu::run() — display mode...");
+            fs::session::init_input();
+            let (mw, mh) = fs::bootmenu::run();
+            println!("[boot-dbg] display mode: {mw}x{mh}");
+
+            // Enter userspace for real: log in, then run the shell.
+            //
+            // This replaces `terminal::init()`/`terminal::run()` rather than
+            // running alongside them. Both read the one keyboard queue, and two
+            // readers on one queue split the keystrokes between them at random,
+            // so a login would lose characters without any visible error. Not
+            // calling the kernel terminal is also what keeps its `#$-=>_` prompt
+            // off the screen while userspace is up.
+            println!("[boot-dbg] step: fs::uspace::run() — login prompt...");
+            fs::uspace::run(d);
         }
         None => println!("[uspace] no data disk; skipping the tree"),
     }
 
+    // Only reached if `fs::uspace::run` ever returns, which it does not: the
+    // login/shell loop is endless. The kernel terminal stays uninitialised so
+    // that its prompt cannot appear; this is here so the two entry points are
+    // not silently independent.
     terminal::init();
     terminal::run();
 

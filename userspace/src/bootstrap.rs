@@ -17,7 +17,9 @@
 //! [`build_tree`] reports how much it actually changed so a caller can tell a
 //! fresh install from an existing one.
 
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 use crate::layout;
 

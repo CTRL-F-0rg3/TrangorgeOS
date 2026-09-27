@@ -102,11 +102,30 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     Ok(false)
 }
 
+/// Whether a USB keyboard is attached and driven.
+///
+/// The input layer uses this to decide what to tell the user, and — more
+/// importantly — to know whether PS/2 is the *only* keyboard there is. A USB
+/// keyboard is optional hardware: on a machine without one, PS/2 is not a
+/// fallback but the sole input path.
+pub fn keyboard_attached() -> bool {
+    unsafe { KEYS.iter().any(|k| k.is_some()) }
+}
+
 pub fn poll(x: &mut Xhci) {
     while let Some(t) = x.ev.pending() {
         let t = t;
         x.ev.pop();
-        x.regs.rt_write(super::super::host::xhci::init::RT_ERDP, x.ev.erdp() as u32);
+        // ERDP is 64 bits. The old 32-bit `rt_write(.., erdp() as u32)` truncated
+        // the physical address of the event ring, which is harmless for a DMA
+        // buffer that happens to land below 4 GiB and silently fatal for one that
+        // does not — the controller would keep posting events the host reads
+        // from a different segment.
+        super::super::host::xhci::init::rt_write64(
+            &x.regs,
+            super::super::host::xhci::init::RT_ERDP,
+            x.ev.erdp(),
+        );
 
         if t.typ() != TRB_TRANSFER_EVENT {
             continue;

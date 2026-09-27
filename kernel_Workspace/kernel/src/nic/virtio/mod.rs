@@ -18,5 +18,5 @@ pub mod pci_modern;
 pub mod queue;
 
 pub use pci_legacy::VirtioPciLegacyNetDevice;
-pub use pci_modern::{StagedFrame, VirtioModernNet};
+pub use pci_modern::VirtioModernNet;
 pub use queue::Descriptor;

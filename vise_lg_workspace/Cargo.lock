@@ -5,6 +5,12 @@ version = 4
 [[package]]
 name = "vise-api"
 version = "0.1.0"
+dependencies = [
+ "vise-ir",
+ "vise-lexer",
+ "vise-parser",
+ "vise-sema",
+]
 
 [[package]]
 name = "vise-codegen"
@@ -13,6 +19,11 @@ version = "0.1.0"
 [[package]]
 name = "vise-compiler"
 version = "0.1.0"
+dependencies = [
+ "vise-api",
+ "vise-lexer",
+ "vise-parser",
+]
 
 [[package]]
 name = "vise-device"

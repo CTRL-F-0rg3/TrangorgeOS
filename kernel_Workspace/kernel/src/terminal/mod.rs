@@ -41,6 +41,19 @@ fn kbuf_pop() -> Option<u8> {
     Some(c)
 }
 
+/// Take the next pending keystroke, if any.
+///
+/// This is the keyboard half of the userspace handoff. The keyboard driver
+/// keeps pushing scancodes into `KBUF` regardless of who is reading it, so
+/// `fs::uspace::session` can consume the same stream the kernel terminal does
+/// without the two knowing about each other. The buffer is a single shared
+/// queue, which is why the kernel terminal must not be running at the same
+/// time: two consumers on one queue means characters are split between them at
+/// random rather than one of them losing them.
+pub fn pop_char() -> Option<char> {
+    kbuf_pop().map(|b| b as char)
+}
+
 
 fn scancode_to_char(code: u8) -> Option<char> {
     let shift = SHIFT.load(Ordering::Relaxed);

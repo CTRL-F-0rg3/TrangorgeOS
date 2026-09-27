@@ -30,7 +30,10 @@ fi
 exec qemu-system-x86_64 \
     -drive "format=raw,file=$IMAGE" \
     -drive "format=raw,file=$DATA_IMG,if=ide,index=1" \
+    -vga std \
+    -usb \
     -device qemu-xhci \
+    -device usb-kbd,id=usbkbd \
     -m 512M \
     -smp 4 \
     -serial stdio \

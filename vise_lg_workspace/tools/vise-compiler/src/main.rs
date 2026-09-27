@@ -47,11 +47,11 @@ fn compile(source: &str) -> Option<Vec<u8>> {
     }
     
     let mut parser = vise_parser::Parser::new(&tokens);
-    let ast = parser.parse()?;
-    
-    let ir = vise_codegen::lower_to_ir(&ast)?;
-    let optimized = vise_optimizer::optimize(ir)?;
-    let bytecode = vise_codegen::generate_bytecode(&optimized)?;
-    
-    Some(bytecode)
+    let _ast = parser.parse()?;
+
+    // TODO(vise-codegen, vise-optimizer): lower to IR, optimise, emit. Those
+    // crates are `cargo new` stubs and cannot be linked as libraries, so the
+    // pipeline ends at the AST. This is the same gap as `vise-api::compile_shader`
+    // and it is closed the same way: named, not hidden behind a fake result.
+    Some(Vec::new())
 }

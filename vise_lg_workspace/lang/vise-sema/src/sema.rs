@@ -190,16 +190,22 @@ impl Sema {
                 self.check_expr(operand)
             }
             Expr::Call { func, args } => {
+                // The symbol's type is copied out before the arguments are
+                // checked. Holding `&Symbol` across `self.check_expr(..)` would
+                // borrow `self` immutably and mutably at once; `ClType` is
+                // `Copy`-shaped data, so the copy is cheaper than the borrow
+                // juggling to avoid it.
                 if let Some(sym) = self.scopes.lookup(func) {
+                    let sym_ty = sym.ty;
                     if sym.kind != SymKind::Function {
                         self.diags.error(0, "not a function", func);
                     }
-                    
+
                     for arg in args {
                         self.check_expr(arg);
                     }
-                    
-                    sym.ty
+
+                    sym_ty
                 } else {
                     self.diags.error(0, "undeclared function", func);
                     ClType::VOID

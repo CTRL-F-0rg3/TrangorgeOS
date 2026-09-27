@@ -127,3 +127,16 @@ fn walk_and_create(dev: &dyn BlockDevice, path: &str) -> Result<bool, &'static s
 /// would be two things to keep in sync, and they are both saying the same thing:
 /// this is the point where control passes.
 pub const GREETING: &str = "hello in userspace";
+
+/// Run the userspace login and shell on `dev`.
+///
+/// This is the handoff, and unlike [`enter`] it *runs* something: it asks for a
+/// user name, authenticates it, and on success hands the session to the
+/// userspace shell until that session ends — at which point the login prompt
+/// comes back rather than the machine dropping to a dead prompt.
+///
+/// Returns only if there is no usable device, because a userspace with no disk
+/// underneath it would be a shell whose every `ls` fails.
+pub fn run(dev: &'static dyn BlockDevice) {
+    crate::fs::session::run(dev);
+}
