@@ -207,16 +207,109 @@ pub fn say(text: &str) {
     crate::gfx::refresh();
 }
 
-/// Block until a keystroke is available.
-fn next_key() -> Option<char> {
+/// Switch the keyboard driver into keycode mode.
+///
+/// Must run before anything calls [`next_key`]. The driver has two modes and the
+/// default is *character* mode, chosen back when the kernel terminal was the only
+/// consumer — and in that mode a scancode becomes a `char` immediately, so the
+/// arrow keys are dropped on the floor (`scancode_to_char` has no case for them).
+/// The resolution menu needs those keys, so keycode mode is turned on once here
+/// and the mapping happens in [`key_from_code`] instead.
+///
+/// Calling this more than once is harmless: it sets a flag.
+pub fn init_input() {
+    crate::terminal::set_keycode_capture(true);
+}
+
+/// A keystroke, from whichever keyboard produced it.
+///
+/// The two keyboard drivers do not report the same things. PS/2 hands over
+/// *keycodes*, so it can name a key that has no character at all — an arrow, an
+/// Escape. The USB HID driver translates to characters in the driver and keeps
+/// no keycode, so those keys are simply lost. Modelling a keystroke rather than
+/// a character is what lets one `read_line` serve both: `Char` is the common
+/// case, and the special variants are reported by PS/2 and ignored by USB.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Key {
+    Char(char),
+    Enter,
+    Backspace,
+    Esc,
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+/// Block until a keystroke is available on any keyboard.
+///
+/// This is the join point for the two input paths, and it is why there is only
+/// one keyboard queue concern to reason about:
+///
+/// * **PS/2** — the IRQ handler pushes a keycode; `scancode_to_keycode` maps it
+///   and falls through to the character table, so digits and letters arrive here
+///   as `Char`.
+/// * **USB** — the xHCI transfer completes, `hid::poll` decodes a boot-protocol
+///   report and pushes a character into its own ring, which is drained here.
+///
+/// `usb::poll()` has to be called *before* draining, not after: the characters
+/// only exist once the transfer has been serviced, and a driver that is only
+/// polled on the way past would report an empty keyboard forever.
+pub fn next_key() -> Option<Key> {
     loop {
-        if let Some(c) = crate::terminal::pop_char() {
-            return Some(c);
+        // Service USB first so a completed transfer can deposit a character
+        // during this same pass. `poll` walks the event ring and is cheap when
+        // there is nothing pending, so this is safe to call in a tight loop.
+        crate::drivers::usb::poll();
+
+        if let Some(c) = crate::drivers::usb::class::hid::keyboard::take_char() {
+            return Some(key_from_char(c));
         }
+
+        if let Some(code) = crate::terminal::pop_keycode() {
+            return Some(key_from_code(code));
+        }
+
         // Nothing typed yet. Halting is right here: this is a console, and
         // spinning would keep the boot CPU busy instead of letting the power
         // scheduler see an idle machine.
         x86_64::instructions::hlt();
+    }
+}
+
+/// Turn a PS/2 keycode into a keystroke.
+///
+/// The numeric constants are the ones the keyboard driver already uses
+/// (`scancode_to_keycode` in `terminal`); they are spelled out here rather than
+/// re-exported because that table is the driver's business, not this module's.
+fn key_from_code(code: u32) -> Key {
+    match code {
+        0x100 => Key::Enter,
+        0x101 => Key::Backspace,
+        0x102 => Key::Esc,
+        0x103 => Key::Right,
+        0x104 => Key::Left,
+        0x105 => Key::Down,
+        0x106 => Key::Up,
+        // Everything else — letters, digits, and the function keys — falls
+        // through as a character, and anything that is not a printable one is
+        // dropped by `read_line` on the way past.
+        c if (0x20..0x7F).contains(&(c as u8)) => Key::Char(c as u8 as char),
+        _ => Key::Char('\0'),
+    }
+}
+
+/// Turn a USB HID byte into a keystroke.
+///
+/// The driver only ever stores characters, so this is mostly a matter of
+/// recognising the two it encodes as control values: `0x28` (Enter) and `0x2A`
+/// (backspace) come out of `key_to_ascii` as those byte values.
+fn key_from_char(c: u8) -> Key {
+    match c {
+        b'\n' | b'\r' => Key::Enter,
+        0x08 | 0x7F => Key::Backspace,
+        0x1B => Key::Esc,
+        _ => Key::Char(c as char),
     }
 }
 
@@ -233,16 +326,16 @@ pub fn read_line(prompt: &str, echo: bool) -> String {
 
     let mut line = String::new();
     loop {
-        let c = match next_key() {
-            Some(c) => c,
+        let key = match next_key() {
+            Some(k) => k,
             None => continue,
         };
-        match c {
-            '\n' => {
+        match key {
+            Key::Enter => {
                 say("\n");
                 return line;
             }
-            '\x08' => {
+            Key::Backspace => {
                 if line.pop().is_some() && echo {
                     // Rub the character out: step back, overwrite with a space,
                     // step back again. A bare backspace would leave the character
@@ -250,7 +343,11 @@ pub fn read_line(prompt: &str, echo: bool) -> String {
                     say("\x08 \x08");
                 }
             }
-            c if (c as u32) >= 0x20 && (c as u32) < 0x7F => {
+            // Arrow keys carry no text; a line editor that cannot move the
+            // cursor along the line just ignores them rather than inserting
+            // something meaningless.
+            Key::Up | Key::Down | Key::Left | Key::Right | Key::Esc => {}
+            Key::Char(c) if (c as u32) >= 0x20 && (c as u32) < 0x7F => {
                 if line.len() < MAX_LINE {
                     line.push(c);
                     if echo {
@@ -259,13 +356,13 @@ pub fn read_line(prompt: &str, echo: bool) -> String {
                     }
                 }
             }
-            _ => {}
+            Key::Char(_) => {}
         }
     }
 }
 
 /// Write `text` in `color` to both outputs.
-fn say_coloured(text: &str, color: Color) {
+pub fn say_coloured(text: &str, color: Color) {
     {
         let mut w = WRITER.lock();
         w.set_color(color);

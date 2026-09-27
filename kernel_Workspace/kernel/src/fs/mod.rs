@@ -5,6 +5,7 @@ pub mod ext4;
 pub mod fat32;
 pub mod vfs;
 pub mod uspace;
+pub mod bootmenu;
 pub mod session;
 pub mod shellfs;
 use crate::fs::driver::block::BlockDevice;
