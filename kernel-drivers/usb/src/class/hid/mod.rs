@@ -56,7 +56,7 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
 
         if e.attributes & 0x03 == EP_INTERRUPT && e.address & 0x80 != 0 {
             ep_num = e.address & 0x0F;
-            mps = e.max_packet;
+            mps = e.max_packet();
             interval = e.interval;
             have_ep = true;
             break;

@@ -57,6 +57,7 @@ pub mod traits;
 pub mod types;
 
 pub use edid::{DisplayMode, Edid, EdidError, EdidInfo};
+pub use modeset::{LinkCapability, ModesetError};
 pub use service::{GpuService, Reply, Request};
 pub use traits::{GpuDevice, Vendor};
 pub use types::{

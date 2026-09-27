@@ -568,7 +568,14 @@ mod tests {
         p[8] = (hso & 0xFF) as u8;
         p[9] = (hsw & 0xFF) as u8;
         p[10] = ((((hso >> 8) & 0x0F) << 4) | (vsw & 0x0F)) as u8;
-        p[11] = ((((vso >> 4) & 0x03) << 6) | (((vsw >> 4) & 0x03) << 4) | ((hsw >> 8) & 0x0F)) as u8;
+        // p[11]: V sync offset high 2 bits in 7:6, V sync width high 2 bits in
+        // 5:4, H sync width high 4 bits in 3:0.
+        //
+        // `vso` is 3, which fits that two-bit field outright — there is no higher
+        // part to shift in, and writing `vso >> 4` here would silently produce
+        // zero, which is the kind of fixture bug that makes a correct parser look
+        // wrong.
+        p[11] = (((vso & 0x03) << 6) | (((vsw >> 4) & 0x03) << 4) | ((hsw >> 8) & 0x0F)) as u8;
         p[17] = 0x18; // digital separate sync, positive hsync and positive vsync
         p
     }
