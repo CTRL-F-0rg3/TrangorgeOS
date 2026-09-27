@@ -193,7 +193,7 @@ static LINE_LEN: AtomicUsize = AtomicUsize::new(0);
 static LINE_START_COL: AtomicUsize = AtomicUsize::new(0);
 
 
-static CURRENT_DIR: AtomicU32 = AtomicU32::new(crate::fs::tfs::ROOT_DIR);
+static CURRENT_DIR: AtomicU32 = AtomicU32::new(crate::fs::tangfs::tfs::ROOT_DIR);
 static NET_TIME_MS: AtomicU64 = AtomicU64::new(0);
 
 fn line_as_str(buf: &mut [u8]) -> &str {
@@ -377,7 +377,7 @@ fn execute(line: &str) {
             match dev() {
                 Some(d) => {
                     let mut sink = Sink;
-                    let _ = crate::fs::tfs::list_dir(d, dir, &mut sink);
+                    let _ = crate::fs::tangfs::tfs::list_dir(d, dir, &mut sink);
                 }
                 None => crate::println!("no disk"),
             }
@@ -387,11 +387,11 @@ fn execute(line: &str) {
             if name.is_empty() {
                 crate::println!("usage: cd <name|/>");
             } else if name == "/" {
-                CURRENT_DIR.store(crate::fs::tfs::ROOT_DIR, Ordering::Relaxed);
+                CURRENT_DIR.store(crate::fs::tangfs::tfs::ROOT_DIR, Ordering::Relaxed);
             } else {
                 let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::find_dir(d, dir, name) {
+                    Some(d) => match crate::fs::tangfs::tfs::find_dir(d, dir, name) {
                         Ok(next) => CURRENT_DIR.store(next, Ordering::Relaxed),
                         Err(e) => crate::println!("cd failed: {:?}", e),
                     },
@@ -406,7 +406,7 @@ fn execute(line: &str) {
             } else {
                 let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::mkdir(d, dir, name) {
+                    Some(d) => match crate::fs::tangfs::tfs::mkdir(d, dir, name) {
                         Ok(()) => crate::println!("created folder {}", name),
                         Err(e) => crate::println!("mkdir failed: {:?}", e),
                     },
@@ -460,7 +460,7 @@ fn execute(line: &str) {
         }
         "format" => match dev() {
             Some(d) => {
-                if let Err(e) = crate::fs::tfs::format(d) {
+                if let Err(e) = crate::fs::tangfs::tfs::format(d) {
                     crate::println!("format failed: {:?}", e);
                 } else if let Err(e) = crate::fs::seed_defaults(d) {
                     crate::println!("format ok, but seeding defaults failed: {:?}", e);
@@ -477,7 +477,7 @@ fn execute(line: &str) {
             } else {
                 let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::write_file(d, dir, name, text.as_bytes()) {
+                    Some(d) => match crate::fs::tangfs::tfs::write_file(d, dir, name, text.as_bytes()) {
                         Ok(()) => crate::println!("wrote {} ({} bytes)", name, text.len()),
                         Err(e) => crate::println!("write failed: {:?}", e),
                     },
@@ -492,7 +492,7 @@ fn execute(line: &str) {
             } else {
                 let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::read_file(d, dir, name) {
+                    Some(d) => match crate::fs::tangfs::tfs::read_file(d, dir, name) {
                         Ok(data) => {
                             let s = core::str::from_utf8(&data).unwrap_or("(binary)");
                             crate::println!("{}", s);
@@ -536,7 +536,7 @@ fn execute(line: &str) {
             } else {
                 let dir = CURRENT_DIR.load(Ordering::Relaxed);
                 match dev() {
-                    Some(d) => match crate::fs::tfs::remove(d, dir, name) {
+                    Some(d) => match crate::fs::tangfs::tfs::remove(d, dir, name) {
                         Ok(()) => crate::println!("removed {}", name),
                         Err(e) => crate::println!("rm failed: {:?}", e),
                     },

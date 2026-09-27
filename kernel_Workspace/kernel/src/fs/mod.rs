@@ -1,9 +1,9 @@
 pub mod driver;
 pub mod mbr;
-pub mod tfs;
+pub mod tangfs;
 use crate::fs::driver::block::BlockDevice;
 use crate::fs::driver::registry;
-use crate::fs::tfs::{format, read_superblock, Result};
+use crate::fs::tangfs::tfs::{format, read_superblock, Result};
 use crate::testing::TestResult;
 
 pub fn init() {
@@ -67,50 +67,50 @@ pub fn self_test() -> TestResult {
     }
 
     // The base configuration files must be present after a fresh install.
-    if tfs::read_file(data, tfs::ROOT_DIR, "config.tcfg").is_err() {
+    if tangfs::tfs::read_file(data, tangfs::tfs::ROOT_DIR, "config.tcfg").is_err() {
         return Err("missing base config (config.tcfg)");
     }
 
-    if tfs::write_file(data, tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {
+    if tangfs::tfs::write_file(data, tangfs::tfs::ROOT_DIR, "hello.txt", b"Hello from TFS on disk!").is_err() {
         return Err("tfs write failed");
     }
 
-    if tfs::write_file(data, tfs::ROOT_DIR, "note.txt", b"second file").is_err() {
+    if tangfs::tfs::write_file(data, tangfs::tfs::ROOT_DIR, "note.txt", b"second file").is_err() {
         return Err("tfs write #2 failed");
     }
 
-    match tfs::read_file(data, tfs::ROOT_DIR, "hello.txt") {
+    match tangfs::tfs::read_file(data, tangfs::tfs::ROOT_DIR, "hello.txt") {
         Ok(d) if d == b"Hello from TFS on disk!" => {}
         _ => return Err("tfs readback mismatch"),
     }
 
-    if tfs::mkdir(data, tfs::ROOT_DIR, "docs").is_err() {
+    if tangfs::tfs::mkdir(data, tangfs::tfs::ROOT_DIR, "docs").is_err() {
         return Err("tfs mkdir failed");
     }
 
-    let docs = match tfs::find_dir(data, tfs::ROOT_DIR, "docs") {
+    let docs = match tangfs::tfs::find_dir(data, tangfs::tfs::ROOT_DIR, "docs") {
         Ok(d) => d,
         Err(_) => return Err("tfs find_dir failed"),
     };
 
-    if tfs::write_file(data, docs, "readme.txt", b"inside a folder").is_err() {
+    if tangfs::tfs::write_file(data, docs, "readme.txt", b"inside a folder").is_err() {
         return Err("tfs write in dir failed");
     }
 
-    match tfs::read_file(data, docs, "readme.txt") {
+    match tangfs::tfs::read_file(data, docs, "readme.txt") {
         Ok(d) if d == b"inside a folder" => {}
         _ => return Err("tfs dir readback mismatch"),
     }
 
-    if tfs::remove(data, docs, "readme.txt").is_err() {
+    if tangfs::tfs::remove(data, docs, "readme.txt").is_err() {
         return Err("tfs rm in dir failed");
     }
 
-    if tfs::remove(data, tfs::ROOT_DIR, "docs").is_err() {
+    if tangfs::tfs::remove(data, tangfs::tfs::ROOT_DIR, "docs").is_err() {
         return Err("tfs rmdir failed");
     }
 
-    if tfs::remove(data, tfs::ROOT_DIR, "note.txt").is_err() {
+    if tangfs::tfs::remove(data, tangfs::tfs::ROOT_DIR, "note.txt").is_err() {
         return Err("tfs rm failed");
     }
 
@@ -162,8 +162,8 @@ const DEFAULT_CONFIGS: &[(&str, &str)] = &[
 /// edits nor leaks data blocks on an already-populated disk.
 pub fn seed_defaults(dev: &dyn BlockDevice) -> Result<()> {
     for (name, contents) in DEFAULT_CONFIGS {
-        if tfs::read_file(dev, tfs::ROOT_DIR, name).is_err() {
-            tfs::write_file(dev, tfs::ROOT_DIR, name, contents.as_bytes())?;
+        if tangfs::tfs::read_file(dev, tangfs::tfs::ROOT_DIR, name).is_err() {
+            tangfs::tfs::write_file(dev, tangfs::tfs::ROOT_DIR, name, contents.as_bytes())?;
         }
     }
     Ok(())

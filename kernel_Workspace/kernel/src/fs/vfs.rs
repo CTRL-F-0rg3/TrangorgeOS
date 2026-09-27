@@ -1,3 +1,23 @@
+//! `vfs` — a dispatcher over the mounted filesystems.
+//!
+//! Not compiled. The file predates the `tangfs` move and was never wired into
+//! `fs/mod.rs`, so nothing has ever type-checked it. Two things are known to be
+//! wrong even before compilation is attempted:
+//!
+//! * It calls `tangfs::tfs::read_file(dev, dir, path, buf)` and
+//!   `tangfs::tfs::list_dir(...)`, but [`tangfs::tfs`] exports `read_file`
+//!   returning a `Vec<u8>` and calls the listing `entries`. The signatures do not
+//!   match what this file passes.
+//! * `Mounted::Tfs` holds only a `&'static dyn BlockDevice`, so it has to
+//!   re-resolve every path from the root on each call. That is the cost of not
+//!   keeping mounted state, and it is why `self_test` drives `tfs` directly
+//!   rather than going through here.
+//!
+//! It is kept because the shape is the right one — one enum over the mounted
+//! filesystems, one place that dispatches a path — and because FAT32 and ext4
+//! both have to be reachable through the same door. It needs rewriting against
+//! the current `tfs` API, not deleting.
+
 use crate::fs::ext4::Ext4;
 use crate::fs::fat32::Fat32;
 use crate::fs::driver::registry;
@@ -20,7 +40,7 @@ impl Mounted {
         match self {
             Mounted::Ext4(f) => f.read_path(path, buf).ok(),
             Mounted::Fat32(f) => f.read_path(path, buf).ok(),
-            Mounted::Tfs(d) => tfs::read_file(*d, tfs::ROOT_DIR, path, buf).ok(),
+            Mounted::Tfs(d) => tangfs::tfs::read_file(*d, tangfs::tfs::ROOT_DIR, path, buf).ok(),
         }
     }
 
@@ -40,7 +60,7 @@ impl Mounted {
                     size: e.size,
                 }).collect()
             }),
-            Mounted::Tfs(d) => tfs::list_dir(*d, tfs::ROOT_DIR, path).ok().map(|v| {
+            Mounted::Tfs(d) => tangfs::tfs::list_dir(*d, tangfs::tfs::ROOT_DIR, path).ok().map(|v| {
                 v.into_iter().map(|e| FsEntry {
                     name: e.name,
                     is_dir: e.is_dir,

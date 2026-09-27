@@ -1,99 +1,40 @@
-pub mod superblock;
-pub mod btree;
-pub mod extent;
-pub mod journal;
-pub mod inode;
-pub mod dir;
-pub mod file;
-pub mod format;
+//! `tangfs` — the native filesystem, in two generations.
+//!
+//! # Two implementations, one name
+//!
+//! This directory holds two versions of the same filesystem:
+//!
+//! * [`tfs`] — the working one. Flat directories, a bump allocator, no
+//!   directories-within-directories beyond a fixed extent. 367 lines, and it is
+//!   what `fs::self_test` exercises on every boot: format, write, read back,
+//!   `mkdir`, `rm`, `rmdir`. **This is the one that runs.**
+//!
+//! * `superblock`, `btree`, `inode`, `journal`, `dir`, `file` — the next
+//!   generation. A b-tree, extents, a journal for crash recovery, and an inode
+//!   layer. Roughly 690 lines, and it has never compiled.
+//!
+//! They are the same filesystem at two stages, not two filesystems. The second
+//! generation is what the bit-set directory work replaces, and the first
+//! generation is what stays in the tree until it does.
+//!
+//! # Why the second generation is not declared here
+//!
+//! Because it does not build, and declaring it would take the kernel's build
+//! down with it. Its known gaps, in the order they have to be closed:
+//!
+//! | Missing | Referenced by | Consequence |
+//! |---|---|---|
+//! | `extent.rs` | `mod.rs` | `E0583`, the module does not exist at all |
+//! | `crate::fs::vfs` | six files | `E0432`; `vfs.rs` is not declared in `fs/mod.rs` |
+//! | `crate::fs::driver::BlockDevice` | `mod.rs` | `E0432`; the path is `driver::block::BlockDevice` |
+//! | `crate::time` | `mod.rs` | `E0433`; no such module in the kernel |
+//!
+//! 58 errors in total, none of them in [`tfs`]. Restoring these declarations is a
+//! separate piece of work from moving `tfs.rs` here, and conflating the two
+//! would mean a tree that does not compile at the end of either.
 
-use crate::fs::vfs::{FileSystem, Inode as VfsInode, DirEntry, FileType, Result};
-use alloc::vec::Vec;
-use alloc::string::String;
-use core::cell::RefCell;
+pub mod tfs;
 
-pub use superblock::Superblock;
-pub use inode::Inode;
-
-pub struct TangFs {
-    device: &'static dyn crate::fs::driver::BlockDevice,
-    superblock: RefCell<Superblock>,
-    journal: RefCell<journal::Journal>,
-    block_cache: RefCell<alloc::collections::BTreeMap<u64, alloc::vec::Vec<u8>>>,
-}
-
-impl TangFs {
-    pub fn mount(device: &'static dyn crate::fs::driver::BlockDevice) -> Result<Self> {
-        let sb = Superblock::read(device)?;
-        
-        if &sb.magic != b"TANGFS01" {
-            return Err("Invalid TangFS magic");
-        }
-        
-        if sb.version > 0x0100 {
-            return Err("Unsupported TangFS version");
-        }
-        
-        let journal = journal::Journal::open(device, &sb)?;
-        
-        journal.replay()?;
-        
-        Ok(Self {
-            device,
-            superblock: RefCell::new(sb),
-            journal: RefCell::new(journal),
-            block_cache: RefCell::new(alloc::collections::BTreeMap::new()),
-        })
-    }
-    
-    pub fn read_block(&self, block: u64) -> Result<Vec<u8>> {
-        let mut cache = self.block_cache.borrow_mut();
-        
-        if let Some(cached) = cache.get(&block) {
-            return Ok(cached.clone());
-        }
-        
-        let mut buf = vec![0u8; 4096];
-        self.device.read_blocks(block, 1, &mut buf)?;
-        
-        cache.insert(block, buf.clone());
-        Ok(buf)
-    }
-    
-    pub fn write_block(&self, block: u64, data: &[u8]) -> Result<()> {
-        if data.len() != 4096 {
-            return Err("Block size mismatch");
-        }
-        
-
-        self.journal.borrow_mut().write_block(block, data)?;
-        
-        self.device.write_blocks(block, 1, data)?;
-        
-        let mut cache = self.block_cache.borrow_mut();
-        cache.insert(block, data.to_vec());
-        
-        Ok(())
-    }
-}
-
-impl FileSystem for TangFs {
-    fn root_inode(&self) -> Box<dyn VfsInode> {
-        let sb = self.superblock.borrow();
-        Box::new(inode::InodeHandle {
-            fs: self as *const TangFs,
-            ino: sb.root_inode,
-        })
-    }
-    
-    fn statfs(&self) -> Result<crate::fs::vfs::StatFs> {
-        let sb = self.superblock.borrow();
-        Ok(crate::fs::vfs::StatFs {
-            total_blocks: sb.total_blocks,
-            free_blocks: sb.free_blocks,
-            block_size: sb.block_size,
-            total_inodes: sb.total_blocks / 256, 
-            free_inodes: sb.free_blocks / 256,
-        })
-    }
-}
+// The next generation stays undeclared until it builds. See the module docs for
+// what has to land first. The files are kept rather than deleted: they are the
+// design, and deleting them would throw away the part worth keeping.

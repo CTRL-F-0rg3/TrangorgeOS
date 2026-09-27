@@ -98,13 +98,13 @@ fn tfs_read_path(dev: &dyn crate::fs::driver::block::BlockDevice, path: &str) ->
     let mut parts = trimmed.split('/').filter(|p| !p.is_empty());
     let file = parts.next_back()?;
 
-    let mut dir = crate::fs::tfs::ROOT_DIR;
+    let mut dir = crate::fs::tangfs::tfs::ROOT_DIR;
 
     for part in parts {
-        dir = crate::fs::tfs::find_dir(dev, dir, part).ok()?;
+        dir = crate::fs::tangfs::tfs::find_dir(dev, dir, part).ok()?;
     }
 
-    crate::fs::tfs::read_file(dev, dir, file).ok()
+    crate::fs::tangfs::tfs::read_file(dev, dir, file).ok()
 }
 
 #[no_mangle]
