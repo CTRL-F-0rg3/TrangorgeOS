@@ -45,19 +45,61 @@ pub const MODES: &[(u32, u32)] = &[
 ];
 
 /// The banner, drawn with the menu so the screen is not a bare list.
-const BANNER: &str = r"
-  ___ _                    _                     ___
- | _ \__ _ _ _ __ __ _ _ _| |_ ___ __ _ _ __ __  / _ \
- | _ / _` | '_/ _` / _` |  _  _ \/ _` / _` / _` | |  _/
- |_| \__,_|_| \__, \__,_|_|_|___/\__,_|_| \__,_|_|\___|
-        TrangorgeOS — choose a display mode
-";
+///
+/// Verbatim from `baner.txt` at the repository root, which is the source of
+/// truth for this artwork — regenerate it there and copy the result, rather
+/// than editing the art in here where nobody looks for it.
+///
+/// A raw string with a `#` fence: the art contains both backslashes and
+/// backticks, so `r"..."` would terminate on the first backtick.
+const BANNER: &str = r#"
+>>=====================================================================================================<<
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+||      ______                                                                 _____   ____            ||
+||     /\__  _\                                                               /\  __`\/\  _`\          ||
+||     \/_/\ \/ _ __    __      ___      __     ___   _ __    __      __      \ \ \/\ \ \,\L\_\        ||
+||        \ \ \/\`'__\/'__`\  /' _ `\  /'_ `\  / __`\/\`'__\/'_ `\  /'__`\     \ \ \ \ \/_\__ \        ||
+||         \ \ \ \ \//\ \L\.\_/\ \/\ \/\ \L\ \/\ \L\ \ \ \//\ \L\ \/\  __/      \ \ \_\ \/\ \L\ \      ||
+||          \ \_\ \_\\ \__/.\_\ \_\ \_\ \____ \ \____/\ \_\\ \____ \ \____\      \ \_____\ `\____\     ||
+||           \/_/\/_/ \/__/\/_/\/_/\/_/\/___L\ \/___/  \/_/ \/___L\ \/____/       \/_____/\/_____/     ||
+||                                       /\____/              /\____/                                  ||
+||                                       \_/__/               \_/__/                                   ||
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+||                                                                                                     ||
+>>=====================================================================================================<<
+"#;
+
+/// The narrowest console the menu can be drawn on, in text cells.
+///
+/// The banner is 101 columns wide, and the whole screen it is drawn on is the
+/// banner plus nine mode rows plus the help lines. Both have to fit, or the art
+/// wraps and the menu stops being a menu.
+///
+/// This is a VGA text-cell budget rather than a pixel one, because the banner is
+/// text: what matters is how many character cells the current mode provides, not
+/// how many pixels it has.
+const NEED_COLS: usize = 101;
+const NEED_ROWS: usize = 21 + 1 + 9 + 3;
 
 /// Draw the menu and apply whatever the user picks.
 ///
 /// Returns the mode that was actually applied, which is the one already in use
 /// if the user pressed Escape or every candidate mode was refused.
 pub fn run() -> (u32, u32) {
+    // The art is 101 columns wide and the whole screen it is drawn on needs about
+    // 35 rows. The kernel's default console is 320x200, which is 80x25 — smaller
+    // than both — so drawing into it would wrap every line of the banner and
+    // scatter the mode list below the scroll. Rather than mangle the artwork or
+    // drop it, the mode is raised to one that can hold it.
+    fit_screen();
+
     let (cur_w, cur_h) = gfx::current_resolution();
 
     // Start on the mode that is already in effect, so Enter without moving is
@@ -103,6 +145,45 @@ pub fn run() -> (u32, u32) {
 
         draw(&sel);
     }
+}
+
+/// Switch to a mode large enough to hold the banner and the mode list.
+///
+/// The smallest offered mode with room for both, tried in order. Each candidate
+/// is a plain mode from [`MODES`], so this is the same code path the menu itself
+/// uses — no separate, untested way of changing the display.
+///
+/// Failing to find one is not fatal: the menu still runs, the banner wraps, and
+/// the user can still pick a mode with the digit keys. That is strictly better
+/// than refusing to show the menu at all.
+fn fit_screen() {
+    let (w, h) = gfx::current_resolution();
+
+    // The console reports its own grid, which is the number that actually
+    // decides whether a 101-column line fits — pixels alone would be a guess
+    // about the font.
+    if gfx::console::cols() >= NEED_COLS && gfx::console::rows() >= NEED_ROWS {
+        return;
+    }
+
+    for (cw, ch) in MODES {
+        if !gfx::set_resolution_w_h(cw, ch) {
+            continue;
+        }
+        if gfx::console::cols() >= NEED_COLS && gfx::console::rows() >= NEED_ROWS {
+            session::say(&alloc::format!(
+                "display raised to {cw}x{ch} to fit the menu\n\n"
+            ));
+            return;
+        }
+    }
+
+    // Nothing was wide enough, so the mode the last attempt left behind has to
+    // be put back: a failed attempt still changed it.
+    let _ = gfx::set_resolution_w_h(w, h);
+    session::say(&alloc::format!(
+        "no offered mode fits the {NEED_COLS}-column menu; drawing it wrapped\n\n"
+    ));
 }
 
 /// Switch to mode `i` and report whether it took.

@@ -1,12 +1,31 @@
 use crate::drivers::usb::UsbError;
 use crate::mm::ffi;
 
+// Operational registers, xHCI 1.0 §5.4.2, relative to CAPOFF:
+//
+//   0x00 USBCMD   0x04 USBSTS   0x08 USBSTS2  0x0C DNCTL
+//   0x10 PAGESIZE 0x18 SPHC     0x1C DBGi     0x20 DNCTRL
+//   0x24 DSCTRL  0x28 DCBAA    0x2C DEVCTX   0x30 LTSCFL
+//   0x38 CONFIG   0x40 DCBAAP   0x48 CRCR
+//
+// Three of these were wrong, which is what made every xHCI command time out:
+//
+//   PAGESIZE was 0x08, which is USBSTS2.
+//   CRCR      was 0x10, which is PAGESIZE — the command ring pointer was being
+//             written into the page-size register, so the controller was never
+//             told where its command ring is and never ran one.
+//   DCBAAP    was 0x30, which is LTSCFL — the device-context array pointer was
+//             going into the timeout-counter register.
+//
+// `CONFIG` at 0x38 was the only one of the four that was right, which is why the
+// controller still enumerated ports and reported its capabilities: reading the
+// capability registers is independent of the operational ones.
 pub const OP_USBCMD: usize = 0x00;
 pub const OP_USBSTS: usize = 0x04;
-pub const OP_PAGESIZE: usize = 0x08;
-pub const OP_CRCR: usize = 0x10;
-pub const OP_DCBAAP: usize = 0x30;
+pub const OP_PAGESIZE: usize = 0x10;
 pub const OP_CONFIG: usize = 0x38;
+pub const OP_DCBAAP: usize = 0x40;
+pub const OP_CRCR: usize = 0x48;
 pub const OP_PORTSC: usize = 0x400;
 
 pub const CMD_RS: u32 = 1 << 0;

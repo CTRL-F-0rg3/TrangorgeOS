@@ -41,7 +41,14 @@ fn op_write64(regs: &XhciRegs, off: usize, v: u64) {
     regs.op_write(off + 4, (v >> 32) as u32);
 }
 
-pub(super) fn rt_write64(regs: &XhciRegs, off: usize, v: u64) {
+/// Write a 64-bit runtime register.
+///
+/// Public to the crate rather than to the parent module because the HID class
+/// driver also has to advance ERDP, and it is a 64-bit register: writing it
+/// through the 32-bit `rt_write` silently truncates the physical address
+/// whenever the allocation lands above 4 GiB, and the controller then keeps
+/// posting events into a segment it cannot name.
+pub(crate) fn rt_write64(regs: &XhciRegs, off: usize, v: u64) {
     regs.rt_write(off, (v & 0xFFFF_FFFF) as u32);
     regs.rt_write(off + 4, (v >> 32) as u32);
 }
@@ -59,7 +66,11 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
     spin_wait(|| regs.op_read(OP_USBCMD) & CMD_HCRST == 0)?;
     spin_wait(|| regs.op_read(OP_USBSTS) & STS_CNR == 0)?;
 
-    if regs.op_read(OP_PAGESIZE) & 1 == 0 {
+    // PAGESIZE bit 0 is reserved and reads 0; bits 2:1 are the max burst size and
+    // must be 0 for 4 KiB pages. The old check tested `& 1 == 0` and rejected the
+    // controller when that bit was clear — i.e. it passed only by accident,
+    // because it was reading USBSTS2 rather than PAGESIZE.
+    if regs.op_read(OP_PAGESIZE) & 0x7 != 0 {
         return Err(UsbError::Invalid);
     }
 
@@ -72,11 +83,23 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
     let cmd = CmdRing::new(64)?;
     let ev = EventRing::new(256)?;
 
-    regs.op_write(OP_CONFIG, slots & 0xFF);
+    // CONFIG carries three fields, not one: MaxSlotsEn (bits 7:0),
+    // MaxPortsEn (bits 15:8) and MaxIntrsEn (bits 23:16). Leaving the port field
+    // at zero tells the controller it has no ports to use, which it is entitled
+    // to believe — it is a "how many of the device's ports I enable" field, not a
+    // readback of the hardware.
+    let max_intrs = regs.max_intrs.min(1);
+    regs.op_write(OP_CONFIG, (slots & 0xFF) | ((ports & 0xFF) << 8) | ((max_intrs & 0xFF) << 16));
     op_write64(&regs, OP_DCBAAP, dcbaa.phys);
     op_write64(&regs, OP_CRCR, cmd.phys() | 1);
 
-    regs.rt_write(RT_ERSTSZ, 1);
+    // ERSTSZ counts Event Ring Segment Table entries *minus one*, so a table
+    // with the single entry `EventRing` writes is 1 - 1 = 0. Writing 1 here
+    // tells the controller to read a second entry that does not exist, which
+    // makes the table malformed; the controller then never links the event
+    // ring, no command completion is ever posted, and the first command
+    // (Enable Slot) times out.
+    regs.rt_write(RT_ERSTSZ, 0);
     regs.rt_write(RT_IMOD, 0);
     regs.rt_write(RT_IMAN, 0);
     rt_write64(&regs, RT_ERSTBA, ev.erst_phys());

@@ -24,8 +24,24 @@ macro_rules! step {
         match $expr {
             Ok(v) => v,
             Err(e) => {
+                // `UsbError` carries data in one variant, so it cannot be cast
+                // straight to a number for `%d`. The numbering here is only for
+                // the boot log: below 100 is a host-side error, 100+ is the
+                // xHCI completion code the controller sent back, which is the
+                // one worth reading when a command is refused rather than
+                // never answered.
+                let code: u32 = match e {
+                    UsbError::NoController => 0,
+                    UsbError::MapFailed => 1,
+                    UsbError::Timeout => 2,
+                    UsbError::NotReady => 3,
+                    UsbError::BadDescriptor => 4,
+                    UsbError::Invalid => 5,
+                    UsbError::Transfer(c) => 100 + c as u32,
+                };
                 unsafe {
-                    kprintf(concat!("usb: enumerate: ", $label, " failed\n\0").as_ptr());
+                    kprintf(concat!("usb: enumerate: ", $label, " failed, err=").as_ptr());
+                    kprintf(b"%d\n\0".as_ptr(), code);
                 }
                 return Err(e);
             }

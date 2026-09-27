@@ -101,12 +101,32 @@ impl TransferRing {
 impl EventRing {
     pub fn new(count: usize) -> Result<Self, UsbError> {
         let buf = DmaBuf::new(count * 16)?;
-        let erst = DmaBuf::new(16)?;
+        let mut erst = DmaBuf::new(16)?;
 
+        // `DmaBuf::new` hands back unallocated, non-zeroed memory, and the
+        // Event Ring Segment Table is walked as a *32-byte* structure whose
+        // reserved bits are read as data. Anything left as garbage there is a
+        // segment size or a ring count, so the table is zeroed before it is
+        // filled in.
+        erst.zero();
+
+        // One ERST entry, per the xHCI Event Ring Segment Table layout (32 bytes):
+        //
+        //   bits 63:4  ring segment base address
+        //   bits 31:24 XHCI extended ERST size   — only meaningful on entry 0
+        //   bits 23:16 ring segment size          — TRBs *in this segment*
+        //   bit  0     cycle
+        //
+        // The ring segment size and the cycle bit are what make the entry
+        // usable at all, and both live in the first 64 bits. `count` therefore
+        // has to be shifted into bits 23:16 of the *first* word; the previous
+        // code wrote it to the second word, which is entirely reserved, and
+        // left the controller with a segment size of zero and no cycle — so it
+        // never linked the event ring and no command ever completed.
         unsafe {
             let e = erst.virt as *mut u64;
-            e.add(0).write_volatile(buf.phys);
-            e.add(1).write_volatile(count as u64);
+            let entry = (buf.phys & 0xFFFF_FFFF_FFFF_FFF0) | ((count as u64) << 16) | 1;
+            e.add(0).write_volatile(entry);
         }
 
         Ok(Self { buf, erst, len: count, dequeue: 0, cycle: true })

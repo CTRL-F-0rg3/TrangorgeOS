@@ -207,7 +207,7 @@ pub fn say(text: &str) {
     crate::gfx::refresh();
 }
 
-/// Switch the keyboard driver into keycode mode.
+/// Switch the keyboard driver into keycode mode and report what input there is.
 ///
 /// Must run before anything calls [`next_key`]. The driver has two modes and the
 /// default is *character* mode, chosen back when the kernel terminal was the only
@@ -216,9 +216,31 @@ pub fn say(text: &str) {
 /// The resolution menu needs those keys, so keycode mode is turned on once here
 /// and the mapping happens in [`key_from_code`] instead.
 ///
+/// # Both keyboards are live at once
+///
+/// This is not "USB if present, otherwise PS/2" as an either/or. Both queues are
+/// drained on every pass of [`next_key`], so a machine with both stays usable and
+/// a keystroke on either device gets through — which is the behaviour you want
+/// when the USB keyboard is the one in front of you and the PS/2 port is the one
+/// nobody plugged anything into. USB is checked first only because it costs a
+/// completed transfer to have anything queued, so it is the one that can still
+/// gain a character between two passes.
+///
+/// The report is for the user rather than for the code: the branch itself needs
+/// no choice made in advance, which is the point.
+///
 /// Calling this more than once is harmless: it sets a flag.
 pub fn init_input() {
     crate::terminal::set_keycode_capture(true);
+
+    let usb = crate::drivers::usb::class::hid::keyboard_attached();
+    if usb {
+        say("input: USB keyboard (PS/2 still active)\n");
+    } else {
+        // Not a warning. PS/2 is a complete input path on its own, and a machine
+        // that never had a USB keyboard plugged in is not broken.
+        say("input: PS/2 keyboard (no USB keyboard found)\n");
+    }
 }
 
 /// A keystroke, from whichever keyboard produced it.
