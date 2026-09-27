@@ -12,6 +12,9 @@
 //! *shell*, because they are about commands rather than text. A terminal that
 //! implemented them would be guessing at something it does not own.
 
+use alloc::string::String;
+use alloc::vec::Vec;
+
 /// One rendered line of output.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Line {
@@ -131,7 +134,10 @@ impl Terminal {
         }
         match c {
             '\n' | '\r' => {
-                let line = std::mem::take(&mut self.input);
+                // `mem::take` is not in `no_std`'s prelude in the version this
+                // targets, so the replace is spelled out. It is the same thing:
+                // leave a default behind, hand over the old value.
+                let line = core::mem::replace(&mut self.input, String::new());
                 self.cursor = 0;
                 Some(line)
             }

@@ -1,16 +1,20 @@
+use alloc::vec;
+use alloc::vec::Vec;
+
 use spin::Mutex;
 
 use crate::nic::command::NetworkCommandRunner;
-use crate::nic::device::NetworkDevice;
+use crate::nic::device::{NetworkDevice, PollResult, RxFrame, TxFrame};
 use crate::nic::error::NetworkError;
 use crate::nic::ping::PingResult;
 use crate::nic::stack::NetworkConfig;
-use crate::nic::types::Ipv4Address;
+use crate::nic::types::{Ipv4Address, MacAddress};
 use crate::nic::virtio::pci_legacy::VirtioPciLegacyNetDevice;
 use crate::nic::virtio::pci_modern::VirtioModernNet;
 use crate::pci::{
     self, PciDevice, VIRTIO_NET_LEGACY_DEVICE, VIRTIO_NET_MODERN_DEVICE, VIRTIO_VENDOR,
 };
+use crate::println;
 
 const ARP_ENTRIES: usize = 4;
 const IDENTIFIER: u16 = 0x5452;
@@ -41,11 +45,124 @@ pub enum Nic {
     Modern(VirtioModernNet),
 }
 
+/// A received frame held for the caller to read once.
+///
+/// The modern driver hands its DMA buffer back to the device the instant the
+/// frame is taken, so a borrow into that buffer would be reading memory the
+/// device may already be writing. `NetworkDevice::take_rx` has to return a
+/// borrow, so the copy lives here and the caller is expected to call
+/// `take_pending` rather than `take_rx` on a modern device.
+pub struct PendingFrame {
+    pub bytes: Vec<u8>,
+}
+
 impl Nic {
-    pub fn mac_address(&self) -> [u8; 6] {
+    /// Which transport this is, for the boot log.
+    pub fn transport(&self) -> Transport {
+        match self {
+            Nic::Legacy(_) => Transport::Legacy,
+            Nic::Modern(_) => Transport::Modern,
+        }
+    }
+
+    /// Take a received frame from a modern device, copied out of its buffer.
+    ///
+    /// This is the modern counterpart to `NetworkDevice::take_rx`, and the one a
+    /// caller should use: it hands back an owned `Vec` rather than a borrow, so
+    /// nothing keeps pointing into memory the device has been given back.
+    pub fn take_pending(&mut self) -> Option<PendingFrame> {
+        match self {
+            Nic::Legacy(d) => d.take_rx().map(|f| PendingFrame {
+                bytes: f.bytes.to_vec(),
+            }),
+            Nic::Modern(d) => d.take_frame().map(|bytes| PendingFrame { bytes }),
+        }
+    }
+}
+
+impl NetworkDevice for Nic {
+    fn init(&mut self) -> Result<(), NetworkError> {
+        match self {
+            Nic::Legacy(d) => d.init(),
+            // Brought up by `open_nic`, which holds the PCI address the
+            // constructor needs. Re-initialising here would re-map the BAR.
+            Nic::Modern(_) => Ok(()),
+        }
+    }
+
+    fn mac_address(&self) -> MacAddress {
         match self {
             Nic::Legacy(d) => d.mac_address(),
-            Nic::Modern(d) => d.mac_address(),
+            // `MacAddress` is those same six bytes.
+            Nic::Modern(d) => MacAddress(d.mac_address()),
+        }
+    }
+
+    fn mtu(&self) -> usize {
+        // 1500 bytes of payload, which is what both drivers' buffers hold.
+        1500
+    }
+
+    fn submit_tx(&mut self, frame: TxFrame<'_>) -> Result<(), NetworkError> {
+        match self {
+            Nic::Legacy(d) => d.submit_tx(frame),
+            Nic::Modern(d) => d.send(frame.bytes),
+        }
+    }
+
+    fn poll(&mut self) -> Result<PollResult, NetworkError> {
+        match self {
+            Nic::Legacy(d) => d.poll(),
+            // The modern driver has no interrupt status to report; `take_pending`
+            // is how a frame is collected, not how one is waited for. Reporting a
+            // reset only when the device says so keeps `poll` free of the
+            // side effect of draining the receive ring.
+            Nic::Modern(d) => Ok(PollResult {
+                tx_completed: 0,
+                rx_available: 0,
+                device_needs_reset: d.in_failed_state(),
+            }),
+        }
+    }
+
+    /// Only meaningful for a legacy device.
+    ///
+    /// A modern device cannot return a borrow into its DMA buffer, because the
+    /// buffer is already back with the device by the time this is called. Use
+    /// [`Nic::take_pending`] there; this returns `None` rather than a dangling
+    /// borrow so the mistake is a missing frame and not undefined behaviour.
+    fn take_rx(&mut self) -> Option<RxFrame<'_>> {
+        match self {
+            Nic::Legacy(d) => d.take_rx(),
+            Nic::Modern(_) => None,
+        }
+    }
+
+    fn recycle_rx(&mut self, buffer_id: u16) -> Result<(), NetworkError> {
+        match self {
+            Nic::Legacy(d) => d.recycle_rx(buffer_id),
+            // The modern driver refills its receive ring inside `take_frame`.
+            Nic::Modern(_) => Ok(()),
+        }
+    }
+}
+
+/// The device owns a single mapped BAR and its own buffers; it is only ever
+/// reachable through the `RUNTIME` mutex below.
+///
+/// Raw device pointers are not `Send`, and that is correct — moving one across
+/// threads is meaningless without the mapping it points at. Here the mapping is
+/// process-wide and created before the value is ever shared, so the assertion
+/// holds; it is asserted rather than assumed because that is the whole claim.
+unsafe impl Send for Nic {}
+
+impl Nic {
+    pub fn mac_address(&self) -> MacAddress {
+        match self {
+            Nic::Legacy(d) => d.mac_address(),
+            // The modern driver reads the address out of the device's config
+            // blob as raw bytes; `MacAddress` is that same six bytes.
+            Nic::Modern(d) => MacAddress(d.mac_address()),
         }
     }
 
@@ -101,14 +218,14 @@ fn open_nic() -> Result<Nic, NetworkError> {
     };
 
     println!(
-        "[nic] virtio-net {:?} up, mac {:02x}:{:02x}:{:02x}:{:02x}:{:02x}, link {}",
+        "[nic] virtio-net {:?} up, mac {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, link {}",
         transport,
-        nic.mac_address()[0],
-        nic.mac_address()[1],
-        nic.mac_address()[2],
-        nic.mac_address()[3],
-        nic.mac_address()[4],
-        nic.mac_address()[5],
+        nic.mac_address().0[0],
+        nic.mac_address().0[1],
+        nic.mac_address().0[2],
+        nic.mac_address().0[3],
+        nic.mac_address().0[4],
+        nic.mac_address().0[5],
         if nic.link_up() { "up" } else { "down" }
     );
     Ok(nic)

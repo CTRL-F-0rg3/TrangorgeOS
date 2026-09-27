@@ -42,6 +42,9 @@
 //! for it lands. `r1` exists so the mechanism is proven; the rest appear when
 //! their semantics are.
 
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
 /// Directory names, relative to the volume root.
 pub const KERNEL_DIR: &str = "kernel";
 pub const USERSPACE_DIR: &str = "userspace";

@@ -22,10 +22,13 @@
 //! The split is the point: a command that only needs a filesystem works against
 //! any [`Fs`], including one backed by a RAM disk in a test.
 
-use std::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 use crate::apps::terminal::Terminal;
-use crate::login::Session;
+use crate::commands::builtins;
+use crate::login::{Accounts, Session};
 
 /// One entry in a directory listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -67,7 +70,7 @@ pub trait Sys {
 pub struct MemoryFs {
     /// Absolute path to the data it holds. `/a/b` implies `/a`.
     files: BTreeMap<String, Vec<u8>>,
-    dirs: std::collections::BTreeSet<String>,
+    dirs: BTreeSet<String>,
 }
 
 impl MemoryFs {
@@ -219,13 +222,66 @@ pub fn split_command(line: &str) -> (&str, &str) {
 }
 
 /// The shell: a session, a working directory and a command interpreter.
+///
+/// The shell owns three things and delegates everything else:
+///
+/// * the prompt,
+/// * the line editor and the scrollback,
+/// * the working directory.
+///
+/// A command's *meaning* lives in [`crate::commands`], which is what makes the
+/// shell replaceable: a different interpreter reuses them, and a new command does
+/// not need a new `match` arm here.
 pub struct Shell<'a> {
     session: Session,
     fs: &'a mut dyn Fs,
     sys: &'a mut dyn Sys,
+    accounts: &'a mut Accounts,
     term: Terminal,
-    /// What the user last typed, for the `history` command.
+    /// What the user last typed, for `history`.
     history: Vec<String>,
+    /// The prompt style, so a different rung is visibly a different rung.
+    style: PromptStyle,
+}
+
+/// How the prompt looks.
+///
+/// A rung is worth showing: a user who cannot tell which rung they are at cannot
+/// tell what a command is about to be allowed to do. This corrects for that; it
+/// is not a security control, and the capability table is that.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PromptStyle {
+    /// rung 1: the ordinary userspace prompt.
+    Standard,
+    /// A rung above 1, marked with `!` so it cannot be mistaken for rung 1.
+    Elevated,
+    /// The login prompt, shown before a session exists.
+    Login,
+}
+
+impl PromptStyle {
+    /// `user@rN:/path$ ` — the Linux form, because users arrive knowing it and
+    /// re-learning a prompt is a tax paid on every session.
+    pub fn render(&self, session: &Session) -> String {
+        match self {
+            PromptStyle::Standard => {
+                format!("{}@r{}:{}$ ", session.user, session.rung, session.cwd)
+            }
+            PromptStyle::Elevated => {
+                format!("{}@r{}!:{}$ ", session.user, session.rung, session.cwd)
+            }
+            PromptStyle::Login => "login: ".to_string(),
+        }
+    }
+
+    /// The style a session's rung calls for.
+    pub fn for_rung(rung: u32) -> Self {
+        if rung <= crate::layout::RUNG_MIN {
+            PromptStyle::Standard
+        } else {
+            PromptStyle::Elevated
+        }
+    }
 }
 
 impl<'a> Shell<'a> {
@@ -234,19 +290,26 @@ impl<'a> Shell<'a> {
     /// The greeting is the first thing a user sees, and it names the
     /// privilege rung they ended up at — a login that silently drops you into
     /// a different rung than the account asked for would be invisible.
-    pub fn new(session: Session, fs: &'a mut dyn Fs, sys: &'a mut dyn Sys) -> Self {
+    pub fn new(
+        session: Session,
+        fs: &'a mut dyn Fs,
+        sys: &'a mut dyn Sys,
+        accounts: &'a mut Accounts,
+    ) -> Self {
         let mut term = Terminal::default();
         term.say("hello in userspace");
         term.say(format!(
             "TrangorgeOS userspace — {} at rung {}",
             session.user, session.rung
         ));
-        term.say(format!("home: {}", session.cwd));
+        term.say(format!("home: {}", session.home));
         term.say("type 'help' for commands");
         Self {
+            style: PromptStyle::for_rung(session.rung),
             session,
             fs,
             sys,
+            accounts,
             term,
             history: Vec::new(),
         }
@@ -260,86 +323,36 @@ impl<'a> Shell<'a> {
         &self.term
     }
 
-    /// The prompt, e.g. `root@r1 /kernel/…/r1$ `.
-    pub fn prompt(&self) -> String {
-        format!("{} {}$ ", self.session.whoami(), self.session.cwd)
+    /// Commands already run, oldest first.
+    pub fn history(&self) -> &[String] {
+        &self.history
     }
 
-    /// Feed one keystroke. Returns the line when the user pressed Enter.
-    pub fn feed_char(&mut self, c: char) -> Option<String> {
-        self.term.feed_char(c)
-    }
-
-    /// Run one command line, writing its output to the terminal.
-    pub fn run(&mut self, line: &str) {
-        let line = line.trim();
-        if line.is_empty() {
-            return;
-        }
-        self.history.push(line.to_string());
-        self.term.print_prompt(format!("{}{}", self.prompt(), line));
-
-        let (cmd, rest) = split_command(line);
-        match cmd {
-            "help" => self.cmd_help(),
-            "echo" => self.term.say(rest),
-            "clear" => self.term.clear(),
-            "exit" | "logout" => self.term.close(),
-            "whoami" => self.term.say(self.session.whoami()),
-            "pwd" => self.term.say(&self.session.cwd),
-            "cd" => self.cmd_cd(rest),
-            "ls" => self.cmd_ls(rest),
-            "cat" => self.cmd_cat(rest),
-            "mkdir" => self.cmd_mkdir(rest),
-            "write" => self.cmd_write(rest),
-            "rm" => self.cmd_rm(rest),
-            "uname" => self.term.say(self.sys.uname()),
-            "free" => self.cmd_free(),
-            "uptime" => self.cmd_uptime(),
-            "history" => {
-                for (i, h) in self.history.iter().enumerate() {
-                    self.term.say(format!("{:>4}  {h}", i + 1));
-                }
-            }
-            // A bare path is a guess, not an error: users type `notes.txt` and
-            // mean to read it. Saying so beats "command not found".
-            other if other.contains('/') || self.fs.read_file(other).is_ok() => {
-                self.cmd_cat(other)
-            }
-            other => self.term.say(format!("{other}: command not found (try 'help')")),
-        }
-    }
-
-    fn cmd_help(&mut self) {
-        let rows: &[(&str, &str)] = &[
-            ("help", "list these commands"),
-            ("echo <text>", "print text"),
-            ("clear", "clear the screen"),
-            ("exit", "close this shell"),
-            ("whoami", "print user and rung"),
-            ("pwd", "print the working directory"),
-            ("cd <dir>", "change directory"),
-            ("ls [dir]", "list a directory"),
-            ("cat <file>", "print a file"),
-            ("mkdir <dir>", "create a directory"),
-            ("write <file> <text>", "write a text file"),
-            ("rm <path>", "remove a file or directory"),
-            ("uname", "system name"),
-            ("free", "memory usage"),
-            ("uptime", "seconds since boot"),
-            ("history", "commands already run"),
-        ];
-        for (c, d) in rows {
-            self.term.say(format!("  {c:<22} {d}"));
-        }
-    }
-
-    /// Resolve a possibly-relative path against the working directory.
+    /// Change the working directory, unchecked.
     ///
-    /// `~` and `~/…` expand to the session's rung *home*, not to the current
-    /// directory — that is the whole point of the tilde, and expanding it to
-    /// `cwd` would make `cd sub; cd ~` a no-op.
-    fn resolve(&self, arg: &str) -> String {
+    /// Public because `cd` lives in [`crate::commands::builtins`] and needs it.
+    /// Unchecked on purpose: the caller applies the checks that depend on the
+    /// session, and duplicating them here would be one more place to forget one.
+    pub fn set_cwd(&mut self, path: String) {
+        self.session.cwd = path;
+    }
+
+    /// The filesystem this shell reads and writes.
+    pub fn fs(&mut self) -> &mut dyn Fs {
+        self.fs
+    }
+
+    /// The prompt, for the current rung.
+    pub fn prompt(&self) -> String {
+        self.style.render(&self.session)
+    }
+
+    /// Resolve a path against the working directory.
+    ///
+    /// `~` expands to the session's rung *home*, not the working directory — the
+    /// tilde means "home" everywhere else, and a shell where it means "here" is a
+    /// shell users will fight.
+    pub fn resolve(&self, arg: &str) -> String {
         let arg = arg.trim();
         if arg == "~" {
             return self.session.home.clone();
@@ -356,131 +369,71 @@ impl<'a> Shell<'a> {
         }
     }
 
-    fn cmd_cd(&mut self, arg: &str) {
-        let target = self.resolve(arg);
-        if self.fs.read_dir(&target).is_err() {
-            self.term.say(format!("cd: {target}: no such directory"));
-            return;
-        }
-        // A session stays inside its own rung. Refusing `..` at the rung home,
-        // rather than silently doing nothing, is what tells the user why.
-        if !self.session.owns(&target) {
-            self.term.say(format!(
-                "cd: {target}: outside this session's home (rung {})",
-                self.session.rung
-            ));
-            return;
-        }
-        self.session.cwd = target;
+    /// Feed one keystroke. Returns the line when the user pressed Enter.
+    pub fn feed_char(&mut self, c: char) -> Option<String> {
+        self.term.feed_char(c)
     }
 
-    fn cmd_ls(&mut self, arg: &str) {
-        let path = self.resolve(arg);
-        match self.fs.read_dir(&path) {
-            Ok(entries) if entries.is_empty() => self.term.say("(empty)"),
-            Ok(entries) => {
-                for e in entries {
-                    if e.is_dir {
-                        self.term.say(format!("{}/", e.name));
-                    } else {
-                        self.term.say(format!("{}  {} bytes", e.name, e.size));
-                    }
-                }
+    /// Run one command line, writing its output to the terminal.
+    ///
+    /// Returns `true` when the shell should close — `exit`, or a logout that
+    /// ended the session.
+    pub fn run(&mut self, line: &str) -> bool {
+        let line = line.trim();
+        if line.is_empty() {
+            return false;
+        }
+        self.history.push(line.to_string());
+        self.term.print_prompt(format!("{}{}", self.prompt(), line));
+
+        let (cmd, rest) = split_command(line);
+
+        // The shell's own commands come first: `cd` and `history` need the
+        // shell, and a table entry for them would have to reach back into it —
+        // the thing `Ctx` exists to prevent.
+        let builtin = match cmd {
+            "cd" => Some(builtins::cd(self, rest)),
+            "pwd" => Some(builtins::pwd(self)),
+            "history" => Some(builtins::history(self)),
+            "help" | "?" => Some(builtins::help()),
+            "exit" => Some(builtins::exit(self)),
+            "clear" => {
+                self.term.clear();
+                None
             }
-            Err(e) => self.term.say(format!("ls: {e}")),
+            _ => None,
+        };
+        if let Some(result) = builtin {
+            return self.apply(result);
         }
-    }
 
-    fn cmd_cat(&mut self, arg: &str) {
-        if arg.is_empty() {
-            self.term.say("cat: usage: cat <file>");
-            return;
-        }
-        let path = self.resolve(arg);
-        match self.fs.read_file(&path) {
-            Ok(data) => {
-                // Strip exactly one trailing newline, so a file that ends in
-                // one does not print a blank line on every `cat`.
-                let text = String::from_utf8_lossy(&data);
-                for line in text.trim_end_matches('\n').lines() {
-                    self.term.say(line);
-                }
+        // Everything else goes through the table, with a `Ctx` that cannot reach
+        // the prompt, the terminal or the working directory.
+        let result = {
+            let mut ctx =
+                crate::commands::Ctx::new(self.fs, self.sys, &mut self.session, self.accounts);
+            match crate::commands::dispatch(&mut ctx, cmd, rest) {
+                Some(r) => r,
+                // A bare path is a guess, not an error: users type `notes.txt`
+                // and mean to read it.
+                None if cmd.contains('/') => crate::commands::files::cat(&mut ctx, cmd),
+                None => crate::commands::CmdResult::err(format!(
+                    "{cmd}: command not found (try 'help')"
+                )),
             }
-            Err(e) => self.term.say(format!("cat: {e}")),
-        }
+        };
+        self.apply(result)
     }
 
-    fn cmd_mkdir(&mut self, arg: &str) {
-        if arg.is_empty() {
-            self.term.say("mkdir: usage: mkdir <dir>");
-            return;
+    /// Show a command's output and act on its exit status.
+    fn apply(&mut self, result: crate::commands::CmdResult) -> bool {
+        for line in result.out {
+            self.term.say(line);
         }
-        let path = self.resolve(arg);
-        if !self.session.owns(&path) {
-            self.term.say("mkdir: outside this session's home");
-            return;
+        if result.exit {
+            self.term.close();
+            return true;
         }
-        match self.fs.make_dir(&path) {
-            Ok(()) => self.term.say(format!("created {path}")),
-            Err(e) => self.term.say(format!("mkdir: {e}")),
-        }
-    }
-
-    fn cmd_write(&mut self, arg: &str) {
-        let (name, text) = split_command(arg);
-        if name.is_empty() {
-            self.term.say("write: usage: write <file> <text>");
-            return;
-        }
-        let path = self.resolve(name);
-        if !self.session.owns(&path) {
-            self.term.say("write: outside this session's home");
-            return;
-        }
-        match self.fs.write_file(&path, text.as_bytes()) {
-            Ok(()) => self.term.say(format!("wrote {} bytes to {name}", text.len())),
-            Err(e) => self.term.say(format!("write: {e}")),
-        }
-    }
-
-    fn cmd_rm(&mut self, arg: &str) {
-        if arg.is_empty() {
-            self.term.say("rm: usage: rm <path>");
-            return;
-        }
-        let path = self.resolve(arg);
-        if path == self.session.cwd {
-            self.term.say("rm: refusing to remove the working directory");
-            return;
-        }
-        if !self.session.owns(&path) {
-            self.term.say("rm: outside this session's home");
-            return;
-        }
-        match self.fs.remove(&path) {
-            Ok(()) => self.term.say(format!("removed {path}")),
-            Err(e) => self.term.say(format!("rm: {e}")),
-        }
-    }
-
-    fn cmd_free(&mut self) {
-        let (total, free) = self.sys.memory();
-        let mib = 1024 * 1024;
-        self.term.say(format!(
-            "memory: {} MiB total, {} MiB free",
-            total / mib,
-            free / mib
-        ));
-    }
-
-    fn cmd_uptime(&mut self) {
-        let s = self.sys.uptime();
-        self.term.say(format!(
-            "up {}h {}m {}s, {} cpu(s)",
-            s / 3600,
-            (s % 3600) / 60,
-            s % 60,
-            self.sys.cpus()
-        ));
+        false
     }
 }

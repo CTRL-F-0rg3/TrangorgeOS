@@ -14,8 +14,10 @@
 //! swapping in a KDF with a per-account salt is a change in one function. The
 //! weakness is documented at the definition instead of hidden.
 
-use std::collections::BTreeMap;
-use std::fmt;
+use alloc::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use core::fmt;
 
 /// What went wrong.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,6 +98,30 @@ impl Accounts {
 
     pub fn get(&self, name: &str) -> Option<&Account> {
         self.by_name.get(name)
+    }
+
+    /// Every account, in name order.
+    pub fn all(&self) -> Vec<Account> {
+        self.by_name.values().cloned().collect()
+    }
+
+    /// Remove an account, returning it if it existed.
+    pub fn remove(&mut self, name: &str) -> Option<Account> {
+        self.by_name.remove(name)
+    }
+
+    /// Replace an account's password.
+    ///
+    /// The stored value is a plain comparison, not a hash — see
+    /// [`Account::verify`]. This is the one function that would change when a
+    /// KDF lands, which is why it is a method rather than a field write.
+    pub fn set_password(&mut self, name: &str, password: &str) -> Result<(), String> {
+        let account = self
+            .by_name
+            .get_mut(name)
+            .ok_or_else(|| format!("no such account: {name}"))?;
+        account.password_hash = password.to_string();
+        Ok(())
     }
 
     pub fn names(&self) -> Vec<String> {

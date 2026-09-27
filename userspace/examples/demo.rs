@@ -10,6 +10,7 @@
 
 use tgs_userspace::apps::shell::{MemoryFs, MockSys};
 use tgs_userspace::bootstrap::{build_tree, MemoryVolume, Volume};
+use tgs_userspace::commands::accounts::LoginPrompt;
 use tgs_userspace::login::Accounts;
 use tgs_userspace::Shell;
 
@@ -26,14 +27,23 @@ fn main() {
         println!("  {d}");
     }
 
-    // Log in.
-    let accounts = Accounts::with_root();
-    let session = match accounts.login("root", "root") {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("login failed: {e}");
-            return;
-        }
+    // Log in, the way the terminal does: prompt, then password, then a session.
+    let mut accounts = Accounts::with_root();
+    let mut login = LoginPrompt::new(&accounts);
+    println!("\n--- login ---");
+    println!("{}", login.prompt().unwrap_or(""));
+    let (messages, _) = login.submit("root");
+    for m in messages {
+        println!("{m}");
+    }
+    println!("{}", login.prompt().unwrap_or(""));
+    let (messages, session) = login.submit("root");
+    for m in messages {
+        println!("{m}");
+    }
+    let Some(session) = session else {
+        eprintln!("login failed");
+        return;
     };
     println!("logged in as {}", session.whoami());
 
@@ -51,10 +61,11 @@ fn main() {
         ..Default::default()
     };
 
-    let mut shell = Shell::new(session, &mut fs, &mut sys);
+    let mut shell = Shell::new(session, &mut fs, &mut sys, &mut accounts);
+    println!("\n--- shell ---");
     for cmd in [
-        "whoami", "pwd", "mkdir projects", "cd projects", "write todo.txt ship the shell",
-        "ls", "cat todo.txt", "cd ~", "pwd", "uname", "free", "uptime", "help",
+        "pwd", "id", "mkdir projects", "cd projects",
+        "ls -la", "users", "uname -a", "free", "df", "seq 3", "basename /a/b/c",
     ] {
         shell.run(cmd);
     }

@@ -28,7 +28,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ptr::{read_volatile, write_volatile};
 
-use crate::mm::ffi::{contig_alloc, kvirt_to_phys, phys_to_virt, vmm_map_device};
+use crate::mm::ffi::{contig_alloc, vmm_map_device};
+use crate::mm::phys::phys_to_virt;
 use crate::nic::error::NetworkError;
 use crate::nic::virtio::queue::{Descriptor, VIRTQ_DESC_F_WRITE};
 use crate::pci::{self, PciDevice};
@@ -66,13 +67,10 @@ mod common_cfg {
     pub const DEVICE_FEATURE: usize = 0x04;
     pub const DRIVER_FEATURE_SELECT: usize = 0x08;
     pub const DRIVER_FEATURE: usize = 0x0C;
-    pub const MSIX_CONFIG: usize = 0x10;
     pub const NUM_QUEUES: usize = 0x12;
     pub const DEVICE_STATUS: usize = 0x13;
-    pub const CONFIG_GENERATION: usize = 0x14;
     pub const QUEUE_SELECT: usize = 0x16;
     pub const QUEUE_SIZE: usize = 0x18;
-    pub const QUEUE_MSIX_VECTOR: usize = 0x1A;
     pub const QUEUE_ENABLE: usize = 0x1C;
     pub const QUEUE_NOTIFY_OFF: usize = 0x1E;
     pub const QUEUE_DESC: usize = 0x20;
@@ -85,7 +83,6 @@ mod common_cfg {
 mod net_config {
     pub const MAC: usize = 0x00;
     pub const STATUS: usize = 0x06;
-    pub const MAX_VIRTQ_PAIRS: usize = 0x0C;
 }
 
 /// A device-specific region reached through a PCI capability.
@@ -100,22 +97,25 @@ const VIRTIO_PCI_CAP_ID: u8 = 0x09;
 
 /// Walk the capability list for `cap_id`, returning its offset in BAR space.
 fn find_capability(addr: pci::PciAddress, cap_id: u8) -> Option<Capability> {
-    // Standard capability pointer, byte 0x34.
+    // Standard capability pointer, byte 0x34. Config-space offsets are `u8` and
+    // the list lives in the low 256 bytes, so the pointer is truncated rather
+    // than widened: a capability above 0xFF is not addressable here anyway.
     let mut ptr = pci::config_read_u8(addr, 0x34) as u16;
     // The list is a bounded walk; 48 capabilities is the architectural maximum
     // for a single device, and the loop is bounded by that as well as by the
     // termination condition, so a malformed device cannot spin here.
     let mut guard = 0;
-    while ptr != 0 && ptr & 0x3 == 0 && guard < 48 {
+    while ptr != 0 && ptr & 0x3 == 0 && ptr <= u8::MAX as u16 && guard < 48 {
         guard += 1;
-        let id_reg = pci::config_read_u8(addr, ptr);
-        let next = pci::config_read_u8(addr, ptr + 1) & 0xF0;
+        let p = ptr as u8;
+        let id_reg = pci::config_read_u8(addr, p);
+        let next = pci::config_read_u8(addr, p + 1) & 0xF0;
         if id_reg == cap_id {
-            let offset = pci::config_read_u16(addr, ptr + 4);
-            let length = pci::config_read_u16(addr, ptr + 6);
+            let offset = pci::config_read_u16(addr, p + 4);
+            let length = pci::config_read_u16(addr, p + 6);
             return Some(Capability { offset, length });
         }
-        ptr = next;
+        ptr = next as u16;
     }
     None
 }
@@ -178,8 +178,6 @@ struct MmioQueue {
     size: u16,
     /// The device's last-used index, cached so a poll with no traffic is cheap.
     last_used: u16,
-    /// Set while a transmit buffer is still owned by the device.
-    tx_busy: bool,
 }
 
 impl MmioQueue {
@@ -189,7 +187,6 @@ impl MmioQueue {
             phys: 0,
             size: 0,
             last_used: 0,
-            tx_busy: false,
         }
     }
 
@@ -216,7 +213,6 @@ impl MmioQueue {
             phys,
             size,
             last_used: 0,
-            tx_busy: false,
         })
     }
 
@@ -383,15 +379,24 @@ impl VirtioModernNet {
         me.set_status(STATUS_ACKNOWLEDGE | STATUS_DRIVER);
 
         // Read both halves of the device's features, then acknowledge only what
-        // this driver implements. Acknowledging a bit that is not offered is
-        // undefined, so the two are intersected rather than assumed.
+        // this driver implements. Acknowledging a bit the device did not offer
+        // is undefined, so the two are intersected rather than assumed.
         let low = me.read_device_features(0);
         let high = me.read_device_features(1);
         me.device_features = (low as u64) | ((high as u64) << 32);
+        // `VERSION_1` is mandatory for a 1.0 device and lives in the high half.
+        // A device that does not offer it is not really 1.0, and negotiating
+        // anyway would leave every register below meaning something else.
+        if me.device_features & VIRTIO_F_VERSION_1 == 0 {
+            return Err(NetworkError::UnsupportedFeatures {
+                offered: me.device_features,
+                requested: DRIVER_FEATURES,
+            });
+        }
         me.write_driver_features(0, (DRIVER_FEATURES & 0xFFFF_FFFF) as u32);
         me.write_driver_features(1, (DRIVER_FEATURES >> 32) as u32);
 
-        let num_queues = me.read_common_u16(common_cfg::NUM_QUEUES);
+        let num_queues = unsafe { me.read_common_u16(common_cfg::NUM_QUEUES) };
         if num_queues < 2 {
             return Err(NetworkError::InvalidQueueSize);
         }
@@ -407,10 +412,10 @@ impl VirtioModernNet {
         // nowhere to put a frame that arrives immediately.
         me.select_queue(RX_QUEUE_INDEX);
         me.notify_offsets[RX_QUEUE_INDEX as usize] =
-            me.read_common_u32(common_cfg::QUEUE_NOTIFY_OFF) as u32;
+            unsafe { me.read_common_u32(common_cfg::QUEUE_NOTIFY_OFF) as u32 };
         me.select_queue(TX_QUEUE_INDEX);
         me.notify_offsets[TX_QUEUE_INDEX as usize] =
-            me.read_common_u32(common_cfg::QUEUE_NOTIFY_OFF) as u32;
+            unsafe { me.read_common_u32(common_cfg::QUEUE_NOTIFY_OFF) as u32 };
         me.fill_rx();
 
         me.mac = me.read_mac();
@@ -528,35 +533,43 @@ impl VirtioModernNet {
         let mut mac = [0u8; 6];
         for (i, slot) in mac.iter_mut().enumerate() {
             // Read as bytes rather than as a six-byte load: the config blob is
-            // byte-addressed and may be narrower than the read word.
-            *slot = unsafe { self.read_common_u8(self.config_offset + net_config::MAC + i) };
+            // byte-addressed and may be narrower than the read word. The offset
+            // is `u8` because the whole blob is far below 256 bytes.
+            let off = self.config_offset + net_config::MAC as u32 + i as u32;
+            *slot = unsafe { self.read_common_u8(off as usize) };
         }
         mac
     }
 
     /// The link status the device reports: 1 is up.
     pub fn link_up(&self) -> bool {
-        unsafe { self.read_common_u16(self.config_offset + net_config::STATUS) & 1 != 0 }
+        let off = self.config_offset + net_config::STATUS as u32;
+        unsafe { self.read_common_u16(off as usize) & 1 != 0 }
     }
 
-    /// The device's MAC address.
+    /// The device's MAC address, read once at init.
     pub fn mac_address(&self) -> [u8; 6] {
         self.mac
     }
 
-    /// The features the device offered, as a 64-bit mask.
-    pub fn features(&self) -> u64 {
-        self.device_features
+    /// Take one received frame, copied out of the DMA buffer.
+    ///
+    /// The copy is not optional: `receive` hands the buffer straight back to the
+    /// device, so a borrow into it would be reading memory the device may already
+    /// be writing.
+    pub fn take_frame(&mut self) -> Option<Vec<u8>> {
+        self.receive()
     }
 
     // -- buffers -----------------------------------------------------------
 
     /// Allocate one packet buffer per queue slot.
     ///
-    /// Returns `(tx_buffers, rx_buffers)`. Buffers are their own page-aligned
-    /// allocations rather than carve-outs of a bigger one: a receive buffer must
-    /// be physically contiguous for the device to write it in one DMA.
-    fn alloc_buffers(&mut self) -> Result<(Vec<Buffer>, Vec<Buffer>), NetworkError> {
+    /// Stores the pair on the device. The queues themselves are set up
+    /// separately, because a queue's physical rings come from its own allocation
+    /// and the buffers are what the descriptors point *at* — two different
+    /// things that a single pass would conflate.
+    fn alloc_buffers(&mut self) -> Result<(), NetworkError> {
         let mut tx = Vec::with_capacity(QUEUE_SIZE as usize);
         let mut rx = Vec::with_capacity(QUEUE_SIZE as usize);
         for _ in 0..QUEUE_SIZE {
@@ -601,7 +614,7 @@ impl VirtioModernNet {
     /// Returns the frame without the 10-byte virtio header. The buffer is
     /// refilled before returning, so the next frame has somewhere to land.
     pub fn receive(&mut self) -> Option<Vec<u8>> {
-        let (slot, _len) = unsafe { self.queues[RX_QUEUE_INDEX as usize].take_used()? }?;
+        let (slot, _len) = unsafe { self.queues[RX_QUEUE_INDEX as usize].take_used()? };
         let Some((_, rx)) = self.buffers.as_ref() else {
             return None;
         };
@@ -687,22 +700,5 @@ impl VirtioModernNet {
     /// Whether the device has flagged a failure.
     pub fn in_failed_state(&self) -> bool {
         self.status() & STATUS_FAILED != 0
-    }
-}
-
-/// A received frame, copied out of the DMA buffer.
-///
-/// A copy rather than a borrow into the buffer: `take_frame` hands the buffer
-/// straight back to the device, so a reference into it would hand out memory
-/// the device may overwrite while the caller is still reading it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct StagedFrame {
-    pub bytes: Vec<u8>,
-}
-
-impl VirtioModernNet {
-    /// Take one received frame, copying it out of the DMA buffer.
-    pub fn take_frame(&mut self) -> Option<StagedFrame> {
-        self.receive().map(|bytes| StagedFrame { bytes })
     }
 }
