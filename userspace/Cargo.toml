@@ -1,0 +1,27 @@
+[package]
+name = "tgs-userspace"
+version = "0.1.0"
+edition = "2021"
+description = "TrangorgeOS userspace: the on-disk hierarchy, login, and replaceable applications (shell, terminal)."
+
+# Userspace is the nested system. It sits on the kernel (through `tg-comm` for
+# executive actions) and builds its own tree *inside the system image*:
+#
+#   kernel/          created by the kernel
+#     userspace/     created by userspace
+#       user/
+#         root/
+#           shell/       <- the default shell, replaceable
+#           home/
+#             r1/         <- per-privilege-rung home, r1..r128 reserved
+#
+# The tree is created at first boot by `bootstrap::build_tree`, and every
+# application is loaded from its directory, so swapping the shell means
+# putting a different program in `user/root/shell/`.
+[dependencies]
+tg-comm = { path = "../lib" }
+uspace-comm = { path = "../uspace-comm" }
+uspace = { path = "../uspace" }
+
+[profile.release]
+opt-level = 2

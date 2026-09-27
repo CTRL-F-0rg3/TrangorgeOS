@@ -52,6 +52,7 @@ pub mod filter;
 pub mod channel;
 pub mod manager;
 pub mod client;
+pub mod layout;
 
 pub use consts::*;
 pub use layer::Layer;
@@ -66,6 +67,7 @@ pub use filter::{authorize, AuthorizeResult, Gate, KernelHandler};
 pub use channel::LayerChannel;
 pub use manager::Manager;
 pub use client::Client;
+pub use layout::{is_under, normalize, required_dirs, RUNG_MAX, RUNG_MIN, ROOT_USER};
 
 #[cfg(test)]
 mod tests;
