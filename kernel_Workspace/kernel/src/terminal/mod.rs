@@ -375,10 +375,20 @@ fn execute(line: &str) {
         "ls" => {
             let dir = CURRENT_DIR.load(Ordering::Relaxed);
             match dev() {
-                Some(d) => {
-                    let mut sink = Sink;
-                    let _ = crate::fs::tangfs::tfs::list_dir(d, dir, &mut sink);
-                }
+                Some(d) => match crate::fs::tangfs::tfs::entries(d, dir) {
+                    Ok(list) if list.is_empty() => crate::println!("(empty)"),
+                    Ok(list) => {
+                        for (name, size, kind) in list {
+                            // kind 2 is a directory, 1 a file; see tfs::KIND_DIR.
+                            if kind == 2 {
+                                crate::println!("{}/", name);
+                            } else {
+                                crate::println!("{}  {} bytes", name, size);
+                            }
+                        }
+                    }
+                    Err(e) => crate::println!("ls failed: {:?}", e),
+                },
                 None => crate::println!("no disk"),
             }
         }
@@ -575,15 +585,6 @@ fn poll_network() {
         Ok(Some(result)) => print_ping_result(result),
         Ok(None) => {}
         Err(error) => crate::println!("ping failed: {:?}", error),
-    }
-}
-
-struct Sink;
-
-impl core::fmt::Write for Sink {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        crate::print!("{}", s);
-        Ok(())
     }
 }
 

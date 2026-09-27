@@ -1,14 +1,35 @@
 pub mod driver;
 pub mod mbr;
 pub mod tangfs;
+pub mod ext4;
+pub mod fat32;
+pub mod vfs;
 use crate::fs::driver::block::BlockDevice;
-use crate::fs::driver::registry;
 use crate::fs::tangfs::tfs::{format, read_superblock, Result};
 use crate::testing::TestResult;
 
+/// Bring up the storage stack: probe the ATA bus, read the partition table,
+/// then mount whatever filesystem the data disk carries.
+///
+/// `mount_all` runs *after* `ensure_formatted` in `self_test` rather than here.
+/// That ordering is deliberate: a freshly created `data.img` has no superblock
+/// at all, and `tangfs::read_superblock` would reject it. `mount_all` treats
+/// "not Tangfs" as "try the next filesystem", so probing before the format would
+/// miss the only filesystem present.
 pub fn init() {
     driver::init();
     mbr::init();
+}
+
+/// Mount the first filesystem found on any registered device.
+///
+/// Separate from [`init`] because it needs a formatted medium first. Call it
+/// once the data disk carries a filesystem; calling it earlier is harmless but
+/// finds nothing.
+pub fn mount_root() {
+    if vfs::root().is_none() {
+        vfs::mount_all();
+    }
 }
 
 pub fn self_test() -> TestResult {
@@ -58,6 +79,15 @@ pub fn self_test() -> TestResult {
     // so make sure it carries a TFS superblock before touching the tree.
     if ensure_formatted(data).is_err() {
         return Err("tfs format failed");
+    }
+
+    // The medium is formatted now, so the VFS has something to mount. Without
+    // this, `vfs::root()` stays `None` and every path lookup falls back to
+    // re-resolving against the raw device.
+    mount_root();
+
+    if vfs::root().is_none() {
+        return Err("no filesystem mounted after format");
     }
 
     // Ensure the base configuration files exist, whether this is a fresh

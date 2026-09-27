@@ -401,6 +401,12 @@ pub fn name_eq(entry: &DirEntry, query: &str) -> bool {
 }
 
 /// A mounted FAT32 volume.
+///
+/// The device is held, not borrowed per call. Every read and write path
+/// (`read_file`, `create_file`, `mkdir`, `alloc_cluster`, …) needs the medium,
+/// and threading it through each signature meant every caller had to keep the
+/// `&'static dyn BlockDevice` alive alongside the volume — easy to get wrong,
+/// and impossible to express as a plain owned value without it.
 pub struct Fat32 {
     bpb: Bpb,
     /// The volume's length in sectors.
@@ -409,6 +415,8 @@ pub struct Fat32 {
     max_cluster: u32,
     /// Free clusters, from FSINFO. Zero means "not known".
     free_hint: u32,
+    /// The medium this volume lives on.
+    dev: &'static dyn BlockDevice,
 }
 
 impl Fat32 {
@@ -418,7 +426,7 @@ impl Fat32 {
     /// or a superfloppy stick. A whole disk with a partition table needs the
     /// caller to point at the partition, because a physical sector 0 holding an
     /// MBR has no BPB at all.
-    pub fn mount(dev: &dyn BlockDevice) -> Result<Self, FatError> {
+    pub fn mount(dev: &'static dyn BlockDevice) -> Result<Self, FatError> {
         let mut boot = [0u8; SECTOR_SIZE];
         dev.read_block(0, &mut boot).map_err(FatError::from)?;
         let bpb = Bpb::parse(&boot)?;
@@ -434,8 +442,12 @@ impl Fat32 {
     }
 
     /// Mount from an already-parsed BPB and a known volume length.
+    ///
+    /// The device must be `'static`, because the returned volume keeps it. Every
+    /// caller in this kernel mounts from the driver registry, whose entries are
+    /// `'static` statics, so the bound is free in practice.
     pub fn mount_parts(
-        dev: &dyn BlockDevice,
+        dev: &'static dyn BlockDevice,
         bpb: Bpb,
         total_sectors: u32,
     ) -> Result<Self, FatError> {
@@ -447,7 +459,7 @@ impl Fat32 {
         // loses the free-count hint. Demanding it would refuse volumes that are
         // perfectly readable.
         let free_hint = read_fsinfo_free(dev, &bpb).unwrap_or(0);
-        Ok(Self { bpb, total_sectors, max_cluster, free_hint })
+        Ok(Self { bpb, total_sectors, max_cluster, free_hint, dev })
     }
 
     /// The volume's BPB.
@@ -817,16 +829,15 @@ impl Fat32 {
             cur = e.first_cluster();
         }
         // Return a synthetic root entry: the root is a real directory, but it has
-        // no entry of its own to point at.
-        Ok((
-            DirEntry {
-                name: *b"           ",
-                attr: ATTR_DIRECTORY,
-                first_cluster: cur,
-                ..Default::default()
-            },
-            EntryLoc { lba: 0, offset: 0 },
-        ))
+        // no entry of its own to point at. The cluster goes through the setter,
+        // not the field: FAT32 splits it across two halves.
+        let mut root = DirEntry {
+            name: *b"           ",
+            attr: ATTR_DIRECTORY,
+            ..Default::default()
+        };
+        root.set_first_cluster(cur);
+        Ok((root, EntryLoc { lba: 0, offset: 0 }))
     }
 
     /// Find a free slot in a directory.
@@ -985,7 +996,6 @@ impl Fat32 {
         if e.is_dir() {
             return Err(FatError::IsDir);
         }
-        let cbytes = self.bpb.cluster_bytes() as usize;
         let mut out = Vec::with_capacity(e.size as usize);
         self.walk_chain(dev, e.first_cluster(), |c| {
             if out.len() >= e.size as usize {
@@ -997,6 +1007,40 @@ impl Fat32 {
             Ok(())
         })?;
         Ok(out)
+    }
+
+    /// Read a file by full path into `buf`, returning the byte count.
+    ///
+    /// `buf` is the caller's, and truncates rather than failing when it is too
+    /// small — a fixed-size read buffer should not have to grow to read a large
+    /// file. The device comes from the mount, so this needs no argument.
+    pub fn read_path(&self, path: &str, buf: &mut [u8]) -> Result<usize, FatError> {
+        let (e, _) = self.resolve(self.dev, path)?;
+        if e.is_dir() {
+            return Err(FatError::IsDir);
+        }
+        let mut written = 0usize;
+        let limit = e.size as usize;
+        self.walk_chain(self.dev, e.first_cluster(), |c| {
+            if written >= buf.len() || written >= limit {
+                return Ok(());
+            }
+            let data = self.read_cluster(self.dev, c)?;
+            let take = data.len().min(buf.len() - written).min(limit - written);
+            buf[written..written + take].copy_from_slice(&data[..take]);
+            written += take;
+            Ok(())
+        })?;
+        Ok(written)
+    }
+
+    /// List a directory by full path.
+    pub fn list_path(&self, path: &str) -> Result<Vec<(DirEntry, EntryLoc)>, FatError> {
+        let (e, _) = self.resolve(self.dev, path)?;
+        if !e.is_dir() {
+            return Err(FatError::NotDir);
+        }
+        self.read_dir(self.dev, e.first_cluster())
     }
 
     /// Create a directory with `.` and `..` entries.
