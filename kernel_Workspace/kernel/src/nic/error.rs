@@ -12,6 +12,13 @@ pub enum NetworkError {
     ReceiveFailed,
     BufferTooSmall,
     Timeout,
+    /// A device BAR was not mapped into the address space, so its registers
+    /// cannot be read. Distinct from `DeviceNotReady`: the device is there, the
+    /// kernel just did not map it.
+    MmioUnmapped,
+    /// A frame larger than the driver's buffers, i.e. larger than an MTU.
+    /// `BufferTooSmall` is the receive-side name for the same condition.
+    FrameTooLarge,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -237,6 +237,33 @@ pub fn kernel_main(boot_info: &'static bootloader::BootInfo) -> ! {
 
     gfx::refresh();
 
+    // Handoff into userspace: build the system tree, then announce the crossing.
+    // The tree has to exist before anything is drawn, and the medium has to be
+    // formatted first — a fresh data.img has no superblock to create a
+    // directory against.
+    println!("[boot-dbg] step: fs::uspace::enter()...");
+    match fs::root_device() {
+        Some(d) => {
+            if fs::ensure_formatted(d).is_err() {
+                println!("[uspace] format failed; cannot create the tree");
+            } else {
+                let h = fs::uspace::enter(d);
+                // WRITER is a lock, not a Write impl, so it has to be taken
+                // before the report can be written through it.
+                h.report(&mut *vga_buffer::WRITER.lock());
+                if h.is_complete() {
+                    println!("{}", fs::uspace::GREETING);
+                } else {
+                    println!(
+                        "[uspace] tree incomplete ({} path(s) failed); entering anyway",
+                        h.failed.len()
+                    );
+                }
+            }
+        }
+        None => println!("[uspace] no data disk; skipping the tree"),
+    }
+
     terminal::init();
     terminal::run();
 

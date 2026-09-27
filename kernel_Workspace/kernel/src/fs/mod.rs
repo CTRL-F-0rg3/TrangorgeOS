@@ -4,6 +4,8 @@ pub mod tangfs;
 pub mod ext4;
 pub mod fat32;
 pub mod vfs;
+pub mod uspace;
+pub mod shellfs;
 use crate::fs::driver::block::BlockDevice;
 use crate::fs::tangfs::tfs::{format, read_superblock, Result};
 use crate::testing::TestResult;
