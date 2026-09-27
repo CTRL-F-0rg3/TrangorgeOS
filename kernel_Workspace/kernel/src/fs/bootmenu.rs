@@ -147,43 +147,60 @@ pub fn run() -> (u32, u32) {
     }
 }
 
-/// Switch to a mode large enough to hold the banner and the mode list.
+/// Raise the display to the first mode that gives the console its full grid.
 ///
-/// The smallest offered mode with room for both, tried in order. Each candidate
-/// is a plain mode from [`MODES`], so this is the same code path the menu itself
-/// uses — no separate, untested way of changing the display.
+/// # Why this does not loop over modes
 ///
-/// Failing to find one is not fatal: the menu still runs, the banner wraps, and
-/// the user can still pick a mode with the digit keys. That is strictly better
-/// than refusing to show the menu at all.
+/// The text console is not sized by the display mode. `vga_buffer` fixes the
+/// grid at 80x25 and `gfx::console::init` clamps to it
+/// (`COLS = (width / 8).clamp(1, 80)`), so *every* mode from 640x480 upward
+/// yields exactly 80 columns. Raising the resolution past that point cannot make
+/// a 101-column line fit, and the obvious implementation — try each mode, keep
+/// the first whose grid is wide enough — therefore walks the whole list, finds
+/// none, and ends up where it started having re-initialised the console a dozen
+/// times on the way.
+///
+/// So the mode is chosen rather than searched: the first one that reaches the
+/// full 80x25 grid, and only if the current mode is not already there. 320x200
+/// is 40x25, so it is the one mode genuinely worth leaving.
+///
+/// The 101-column banner does not fit in 80 columns and no resolution change
+/// will make it. That is a property of the console's fixed grid, not of the
+/// picture, so it is reported rather than papered over.
 fn fit_screen() {
-    let (w, h) = gfx::current_resolution();
+    const CELL_W: usize = 8;
+    const CELL_H: usize = 8;
+    const MAX_COLS: usize = 80;
+    const MAX_ROWS: usize = 25;
 
-    // The console reports its own grid, which is the number that actually
-    // decides whether a 101-column line fits — pixels alone would be a guess
-    // about the font.
-    if gfx::console::cols() >= NEED_COLS && gfx::console::rows() >= NEED_ROWS {
+    let (cols, rows) = (gfx::console::cols(), gfx::console::rows());
+    if cols >= MAX_COLS && rows >= MAX_ROWS {
         return;
     }
 
-    for (cw, ch) in MODES {
-        if !gfx::set_resolution_w_h(cw, ch) {
-            continue;
-        }
-        if gfx::console::cols() >= NEED_COLS && gfx::console::rows() >= NEED_ROWS {
-            session::say(&alloc::format!(
-                "display raised to {cw}x{ch} to fit the menu\n\n"
-            ));
-            return;
-        }
+    // First offered mode that reaches the full grid. Computed rather than tried,
+    // so the console is re-initialised at most once.
+    let target = MODES
+        .iter()
+        .find(|&&(w, h)| (w / CELL_W as u32) as usize >= MAX_COLS
+            && (h / CELL_H as u32) as usize >= MAX_ROWS);
+
+    let Some(&(tw, th)) = target else {
+        return;
+    };
+
+    if gfx::set_resolution_w_h(tw, th) {
+        session::say(&alloc::format!(
+            "display raised to {tw}x{th} for the full {MAX_COLS}x{MAX_ROWS} console\n"
+        ));
     }
 
-    // Nothing was wide enough, so the mode the last attempt left behind has to
-    // be put back: a failed attempt still changed it.
-    let _ = gfx::set_resolution_w_h(w, h);
-    session::say(&alloc::format!(
-        "no offered mode fits the {NEED_COLS}-column menu; drawing it wrapped\n\n"
-    ));
+    if gfx::console::cols() < NEED_COLS {
+        session::say(&alloc::format!(
+            "note: the console is fixed at {} columns, so the {NEED_COLS}-column banner will wrap\n\n",
+            gfx::console::cols()
+        ));
+    }
 }
 
 /// Switch to mode `i` and report whether it took.
