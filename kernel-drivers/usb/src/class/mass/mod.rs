@@ -126,10 +126,10 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
         if e.attributes & 0x03 == 2 {
             if e.address & 0x80 != 0 {
                 in_ep = e.address & 0x0F;
-                mps_in = e.max_packet;
+                mps_in = e.max_packet();
             } else {
                 out_ep = e.address & 0x0F;
-                mps_out = e.max_packet;
+                mps_out = e.max_packet();
             }
         }
     }
