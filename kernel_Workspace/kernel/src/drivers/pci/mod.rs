@@ -111,6 +111,74 @@ impl PciDev {
     }
 }
 
+/// Find the first device matching class/subclass, ignoring prog-if.
+///
+/// Prog-if is a revision hint that controllers of the same generation do not
+/// agree on, so matching it as part of the identity hides real devices. The
+/// three-way [`find_class`] stays for callers that genuinely want one revision.
+pub fn find_class_subclass(class: u8, subclass: u8) -> Option<PciDev> {
+    for bus in 0u32..256 {
+        for dev in 0u32..32 {
+            for func in 0u32..8 {
+                let d = PciDev {
+                    bus: bus as u8,
+                    dev: dev as u8,
+                    func: func as u8,
+                };
+
+                if d.vendor() == 0xFFFF {
+                    continue;
+                }
+
+                if d.class() == class && d.subclass() == subclass {
+                    return Some(d);
+                }
+
+                if func == 0 {
+                    break;
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Every device of a given class, whatever its subclass or prog-if.
+///
+/// Used to explain a miss: a machine reporting only an EHCI controller has USB
+/// hardware, just not the generation this driver speaks, and the difference is
+/// invisible unless the devices that *were* found get named.
+pub fn find_all_by_class(class: u8) -> alloc::vec::Vec<PciDev> {
+    let mut out = alloc::vec::Vec::new();
+
+    for bus in 0u32..256 {
+        for dev in 0u32..32 {
+            for func in 0u32..8 {
+                let d = PciDev {
+                    bus: bus as u8,
+                    dev: dev as u8,
+                    func: func as u8,
+                };
+
+                if d.vendor() == 0xFFFF {
+                    continue;
+                }
+
+                if d.class() == class {
+                    out.push(d);
+                }
+
+                if func == 0 {
+                    break;
+                }
+            }
+        }
+    }
+
+    out
+}
+
 pub fn find_class(class: u8, subclass: u8, prog_if: u8) -> Option<PciDev> {
     for bus in 0u32..256 {
         for dev in 0u32..32 {

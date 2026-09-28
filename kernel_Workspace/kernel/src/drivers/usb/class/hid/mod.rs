@@ -10,6 +10,15 @@ use crate::drivers::usb::core::device::UsbDevice;
 use crate::drivers::usb::core::speed::EP_INTERRUPT;
 use crate::drivers::usb::UsbError;
 
+// `kprintf` is a C variadic, and Rust will not promote a `u8` through `...`:
+// the callee reads it as a full word. The cast is what makes the value mean
+// what the format string claims.
+use core::ffi::c_uint;
+
+extern "C" {
+    fn kprintf(fmt: *const u8, ...);
+}
+
 const SET_IDLE: u8 = 0x0A;
 const SET_PROTOCOL: u8 = 0x0B;
 
@@ -32,6 +41,26 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     let mut iface = 0u8;
     let mut found = false;
 
+    // Report what was actually on the wire, not just whether it matched. The
+    // match test below is narrow — boot keyboard only — and "no USB keyboard
+    // found" downstream is indistinguishable between "there is no keyboard" and
+    // "there is a keyboard and we did not recognise it". Those need different
+    // fixes, so the class triple each interface actually carried is printed
+    // before the decision is made.
+    let mut ifaces_seen = 0u8;
+    for i in 0..dev.iface_count {
+        let f = &dev.ifaces[i];
+        unsafe {
+            kprintf(b"usb: hid: iface %d class=%d subclass=%d protocol=%d\n\0".as_ptr(),
+                    f.number as c_uint, f.class as c_uint,
+                    f.subclass as c_uint, f.protocol as c_uint);
+        }
+        ifaces_seen += 1;
+    }
+    if ifaces_seen == 0 {
+        unsafe { kprintf(b"usb: hid: device reported no interfaces at all\n\0".as_ptr()); }
+    }
+
     for i in 0..dev.iface_count {
         let f = &dev.ifaces[i];
 
@@ -43,6 +72,18 @@ pub fn attach(x: &mut Xhci, dev: &mut UsbDevice) -> Result<bool, UsbError> {
     }
 
     if !found {
+        // A HID device that is not a *boot* keyboard still types: it is just
+        // driven by the report's own keycodes rather than by this table. Saying
+        // so is the difference between "attach this differently" and "buy a
+        // different keyboard".
+        let hid_other = (0..dev.iface_count).any(|i| dev.ifaces[i].class == 3);
+        unsafe {
+            kprintf(if hid_other {
+                b"usb: hid: HID present but not a boot keyboard (protocol != 1)\n\0".as_ptr()
+            } else {
+                b"usb: hid: no HID interface; not a keyboard\n\0".as_ptr()
+            });
+        }
         return Ok(false);
     }
 

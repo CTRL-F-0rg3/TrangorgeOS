@@ -52,6 +52,18 @@ pub fn push_char(c: u8) {
     }
 }
 
+/// How many characters are waiting, so a caller can tell an empty keyboard from
+/// a full one. `take_char` returning `None` is ambiguous between the two.
+pub fn queued() -> usize {
+    unsafe {
+        if IN_HEAD >= IN_TAIL {
+            IN_HEAD - IN_TAIL
+        } else {
+            64 - IN_TAIL + IN_HEAD
+        }
+    }
+}
+
 pub fn take_char() -> Option<u8> {
     unsafe {
         if IN_HEAD == IN_TAIL {

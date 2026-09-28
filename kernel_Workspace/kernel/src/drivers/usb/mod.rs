@@ -64,6 +64,18 @@ pub fn poll() {
     }
 }
 
+/// Re-scan the ports, so a device plugged in after boot is noticed.
+///
+/// Separate from [`poll`] because the rescan is a bus-level operation that
+/// resets a port if anything is on it, and doing that on every input pass would
+/// tear down the keyboard that is already working. The caller is expected to
+/// rate-limit it.
+pub fn rescan() {
+    if let Some(x) = unsafe { CONTROLLER.as_mut() } {
+        x.scan_ports();
+    }
+}
+
 pub fn self_test() -> TestResult {
     match init() {
         Ok(()) => Ok("xHCI initialized OK"),

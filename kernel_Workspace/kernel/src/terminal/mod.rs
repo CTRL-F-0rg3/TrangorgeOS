@@ -105,6 +105,79 @@ pub fn restore_input() {
     }
 }
 
+/// A snapshot of every stage between the keyboard and the queue, as one line.
+///
+/// # Why this exists
+///
+/// "The menu does not react" has at least five quite different causes, and they
+/// look identical from the outside because the symptom is silence:
+///
+/// 1. no scancode is ever produced (nothing is plugged in, or the device is not
+///    scanning),
+/// 2. a scancode is sitting in the 8042 output buffer but the interrupt never
+///    fires, because the PIC line is masked,
+/// 3. the interrupt fires but the handler never runs,
+/// 4. the handler runs and pushes, but the queue is not the one being drained,
+/// 5. the queue has the key and the consumer is looking somewhere else.
+///
+/// Printing only when a key arrives can only ever report case 5, because in the
+/// other four the function never comes back. So this reports the state of the
+/// whole path instead, and each field separates the cases: `obf=1` with
+/// `irq1=0` is case 2, `irq1` climbing with an empty queue is case 3, and a
+/// non-zero pending count with no progress is case 4.
+///
+/// Ports are read directly rather than through the driver, which is the whole
+/// point: the driver is one of the stages being checked.
+pub fn input_debug() -> alloc::string::String {
+    use core::fmt::Write;
+
+    const PS2_STATUS: u16 = 0x64;
+    /// Status bit 0: a byte is waiting to be read.
+    const OBF: u8 = 0x01;
+
+    // The 8042 status port: is there an unread byte right now?
+    let status = unsafe { x86_64::instructions::port::Port::<u8>::new(PS2_STATUS).read() };
+    let obf = status & OBF != 0;
+
+    // The master PIC mask: is the keyboard line allowed through at all?
+    let mask = unsafe { crate::interrupts::PICS.lock().read_masks()[0] };
+    let line = if mask & 0x02 == 0 { "open" } else { "MASKED" };
+
+    let pending = KCODE_TAIL
+        .load(Ordering::Acquire)
+        .wrapping_sub(KCODE_HEAD.load(Ordering::Acquire))
+        % KCODE_SIZE;
+
+    let mut s = alloc::string::String::new();
+    let _ = write!(
+        s,
+        "[input] ps2status={:#04x} obf={} pic_mask={:#04x} irq1={} {} \
+         capture={} keyq={}/{} chars_q={}",
+        status,
+        u8::from(obf),
+        mask,
+        crate::interrupts::KEYBOARD_HITS.load(Ordering::Relaxed),
+        line,
+        CAPTURE_KEYCODE.load(Ordering::Relaxed),
+        pending,
+        KCODE_SIZE,
+        KTAIL.load(Ordering::Acquire).wrapping_sub(KHEAD.load(Ordering::Acquire)) % KBUF_SIZE,
+    );
+
+    // The USB side of the same question. `keysq` alone cannot tell "no keyboard
+    // on the bus" from "keyboard present, nothing typed yet", and those need
+    // opposite fixes. `attached` is the attach decision the HID driver made; the
+    // queue depth is whether a character has come out of it.
+    let _ = write!(
+        s,
+        " usb_attached={} usb_chars={}",
+        u8::from(crate::drivers::usb::class::hid::keyboard_attached()),
+        crate::drivers::usb::class::hid::keyboard::queued(),
+    );
+
+    s
+}
+
 /// Take the next pending keystroke, if any.
 ///
 /// This is the keyboard half of the userspace handoff. The keyboard driver

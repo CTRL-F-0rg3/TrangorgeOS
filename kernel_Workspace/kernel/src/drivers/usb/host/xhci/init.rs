@@ -4,6 +4,10 @@ use super::trb::*;
 use crate::drivers::usb::dma::DmaBuf;
 use crate::drivers::usb::UsbError;
 
+// `kprintf` is a C variadic; a `u8` cannot be passed through `...` because the
+// callee reads a full word. See the same cast in `hid::attach`.
+use core::ffi::c_uint;
+
 extern "C" {
     fn kprintf(fmt: *const u8, ...);
 }
@@ -22,6 +26,14 @@ pub struct Xhci {
     pub ctx_size: usize,
     pub slots: u32,
     pub ports: u32,
+
+    /// Ports already attached, one bit per port.
+    ///
+    /// The input loop rescans the ports so a keyboard plugged in after boot is
+    /// picked up. Without this, every rescan re-enumerates devices that are
+    /// already attached, which fills the two HID slots with duplicates and
+    /// leaves the real keyboard unable to report anything.
+    pub attached: u32,
 }
 
 fn spin_wait<F: Fn() -> bool>(f: F) -> Result<(), UsbError> {
@@ -119,6 +131,7 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
         ctx_size,
         slots,
         ports,
+        attached: 0,
     })
 }
 
@@ -152,9 +165,22 @@ impl Xhci {
 
     pub fn scan_ports(&mut self) {
         for p in 1..=self.ports {
+            // Skip ports that have already been enumerated. The rescan exists to
+            // catch devices plugged in after boot; without this guard it would
+            // also re-attach the ones already there.
+            if self.attached & (1 << (p - 1)) != 0 {
+                continue;
+            }
+
             let sc = self.regs.port_sc(p);
 
             if sc & PORTSC_CCS == 0 {
+                // Silent. An empty port is the normal case on almost every
+                // machine, and this scan is repeated for as long as the menu
+                // waits: reporting every idle port turns the boot log into a
+                // wall of lines that says nothing eight times over. A port with
+                // something on it is reported below, which is the case worth
+                // a line.
                 continue;
             }
 
@@ -188,6 +214,11 @@ impl Xhci {
             if !enabled {
                 continue;
             }
+
+            // Marked before attaching, not after: if attach fails the port still
+            // holds a device that is not working, and retrying it on every
+            // rescan would restart enumeration for the rest of the boot.
+            self.attached |= 1 << (p - 1);
 
             self.attach_port(p);
         }

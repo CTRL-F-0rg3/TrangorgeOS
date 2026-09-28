@@ -115,10 +115,55 @@ pub fn run() -> (u32, u32) {
 
     draw(&sel);
 
+    // Report the input path once up front, so there is a baseline to compare the
+    // heartbeat against even if nothing is ever pressed.
+    crate::serial::write_str(&alloc::format!("{}\n", crate::terminal::input_debug()));
+
+    // Spins so far, and the last state reported. Together they let the loop
+    // report on *change* rather than on a timer.
+    let mut spins: u32 = 0;
+    let mut last_dbg: Option<alloc::string::String> = None;
+
     loop {
-        let key = match session::next_key() {
+        // Non-blocking, deliberately. The blocking `next_key` halts until a key
+        // arrives, so a broken input path made this loop a black box: it simply
+        // stopped, with every trace placed after the call unreachable. Polling
+        // instead means "nothing arrived" is something the loop can observe and
+        // report, rather than something it can only wait forever inside.
+        let key = match session::try_key() {
             Some(k) => k,
-            None => continue,
+            None => {
+                spins = spins.wrapping_add(1);
+
+                // Periodic rescan, so a keyboard plugged in after boot is
+                // found. `scan_ports` was previously called exactly once, during
+                // init, which meant a device that appeared later was never
+                // seen. Rate-limited because it is a bus-level operation, and
+                // `scan_ports` skips ports it has already attached.
+                if spins % 65_536 == 0 {
+                    crate::drivers::usb::rescan();
+                }
+
+                if spins % 4096 == 0 {
+                    // Report on *change*, not on a counter. A fixed interval
+                    // puts a line on the wire every few hundred milliseconds for
+                    // as long as the menu waits, which buries the rest of the boot
+                    // log and makes it harder to read than the silence it replaced.
+                    // What matters while nothing arrives is that the fields stop
+                    // moving - and if they do move, that is exactly when a line is
+                    // worth having.
+                    let dbg = crate::terminal::input_debug();
+
+                    if last_dbg.as_deref() != Some(dbg.as_str()) {
+                        crate::serial::write_str(&alloc::format!(
+                            "[menu] idle x{} {dbg}\n",
+                            spins / 4096
+                        ));
+                        last_dbg = Some(dbg);
+                    }
+                }
+                continue;
+            }
         };
 
         // Serial only, never the console: the console is not what is on screen
@@ -126,19 +171,54 @@ pub fn run() -> (u32, u32) {
         // drawing. Its only job is to make "no key ever arrived" distinguishable
         // from "a key arrived and was ignored" when reading a boot log.
         crate::serial::write_str(&alloc::format!("[menu] key {:?}\n", key));
+        crate::serial::write_str(&alloc::format!("{}\n", crate::terminal::input_debug()));
 
         match key {
-            // Digits pick a row directly. A digit also confirms, because the
-            // point of the menu is to set a mode, not to browse one: making the
-            // user press a digit and then Enter is a step for its own sake.
+            // A digit moves the selection; it does not commit it.
+            //
+            // Committing on the digit is what made this menu look broken. The
+            // key did arrive and *was* handled — but `apply` returns from `run`,
+            // so the mode set wiped the screen and the menu was simply gone by
+            // the time the user looked. The only visible consequence of pressing
+            // a key was the menu disappearing, which is indistinguishable from
+            // input not working at all. Browsing a list and confirming the
+            // choice are separate acts; the menu needs both of them visible.
             Key::Char(c @ '1'..='9') => {
                 let i = (c as u8 - b'1') as usize;
                 if i < MODES.len() {
-                    return apply(i);
+                    sel = i;
                 }
             }
             Key::Char('j') | Key::Down => sel = (sel + 1) % MODES.len(),
             Key::Char('k') | Key::Up => sel = (sel + MODES.len() - 1) % MODES.len(),
+
+            // Keyboard-backend switching, reachable from the menu because the
+            // menu is where a user with a keyboard that "does not work" is
+            // standing. Without a command that changes the input mode, a machine
+            // whose keyboard is on the wrong backend has no way to say so.
+            Key::Char('p') | Key::Char('u') | Key::Char('b') => {
+                let want = match key {
+                    Key::Char('p') => session::InputBackend::Ps2,
+                    Key::Char('u') => session::InputBackend::Usb,
+                    _ => session::InputBackend::Both,
+                };
+                let old = session::set_input_backend(want);
+
+                // On the serial port, not the console: the console is the text
+                // under the TUI, and writing there would be painted over by the
+                // redraw below anyway.
+                crate::serial::write_str(&alloc::format!(
+                    "[menu] keyboard {} -> {}\n",
+                    session::input_backend_name(),
+                    match want {
+                        session::InputBackend::Ps2 => "ps/2",
+                        session::InputBackend::Usb => "usb",
+                        session::InputBackend::Both => "both",
+                    }
+                ));
+                let _ = old;
+            }
+
             Key::Enter => return apply(sel),
             Key::Esc => {
                 let (w, h) = gfx::current_resolution();
@@ -151,6 +231,14 @@ pub fn run() -> (u32, u32) {
             _ => {}
         }
 
+        // What the menu did about the key, as opposed to what it received. The
+        // gap between these two lines is the whole fault: a key that arrives and
+        // changes nothing on screen is exactly what "does not react" looks like,
+        // and only reporting the redraw tells the two apart.
+        crate::serial::write_str(&alloc::format!(
+            "[menu] draw sel={sel} -> {}x{}\n",
+            MODES[sel].0, MODES[sel].1
+        ));
         draw(&sel);
     }
 }
@@ -300,7 +388,25 @@ fn draw(sel: &usize) {
         &c,
         list_x,
         ry,
-        "Up/Down or j/k to move   1-9 to apply   Enter confirm   Esc keep current",
+        "Up/Down or j/k to move   1-9 to select   Enter confirm   Esc keep current",
+        tui::Color::dim(),
+        1,
+    );
+
+    // Keyboard-backend line, and the reason it is on screen: this is a menu
+    // that only responds to a keyboard, so a user whose keyboard is on the
+    // other backend has no way to recover except by being told the shortcut
+    // exists. Rendered from the live setting rather than a literal so it cannot
+    // drift from what the driver is actually doing.
+    ry += 16;
+    tui::draw_text(
+        &c,
+        list_x,
+        ry,
+        &alloc::format!(
+            "keyboard: {}   (p) ps/2   (u) usb   (b) both",
+            session::input_backend_name()
+        ),
         tui::Color::dim(),
         1,
     );
