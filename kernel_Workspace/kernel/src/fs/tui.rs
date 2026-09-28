@@ -122,22 +122,56 @@ pub fn stroke_rect(c: &Canvas, x: i64, y: i64, w: i64, h: i64, color: Color) {
 /// One character cell, in pixels. The font is 8x8.
 const GLYPH: i64 = 8;
 
+/// Whether the TUI's own drawing is turned over.
+///
+/// Off until the menu actually draws, so nothing that happens before the TUI is
+/// on screen — the galaxy, the text console, the boot log — is affected even in
+/// principle. This is the only place a vertical flip exists in the tree.
+static FLIPPED: core::sync::atomic::AtomicBool =
+    core::sync::atomic::AtomicBool::new(false);
+
+/// Turn the TUI's drawing over. Idempotent.
+///
+/// Called by the menu as it draws, never earlier: the correction belongs to the
+/// menu's compositing, and nothing that shares the framebuffer with it has any
+/// business being turned over along with it.
+pub fn activate() {
+    FLIPPED.store(true, core::sync::atomic::Ordering::Release);
+}
+
 /// The framebuffer row that the top of a logical band of `h` rows lands on.
 ///
-/// # Why the TUI is the only thing that flips
+/// # Identity until the TUI is active
 ///
-/// The linear framebuffer the Bochs VBE extension hands out is bottom-up: row 0
-/// is the *last* scanline on screen, so drawing at `y = 0` puts the picture at
-/// the bottom and the whole menu arrives standing on its head.
-///
-/// This is a property of how the menu is composited, not of the console, and it
-/// is corrected here and nowhere else. Flipping in `Framebuffer` itself would
-/// also turn over the galaxy background and the text console, which are drawn
-/// through paths that already place their own pixels and are not the thing
-/// being complained about. So the correction lives at the one boundary that
-/// introduces the problem: the TUI's own drawing calls.
+/// Until [`activate`] is called this returns `y` unchanged, so the drawing
+/// primitives behave exactly as they did before the flip existed. That is the
+/// point of the flag: the framebuffer the Bochs VBE extension hands out is
+/// bottom-up, and that fact is corrected for the menu alone rather than applied
+/// to whatever else happens to share the buffer.
 fn flipped(c: &Canvas, y: i64, h: i64) -> i64 {
+    if !FLIPPED.load(core::sync::atomic::Ordering::Acquire) {
+        return y;
+    }
     c.height as i64 - y - h
+}
+
+/// The framebuffer row for one scanline of a glyph.
+///
+/// `row` counts down from the top of the cell and `sy` is the scanline within the
+/// scaled row, so together they are a distance from the top of the cell. The
+/// distance is measured *backwards* from the top of the turned-over band: the
+/// band's origin `flipped(..)` is its bottom once turned over, so the top is a
+/// whole cell further on.
+///
+/// The two have to move together. Flipping only the band's position leaves every
+/// glyph standing on its head inside an otherwise correct panel, which looks
+/// like a rendering fault rather than a missed transform.
+fn glyph_row(c: &Canvas, y: i64, cw: i64, row: usize, scale: i64, sy: i64) -> i64 {
+    let base = flipped(c, y, cw);
+    if !FLIPPED.load(core::sync::atomic::Ordering::Acquire) {
+        return base + row as i64 * scale + sy;
+    }
+    base + cw - 1 - (row as i64 * scale + sy)
 }
 
 /// Draw one character at `(x, y)`, scaled by `scale`.
@@ -160,25 +194,17 @@ pub fn draw_char(c: &Canvas, x: i64, y: i64, ch: char, color: Color, scale: i64)
         return;
     }
 
-    // The band this glyph occupies, turned over into framebuffer rows. Both the
-    // band's origin and the order of the rows within it are inverted, so the
-    // glyph is not merely moved but genuinely stood upright.
-    let base = flipped(c, y, cw);
-
     for (row, bits) in glyph.iter().enumerate() {
         for col in 0..GLYPH {
             // `FONT8X8` is one byte per row, low bit leftmost. A set bit is ink.
             if bits & (1 << col) == 0 {
                 continue;
             }
-            // `row` counts down from the top of the cell, so the scanline is
-            // `base + row` counted up from the flipped band.
-            let fyy = base + row as i64;
             for sy in 0..scale {
                 for sx in 0..scale {
                     fb.set(
                         (x + col * scale + sx) as usize,
-                        (fyy + scale - 1 - sy) as usize,
+                        glyph_row(c, y, cw, row, scale, sy) as usize,
                         color.0,
                     );
                 }

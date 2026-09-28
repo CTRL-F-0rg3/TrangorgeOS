@@ -231,6 +231,10 @@ fn apply(i: usize) -> (u32, u32) {
 fn draw(sel: &usize) {
     let Some(c) = tui::canvas() else { return };
 
+    // From here on the TUI is what is on screen, so the turn-over belongs to it
+    // and to nothing else.
+    tui::activate();
+
     // The whole screen, not the panel: the mode change wipes the framebuffer and
     // the galaxy background, so the first thing after it is a blank screen.
     tui::fill_rect(&c, 0, 0, c.width as i64, c.height as i64, tui::Color::panel());
