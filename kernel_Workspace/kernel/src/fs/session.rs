@@ -232,6 +232,10 @@ pub fn say(text: &str) {
 /// Calling this more than once is harmless: it sets a flag.
 pub fn init_input() {
     crate::terminal::set_keycode_capture(true);
+    // Re-assert the keyboard line. A display mode set goes through the BIOS
+    // video path, which is entitled to leave the 8042 in whatever state it
+    // likes, so the input path is put back the way it was after every one.
+    crate::terminal::restore_input();
 
     let usb = crate::drivers::usb::class::hid::keyboard_attached();
     if usb {

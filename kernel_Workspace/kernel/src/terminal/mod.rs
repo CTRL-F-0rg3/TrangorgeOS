@@ -41,6 +41,70 @@ fn kbuf_pop() -> Option<u8> {
     Some(c)
 }
 
+/// Re-assert the PS/2 input path.
+///
+/// # Why this has to exist
+///
+/// Setting a display mode goes through the BIOS video path, and a BIOS is free
+/// to leave the 8042 controller however it likes when it does — commonly with
+/// the keyboard interface disabled or scanning turned off at the device. Nothing
+/// downstream can recover from that on its own: the interrupt line stays silent,
+/// the handler never runs, and the keyboard looks dead while the driver still
+/// reports one attached.
+///
+/// The three things that have to hold are therefore stated explicitly:
+///
+/// 1. the controller's keyboard interface is enabled (0xAE),
+/// 2. the device is told to resume scanning (0xF4),
+/// 3. whatever the mode change left in the output buffer is discarded, so a
+///    half-finished transaction is not decoded as a keystroke.
+///
+/// Every wait is bounded. An input path that can spin forever on a wedged
+/// controller would hang the machine where it used merely to be quiet.
+pub fn restore_input() {
+    use x86_64::instructions::port::Port;
+
+    const DATA: u16 = 0x60;
+    const STATUS: u16 = 0x64;
+    /// The device acknowledging a command.
+    const ACK: u8 = 0xFA;
+    /// Resume scanning.
+    const ENABLE_SCANNING: u8 = 0xF4;
+    /// Status bit 0: an unread byte is waiting.
+    const OBF: u8 = 0x01;
+    /// A generous upper bound on any single wait, in spins.
+    const SPINS: usize = 100_000;
+
+    let mut data = Port::<u8>::new(DATA);
+    let mut status = Port::<u8>::new(STATUS);
+
+    unsafe {
+        // 1. Controller-side: enable the keyboard interface.
+        status.write(0xAE);
+
+        // 3. Discard anything already buffered. Done before the device command
+        // so a stale byte is not mistaken for the acknowledgement below.
+        let mut spins = 0;
+        while status.read() & OBF != 0 && spins < SPINS {
+            let _ = data.read();
+            spins += 1;
+        }
+
+        // 2. Device-side: resume scanning, and consume its acknowledgement.
+        data.write(ENABLE_SCANNING);
+
+        spins = 0;
+        while spins < SPINS {
+            if status.read() & OBF != 0 {
+                if data.read() == ACK {
+                    break;
+                }
+            }
+            spins += 1;
+        }
+    }
+}
+
 /// Take the next pending keystroke, if any.
 ///
 /// This is the keyboard half of the userspace handoff. The keyboard driver
