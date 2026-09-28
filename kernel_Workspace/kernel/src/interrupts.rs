@@ -83,6 +83,45 @@ lazy_static! {
 pub fn init_idt() {
     IDT.load();
 }
+
+/// Assert that the interrupt lines the kernel uses are actually enabled.
+///
+/// # Why this is not optional
+///
+/// `ChainedPics::initialize` — called from `arch::x86_64::init` — programs the
+/// vector offsets and then *restores the mask registers it found*, deliberately:
+/// it has no opinion about which inputs the guest wants. So after
+/// `initialize` the PIC mask is whatever the firmware left behind, and nothing
+/// in this kernel has ever asserted that the lines it installs handlers for are
+/// among the unmasked ones.
+///
+/// That is a real gap rather than a hypothetical one. A line whose mask bit is
+/// set produces no interrupt no matter that its handler is registered in the IDT
+/// and is correct — the interrupt simply never reaches the CPU. The keyboard
+/// line is the one that matters here: the driver reports a keyboard present and
+/// `terminal::push_scancode` is wired to the handler, so every layer above the
+/// PIC looks healthy while the keyboard stays permanently dead.
+///
+/// Note that `pic8259` 0.10 exposes no `unmask`: the mask registers are read and
+/// written whole via `read_masks`/`write_masks`, so the bits to clear are
+/// computed here. The indices are *vector* numbers, which is what `InterruptIndex`
+/// holds, so each one is biased back down to a line number before being shifted.
+pub fn unmask_irqs() {
+    /// The mask bit for a vector: bias the vector down to a line, then shift.
+    const fn bit(vector: u8) -> u8 {
+        1u8 << (vector - PIC_1_OFFSET)
+    }
+
+    unsafe {
+        let mut pics = PICS.lock();
+        let [master, slave] = pics.read_masks();
+        // Both lines live on the master PIC. The slave mask is passed through
+        // untouched rather than assumed, since this kernel drives it indirectly
+        // through the local APIC.
+        let keep = bit(InterruptIndex::Timer.as_u8()) | bit(InterruptIndex::Keyboard.as_u8());
+        pics.write_masks(master & !keep, slave);
+    }
+}
 // Interrupt handlers
 extern "x86-interrupt" fn page_fault_handler(
     stack_frame: InterruptStackFrame,

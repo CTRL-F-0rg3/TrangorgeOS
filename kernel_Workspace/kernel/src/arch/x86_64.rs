@@ -11,6 +11,9 @@ pub fn init() {
     crate::gdt::init();
     crate::interrupts::init_idt();
     unsafe { crate::interrupts::PICS.lock().initialize() };
+    // Must follow `initialize`, which restores the firmware's own mask bits and
+    // so leaves the lines this kernel needs unasserted.
+    crate::interrupts::unmask_irqs();
     x86_64::instructions::interrupts::enable();
 }
 
