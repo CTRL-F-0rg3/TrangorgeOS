@@ -1,10 +1,16 @@
-use super::init::Xhci;
+use super::init::{Xhci, WAIT_YIELDS};
 use super::trb::*;
 use crate::drivers::usb::core::device::UsbDevice;
 use crate::drivers::usb::UsbError;
 
 pub fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
-    for _ in 0..2_000_000 {
+            // The budget counts *yields*, not nanoseconds: with `hlt` in the wait,
+        // one iteration is one timer interrupt, so the old 2,000,000 meant
+        // millions of wake-ups - a hang dressed as a slow timeout. A successful
+        // command completes within a couple of yields, because the controller
+        // posts its event the moment the CPU hands the slot over, so a few
+        // thousand is generous for success and still bounded for failure.
+        for _ in 0..WAIT_YIELDS {
         if let Some(t) = x.ev.pending() {
             let t = t;
             x.ev.pop();
@@ -17,14 +23,20 @@ pub fn wait_transfer(x: &mut Xhci, slot: u8) -> Result<u8, UsbError> {
             continue;
         }
 
-        core::hint::spin_loop();
+        super::init::wait_step();
     }
 
     Err(UsbError::Timeout)
 }
 
 pub fn wait_transfer_ep(x: &mut Xhci, slot: u8, ep: u8) -> Result<u8, UsbError> {
-    for _ in 0..2_000_000 {
+            // The budget counts *yields*, not nanoseconds: with `hlt` in the wait,
+        // one iteration is one timer interrupt, so the old 2,000,000 meant
+        // millions of wake-ups - a hang dressed as a slow timeout. A successful
+        // command completes within a couple of yields, because the controller
+        // posts its event the moment the CPU hands the slot over, so a few
+        // thousand is generous for success and still bounded for failure.
+        for _ in 0..WAIT_YIELDS {
         if let Some(t) = x.ev.pending() {
             let t = t;
             x.ev.pop();
@@ -37,7 +49,7 @@ pub fn wait_transfer_ep(x: &mut Xhci, slot: u8, ep: u8) -> Result<u8, UsbError> 
             continue;
         }
 
-        core::hint::spin_loop();
+        super::init::wait_step();
     }
 
     Err(UsbError::Timeout)

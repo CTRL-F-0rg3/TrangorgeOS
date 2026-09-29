@@ -18,3 +18,12 @@ tmp/
 /dist/
 
 dirtycode/
+
+# Zrzuty ramki wyrenderowane przez settings_app - wynik, nie zrodlo.
+userspace_worspace/*.ppm
+
+# UWAGA: `*.bin` wyzej jest celowy (kompilowane sterowniki, artefakty bootloadera),
+# ale `uspace/src/gfx/font_atlas.bin` jest ZRODLEM: `font_atlas.rs` robi na niego
+# `include_bytes!`, wiec bez tego pliku `uspace` nie kompiluje sie. Wyjatkiem
+# niz wzglednionym wyzej.
+!uspace/src/gfx/font_atlas.bin

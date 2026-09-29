@@ -113,6 +113,12 @@ pub fn run() -> (u32, u32) {
         .position(|(w, h)| *w == cur_w && *h == cur_h)
         .unwrap_or(MODES.len() - 1);
 
+    // Before the menu is drawn and before it can read a key: this changes the
+    // mode repeatedly, and a menu drawn halfway through that sequence would be
+    // showing a framebuffer that is about to be wiped. It restores the starting
+    // mode itself, so the menu still comes up where the user left the machine.
+    probe_all_modes();
+
     draw(&sel);
 
     // Report the input path once up front, so there is a baseline to compare the
@@ -123,6 +129,14 @@ pub fn run() -> (u32, u32) {
     // report on *change* rather than on a timer.
     let mut spins: u32 = 0;
     let mut last_dbg: Option<alloc::string::String> = None;
+
+    // Key accounting for the verdict below. `seen` counts keys the menu actually
+    // consumed; `sel_moves` counts those that changed the selection. A key that
+    // arrives but never moves the selection is a different fault from no key at
+    // all, and the two need opposite fixes.
+    let mut seen: u32 = 0;
+    let mut sel_moves: u32 = 0;
+    let sel_at_start = sel;
 
     loop {
         // Non-blocking, deliberately. The blocking `next_key` halts until a key
@@ -170,8 +184,19 @@ pub fn run() -> (u32, u32) {
         // here, and writing to it would paint over the menu this loop is
         // drawing. Its only job is to make "no key ever arrived" distinguishable
         // from "a key arrived and was ignored" when reading a boot log.
-        crate::serial::write_str(&alloc::format!("[menu] key {:?}\n", key));
-        crate::serial::write_str(&alloc::format!("{}\n", crate::terminal::input_debug()));
+        seen += 1;
+        crate::serial::write_str(&alloc::format!(
+            "[tui] KLUCZ #{seen} {:?} (kod 0x{:x}, kolejka {}, irq1 {})\n",
+            key,
+            // The keycode as the transport delivered it, not as `Key` reads
+            // after decoding: the mapping from one to the other is a place where
+            // a key can arrive and still do the wrong thing.
+            crate::terminal::keycode_peek().unwrap_or(0),
+            crate::terminal::keycode_pending(),
+            crate::interrupts::KEYBOARD_HITS.load(core::sync::atomic::Ordering::Relaxed),
+        ));
+
+        let sel_before = sel;
 
         match key {
             // A digit moves the selection; it does not commit it.
@@ -235,11 +260,47 @@ pub fn run() -> (u32, u32) {
         // gap between these two lines is the whole fault: a key that arrives and
         // changes nothing on screen is exactly what "does not react" looks like,
         // and only reporting the redraw tells the two apart.
+        if sel != sel_before {
+            sel_moves += 1;
+        }
+
+        let (cur_w, cur_h) = gfx::current_resolution();
+        let (cw, ch) = tui::canvas().map_or((0, 0), |c| (c.width, c.height));
         crate::serial::write_str(&alloc::format!(
-            "[menu] draw sel={sel} -> {}x{}\n",
-            MODES[sel].0, MODES[sel].1
+            "[tui] sel={sel} -> {}x{} (było {sel_before}, ruchów {sel_moves}) \
+             klucze={seen} kolejka={} ekran={cw}x{ch} cur={cur_w}x{cur_h}\n",
+            MODES[sel].0,
+            MODES[sel].1,
+            crate::terminal::keycode_pending(),
         ));
         draw(&sel);
+
+        // The verdict, once the menu has been waiting long enough that silence is
+        // no longer explainable by a user who has not touched the keyboard yet.
+        //
+        // Printed instead of sitting inside the blocking call on purpose: a
+        // `next_key` that waits forever can only report "I am waiting", never
+        // "nothing is arriving", and those are different faults. `sel_moves`
+        // separating from `seen` is what distinguishes a dead key from a
+        // mis-mapped one - a key that arrives and does nothing is worse than no
+        // key, because the user sees the list react to nothing and assumes the
+        // whole thing is stuck.
+        if seen == 0 && spins == 262_144 {
+            let usb = crate::drivers::usb::class::hid::keyboard_attached();
+            let ps2_hits = crate::interrupts::KEYBOARD_HITS
+                .load(core::sync::atomic::Ordering::Relaxed);
+            crate::serial::write_str(&alloc::format!(
+                "[tui] WERDYKT: brak klawiszy. irq1={ps2_hits} usb_klawiatura={usb} \
+                 aktywny={}. {}KLIATYSMA: {}\n",
+                session::input_backend_name(),
+                if usb {
+                    "USB jest zalaczona, wiec problem lezy w xHCI, nie w TUI. "
+                } else {
+                    "USB nie dziala, pada na wylacznik PS/2. "
+                },
+                "Sprawdz kabel/port."
+            ));
+        }
     }
 }
 
@@ -252,6 +313,95 @@ pub fn run() -> (u32, u32) {
 /// pixels, plus a margin. Every offered mode above 1024x768 satisfies that; the
 /// smallest that does is chosen so a machine that can be had at 1024x768 is not
 /// pushed to 1920x1080 for no reason.
+/// Drive every offered mode without a keyboard, and report which one took.
+///
+/// # Why this exists
+///
+/// "The resolution menu does not let me change the resolution" has two very
+/// different causes that look identical from the outside: the list does not move
+/// because no key arrives, or the list moves and Enter is refused. Telling them
+/// apart otherwise needs a human to notice which one happened.
+///
+/// The decision itself does not depend on input at all - it is hardware work
+/// indexed by a number - so the menu can make the same decision for itself. This
+/// walks every entry, records the outcome, and puts the display back where it
+/// started, so a machine that cannot do 1920x1080 finds that out during boot
+/// rather than being told "refused" afterwards.
+///
+/// It runs before the menu is drawn, because each mode set clears the screen
+/// and leaving the display mid-sequence would show a blank screen for a second.
+pub fn probe_all_modes() {
+    let (start_w, start_h) = gfx::current_resolution();
+
+    crate::serial::write_str(&alloc::format!(
+        "[tui] autotest trybow: {}, zaczynam od {start_w}x{start_h}\n",
+        MODES.len()
+    ));
+
+    let mut ok_count = 0u32;
+
+    for (index, &(w, h)) in MODES.iter().enumerate() {
+        // Every attempt goes through the same call Enter would make, so a mode
+        // reported reachable here is reachable from the menu too. Which mode to
+        // pick stays the user's decision; this only establishes which are
+        // physically possible.
+        // Compared against where the display is *now*, not against where the
+        // probe started. The previous mode in the list is normally what is on
+        // screen, so comparing to the start skipped a mode that was not
+        // actually set - it reported "already there" while the display sat on
+        // the previous entry, and left that mode untested.
+        let (now_w, now_h) = gfx::current_resolution();
+        let same = w == now_w && h == now_h;
+        let outcome = if same {
+            "juz tak"
+        } else if gfx::set_resolution_w_h(w, h) {
+            ok_count += 1;
+            "OK"
+        } else {
+            "ODRZUCONE"
+        };
+
+        let (cur_w, cur_h) = gfx::current_resolution();
+        crate::serial::write_str(&alloc::format!(
+            "[tui]   {}. {:>4}x{:<4} -> {outcome:<10} (faktycznie {cur_w}x{cur_h})\n",
+            index + 1,
+            w,
+            h
+        ));
+
+        // A mode set goes through the BIOS video path and can leave the 8042 in
+        // any state, so the input path is re-asserted between attempts rather
+        // than once at the end - the last attempt is as good a place to lose the
+        // keyboard as the first.
+        crate::terminal::restore_input();
+    }
+
+    // Put the display back. Leaving it wherever the last probe landed would make
+    // the boot look random, and the user asked for a menu, not a survey.
+    if (start_w, start_h) != gfx::current_resolution() {
+        if gfx::set_resolution_w_h(start_w, start_h) {
+            crate::terminal::restore_input();
+            crate::serial::write_str(&alloc::format!(
+                "[tui] autotest: przywrocono {start_w}x{start_h}\n"
+            ));
+        } else {
+            // Reported rather than hidden: a display that cannot return to
+            // where it started is a fact the user needs.
+            let (cur_w, cur_h) = gfx::current_resolution();
+            crate::serial::write_str(&alloc::format!(
+                "[tui] autotest: NIE DA SIE wrócić do {start_w}x{start_h}, \
+                 zostaje {cur_w}x{cur_h}\n"
+            ));
+        }
+    }
+
+    let (cur_w, cur_h) = gfx::current_resolution();
+    crate::serial::write_str(&alloc::format!(
+        "[tui] autotest: {ok_count} z {} osiągalnych, koniec w {cur_w}x{cur_h}\n",
+        MODES.len()
+    ));
+}
+
 fn fit_screen() -> bool {
     /// One glyph plus the margin, in pixels.
     const NEED_W: u32 = 101 * 8 + 64;
@@ -288,6 +438,10 @@ fn apply(i: usize) -> (u32, u32) {
     let (w, h) = MODES[i];
     let (cur_w, cur_h) = gfx::current_resolution();
 
+    crate::serial::write_str(&alloc::format!(
+        "[tui] apply({i}) {w}x{h}, biezacy {cur_w}x{cur_h}\n"
+    ));
+
     if w == cur_w && h == cur_h {
         // Already there. Saying so beats doing a pointless mode set, which
         // would clear the screen and force a redraw for no reason at all.
@@ -298,6 +452,7 @@ fn apply(i: usize) -> (u32, u32) {
     if gfx::set_resolution_w_h(w, h) {
         crate::terminal::restore_input();
         session::say(&alloc::format!("display: {w}x{h}\n"));
+        crate::serial::write_str(&alloc::format!("[tui] apply({i}) ZAAPLIKOWANO {w}x{h}\n"));
         (w, h)
     } else {
         // `set_resolution_w_h` goes through the Bochs VBE registers, so it can
@@ -306,6 +461,16 @@ fn apply(i: usize) -> (u32, u32) {
         // stays where it was, which is why that is what gets returned.
         session::say(&alloc::format!(
             "display: {w}x{h} refused by this display, staying at {cur_w}x{cur_h}\n"
+        ));
+        // The reason matters, because "refused" covers three unrelated
+        // failures: no Bochs device on the PCI bus, a controller that does not
+        // answer, and a framebuffer mapping the memory manager would not hand
+        // out. The caller cannot tell them apart and neither can the user.
+        let (w_can, h_can) = tui::canvas().map_or((0, 0), |c| (c.width, c.height));
+        crate::serial::write_str(&alloc::format!(
+            "[tui] apply({i}) ODRZUCONE {w}x{h}. Ekran TUI={w_can}x{h_can}, \
+             set_resolution_w_h=false. Sprawdz ./run.sh: potrzebne jest `-vga std` \
+             (karta Bochs/VBE). Na prawdziwej karcie GPU ta sciezka nie dziala.\n"
         ));
         (cur_w, cur_h)
     }

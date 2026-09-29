@@ -25,6 +25,11 @@ impl CmdRing {
         self.buf.phys
     }
 
+    /// Where the next TRB will land, for diagnostics.
+    pub fn enqueue_pos(&self) -> usize {
+        self.enqueue
+    }
+
     pub fn enqueue(&mut self, mut trb: Trb) {
         if self.enqueue == self.len - 1 {
             self.enqueue = 0;
@@ -101,7 +106,13 @@ impl TransferRing {
 impl EventRing {
     pub fn new(count: usize) -> Result<Self, UsbError> {
         let buf = DmaBuf::new(count * 16)?;
-        let mut erst = DmaBuf::new(16)?;
+        // An Event Ring Segment Table entry is 32 bytes, not 16. The controller
+        // walks the table in 32-byte strides, so a 16-byte allocation leaves it
+        // reading the second half of the *next* thing in memory and interpreting
+        // it as segment size and cycle bit. The 16 bytes that were written were
+        // enough for the fields this driver sets, and not enough for the ones
+        // the controller reads.
+        let mut erst = DmaBuf::new(32)?;
 
         // `DmaBuf::new` hands back unallocated, non-zeroed memory, and the
         // Event Ring Segment Table is walked as a *32-byte* structure whose
@@ -110,23 +121,30 @@ impl EventRing {
         // filled in.
         erst.zero();
 
-        // One ERST entry, per the xHCI Event Ring Segment Table layout (32 bytes):
+        // One ERST entry. The 32-byte layout (see `struct xhci_erst_entry` and
+        // `xhci_alloc_erst()` in Linux's drivers/usb/host/xhci-mem.c) is:
         //
-        //   bits 63:4  ring segment base address
-        //   bits 31:24 XHCI extended ERST size   — only meaningful on entry 0
-        //   bits 23:16 ring segment size          — TRBs *in this segment*
-        //   bit  0     cycle
+        //   dword 0..1  64-bit event ring segment base address
+        //   dword 2     segment size, in TRBs
+        //   dword 3     reserved, zero
         //
-        // The ring segment size and the cycle bit are what make the entry
-        // usable at all, and both live in the first 64 bits. `count` therefore
-        // has to be shifted into bits 23:16 of the *first* word; the previous
-        // code wrote it to the second word, which is entirely reserved, and
-        // left the controller with a segment size of zero and no cycle — so it
-        // never linked the event ring and no command ever completed.
+        // The size is a *separate dword*, not a field sharing the address word.
+        // Writing it at `count << 16` put the value in the middle of the address
+        // instead, so the controller read a segment size of zero and never
+        // linked the event ring.
+        //
+        // There is deliberately no cycle bit here. Linux leaves `seg_addr` as the
+        // bare segment DMA address and sets `rsvd` to zero; OR-ing a cycle bit
+        // into the low dword perturbs `er_start` by one, which pushes `erdp` to
+        // the far end of the segment and makes the controller reject it.
         unsafe {
-            let e = erst.virt as *mut u64;
-            let entry = (buf.phys & 0xFFFF_FFFF_FFFF_FFF0) | ((count as u64) << 16) | 1;
-            e.add(0).write_volatile(entry);
+            let e = erst.virt as *mut u32;
+            let addr = buf.phys & 0xFFFF_FFFF_FFFF_FFF0;
+
+            e.add(0).write_volatile(addr as u32);
+            e.add(1).write_volatile((addr >> 32) as u32);
+            e.add(2).write_volatile(count as u32);
+            e.add(3).write_volatile(0);
         }
 
         Ok(Self { buf, erst, len: count, dequeue: 0, cycle: true })
@@ -157,7 +175,14 @@ impl EventRing {
         }
     }
 
+    /// Event Ring Dequeue Pointer.
+    ///
+    /// TRB-aligned, i.e. 16 bytes - not 256. Masking to `0xFF00` rounds the
+    /// pointer down to a 256-byte boundary, which for a 4 KiB ring folds the
+    /// first sixteen positions back onto position zero. ERDP then points at an
+    /// event the driver has not consumed yet, the cycle comparison matches a TRB
+    /// it already popped, and command completion looks like a stall.
     pub fn erdp(&self) -> u64 {
-        (self.buf.phys + (self.dequeue as u64) * 16) & 0xFFFF_FFFF_FFFF_FF00
+        (self.buf.phys + (self.dequeue as u64) * 16) & 0xFFFF_FFFF_FFFF_FFF0
     }
 }

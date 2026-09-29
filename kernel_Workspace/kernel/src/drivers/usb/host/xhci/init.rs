@@ -12,11 +12,24 @@ extern "C" {
     fn kprintf(fmt: *const u8, ...);
 }
 
-pub const RT_IMAN: usize = 0x00;
-pub const RT_IMOD: usize = 0x04;
-pub const RT_ERSTSZ: usize = 0x08;
-pub const RT_ERSTBA: usize = 0x10;
-pub const RT_ERDP: usize = 0x18;
+/// Yield budget for every wait on the controller. See the loops.
+pub const WAIT_YIELDS: u32 = 4_000;
+
+/// Offsets of the interrupter 0 register set, relative to the *runtime* block
+/// base (`RTSOFF`).
+///
+/// Interrupter 0 does not start at the block base: MFINDEX occupies `0x00`, and
+/// the register sets begin at `0x20` (xHCI 1.0 §4.2.2, "Interrupter Register
+/// Set", stride 0x20). QEMU resolves the set number as `(reg - 0x20) / 0x20` and
+/// silently drops any access outside a set it knows, so writing ERSTSZ at
+/// `RTSOFF + 0x08` lands on MFINDEX: the controller is never told where its
+/// event ring segment table is, posts no command completion, and the first
+/// command - Enable Slot - expires as a timeout.
+pub const RT_IMAN: usize = 0x20;
+pub const RT_IMOD: usize = 0x24;
+pub const RT_ERSTSZ: usize = 0x28;
+pub const RT_ERSTBA: usize = 0x30;
+pub const RT_ERDP: usize = 0x38;
 
 pub struct Xhci {
     pub regs: XhciRegs,
@@ -34,15 +47,64 @@ pub struct Xhci {
     /// already attached, which fills the two HID slots with duplicates and
     /// leaves the real keyboard unable to report anything.
     pub attached: u32,
+
+    /// How many command-ring TRBs this driver has told the controller to read.
+    ///
+    /// # Why this has to be a counter
+    ///
+    /// The Host Controller Doorbell (DBOFF + 0) is not a flag. Per xHCI 1.0
+    /// §4.7.16.1 its value is the *doorbell target*: the number of TRBs the
+    /// controller should have processed. The controller compares it against its
+    /// own position and only looks at the ring when the target is ahead.
+    ///
+    /// Writing a constant zero therefore means "you have nothing to do", and the
+    /// controller never reads the TRB that was just enqueued. Every command then
+    /// times out, no device is ever enabled, and the consequence reaches all the
+    /// way up to a keyboard that never enumerates - which looks like a broken
+    /// input path and is not one.
+    ///
+    /// It starts at 0, matching a controller that has been reset and believes it
+    /// has processed nothing.
+    pub cmd_doorbell: u32,
+}
+
+/// One iteration of a wait on the controller.
+///
+/// # Why this is a plain spin, and why that is a bug we have not fixed yet
+///
+/// A controller modelled by QEMU is stepped by the host from its own event
+/// loop, and a guest in a tight `pause` loop never yields to it - so in
+/// principle the wait has to hand the CPU over with `hlt`.
+///
+/// That was tried and it is worse. Each iteration became one timer interrupt,
+/// which turned a wait bounded by an iteration count into one bounded by
+/// millions of wake-ups, and the machine stopped booting. The iteration budget
+/// would also have to be restated in wall-clock terms, which this code has no
+/// way to do without a timer read.
+///
+/// So the spin is deliberately left as it is: it keeps the wait bounded and the
+/// system bootable, and it leaves the timeout in place to be reported rather
+/// than a hang. Whether a real controller *needs* the yield is unresolved -
+/// with `hlt` removed, a command that never completes is a `Timeout` again,
+/// which at least is a diagnosable state.
+#[inline]
+pub fn wait_step() {
+    core::hint::spin_loop();
 }
 
 fn spin_wait<F: Fn() -> bool>(f: F) -> Result<(), UsbError> {
-    for _ in 0..2_000_000 {
+            // The budget counts *yields*, not nanoseconds: with `hlt` in the wait,
+        // one iteration is one timer interrupt, so the old 2,000,000 meant
+        // millions of wake-ups - a hang dressed as a slow timeout. A successful
+        // command completes within a couple of yields, because the controller
+        // posts its event the moment the CPU hands the slot over, so a few
+        // thousand is generous for success and still bounded for failure.
+        for _ in 0..WAIT_YIELDS {
         if f() {
             return Ok(());
         }
 
-        core::hint::spin_loop();
+        wait_step();
     }
 
     Err(UsbError::Timeout)
@@ -78,11 +140,11 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
     spin_wait(|| regs.op_read(OP_USBCMD) & CMD_HCRST == 0)?;
     spin_wait(|| regs.op_read(OP_USBSTS) & STS_CNR == 0)?;
 
-    // PAGESIZE bit 0 is reserved and reads 0; bits 2:1 are the max burst size and
-    // must be 0 for 4 KiB pages. The old check tested `& 1 == 0` and rejected the
-    // controller when that bit was clear — i.e. it passed only by accident,
-    // because it was reading USBSTS2 rather than PAGESIZE.
-    if regs.op_read(OP_PAGESIZE) & 0x7 != 0 {
+    // PAGESIZE is at operational offset 0x08. Bit 0 is reserved and reads 0;
+    // bits 2:1 are the maximum burst size and must be 0 for 4 KiB pages. QEMU
+    // returns the literal value 1 there, which is that same encoding of "4 KiB,
+    // no burst", so the check has to tolerate it rather than reject it.
+    if regs.op_read(OP_PAGESIZE) & 0x7 > 0x1 {
         return Err(UsbError::Invalid);
     }
 
@@ -105,21 +167,56 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
     op_write64(&regs, OP_DCBAAP, dcbaa.phys);
     op_write64(&regs, OP_CRCR, cmd.phys() | 1);
 
-    // ERSTSZ counts Event Ring Segment Table entries *minus one*, so a table
-    // with the single entry `EventRing` writes is 1 - 1 = 0. Writing 1 here
-    // tells the controller to read a second entry that does not exist, which
-    // makes the table malformed; the controller then never links the event
-    // ring, no command completion is ever posted, and the first command
-    // (Enable Slot) times out.
-    regs.rt_write(RT_ERSTSZ, 0);
+    // Runtime register setup order, as it appears on the wire in a working
+    // enumeration (verified against QEMU's `usb_xhci_*` trace):
+    //
+    //   ERSTSZ -> ERDP -> ERSTBA -> USBCMD.RS
+    //
+    // ERDP is written *before* ERSTBA. QEMU only latches the event ring from
+    // the `case 0x14` arm of `xhci_runtime_write` (the high half of ERSTBA), so
+    // at that point it validates ERSTSZ and resolves the segment table. Writing
+    // IMOD/IMAN between ERSTBA and ERDP is harmless, but reordering ERSTSZ past
+    // ERSTBA is not: `xhci_er_reset` then sees `erstsz == 0`, treats the
+    // interrupter as disabled, leaves `er_size` at 0, and every later
+    // `xhci_event` fails its own bounds check and raises HCE. From the guest side
+    // that looks like a dead controller - no completions, every command timing
+    // out - even though the command ring itself was programmed correctly.
+    regs.rt_write(RT_ERSTSZ, 1);
+    rt_write64(&regs, RT_ERDP, ev.erdp());
     regs.rt_write(RT_IMOD, 0);
     regs.rt_write(RT_IMAN, 0);
     rt_write64(&regs, RT_ERSTBA, ev.erst_phys());
-    rt_write64(&regs, RT_ERDP, ev.erdp());
 
     regs.op_write(OP_USBCMD, CMD_RS);
 
     spin_wait(|| regs.op_read(OP_USBSTS) & STS_HCH == 0)?;
+
+    // Read the ring pointers back before trusting any of them. Every failure
+    // that follows - a command that times out, a device that never enables -
+    // looks identical, and the first question is always whether the controller
+    // kept what we told it. A register that reads back as zero is the
+    // difference between "the controller has the wrong pointer" and "the
+    // controller is ignoring the ring", and those need opposite fixes.
+    let crcr_lo = regs.op_read(OP_CRCR);
+    let crcr_hi = regs.op_read(OP_CRCR + 4);
+    let dcbaa_lo = regs.op_read(OP_DCBAAP);
+    let erstba_lo = regs.rt_read(RT_ERSTBA);
+    let erstsz = regs.rt_read(RT_ERSTSZ);
+    let db0 = regs.db_read(0);
+    crate::serial::write_str(&alloc::format!(
+        "[xhci] ring: rt=0x{:x} db=0x{:x} CRCR=0x{:x}{:08x} (pisano 0x{:x}) \
+         DCBAAP.lo=0x{:08x} ERSTBA.lo=0x{:08x} ERSTSZ={} DB0={} cfg=0x{:x}\n",
+        regs.rt_offset(),
+        regs.db_offset(),
+        crcr_hi,
+        crcr_lo,
+        cmd.phys(),
+        dcbaa_lo,
+        erstba_lo,
+        erstsz,
+        db0,
+        regs.op_read(OP_CONFIG),
+    ));
 
     let ctx_size = if regs.csz64 { 64 } else { 32 };
 
@@ -132,15 +229,37 @@ pub fn init(regs: XhciRegs) -> Result<Xhci, UsbError> {
         slots,
         ports,
         attached: 0,
+        // A controller that has just come out of HCRST believes it has
+        // processed no command-ring TRBs, so the first doorbell target is 1.
+        cmd_doorbell: 0,
     })
 }
 
 impl Xhci {
+    /// Submit one command-ring TRB and wait for its completion event.
     pub fn command(&mut self, trb: Trb) -> Result<Trb, UsbError> {
-        self.cmd.enqueue(trb);
-        self.regs.doorbell(0, 0, 0);
+        // Which command is this? The completion event carries no opcode, so
+        // without this the timeout log says only "a command timed out" and
+        // there is nothing to attach a trace to.
+        let wanted_type = trb.typ();
 
-        for _ in 0..2_000_000 {
+        self.cmd.enqueue(trb);
+
+        // The doorbell target, not a flag. See `cmd_doorbell` for why a constant
+        // here meant the controller was never told to read the ring. Written
+        // *after* the TRB and *before* the wait, and never on a failure path - a
+        // doorbell rung for a command that was never enqueued would make the
+        // controller read the wrong TRB and desynchronise the ring.
+        self.cmd_doorbell = self.cmd_doorbell.wrapping_add(1);
+        self.regs.doorbell(0, self.cmd_doorbell, 0);
+
+                // The budget counts *yields*, not nanoseconds: with `hlt` in the wait,
+        // one iteration is one timer interrupt, so the old 2,000,000 meant
+        // millions of wake-ups - a hang dressed as a slow timeout. A successful
+        // command completes within a couple of yields, because the controller
+        // posts its event the moment the CPU hands the slot over, so a few
+        // thousand is generous for success and still bounded for failure.
+        for _ in 0..WAIT_YIELDS {
             if let Some(t) = self.ev.pending() {
                 let t = t;
                 self.ev.pop();
@@ -157,8 +276,28 @@ impl Xhci {
                 continue;
             }
 
-            core::hint::spin_loop();
+            wait_step();
         }
+
+        // A timeout here used to be indistinguishable from a broken controller.
+        // What is reported is everything needed to tell the three candidates
+        // apart: the doorbell we rang and what the register reads back (a
+        // controller that ignores it reads 0), whether the event ring moved at
+        // all, and the position the command ring had reached.
+        let db_back = self.regs.db_read(0);
+        crate::serial::write_str(&alloc::format!(
+            "[xhci] TIMEOUT typ=0x{:02x} dzwonek={} wrocil={} cmd_enq={} erdp=0x{:x} \
+             USBSTS=0x{:x} (CRST={} CNR={} CFGCHG={})\n",
+            wanted_type,
+            self.cmd_doorbell,
+            db_back,
+            self.cmd.enqueue_pos(),
+            self.ev.erdp(),
+            self.regs.op_read(OP_USBSTS),
+            u8::from(self.regs.op_read(OP_USBSTS) & (1 << 0) != 0),
+            u8::from(self.regs.op_read(OP_USBSTS) & (1 << 11) != 0),
+            u8::from(self.regs.op_read(OP_USBSTS) & (1 << 2) != 0),
+        ));
 
         Err(UsbError::Timeout)
     }

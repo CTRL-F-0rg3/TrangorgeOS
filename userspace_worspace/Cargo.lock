@@ -112,6 +112,9 @@ version = "0.1.0"
 [[package]]
 name = "settings_app"
 version = "0.1.0"
+dependencies = [
+ "uspace",
+]
 
 [[package]]
 name = "shell"

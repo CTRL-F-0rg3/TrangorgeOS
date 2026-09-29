@@ -16,8 +16,45 @@ extern "C" {
 const CLS_SYS: u32 = 0;
 const CLS_VIDEO: u32 = 5;
 
-/// Framebuffer info, within the video class.
-const VIDEO_FB_INFO: u32 = 0;
+// ── the video class opcode map ───────────────────────────────────────────────
+//
+// The class number is 5 (`OpClass::Video`) and the operation number is the low
+// byte. The numbers below are not one list in one place, so they are gathered
+// here; anything not named is refused rather than falling through.
+//
+//   0  alias for FB_INFO          (see below)
+//   1  FB_INFO                   uspace::KernelClient::acquire_framebuffer
+//   2  —                          free
+//   3  HDMI_INIT                  kernel/src/hdmi/aut.rs
+//   4  HDMI_FILL
+//   5  HDMI_POLL
+//   6  HDMI_CAPS
+//   7  MODE_GET
+//   8  MODE_LIST
+//   9  MODE_SET
+//  10  GRANT_FB
+//  11  REVOKE_FB
+//  12  HDMI_ACQUIRE
+//  13  HDMI_RELEASE
+//
+// The HDMI operations are reached through `hdmi::bridge::hdmi_call`, which is
+// wired separately from this dispatcher; they are listed so the numbering
+// cannot be reused by accident.
+
+/// Framebuffer info: the canonical operation number.
+///
+/// This is 1 because that is what the only real client sends
+/// (`uspace::KernelClient` builds `(5 << 8) | 1`). An earlier version of this
+/// file answered only operation 0, which broke `acquire_framebuffer` — the
+/// client got `status = -1` and no framebuffer. The number has to match the
+/// client that actually exists, not the one that seems tidy.
+const VIDEO_FB_INFO: u32 = 1;
+
+/// Operation 0 was never assigned to anything; accepted as an alias for
+/// [`VIDEO_FB_INFO`] so a client built against the earlier numbering still
+/// works. Two spellings of one operation is a nuisance, but a dangling client
+/// is worse.
+const VIDEO_FB_INFO_ALIAS: u32 = 0;
 
 /// Dispatch an authorized request, filling `reply` with the result.
 pub fn handle(msg: &CommMsg, reply: &mut CommMsg) {
@@ -45,7 +82,7 @@ pub fn handle(msg: &CommMsg, reply: &mut CommMsg) {
         CLS_VIDEO => match op {
             // Framebuffer info. The reply carries the whole
             // `FramebufferDesc`, in the packing below.
-            VIDEO_FB_INFO => {
+            VIDEO_FB_INFO | VIDEO_FB_INFO_ALIAS => {
                 let desc = crate::gfx::console::fb_desc();
 
                 if !desc.is_usable() {

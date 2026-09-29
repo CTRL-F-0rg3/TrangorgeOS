@@ -5,3 +5,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+# `uspace` daje warstwę graficzną: wypełnianie prostokątów, zaokrąglone
+# kształty i - co jest tu istotne - warstwę tekstu z atlasu bitmapowego.
+# Font 8x8 w `render` nie umie narysować polskich znaków diakrytycznych ani
+# rozmiaru 17-19 px, a to menu składa się z samego tekstu.
+uspace = { path = "../../../uspace" }
